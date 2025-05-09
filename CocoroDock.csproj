@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <Version>2.0.0</Version>
+    <Authors>Hirona</Authors>
+    <Company>AliceEncoder</Company>
+    <Description>CocoroAIのチャット及び設定画面</Description>
+    <ApplicationIcon>logo2.ico</ApplicationIcon>
+    <AssemblyName>CocoroAI</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="logo2.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Communication\" />
+    <Folder Include="Controls\" />
+    <Folder Include="Models\" />
+    <Folder Include="Services\" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,70 @@
+<Window x:Class="CocoroDock.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CocoroDock"
+        xmlns:controls="clr-namespace:CocoroDock.Controls"
+        mc:Ignorable="d"
+        Title="CocoroAI Ver. 2.0.0 Beta"
+        Height="600"
+        Width="500"
+        WindowStartupLocation="CenterScreen">
+
+        <Grid>
+                <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- ヘッダー部分 -->
+                <Grid Grid.Row="0"
+                      Background="#4873CF"
+                      Height="60">
+                        <Grid>
+                                <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0"
+                                            Orientation="Horizontal"
+                                            VerticalAlignment="Center"
+                                            Margin="20,0">
+                                        <TextBlock Text="CocoroAI"
+                                                   FontSize="24"
+                                                   Foreground="WhiteSmoke"
+                                                   FontWeight="SemiBold"/>
+                                </StackPanel>
+
+                                <Button x:Name="AdminButton"
+                                        Grid.Column="1"
+                                        Content="Setting"
+                                        Margin="0,0,20,0"
+                                        Padding="15,5"
+                                        Background="#4873CF"
+                                        Foreground="WhiteSmoke"
+                                        BorderThickness="0"
+                                        Click="AdminButton_Click"
+                                        FontSize="14"/>
+                        </Grid>
+                </Grid>
+
+                <!-- メインコンテンツ部分 -->
+                <Grid Grid.Row="1"
+                      Background="White">
+                        <controls:ChatControl x:Name="ChatControlInstance"/>
+                </Grid>
+
+                <!-- フッター部分 -->
+                <StatusBar Grid.Row="2"
+                           Height="30"
+                           Background="#F0F0F0">
+                        <StatusBarItem>
+                                <TextBlock x:Name="ConnectionStatusText"
+                                           Text="接続状態: 切断中"/>
+                        </StatusBarItem>
+                </StatusBar>
+        </Grid>
+</Window>

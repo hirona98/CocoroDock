@@ -1,0 +1,55 @@
+◆ つくよみちゃん ◆
+本ソフトウェアでは、フリー素材キャラクター「つくよみちゃん」（© Rei Yumesaki）を使用しています。
+つくよみちゃん公式サイト
+https://tyc.rei-yumesaki.net/
+
+◆ つくよみちゃん3Dモデル ◆
+本ソフトウェアに収録されているつくよみちゃんの3Dモデルの利用規約は、「つくよみちゃん公式3Dモデル タイプA」の利用規約に準じます。
+https://tyc.rei-yumesaki.net/material/avatar/3d-a/
+
+◆ 初音ミク ◆
+このソフトウェアは、ピアプロ・キャラクター・ライセンスに基づいて、クリプトン・フューチャー・メディア株式会社のキャラクター「初音ミク」を組み込んでいます。
+https://piapro.jp/license/pcl/summary
+
+◆ 初音ミク3Dモデル ◆
+Copyright (c) 白氣凪
+https://booth.pm/ja/items/6690538
+
+◆ モーション ◆
+Copyright (c) デジタルモーション株式会社
+https://digitalmotion.booth.pm/
+Copyright (c) naokimiku39
+https://naokimiku39.booth.pm/items/4366008
+
+◆ ChatdollKit ◆
+Copyright (c) uezo
+https://github.com/uezo/ChatdollKit/blob/master/LICENSE
+
+◆ UniWindowController ◆
+Copyright (c) 2020 Kirurobo
+https://github.com/kirurobo/UniWindowController/blob/main/LICENSE.txt
+
+◆ uDesktopDuplication ◆
+Copyright (c) 2016 hecomi
+https://github.com/hecomi/uDesktopDuplication/blob/master/LICENSE.md
+
+◆ UniVRM ◆
+Copyright (c) 2020 VRM Consortium
+Copyright (c) 2018 Masataka SUMI for MToon
+https://github.com/vrm-c/UniVRM/blob/master/LICENSE.txt
+
+◆ UniTask ◆
+Copyright (c) neuecc
+https://github.com/Cysharp/UniTask/blob/master/LICENSE
+
+◆ websocket-sharp ◆
+Copyright (c) 2010-2025 sta.blockhead
+https://raw.githubusercontent.com/sta/websocket-sharp/master/LICENSE.txt
+
+◆ uLipSync ◆
+Copyright (c) 2021 hecomi
+https://github.com/hecomi/uLipSync/blob/main/LICENSE.md
+
+◆ このソフトウェアについて ◆
+Copyright (c) ヒロナ
+https://alice-encoder.booth.pm/
