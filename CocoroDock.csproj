@@ -11,6 +11,7 @@
     <Company>AliceEncoder</Company>
     <Description>CocoroAIのチャット及び設定画面</Description>
     <ApplicationIcon>logo2.ico</ApplicationIcon>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <AssemblyName>CocoroAI</AssemblyName>
   </PropertyGroup>
 
