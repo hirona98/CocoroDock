@@ -10,13 +10,13 @@
     <Authors>Hirona</Authors>
     <Company>AliceEncoder</Company>
     <Description>CocoroAIのチャット及び設定画面</Description>
-    <ApplicationIcon>logo2.ico</ApplicationIcon>
+    <ApplicationIcon>Resource/logo2.ico</ApplicationIcon>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <AssemblyName>CocoroAI</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="logo2.ico" />
+    <Content Include="Resource/logo2.ico" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Communication\" />
