@@ -26,8 +26,9 @@ namespace CocoroDock.Services
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "",
             "UserData", "defaultSetting.json");
 
-        // UI設定
         public int CocoroDockPort { get; set; } = 55600;
+        public int CocoroCorePort { get; set; } = 55601;
+        // UI設定
         public bool IsTopmost { get; set; } = false;
         public bool IsEscapeCursor { get; set; } = false;
         public bool IsInputVirtualKey { get; set; } = false;
@@ -88,6 +89,7 @@ namespace CocoroDock.Services
         public void UpdateSettings(ConfigSettings config)
         {
             CocoroDockPort = config.cocoroDockPort;
+            CocoroCorePort = config.cocoroCorePort;
             IsTopmost = config.isTopmost;
             IsEscapeCursor = config.isEscapeCursor;
             IsInputVirtualKey = config.isInputVirtualKey;
@@ -121,6 +123,7 @@ namespace CocoroDock.Services
             return new ConfigSettings
             {
                 cocoroDockPort = CocoroDockPort,
+                cocoroCorePort = CocoroCorePort,
                 isTopmost = IsTopmost,
                 isEscapeCursor = IsEscapeCursor,
                 isInputVirtualKey = IsInputVirtualKey,
@@ -184,7 +187,6 @@ namespace CocoroDock.Services
 
                     if (settings != null)
                     {
-                        CocoroDockPort = settings.cocoroDockPort;
                         // 設定更新メソッドを呼び出して設定を適用
                         UpdateSettings(settings);
                     }

@@ -118,6 +118,7 @@ namespace CocoroDock.Communication
     public class ConfigSettings
     {
         public int cocoroDockPort { get; set; }
+        public int cocoroCorePort { get; set; }
         public bool isTopmost { get; set; }
         public bool isEscapeCursor { get; set; }
         public bool isInputVirtualKey { get; set; }
