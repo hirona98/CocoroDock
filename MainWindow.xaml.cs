@@ -49,9 +49,7 @@ namespace CocoroDock
 
                 // 通信サービスを初期化 (WebSocketServerを使用)
                 _communicationService = new CommunicationService(
-                    settings.WebSocketHost,
-                    settings.WebSocketPort,
-                    settings.UserId);
+                    settings.CocoroDockPort);
 
                 // 通信サービスのイベントハンドラを設定
                 _communicationService.ChatMessageReceived += OnChatMessageReceived;
@@ -115,11 +113,19 @@ namespace CocoroDock
         {
             try
             {
+                // 設定読み込み状態をリセット
+                AppSettings.Instance.IsLoaded = false;
+
+                // サーバー側で管理している設定ファイルを読み込む
+                AppSettings.Instance.LoadAppSettings();
+
+                // 設定をUIに反映
+                ApplySettings();
+
+                // クライアントにも設定を通知
                 if (_communicationService != null && _communicationService.IsConnected)
                 {
-                    // 設定読み込み状態をリセット
-                    AppSettings.Instance.IsLoaded = false;
-                    await _communicationService.RequestConfigAsync();
+                    await _communicationService.UpdateConfigAsync(AppSettings.Instance.GetConfigSettings());
                 }
             }
             catch (Exception ex)
@@ -147,11 +153,11 @@ namespace CocoroDock
             {
                 if (isConnected)
                 {
-                    ConnectionStatusText.Text = "接続状態: 接続中";
+                    ConnectionStatusText.Text = "接続状態: 動作中";
                 }
                 else
                 {
-                    string statusText = customMessage ?? "切断中";
+                    string statusText = customMessage ?? "停止中";
                     ConnectionStatusText.Text = $"接続状態: {statusText}";
                 }
             });
@@ -246,18 +252,18 @@ namespace CocoroDock
             RunOnUIThread(() =>
             {
                 // 応答ステータスをチェック
-                if (response.Status != "Ok")
+                if (response.status != "ok")
                 {
                     // エラーの場合はメッセージを表示
-                    MessageBox.Show($"設定変更エラー: {response.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show($"設定変更エラー: {response.message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
                 // 設定情報が含まれている場合は適用する
-                if (response.Settings != null)
+                if (response.settings != null)
                 {
                     // アプリケーション設定を更新
-                    AppSettings.Instance.UpdateSettings(response.Settings);
+                    AppSettings.Instance.UpdateSettings(response.settings);
 
                     // 設定を画面に反映
                     ApplySettings();
@@ -279,12 +285,12 @@ namespace CocoroDock
         private void OnSystemMessageReceived(object? sender, SystemMessagePayload systemMessage)
         {
             // levelがerrorの場合のみ処理する（Infoは無視）
-            if (systemMessage.Level == "Error")
+            if (systemMessage.level == "Error")
             {
                 RunOnUIThread(() =>
                 {
                     // エラーメッセージをチャットウィンドウに表示（中央グレー枠）
-                    ChatControlInstance.AddSystemErrorMessage(systemMessage.Message);
+                    ChatControlInstance.AddSystemErrorMessage(systemMessage.message);
                 });
             }
             // その他のレベル（Info等）は無視
@@ -347,19 +353,10 @@ namespace CocoroDock
         /// <summary>
         /// 管理ボタンクリック時のイベントハンドラ
         /// </summary>
-        private async void AdminButton_Click(object sender, RoutedEventArgs e)
+        private void AdminButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // 設定要求を送信し、完了を待つ
-                await RequestConfigAsync();
-                int maxWaitTime = 20; // 100ms x 20 = 2秒
-                int waitCount = 0;
-                while (!AppSettings.Instance.IsLoaded && waitCount < maxWaitTime)
-                {
-                    await Task.Delay(100); // 100ミリ秒待機
-                    waitCount++;
-                }
                 // 管理画面を表示
                 var adminWindow = new AdminWindow();
                 adminWindow.Owner = this; // メインウィンドウを親に設定

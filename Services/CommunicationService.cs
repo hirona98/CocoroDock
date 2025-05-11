@@ -12,7 +12,6 @@ namespace CocoroDock.Services
     public class CommunicationService : IDisposable
     {
         private readonly WebSocketServer _webSocketServer;
-        private readonly string _userId;
         private string _sessionId;
         private readonly Dictionary<string, string> _clientSessions = new Dictionary<string, string>();
 
@@ -29,13 +28,10 @@ namespace CocoroDock.Services
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="host">サーバーホスト（例: 127.0.0.1）</param>
         /// <param name="port">サーバーポート（例: 55600）</param>
-        /// <param name="userId">ユーザーID</param>
-        public CommunicationService(string host, int port, string userId)
+        public CommunicationService(int port)
         {
-            _webSocketServer = new WebSocketServer(host, port);
-            _userId = userId;
+            _webSocketServer = new WebSocketServer("127.0.0.1", port);
             _sessionId = GenerateSessionId();
 
             // WebSocketサーバーのイベントハンドラを設定
@@ -94,12 +90,11 @@ namespace CocoroDock.Services
         {
             var payload = new ChatMessagePayload
             {
-                UserId = _userId,
-                SessionId = _sessionId,
-                Message = message
+                sessionId = _sessionId,
+                message = message
             };
 
-            await _webSocketServer.SendMessageAsync(MessageType.Chat, payload);
+            await _webSocketServer.SendMessageAsync(MessageType.chat, payload);
         }
 
         /// <summary>
@@ -111,11 +106,11 @@ namespace CocoroDock.Services
         {
             var payload = new ConfigMessagePayload
             {
-                SettingKey = settingKey,
-                Value = value
+                settingKey = settingKey,
+                value = value
             };
 
-            await _webSocketServer.SendMessageAsync(MessageType.Config, payload);
+            await _webSocketServer.SendMessageAsync(MessageType.config, payload);
         }
 
         /// <summary>
@@ -127,11 +122,11 @@ namespace CocoroDock.Services
         {
             var payload = new ControlMessagePayload
             {
-                Command = command,
-                Reason = reason
+                command = command,
+                reason = reason
             };
 
-            await _webSocketServer.SendMessageAsync(MessageType.Control, payload);
+            await _webSocketServer.SendMessageAsync(MessageType.control, payload);
         }
 
         /// <summary>
@@ -152,24 +147,24 @@ namespace CocoroDock.Services
                 using JsonDocument document = JsonDocument.Parse(args.Json);
                 var message = document.RootElement;
 
-                if (message.TryGetProperty("Type", out var typeElement) &&
-                    message.TryGetProperty("Payload", out var payloadElement))
+                if (message.TryGetProperty("type", out var typeElement) &&
+                    message.TryGetProperty("payload", out var payloadElement))
                 {
                     string type = typeElement.GetString() ?? string.Empty;
 
                     switch (type)
                     {
-                        case "Chat":
+                        case "chat":
                             var chatResponse = JsonSerializer.Deserialize<ChatResponsePayload>(
                                 payloadElement.GetRawText());
 
                             if (chatResponse != null)
                             {
-                                ChatMessageReceived?.Invoke(this, chatResponse.Response);
+                                ChatMessageReceived?.Invoke(this, chatResponse.response);
                             }
                             break;
 
-                        case "Config":
+                        case "config":
                             var configResponse = JsonSerializer.Deserialize<ConfigResponsePayload>(
                                 payloadElement.GetRawText());
 
@@ -179,7 +174,7 @@ namespace CocoroDock.Services
                             }
                             break;
 
-                        case "Status":
+                        case "status":
                             var statusUpdate = JsonSerializer.Deserialize<StatusMessagePayload>(
                                 payloadElement.GetRawText());
 
@@ -189,7 +184,7 @@ namespace CocoroDock.Services
                             }
                             break;
 
-                        case "System":
+                        case "system":
                             var systemMessage = JsonSerializer.Deserialize<SystemMessagePayload>(
                                 payloadElement.GetRawText());
 

@@ -34,7 +34,6 @@ namespace CocoroDock.Communication
         /// <summary>
         /// WebSocketサーバーのコンストラクタ
         /// </summary>
-        /// <param name="host">ホスト（例：127.0.0.1）</param>
         /// <param name="port">ポート番号（例：55600）</param>
         public WebSocketServer(string host, int port)
         {
@@ -385,10 +384,10 @@ namespace CocoroDock.Communication
         {
             var payload = new ConfigRequestPayload
             {
-                Action = "Get"
+                action = "get"
             };
 
-            await SendMessageAsync(MessageType.Config, payload);
+            await SendMessageAsync(MessageType.config, payload);
         }
 
         /// <summary>
@@ -399,11 +398,11 @@ namespace CocoroDock.Communication
         {
             var payload = new ConfigUpdatePayload
             {
-                Action = "Update",
-                Settings = settings
+                action = "update",
+                settings = settings
             };
 
-            await SendMessageAsync(MessageType.Config, payload);
+            await SendMessageAsync(MessageType.config, payload);
         }
 
         /// <summary>

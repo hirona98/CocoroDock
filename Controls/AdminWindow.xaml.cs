@@ -355,20 +355,20 @@ namespace CocoroDock.Controls
             {
                 var characterDict = new Dictionary<string, string>
                 {
-                    { "Name", character.ModelName ?? "不明" },
-                    { "VRMFilePath", character.VRMFilePath ?? "" },
-                    { "IsUseLLM", character.IsUseLLM.ToString() },
-                    { "ApiKey", character.ApiKey ?? "" },
-                    { "LLMModel", character.LLMModel ?? "" },
-                    { "SystemPrompt", character.SystemPrompt ?? "" },
-                    { "IsUseTTS", character.IsUseTTS.ToString() },
-                    { "TTSEndpointURL", character.TTSEndpointURL ?? "" },
-                    { "TTSSperkerID", character.TTSSperkerID ?? "" }
+                    { "Name", character.modelName ?? "不明" },
+                    { "VRMFilePath", character.vrmFilePath ?? "" },
+                    { "IsUseLLM", character.isUseLLM.ToString() },
+                    { "ApiKey", character.apiKey ?? "" },
+                    { "LLMModel", character.llmMModel ?? "" },
+                    { "SystemPrompt", character.systemPrompt ?? "" },
+                    { "IsUseTTS", character.isUseTTS.ToString() },
+                    { "TTSEndpointURL", character.ttsEndpointURL ?? "" },
+                    { "TTSSperkerID", character.ttsSperkerID ?? "" }
                 };
                 _characterSettings.Add(characterDict);
 
                 // コンボボックスに項目を追加
-                var item = new ComboBoxItem { Content = character.ModelName ?? "不明" };
+                var item = new ComboBoxItem { Content = character.modelName ?? "不明" };
                 CharacterSelectComboBox.Items.Add(item);
             }
 
@@ -434,7 +434,7 @@ namespace CocoroDock.Controls
                 bool isReadOnly = false;
                 if (index < AppSettings.Instance.CharacterList.Count)
                 {
-                    isReadOnly = AppSettings.Instance.CharacterList[index].IsReadOnly;
+                    isReadOnly = AppSettings.Instance.CharacterList[index].isReadOnly;
                 }
                 CharacterNameTextBox.IsEnabled = !isReadOnly;
                 VRMFilePathTextBox.IsEnabled = !isReadOnly;
@@ -545,7 +545,7 @@ namespace CocoroDock.Controls
                 bool isReadOnly = false;
                 if (_currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
                 {
-                    isReadOnly = AppSettings.Instance.CharacterList[_currentCharacterIndex].IsReadOnly;
+                    isReadOnly = AppSettings.Instance.CharacterList[_currentCharacterIndex].isReadOnly;
                 }
 
                 // ReadOnlyの場合、元の名前とVRMファイルパスを保持
@@ -637,7 +637,7 @@ namespace CocoroDock.Controls
             string lastVRMFilePath = string.Empty;
             if (lastSelectedIndex >= 0 && lastSelectedIndex < AppSettings.Instance.CharacterList.Count)
             {
-                lastVRMFilePath = AppSettings.Instance.CharacterList[lastSelectedIndex].VRMFilePath ?? string.Empty;
+                lastVRMFilePath = AppSettings.Instance.CharacterList[lastSelectedIndex].vrmFilePath ?? string.Empty;
             }
 
             // すべてのタブの設定を保存
@@ -649,7 +649,7 @@ namespace CocoroDock.Controls
             string currentVRMFilePath = string.Empty;
             if (currentSelectedIndex >= 0 && currentSelectedIndex < AppSettings.Instance.CharacterList.Count)
             {
-                currentVRMFilePath = AppSettings.Instance.CharacterList[currentSelectedIndex].VRMFilePath ?? string.Empty;
+                currentVRMFilePath = AppSettings.Instance.CharacterList[currentSelectedIndex].vrmFilePath ?? string.Empty;
             }
             // SelectedIndexが変更された場合
             if (lastSelectedIndex != currentSelectedIndex)
@@ -713,7 +713,10 @@ namespace CocoroDock.Controls
                 // AppSettings に設定を反映
                 UpdateAppSettings();
 
-                // WebSocketを通じて設定を更新
+                // 設定をファイルに保存
+                AppSettings.Instance.SaveAppSettings();
+
+                // WebSocketを通じて設定を更新（クライアントに通知）
                 bool configUpdateSuccessful = false;
                 string errorMessage = string.Empty;
 
@@ -735,8 +738,12 @@ namespace CocoroDock.Controls
                 // 処理結果に応じてメッセージを表示
                 if (!configUpdateSuccessful)
                 {
-                    MessageBox.Show($"設定に失敗しました。\n\nエラー: {errorMessage}",
-                        "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show($"クライアントへの設定通知に失敗しました。\n\n設定自体は保存されています。\n\nエラー: {errorMessage}",
+                        "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+                else
+                {
+                    MessageBox.Show("設定を保存しました。", "設定保存", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (System.Exception ex)
@@ -880,8 +887,8 @@ namespace CocoroDock.Controls
                 CharacterSettings newCharacter = existingCharacter ?? new CharacterSettings();
 
                 // 基本項目の更新
-                newCharacter.ModelName = character["Name"];
-                newCharacter.SystemPrompt = character["SystemPrompt"];
+                newCharacter.modelName = character["Name"];
+                newCharacter.systemPrompt = character["SystemPrompt"];
 
                 // IsUseLLMの設定を更新
                 bool isUseLLM = false;
@@ -889,24 +896,24 @@ namespace CocoroDock.Controls
                 {
                     bool.TryParse(character["IsUseLLM"], out isUseLLM);
                 }
-                newCharacter.IsUseLLM = isUseLLM;
+                newCharacter.isUseLLM = isUseLLM;
 
                 // VRMFilePathの設定を更新
                 if (character.ContainsKey("VRMFilePath"))
                 {
-                    newCharacter.VRMFilePath = character["VRMFilePath"];
+                    newCharacter.vrmFilePath = character["VRMFilePath"];
                 }
 
                 // ApiKeyの設定を更新
                 if (character.ContainsKey("ApiKey"))
                 {
-                    newCharacter.ApiKey = character["ApiKey"];
+                    newCharacter.apiKey = character["ApiKey"];
                 }
 
                 // LLMModelの設定を更新
                 if (character.ContainsKey("LLMModel"))
                 {
-                    newCharacter.LLMModel = character["LLMModel"];
+                    newCharacter.llmMModel = character["LLMModel"];
                 }
 
                 // IsUseTTSの設定を更新
@@ -915,22 +922,22 @@ namespace CocoroDock.Controls
                 {
                     bool.TryParse(character["IsUseTTS"], out isUseTTS);
                 }
-                newCharacter.IsUseTTS = isUseTTS;
+                newCharacter.isUseTTS = isUseTTS;
 
                 // TTSEndpointURLの設定を更新
                 if (character.ContainsKey("TTSEndpointURL"))
                 {
-                    newCharacter.TTSEndpointURL = character["TTSEndpointURL"];
+                    newCharacter.ttsEndpointURL = character["TTSEndpointURL"];
                 }
 
                 // TTSSperkerIDの設定を更新
                 if (character.ContainsKey("TTSSperkerID"))
                 {
-                    newCharacter.TTSSperkerID = character["TTSSperkerID"];
+                    newCharacter.ttsSperkerID = character["TTSSperkerID"];
                 }
 
                 // 既存の設定を保持（null になることはないという前提）
-                newCharacter.IsReadOnly = existingCharacter?.IsReadOnly ?? false;
+                newCharacter.isReadOnly = existingCharacter?.isReadOnly ?? false;
 
                 // リストに追加
                 newCharacterList.Add(newCharacter);

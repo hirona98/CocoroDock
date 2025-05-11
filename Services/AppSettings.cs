@@ -16,32 +16,18 @@ namespace CocoroDock.Services
 
         public static AppSettings Instance => _instance.Value;
 
-        // 設定ファイルのパス
-        private string SettingsFilePath => Path.Combine(
+        // アプリケーション設定ファイルのパス
+        private string AppSettingsFilePath => Path.Combine(
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "",
-            "ConnectSetting.json");
+            "UserData", "setting.json");
 
-        // 接続設定
-        public string WebSocketHost { get; set; } = "127.0.0.1";
-        public int WebSocketPort { get; set; } = 55600;
-        public string UserId { get; set; } = "user01";
-
-        // 下位互換性のためのプロパティ
-        public string WebSocketUrl
-        {
-            get => $"ws://{WebSocketHost}:{WebSocketPort}/";
-            set
-            {
-                // ws://127.0.0.1:55600/ 形式から分解して設定
-                if (Uri.TryCreate(value, UriKind.Absolute, out Uri? uri) && uri != null)
-                {
-                    WebSocketHost = uri.Host;
-                    WebSocketPort = uri.Port;
-                }
-            }
-        }
+        // デフォルト設定ファイルのパス
+        private string DefaultSettingsFilePath => Path.Combine(
+            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "",
+            "UserData", "defaultSetting.json");
 
         // UI設定
+        public int CocoroDockPort { get; set; } = 55600;
         public bool IsTopmost { get; set; } = false;
         public bool IsEscapeCursor { get; set; } = false;
         public bool IsInputVirtualKey { get; set; } = false;
@@ -81,16 +67,16 @@ namespace CocoroDock.Services
             {
                 new CharacterSettings
                 {
-                    IsReadOnly = false,
-                    ModelName = "model_name",
-                    VRMFilePath = "vrm_file_path",
-                    IsUseLLM = false,
-                    ApiKey = "your_api_key",
-                    LLMModel = "gpt-3.5-turbo",
-                    SystemPrompt = "あなたは親切なアシスタントです。",
-                    IsUseTTS = false,
-                    TTSEndpointURL = "http://localhost:50021",
-                    TTSSperkerID = "1",
+                    isReadOnly = false,
+                    modelName = "model_name",
+                    vrmFilePath = "vrm_file_path",
+                    isUseLLM = false,
+                    apiKey = "your_api_key",
+                    llmMModel = "gpt-3.5-turbo",
+                    systemPrompt = "あなたは親切なアシスタントです。",
+                    isUseTTS = false,
+                    ttsEndpointURL = "http://localhost:50021",
+                    ttsSperkerID = "1",
                 }
             };
         }
@@ -101,24 +87,25 @@ namespace CocoroDock.Services
         /// <param name="config">サーバーから受信した設定値</param>
         public void UpdateSettings(ConfigSettings config)
         {
-            IsTopmost = config.IsTopmost;
-            IsEscapeCursor = config.IsEscapeCursor;
-            IsInputVirtualKey = config.IsInputVirtualKey;
-            VirtualKeyString = config.VirtualKeyString;
-            IsAutoMove = config.IsAutoMove;
-            IsEnableAmbientOcclusion = config.IsEnableAmbientOcclusion;
-            MsaaLevel = config.MsaaLevel;
-            CharacterShadow = config.CharacterShadow;
-            CharacterShadowResolution = config.CharacterShadowResolution;
-            BackgroundShadow = config.BackgroundShadow;
-            BackgroundShadowResolution = config.BackgroundShadowResolution;
-            WindowSize = config.WindowSize > 0 ? (int)config.WindowSize : 650;
-            CurrentCharacterIndex = config.CurrentCharacterIndex;
+            CocoroDockPort = config.cocoroDockPort;
+            IsTopmost = config.isTopmost;
+            IsEscapeCursor = config.isEscapeCursor;
+            IsInputVirtualKey = config.isInputVirtualKey;
+            VirtualKeyString = config.virtualKeyString;
+            IsAutoMove = config.isAutoMove;
+            IsEnableAmbientOcclusion = config.isEnableAmbientOcclusion;
+            MsaaLevel = config.msaaLevel;
+            CharacterShadow = config.characterShadow;
+            CharacterShadowResolution = config.characterShadowResolution;
+            BackgroundShadow = config.backgroundShadow;
+            BackgroundShadowResolution = config.backgroundShadowResolution;
+            WindowSize = config.windowSize > 0 ? (int)config.windowSize : 650;
+            CurrentCharacterIndex = config.currentCharacterIndex;
 
             // キャラクターリストを更新（もし受信したリストが空でなければ）
-            if (config.CharacterList != null && config.CharacterList.Count > 0)
+            if (config.characterList != null && config.characterList.Count > 0)
             {
-                CharacterList = new List<CharacterSettings>(config.CharacterList);
+                CharacterList = new List<CharacterSettings>(config.characterList);
             }
 
             // 設定読み込み完了フラグを設定
@@ -133,20 +120,21 @@ namespace CocoroDock.Services
         {
             return new ConfigSettings
             {
-                IsTopmost = IsTopmost,
-                IsEscapeCursor = IsEscapeCursor,
-                IsInputVirtualKey = IsInputVirtualKey,
-                VirtualKeyString = VirtualKeyString,
-                IsAutoMove = IsAutoMove,
-                IsEnableAmbientOcclusion = IsEnableAmbientOcclusion,
-                MsaaLevel = MsaaLevel,
-                CharacterShadow = CharacterShadow,
-                CharacterShadowResolution = CharacterShadowResolution,
-                BackgroundShadow = BackgroundShadow,
-                BackgroundShadowResolution = BackgroundShadowResolution,
-                WindowSize = WindowSize,
-                CurrentCharacterIndex = CurrentCharacterIndex,
-                CharacterList = new List<CharacterSettings>(CharacterList)
+                cocoroDockPort = CocoroDockPort,
+                isTopmost = IsTopmost,
+                isEscapeCursor = IsEscapeCursor,
+                isInputVirtualKey = IsInputVirtualKey,
+                virtualKeyString = VirtualKeyString,
+                isAutoMove = IsAutoMove,
+                isEnableAmbientOcclusion = IsEnableAmbientOcclusion,
+                msaaLevel = MsaaLevel,
+                characterShadow = CharacterShadow,
+                characterShadowResolution = CharacterShadowResolution,
+                backgroundShadow = BackgroundShadow,
+                backgroundShadowResolution = BackgroundShadowResolution,
+                windowSize = WindowSize,
+                currentCharacterIndex = CurrentCharacterIndex,
+                characterList = new List<CharacterSettings>(CharacterList)
             };
         }
 
@@ -157,31 +145,10 @@ namespace CocoroDock.Services
         {
             try
             {
-                // 設定ファイルが存在するか確認
-                if (File.Exists(SettingsFilePath))
-                {
-                    // ファイルからJSONを読み込む
-                    string json = File.ReadAllText(SettingsFilePath);
-
-                    // JSONをデシリアライズ
-                    var settings = JsonSerializer.Deserialize<ConnectionSettings>(json);
-
-                    if (settings != null)
-                    {
-                        // 設定を適用
-                        WebSocketHost = settings.WebSocketHost;
-                        WebSocketPort = settings.WebSocketPort;
-                        UserId = settings.UserId;
-
-                        // 設定読み込み完了フラグを設定
-                        IsLoaded = true;
-                    }
-                }
-                else
-                {
-                    // 設定ファイルが存在しない場合は、デフォルト設定でファイルを作成
-                    SaveSettings();
-                }
+                // アプリケーション設定ファイルを読み込む
+                LoadAppSettings();
+                // 設定読み込み完了フラグを設定
+                IsLoaded = true;
             }
             catch (Exception ex)
             {
@@ -191,44 +158,83 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// 設定をファイルに保存
+        /// アプリケーション設定ファイルを読み込む
         /// </summary>
-        public void SaveSettings()
+        public void LoadAppSettings()
         {
             try
             {
-                // 保存する設定オブジェクトを作成
-                var settings = new ConnectionSettings
-                {
-                    WebSocketHost = WebSocketHost,
-                    WebSocketPort = WebSocketPort,
-                    UserId = UserId
-                };
+                // ファイルパスを決定（appSetting.jsonがなければdefaultSetting.jsonを使用）
+                string settingsPath = File.Exists(AppSettingsFilePath)
+                    ? AppSettingsFilePath
+                    : DefaultSettingsFilePath;
 
-                // JSONにシリアライズ
-                var options = new JsonSerializerOptions
+                // ファイルが存在するか確認
+                if (File.Exists(settingsPath))
                 {
-                    WriteIndented = true // 整形されたJSONを出力
-                };
-                string json = JsonSerializer.Serialize(settings, options);
+                    // ファイルからJSONを読み込む
+                    string json = File.ReadAllText(settingsPath);
 
-                // ファイルに保存
-                File.WriteAllText(SettingsFilePath, json);
+                    // JSONをデシリアライズ
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    var settings = JsonSerializer.Deserialize<ConfigSettings>(json, options);
+
+                    if (settings != null)
+                    {
+                        CocoroDockPort = settings.cocoroDockPort;
+                        // 設定更新メソッドを呼び出して設定を適用
+                        UpdateSettings(settings);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"設定ファイルが見つかりません: {settingsPath}");
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"設定ファイル保存エラー: {ex.Message}");
+                Console.WriteLine($"アプリケーション設定ファイル読み込みエラー: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// 接続設定クラス
+        /// アプリケーション設定をファイルに保存
         /// </summary>
-        private class ConnectionSettings
+        public void SaveAppSettings()
         {
-            public string WebSocketHost { get; set; } = "127.0.0.1";
-            public int WebSocketPort { get; set; } = 55600;
-            public string UserId { get; set; } = "user01";
+            try
+            {
+                // 現在の設定からConfigSettingsオブジェクトを取得
+                var settings = GetConfigSettings();
+
+                // JSONにシリアライズ
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true, // 整形されたJSONを出力
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+                string json = JsonSerializer.Serialize(settings, options);
+
+                // ファイルに保存
+                File.WriteAllText(AppSettingsFilePath, json);
+
+                Console.WriteLine($"設定をファイルに保存しました: {AppSettingsFilePath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"アプリケーション設定ファイル保存エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 全設定をファイルに保存
+        /// </summary>
+        public void SaveSettings()
+        {
+            SaveAppSettings();
         }
     }
 }
