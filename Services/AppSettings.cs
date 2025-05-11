@@ -73,7 +73,7 @@ namespace CocoroDock.Services
                     vrmFilePath = "vrm_file_path",
                     isUseLLM = false,
                     apiKey = "your_api_key",
-                    llmMModel = "gpt-3.5-turbo",
+                    llmModel = "gpt-3.5-turbo",
                     systemPrompt = "あなたは親切なアシスタントです。",
                     isUseTTS = false,
                     ttsEndpointURL = "http://localhost:50021",

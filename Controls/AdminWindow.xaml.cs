@@ -359,7 +359,7 @@ namespace CocoroDock.Controls
                     { "VRMFilePath", character.vrmFilePath ?? "" },
                     { "IsUseLLM", character.isUseLLM.ToString() },
                     { "ApiKey", character.apiKey ?? "" },
-                    { "LLMModel", character.llmMModel ?? "" },
+                    { "LLMModel", character.llmModel ?? "" },
                     { "SystemPrompt", character.systemPrompt ?? "" },
                     { "IsUseTTS", character.isUseTTS.ToString() },
                     { "TTSEndpointURL", character.ttsEndpointURL ?? "" },
@@ -913,7 +913,7 @@ namespace CocoroDock.Controls
                 // LLMModelの設定を更新
                 if (character.ContainsKey("LLMModel"))
                 {
-                    newCharacter.llmMModel = character["LLMModel"];
+                    newCharacter.llmModel = character["LLMModel"];
                 }
 
                 // IsUseTTSの設定を更新

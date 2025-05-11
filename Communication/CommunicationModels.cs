@@ -105,7 +105,7 @@ namespace CocoroDock.Communication
         public string vrmFilePath { get; set; } = string.Empty;
         public bool isUseLLM { get; set; }
         public string apiKey { get; set; } = string.Empty;
-        public string llmMModel { get; set; } = string.Empty;
+        public string llmModel { get; set; } = string.Empty;
         public string systemPrompt { get; set; } = string.Empty;
         public bool isUseTTS { get; set; }
         public string ttsEndpointURL { get; set; } = string.Empty;
