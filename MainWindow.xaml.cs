@@ -56,11 +56,10 @@ namespace CocoroDock
         private void InitializeApp()
         {
             try
-            {
-                // CocoroShell.exeを起動
+            {                // CocoroShell.exeを起動（既に起動していれば終了してから再起動）
                 LaunchCocoroShell();
 
-                // CocoroCore.exeを起動
+                // CocoroCore.exeを起動（既に起動していれば終了してから再起動）
                 LaunchCocoroCore();
 
                 // AppSettingsから設定を取得
@@ -440,6 +439,28 @@ namespace CocoroDock
                     return;
                 }
 
+                // 同名の実行中プロセスをチェック
+                string processName = Path.GetFileNameWithoutExtension(exePath);
+                Process[] existingProcesses = Process.GetProcessesByName(processName);
+
+                // 既存のプロセスを終了
+                foreach (Process process in existingProcesses)
+                {
+                    try
+                    {
+                        if (!process.HasExited)
+                        {
+                            process.Kill();
+                            process.WaitForExit(3000); // 最大3秒待機
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"プロセス終了エラー: {ex.Message}");
+                        // プロセス終了のエラーはログに記録するだけで続行
+                    }
+                }
+
                 // プロセス起動のためのパラメータを設定
                 ProcessStartInfo startInfo = new ProcessStartInfo
                 {
@@ -457,7 +478,7 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// CocoroShell.exeを起動する
+        /// CocoroShell.exeを起動する（既に起動している場合は終了してから再起動）
         /// </summary>
         private void LaunchCocoroShell()
         {
@@ -465,7 +486,7 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// CocoroCore.exeを起動する
+        /// CocoroCore.exeを起動する（既に起動している場合は終了してから再起動）
         /// </summary>
         private void LaunchCocoroCore()
         {
