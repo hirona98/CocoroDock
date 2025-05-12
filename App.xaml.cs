@@ -57,7 +57,7 @@ namespace CocoroDock
             {
                 _notifyIcon = new NotifyIcon
                 {
-                    Icon = new Icon(GetResourcePath("Resource/logo.ico")),
+                    Icon = LoadIconFromResource("Resource/logo.ico"),
                     Visible = true,
                     Text = "CocoroAI"
                 };
@@ -109,6 +109,35 @@ namespace CocoroDock
         {
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
             return System.IO.Path.Combine(basePath, relativePath);
+        }
+
+        /// <summary>
+        /// リソースからアイコンを読み込む
+        /// </summary>
+        private Icon LoadIconFromResource(string resourcePath)
+        {
+            try
+            {
+                // アプリケーションリソースからアイコンを読み込む
+                Uri resourceUri = new Uri($"pack://application:,,,/{resourcePath}", UriKind.Absolute);
+                var resourceStream = Application.GetResourceStream(resourceUri);
+
+                if (resourceStream != null)
+                {
+                    return new Icon(resourceStream.Stream);
+                }
+
+                // リソースが見つからない場合は物理ファイルを試す
+                return new Icon(GetResourcePath(resourcePath));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"アイコン読み込みエラー: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                // エラーが発生した場合、デフォルトのアイコンを返す
+                return Icon.ExtractAssociatedIcon(GetType().Assembly.Location) ??
+                       SystemIcons.Application;
+            }
         }
 
         protected override void OnExit(ExitEventArgs e)

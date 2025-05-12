@@ -14,9 +14,13 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <AssemblyName>CocoroAI</AssemblyName>
   </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Resource\logo.png" />
+  </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Resource/logo.ico" />
+    <Resource Include="Resource/logo.ico" />
+    <Resource Include="Resource\logo.png" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Communication\" />
