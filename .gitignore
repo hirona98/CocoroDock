@@ -3,6 +3,10 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+# CocoroDock
+performance.db
+context.db
+
 # dotenv files
 .env
 

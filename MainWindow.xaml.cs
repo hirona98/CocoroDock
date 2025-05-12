@@ -2,7 +2,9 @@ using CocoroDock.Communication;
 using CocoroDock.Controls;
 using CocoroDock.Services;
 using System;
-using System.Threading; // Timerを使用するために追加
+using System.Diagnostics;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -48,15 +50,19 @@ namespace CocoroDock
         {
             // ChatControlのMessageTextBoxにフォーカス設定
             ChatControlInstance.FocusMessageTextBox();
-        }
-
-        /// <summary>
-        /// アプリケーション初期化
-        /// </summary>
+        }        /// <summary>
+                 /// アプリケーション初期化
+                 /// </summary>
         private void InitializeApp()
         {
             try
             {
+                // CocoroShell.exeを起動
+                LaunchCocoroShell();
+
+                // CocoroCore.exeを起動
+                LaunchCocoroCore();
+
                 // AppSettingsから設定を取得
                 var settings = AppSettings.Instance;
 
@@ -404,6 +410,66 @@ namespace CocoroDock
         {
             _reconnectTimer?.Change(Timeout.Infinite, Timeout.Infinite);
             _reconnectTimer = null;
+        }
+
+        /// <summary>
+        /// 外部アプリケーションを起動する
+        /// </summary>
+        /// <param name="appName">アプリケーション名</param>
+        /// <param name="exePath">実行ファイルのパス（絶対パスまたは相対パス）</param>
+        /// <param name="relativeDir">相対ディレクトリ（nullの場合は直接exePathを使用）</param>
+        private void LaunchExternalApplication(string appName, string exePath, string? relativeDir = null)
+        {
+            try
+            {
+                // 実行ファイルパスの構築
+                string fullPath;
+                if (relativeDir != null)
+                {
+                    fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, relativeDir, exePath);
+                }
+                else
+                {
+                    fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, exePath);
+                }
+
+                // ファイルの存在確認
+                if (!File.Exists(fullPath))
+                {
+                    ShowError("起動エラー", $"{appName}が見つかりません。パス: {fullPath}");
+                    return;
+                }
+
+                // プロセス起動のためのパラメータを設定
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = fullPath,
+                    UseShellExecute = true
+                };
+
+                // プロセスを起動
+                Process.Start(startInfo);
+            }
+            catch (Exception ex)
+            {
+                ShowError($"{appName}起動エラー", ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// CocoroShell.exeを起動する
+        /// </summary>
+        private void LaunchCocoroShell()
+        {
+            LaunchExternalApplication("CocoroShell", "CocoroShell.exe", "CocoroShell");
+        }
+
+        /// <summary>
+        /// CocoroCore.exeを起動する
+        /// </summary>
+        private void LaunchCocoroCore()
+        {
+            LaunchExternalApplication("CocoroCore", "CocoroCore.exe");
         }
     }
 }
