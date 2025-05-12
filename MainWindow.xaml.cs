@@ -27,8 +27,21 @@ namespace CocoroDock
             // ウィンドウの状態変更イベントを監視
             this.StateChanged += MainWindow_StateChanged;
 
+            // ウィンドウのCloseButtonクリック時（×ボタン）のイベントを監視
+            this.Closing += MainWindow_Closing;
+
             // 初期化と接続
             InitializeApp();
+        }
+
+        /// <summary>
+        /// ウィンドウの閉じるボタンクリック時のイベントハンドラ
+        /// </summary>
+        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // 閉じる操作をキャンセルし、代わりにウィンドウを非表示にする
+            e.Cancel = true;
+            this.Hide();
         }
 
         /// <summary>
