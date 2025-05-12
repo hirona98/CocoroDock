@@ -353,6 +353,9 @@ namespace CocoroDock
                     _communicationService.Dispose();
                     _communicationService = null;
                 }
+
+                // CocoroCore と CocoroShell を終了
+                TerminateExternalApplications();
             }
             catch (Exception)
             {
@@ -364,6 +367,51 @@ namespace CocoroDock
             // Application.Current.ShutdownだけでOK
             // OnExitが自動的に実行される
             Application.Current.Shutdown();
+        }
+
+        /// <summary>
+        /// 外部アプリケーション（CocoroCore と CocoroShell）を終了する
+        /// </summary>
+        private void TerminateExternalApplications()
+        {
+            try
+            {
+                // CocoroCore プロセスを終了
+                TerminateProcessByName("CocoroCore");
+
+                // CocoroShell プロセスを終了
+                TerminateProcessByName("CocoroShell");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"外部アプリケーション終了エラー: {ex.Message}");
+                // アプリケーションの終了処理なのでエラーメッセージは表示しない
+            }
+        }
+
+        /// <summary>
+        /// 指定した名前のプロセスを終了する
+        /// </summary>
+        /// <param name="processName">終了するプロセス名（拡張子なし）</param>
+        private void TerminateProcessByName(string processName)
+        {
+            try
+            {
+                Process[] processes = Process.GetProcessesByName(processName);
+                foreach (Process process in processes)
+                {
+                    if (!process.HasExited)
+                    {
+                        process.Kill();
+                        process.WaitForExit(3000); // 最大3秒待機
+                        Debug.WriteLine($"{processName} プロセスを終了しました。");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"{processName} プロセス終了エラー: {ex.Message}");
+            }
         }
 
         /// <summary>
