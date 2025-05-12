@@ -377,10 +377,10 @@ namespace CocoroDock
             try
             {
                 // CocoroCore プロセスを終了
-                TerminateProcessByName("CocoroCore");
+                ProcessUtility("CocoroCore", ProcessOperation.Terminate);
 
                 // CocoroShell プロセスを終了
-                TerminateProcessByName("CocoroShell");
+                ProcessUtility("CocoroShell", ProcessOperation.Terminate);
             }
             catch (Exception ex)
             {
@@ -390,27 +390,59 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// 指定した名前のプロセスを終了する
+        /// プロセス操作の種類を定義する列挙型
         /// </summary>
-        /// <param name="processName">終了するプロセス名（拡張子なし）</param>
-        private void TerminateProcessByName(string processName)
+        private enum ProcessOperation
+        {
+            /// <summary>既存のプロセスを終了して新しいプロセスを起動</summary>
+            RestartIfRunning,
+            /// <summary>プロセスを強制終了</summary>
+            Terminate,
+            /// <summary>プロセスの存在チェックのみ</summary>
+            CheckOnly
+        }
+
+        /// <summary>
+        /// 指定した名前のプロセスに対して操作を行う
+        /// </summary>
+        /// <param name="processName">プロセス名（拡張子なし）</param>
+        /// <param name="operation">実行する操作</param>
+        /// <returns>プロセスが存在する場合はtrue、存在しない場合はfalse</returns>
+        private bool ProcessUtility(string processName, ProcessOperation operation)
         {
             try
             {
                 Process[] processes = Process.GetProcessesByName(processName);
-                foreach (Process process in processes)
+                bool exists = processes.Length > 0;
+
+                // 操作に応じたプロセス処理
+                if (operation == ProcessOperation.Terminate || operation == ProcessOperation.RestartIfRunning)
                 {
-                    if (!process.HasExited)
+                    foreach (Process process in processes)
                     {
-                        process.Kill();
-                        process.WaitForExit(3000); // 最大3秒待機
-                        Debug.WriteLine($"{processName} プロセスを終了しました。");
+                        try
+                        {
+                            if (!process.HasExited)
+                            {
+                                process.Kill();
+                                process.WaitForExit(3000); // 最大3秒待機
+                                Debug.WriteLine($"{processName} プロセスを終了しました。");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"{processName} プロセス終了エラー: {ex.Message}");
+                            // プロセス終了のエラーはログに記録するだけで続行
+                        }
                     }
                 }
+
+                return exists;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"{processName} プロセス終了エラー: {ex.Message}");
+                Debug.WriteLine($"{processName} プロセス操作エラー: {ex.Message}");
+                return false;
             }
         }
 
@@ -487,27 +519,9 @@ namespace CocoroDock
                     return;
                 }
 
-                // 同名の実行中プロセスをチェック
+                // 同名の実行中プロセスをチェックして終了
                 string processName = Path.GetFileNameWithoutExtension(exePath);
-                Process[] existingProcesses = Process.GetProcessesByName(processName);
-
-                // 既存のプロセスを終了
-                foreach (Process process in existingProcesses)
-                {
-                    try
-                    {
-                        if (!process.HasExited)
-                        {
-                            process.Kill();
-                            process.WaitForExit(3000); // 最大3秒待機
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"プロセス終了エラー: {ex.Message}");
-                        // プロセス終了のエラーはログに記録するだけで続行
-                    }
-                }
+                ProcessUtility(processName, ProcessOperation.RestartIfRunning);
 
                 // プロセス起動のためのパラメータを設定
                 ProcessStartInfo startInfo = new ProcessStartInfo
