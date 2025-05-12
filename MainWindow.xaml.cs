@@ -75,9 +75,8 @@ namespace CocoroDock
 
                 // UIコントロールのイベントハンドラを登録
                 RegisterEventHandlers();
-
                 // サーバーの起動を開始
-                _ = ConnectToServiceAsync();
+                _ = StartWebSocketServerAsync();
             }
             catch (Exception ex)
             {
@@ -86,9 +85,9 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// サービスに接続（非同期タスク）
+        /// WebSocketサーバーを起動（非同期タスク）
         /// </summary>
-        private async Task ConnectToServiceAsync()
+        private async Task StartWebSocketServerAsync()
         {
             try
             {
@@ -97,10 +96,10 @@ namespace CocoroDock
 
                 if (_communicationService != null)
                 {
-                    if (_communicationService != null && !_communicationService.IsConnected)
+                    if (_communicationService != null && !_communicationService.IsServerRunning)
                     {
                         // サーバーを起動
-                        await _communicationService.ConnectAsync();
+                        await _communicationService.StartServerAsync();
 
                         // UI更新
                         UpdateConnectionStatus(true);
@@ -114,8 +113,8 @@ namespace CocoroDock
             {
                 UpdateConnectionStatus(false, "サーバー起動エラー");
 
-                // 再接続タイマーを開始
-                StartReconnectTimer();
+                // 再起動タイマーを開始
+                StartServerRestartTimer();
             }
         }
 
@@ -134,9 +133,8 @@ namespace CocoroDock
 
                 // 設定をUIに反映
                 ApplySettings();
-
                 // クライアントにも設定を通知
-                if (_communicationService != null && _communicationService.IsConnected)
+                if (_communicationService != null && _communicationService.IsServerRunning)
                 {
                     await _communicationService.UpdateConfigAsync(AppSettings.Instance.GetConfigSettings());
                 }
@@ -229,14 +227,14 @@ namespace CocoroDock
         {
             try
             {
-                // WebSocketが接続されている場合のみ送信
-                if (_communicationService != null && _communicationService.IsConnected)
+                // WebSocketサーバーが起動している場合のみ送信
+                if (_communicationService != null && _communicationService.IsServerRunning)
                 {
                     await _communicationService.SendChatMessageAsync(message);
                 }
                 else
                 {
-                    ChatControlInstance.AddSystemErrorMessage("接続が確立されていません");
+                    ChatControlInstance.AddSystemErrorMessage("サーバーが起動していません");
                 }
             }
             catch (Exception ex)
@@ -318,21 +316,21 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// 接続成功時のハンドラ
+        /// サーバー起動成功時のハンドラ
         /// </summary>
         private void OnConnected(object? sender, EventArgs e)
         {
             UpdateConnectionStatus(true);
-            StopReconnectTimer(); // 再接続タイマーを停止
+            StopServerRestartTimer(); // サーバー再起動タイマーを停止
         }
 
         /// <summary>
-        /// 切断時のハンドラ
+        /// サーバー停止時のハンドラ
         /// </summary>
         private void OnDisconnected(object? sender, EventArgs e)
         {
             UpdateConnectionStatus(false);
-            StartReconnectTimer(); // 再接続タイマーを開始
+            StartServerRestartTimer(); // サーバー再起動タイマーを開始
         }
 
         #endregion
@@ -382,27 +380,27 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// 再接続タイマーを開始
+        /// サーバー再起動タイマーを開始
         /// </summary>
-        private void StartReconnectTimer()
+        private void StartServerRestartTimer()
         {
             if (_reconnectTimer == null)
             {
                 _reconnectTimer = new Timer(async _ =>
                 {
-                    // 接続処理中でない場合のみ再接続を試みる
-                    if (_communicationService != null && !_communicationService.IsConnected)
+                    // サーバーが停止している場合のみ再起動を試みる
+                    if (_communicationService != null && !_communicationService.IsServerRunning)
                     {
-                        await ConnectToServiceAsync();
+                        await StartWebSocketServerAsync();
                     }
                 }, null, ReconnectIntervalMs, ReconnectIntervalMs);
             }
         }
 
         /// <summary>
-        /// 再接続タイマーを停止
+        /// サーバー再起動タイマーを停止
         /// </summary>
-        private void StopReconnectTimer()
+        private void StopServerRestartTimer()
         {
             _reconnectTimer?.Change(Timeout.Infinite, Timeout.Infinite);
             _reconnectTimer = null;

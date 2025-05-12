@@ -13,7 +13,6 @@ namespace CocoroDock.Services
     {
         private readonly WebSocketServer _webSocketServer;
         private string _sessionId;
-        private readonly Dictionary<string, string> _clientSessions = new Dictionary<string, string>();
 
         public event EventHandler<string>? ChatMessageReceived;
         public event EventHandler<ConfigResponsePayload>? ConfigResponseReceived;
@@ -23,7 +22,7 @@ namespace CocoroDock.Services
         public event EventHandler? Connected;
         public event EventHandler? Disconnected;
 
-        public bool IsConnected => _webSocketServer.IsRunning;
+        public bool IsServerRunning => _webSocketServer.IsRunning;
 
         /// <summary>
         /// コンストラクタ
@@ -52,7 +51,7 @@ namespace CocoroDock.Services
         /// <summary>
         /// サーバーを開始
         /// </summary>
-        public async Task ConnectAsync()
+        public async Task StartServerAsync()
         {
             await _webSocketServer.StartAsync();
         }
@@ -60,7 +59,7 @@ namespace CocoroDock.Services
         /// <summary>
         /// サーバーを停止
         /// </summary>
-        public async Task DisconnectAsync()
+        public async Task StopServerAsync()
         {
             await _webSocketServer.StopAsync();
         }

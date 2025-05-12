@@ -720,7 +720,7 @@ namespace CocoroDock.Controls
                 bool configUpdateSuccessful = false;
                 string errorMessage = string.Empty;
 
-                if (_communicationService != null && _communicationService.IsConnected)
+                if (_communicationService != null && _communicationService.IsServerRunning)
                 {
                     try
                     {
