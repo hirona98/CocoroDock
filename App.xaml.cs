@@ -71,7 +71,11 @@ namespace CocoroDock
                     var mainWindow = Application.Current.MainWindow;
                     if (mainWindow != null)
                     {
+                        // ウィンドウが隠れている場合は表示する
+                        mainWindow.Show();
+                        // 最小化されている場合は元のサイズに戻す
                         mainWindow.WindowState = WindowState.Normal;
+                        // ウィンドウをアクティブにして前面に表示
                         mainWindow.Activate();
                         mainWindow.Focus();
                     }
@@ -90,9 +94,15 @@ namespace CocoroDock
                     var mainWindow = Application.Current.MainWindow;
                     if (mainWindow != null)
                     {
+                        // ウィンドウが隠れている場合は表示する
+                        mainWindow.Show();
+                        // 最小化されている場合は元のサイズに戻す
                         mainWindow.WindowState = WindowState.Normal;
+                        // ウィンドウをアクティブにして前面に表示
                         mainWindow.Activate();
                         mainWindow.Focus();
+                        // ウィンドウを画面の中央に配置（必要に応じて）
+                        mainWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
                     }
                 };
             }
