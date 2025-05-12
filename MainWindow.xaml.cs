@@ -24,9 +24,6 @@ namespace CocoroDock
             // ウィンドウのロード時にメッセージテキストボックスにフォーカスを設定するイベントを追加
             this.Loaded += MainWindow_Loaded;
 
-            // ウィンドウの状態変更イベントを監視
-            this.StateChanged += MainWindow_StateChanged;
-
             // ウィンドウのCloseButtonクリック時（×ボタン）のイベントを監視
             this.Closing += MainWindow_Closing;
 
@@ -42,18 +39,6 @@ namespace CocoroDock
             // 閉じる操作をキャンセルし、代わりにウィンドウを非表示にする
             e.Cancel = true;
             this.Hide();
-        }
-
-        /// <summary>
-        /// ウィンドウの状態変更時のイベントハンドラ
-        /// </summary>
-        private void MainWindow_StateChanged(object? sender, EventArgs e)
-        {
-            // ウィンドウが最小化されたら非表示にする
-            if (this.WindowState == WindowState.Minimized)
-            {
-                this.Hide();
-            }
         }
 
         /// <summary>
