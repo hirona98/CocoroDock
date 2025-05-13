@@ -203,7 +203,18 @@ namespace CocoroDock
                 }
                 else
                 {
-                    Application.Current.Dispatcher.Invoke(action);
+                    try
+                    {
+                        Application.Current.Dispatcher.InvokeAsync(action);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        // キャンセルされた場合は無視
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"UI更新エラー: {ex.Message}");
+                    }
                 }
             }
         }
