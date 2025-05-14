@@ -26,21 +26,8 @@ namespace CocoroDock
             // ウィンドウのロード時にメッセージテキストボックスにフォーカスを設定するイベントを追加
             this.Loaded += MainWindow_Loaded;
 
-            // ウィンドウのCloseButtonクリック時（×ボタン）のイベントを監視
-            this.Closing += MainWindow_Closing;
-
             // 初期化と接続
             InitializeApp();
-        }
-
-        /// <summary>
-        /// ウィンドウの閉じるボタンクリック時のイベントハンドラ
-        /// </summary>
-        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
-        {
-            // 閉じる操作をキャンセルし、代わりにウィンドウを非表示にする
-            e.Cancel = true;
-            this.Hide();
         }
 
         /// <summary>
@@ -50,13 +37,16 @@ namespace CocoroDock
         {
             // ChatControlのMessageTextBoxにフォーカス設定
             ChatControlInstance.FocusMessageTextBox();
-        }        /// <summary>
-                 /// アプリケーション初期化
-                 /// </summary>
+        }
+
+        /// <summary>
+        /// アプリケーション初期化
+        /// </summary>
         private void InitializeApp()
         {
             try
-            {                // CocoroShell.exeを起動（既に起動していれば終了してから再起動）
+            {
+                // CocoroShell.exeを起動（既に起動していれば終了してから再起動）
                 LaunchCocoroShell();
 
                 // CocoroCore.exeを起動（既に起動していれば終了してから再起動）
