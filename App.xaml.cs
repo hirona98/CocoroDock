@@ -25,9 +25,6 @@ namespace CocoroDock
         {
             base.OnStartup(e);
 
-            // システムトレイアイコンの初期化
-            InitializeNotifyIcon();
-
             // 二重起動チェック
             string processName = Process.GetCurrentProcess().ProcessName;
             Process[] processes = Process.GetProcessesByName(processName);
@@ -46,108 +43,6 @@ namespace CocoroDock
             // メインウィンドウを作成・表示
             MainWindow mainWindow = new MainWindow();
             mainWindow.Show();
-        }
-
-        /// <summary>
-        /// システムトレイアイコンを初期化する
-        /// </summary>
-        private void InitializeNotifyIcon()
-        {
-            try
-            {
-                _notifyIcon = new NotifyIcon
-                {
-                    Icon = LoadIconFromResource("Resource/logo.ico"),
-                    Visible = true,
-                    Text = "CocoroAI"
-                };
-
-                // コンテキストメニュー
-                var contextMenu = new ContextMenuStrip();
-                // 表示メニュー
-                var showItem = new ToolStripMenuItem("表示");
-                showItem.Click += (s, e) =>
-                {
-                    var mainWindow = Application.Current.MainWindow;
-                    if (mainWindow != null)
-                    {
-                        // ウィンドウが隠れている場合は表示する
-                        mainWindow.Show();
-                        // 最小化されている場合は元のサイズに戻す
-                        mainWindow.WindowState = WindowState.Normal;
-                        // ウィンドウをアクティブにして前面に表示
-                        mainWindow.Activate();
-                        mainWindow.Focus();
-                    }
-                };                // 終了メニュー
-                var exitItem = new ToolStripMenuItem("終了");
-                exitItem.Click += (s, e) => { Application.Current.Shutdown(); };
-
-                // メニュー項目を追加
-                contextMenu.Items.Add(showItem);
-                contextMenu.Items.Add(exitItem);
-
-                // コンテキストメニューの設定
-                _notifyIcon.ContextMenuStrip = contextMenu;                // アイコンのダブルクリック
-                _notifyIcon.DoubleClick += (sender, e) =>
-                {
-                    var mainWindow = Application.Current.MainWindow;
-                    if (mainWindow != null)
-                    {
-                        // ウィンドウが隠れている場合は表示する
-                        mainWindow.Show();
-                        // 最小化されている場合は元のサイズに戻す
-                        mainWindow.WindowState = WindowState.Normal;
-                        // ウィンドウをアクティブにして前面に表示
-                        mainWindow.Activate();
-                        mainWindow.Focus();
-                        // ウィンドウを画面の中央に配置（必要に応じて）
-                        mainWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-                    }
-                };
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"システムトレイアイコンの初期化エラー: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        /// <summary>
-        /// リソースパスを取得
-        /// </summary>
-        private string GetResourcePath(string relativePath)
-        {
-            string basePath = AppDomain.CurrentDomain.BaseDirectory;
-            return System.IO.Path.Combine(basePath, relativePath);
-        }
-
-        /// <summary>
-        /// リソースからアイコンを読み込む
-        /// </summary>
-        private Icon LoadIconFromResource(string resourcePath)
-        {
-            try
-            {
-                // アプリケーションリソースからアイコンを読み込む
-                Uri resourceUri = new Uri($"pack://application:,,,/{resourcePath}", UriKind.Absolute);
-                var resourceStream = Application.GetResourceStream(resourceUri);
-
-                if (resourceStream != null)
-                {
-                    return new Icon(resourceStream.Stream);
-                }
-
-                // リソースが見つからない場合は物理ファイルを試す
-                return new Icon(GetResourcePath(resourcePath));
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"アイコン読み込みエラー: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
-
-                // エラーが発生した場合、デフォルトのアイコンを返す
-                return Icon.ExtractAssociatedIcon(GetType().Assembly.Location) ??
-                       SystemIcons.Application;
-            }
         }
 
         protected override void OnExit(ExitEventArgs e)
