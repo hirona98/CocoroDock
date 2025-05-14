@@ -3,14 +3,26 @@ using System.Windows;
 using System.Windows.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Linq;
+using System.Runtime.InteropServices;
 using CocoroDock.Services;
-using System.Drawing; // 追加
 using MessageBox = System.Windows.MessageBox;
 using Application = System.Windows.Application;
-// System.Windows.FormsのNotifyIconを使用
 using NotifyIcon = System.Windows.Forms.NotifyIcon;
-using ContextMenuStrip = System.Windows.Forms.ContextMenuStrip;
-using ToolStripMenuItem = System.Windows.Forms.ToolStripMenuItem;
+
+// Win32 API呼び出し用クラス
+internal static class NativeMethods
+{
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    internal static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    // ShowWindowコマンド
+    internal const int SW_RESTORE = 9;
+}
 
 namespace CocoroDock
 {
@@ -31,8 +43,36 @@ namespace CocoroDock
             // 現在のプロセスを含めて2つ以上あれば、既に起動している
             if (processes.Length > 1)
             {
-                // 既にアプリケーションが起動している場合
-                MessageBox.Show("二重起動です", "二重起動警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                // 既存のプロセスを探して最前面に表示
+                try
+                {
+                    // 自分のプロセスID
+                    int currentPid = Process.GetCurrentProcess().Id;
+
+                    // 自分以外の同名プロセスを取得
+                    Process? existingProcess = processes.FirstOrDefault(p => p.Id != currentPid);
+
+                    if (existingProcess != null)
+                    {
+                        // メインウィンドウのハンドルを取得して最前面に表示
+                        IntPtr mainWindowHandle = existingProcess.MainWindowHandle;
+                        if (mainWindowHandle != IntPtr.Zero)
+                        {
+                            // ウィンドウを最前面に表示
+                            NativeMethods.SetForegroundWindow(mainWindowHandle);
+                            NativeMethods.ShowWindow(mainWindowHandle, NativeMethods.SW_RESTORE);
+                        }
+                    }
+
+                    // 自プロセスを終了
+                    Environment.Exit(0);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"既存プロセスの検出中にエラーが発生しました: {ex.Message}",
+                        "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Environment.Exit(1);
+                }
             }
 
             // 未処理の例外ハンドラを登録
