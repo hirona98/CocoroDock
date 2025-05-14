@@ -741,10 +741,6 @@ namespace CocoroDock.Controls
                     MessageBox.Show($"クライアントへの設定通知に失敗しました。\n\n設定自体は保存されています。\n\nエラー: {errorMessage}",
                         "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
-                else
-                {
-                    MessageBox.Show("設定を保存しました。", "設定保存", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
             }
             catch (System.Exception ex)
             {
