@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Encodings.Web;
 
 namespace CocoroDock.Services
 {
@@ -177,11 +178,10 @@ namespace CocoroDock.Services
                 {
                     // ファイルからJSONを読み込む
                     string json = File.ReadAllText(settingsPath);
-
-                    // JSONをデシリアライズ
                     var options = new JsonSerializerOptions
                     {
-                        PropertyNameCaseInsensitive = true
+                        PropertyNameCaseInsensitive = true,
+                        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // 日本語などの非ASCII文字の処理を最適化
                     };
                     var settings = JsonSerializer.Deserialize<ConfigSettings>(json, options);
 
@@ -216,7 +216,8 @@ namespace CocoroDock.Services
                 var options = new JsonSerializerOptions
                 {
                     WriteIndented = true, // 整形されたJSONを出力
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping // 日本語などの非ASCII文字をエスケープせずに出力
                 };
                 string json = JsonSerializer.Serialize(settings, options);
 
