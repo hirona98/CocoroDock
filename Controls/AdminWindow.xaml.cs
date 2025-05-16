@@ -664,17 +664,13 @@ namespace CocoroDock.Controls
             // 設定が変更された場合、メッセージボックスを表示して CocoroCore と CocoroShell を再起動
             if (isNeedsRestart)
             {
-                MessageBox.Show(
-                    "キャラクターまたはVRMファイルの設定が変更されました。変更を適用するために CocoroCore と CocoroShell を再起動します。",
-                    "設定変更の通知",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-                
                 if (Owner is MainWindow mainWindow)
                 {
+                    // チャット履歴をクリア
+                    mainWindow.ChatControlInstance.ClearChat();
+
                     var launchCocoroCore = typeof(MainWindow).GetMethod("LaunchCocoroCore", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                     var launchCocoroShell = typeof(MainWindow).GetMethod("LaunchCocoroShell", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    
                     if (launchCocoroCore != null && launchCocoroShell != null)
                     {
                         launchCocoroCore.Invoke(mainWindow, null);

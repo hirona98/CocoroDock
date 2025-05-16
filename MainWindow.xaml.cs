@@ -30,6 +30,11 @@ namespace CocoroDock
             InitializeApp();
         }
 
+        public void ClearChatHistory()
+        {
+            ChatControlInstance.ClearChat();
+        }
+
         /// <summary>
         /// ウィンドウのロード完了時のイベントハンドラ
         /// </summary>
