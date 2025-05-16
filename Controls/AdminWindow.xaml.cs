@@ -683,6 +683,12 @@ namespace CocoroDock.Controls
                 }
             }
 
+            // キャラクター設定が変更された場合、チャット履歴をクリアする
+            if (_settingsChanged && Owner is MainWindow mainWindow)
+            {
+                mainWindow.ChatControlInstance.ClearChat();
+            }
+
             // ウィンドウを閉じる
             DialogResult = true;
             Close();
