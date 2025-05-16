@@ -9,6 +9,7 @@
         Title="CocoroAI Ver. 2.0.0 Beta"
         Height="600"
         Width="500"
+        ShowInTaskbar="False"
         WindowStartupLocation="CenterScreen">
 
         <Grid>
