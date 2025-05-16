@@ -561,5 +561,38 @@ namespace CocoroDock
         {
             LaunchExternalApplication("CocoroCore", "CocoroCore.exe");
         }
+
+        /// <summary>
+        /// ウィンドウの状態変更イベントハンドラ
+        /// </summary>
+        protected override void OnStateChanged(EventArgs e)
+        {
+            base.OnStateChanged(e);
+
+            // ウィンドウが最小化された場合は非表示にする
+            if (WindowState == WindowState.Minimized)
+            {
+                this.Hide();
+            }
+        }
+
+        /// <summary>
+        /// ウィンドウのクローズイベントをキャンセルし、代わりに最小化する
+        /// </summary>
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            // 本当に終了するか確認（ALT+F4やタイトルバーのXボタン押下時）
+            if (System.Windows.Application.Current.ShutdownMode != ShutdownMode.OnExplicitShutdown)
+            {
+                // 終了ではなく最小化して非表示にする
+                e.Cancel = true;
+                WindowState = WindowState.Minimized;
+                this.Hide();
+            }
+            else
+            {
+                base.OnClosing(e);
+            }
+        }
     }
 }

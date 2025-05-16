@@ -37,6 +37,9 @@ namespace CocoroDock
         {
             base.OnStartup(e);
 
+            // システムトレイアイコンの初期化
+            InitializeNotifyIcon();
+
             // 二重起動チェック
             string processName = Process.GetCurrentProcess().ProcessName;
             Process[] processes = Process.GetProcessesByName(processName);
@@ -82,6 +85,7 @@ namespace CocoroDock
 
             // メインウィンドウを作成・表示
             MainWindow mainWindow = new MainWindow();
+            Current.MainWindow = mainWindow; // MainWindowプロパティに明示的に設定
             mainWindow.Show();
         }
 
@@ -102,6 +106,92 @@ namespace CocoroDock
             }
 
             base.OnExit(e);
+        }
+
+        /// <summary>
+        /// システムトレイアイコンの初期化
+        /// </summary>
+        private void InitializeNotifyIcon()
+        {
+            try
+            {
+                _notifyIcon = new NotifyIcon
+                {
+                    Icon = System.Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                    Visible = true,
+                    Text = "CocoroAI"
+                };
+
+                // コンテキストメニューの作成
+                var contextMenu = new System.Windows.Forms.ContextMenuStrip();
+
+                // 表示メニュー項目
+                var showMenuItem = new System.Windows.Forms.ToolStripMenuItem
+                {
+                    Text = "表示"
+                };
+                showMenuItem.Click += (s, e) => ShowMainWindow();
+                contextMenu.Items.Add(showMenuItem);
+
+                // 終了メニュー項目
+                var exitMenuItem = new System.Windows.Forms.ToolStripMenuItem
+                {
+                    Text = "終了"
+                };
+                exitMenuItem.Click += (s, e) => Shutdown();
+                contextMenu.Items.Add(exitMenuItem);
+
+                _notifyIcon.ContextMenuStrip = contextMenu;
+
+                // アイコンをダブルクリックした時のイベント
+                _notifyIcon.DoubleClick += (s, e) => ShowMainWindow();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"システムトレイアイコンの初期化エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// メインウィンドウを表示する
+        /// </summary>
+        private void ShowMainWindow()
+        {
+            try
+            {
+                // メインウィンドウを取得（Applicationのウィンドウコレクションから探す）
+                Window? mainWindow = null;
+
+                foreach (Window window in Application.Current.Windows)
+                {
+                    if (window is MainWindow)
+                    {
+                        mainWindow = window;
+                        break;
+                    }
+                }
+
+                if (mainWindow != null)
+                {
+                    // ウィンドウを表示
+                    mainWindow.Show();
+                    mainWindow.WindowState = WindowState.Normal;
+                    mainWindow.Activate();
+                    mainWindow.Topmost = true;
+                    mainWindow.Topmost = false;
+                    mainWindow.Focus();
+                }
+                else
+                {
+                    // メインウィンドウが見つからない場合は新しく作成して表示
+                    mainWindow = new MainWindow();
+                    mainWindow.Show();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ウィンドウ表示エラー: {ex.Message}");
+            }
         }
 
         /// <summary>

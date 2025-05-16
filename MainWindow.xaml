@@ -6,10 +6,10 @@
         xmlns:local="clr-namespace:CocoroDock"
         xmlns:controls="clr-namespace:CocoroDock.Controls"
         mc:Ignorable="d"
-        Title="CocoroAI Ver. 2.0.0 Beta"
+                Title="CocoroAI Ver. 2.0.0 Beta"
         Height="600"
         Width="500"
-        ShowInTaskbar="False"
+        ShowInTaskbar="True"
         WindowStartupLocation="CenterScreen">
 
         <Grid>
