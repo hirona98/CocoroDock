@@ -661,14 +661,26 @@ namespace CocoroDock.Controls
             {
                 isNeedsRestart = true;
             }
-            // 設定が変更された場合、メッセージボックスを表示
+            // 設定が変更された場合、メッセージボックスを表示して CocoroCore と CocoroShell を再起動
             if (isNeedsRestart)
             {
                 MessageBox.Show(
-                    "キャラクターまたはVRMファイルの設定が変更されました。変更を適用するにはアプリケーションの再起動が必要です。",
+                    "キャラクターまたはVRMファイルの設定が変更されました。変更を適用するために CocoroCore と CocoroShell を再起動します。",
                     "設定変更の通知",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
+                
+                if (Owner is MainWindow mainWindow)
+                {
+                    var launchCocoroCore = typeof(MainWindow).GetMethod("LaunchCocoroCore", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    var launchCocoroShell = typeof(MainWindow).GetMethod("LaunchCocoroShell", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    
+                    if (launchCocoroCore != null && launchCocoroShell != null)
+                    {
+                        launchCocoroCore.Invoke(mainWindow, null);
+                        launchCocoroShell.Invoke(mainWindow, null);
+                    }
+                }
             }
 
             // ウィンドウを閉じる
