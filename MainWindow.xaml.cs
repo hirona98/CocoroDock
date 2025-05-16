@@ -46,12 +46,12 @@ namespace CocoroDock
         {
             try
             {
+#if !DEBUG
                 // CocoroShell.exeを起動（既に起動していれば終了してから再起動）
                 LaunchCocoroShell();
-
                 // CocoroCore.exeを起動（既に起動していれば終了してから再起動）
                 LaunchCocoroCore();
-
+#endif
                 // AppSettingsから設定を取得
                 var settings = AppSettings.Instance;
 
@@ -354,9 +354,10 @@ namespace CocoroDock
                     _communicationService.Dispose();
                     _communicationService = null;
                 }
-
+#if !DEBUG
                 // CocoroCore と CocoroShell を終了
                 TerminateExternalApplications();
+#endif
             }
             catch (Exception)
             {
