@@ -5,6 +5,14 @@ CocoroDock は デスクトップマスコット CocoroAI のチャットおよ�
 CocoroAI
 https://alice-encoder.booth.pm/items/6821221
 
+----
+
+CocoroCore に合わせてそのうち作り直すと思うので、かな～り雑に作ってます
+
+プルリクしたい場合はお気軽にどうぞ！
+
+----
+
 ## 開発環境
 
 - Windows
