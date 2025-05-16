@@ -278,7 +278,6 @@ namespace CocoroDock.Communication
             catch (Exception ex)
             {
                 Debug.WriteLine($"メッセージ受信エラー: {ex.Message}");
-                ConnectionError?.Invoke(this, $"メッセージ受信エラー ({clientId}): {ex.Message}");
             }
             finally
             {
