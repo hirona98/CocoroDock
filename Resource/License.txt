@@ -21,6 +21,10 @@ https://digitalmotion.booth.pm/
 Copyright (c) naokimiku39
 https://naokimiku39.booth.pm/items/4366008
 
+◆ AIAvatarKit ◆
+Copyright (c) uezo
+https://github.com/uezo/aiavatarkit/blob/main/LICENSE
+
 ◆ ChatdollKit ◆
 Copyright (c) uezo
 https://github.com/uezo/ChatdollKit/blob/master/LICENSE
