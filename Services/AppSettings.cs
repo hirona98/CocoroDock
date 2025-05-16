@@ -187,6 +187,8 @@ namespace CocoroDock.Services
 
                     if (settings != null)
                     {
+                        UpdateLlmModelFormat(settings);
+                        
                         // 設定更新メソッドを呼び出して設定を適用
                         UpdateSettings(settings);
                     }
@@ -238,6 +240,32 @@ namespace CocoroDock.Services
         public void SaveSettings()
         {
             SaveAppSettings();
+        }
+
+        /// <summary>
+        /// </summary>
+        /// <param name="settings">更新する設定</param>
+        private void UpdateLlmModelFormat(ConfigSettings settings)
+        {
+            if (settings.characterList == null || settings.characterList.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var character in settings.characterList)
+            {
+                if (!string.IsNullOrEmpty(character.llmModel))
+                {
+                    if (character.llmModel.StartsWith("gpt-"))
+                    {
+                        character.llmModel = "openai/" + character.llmModel;
+                    }
+                    else if (character.llmModel.StartsWith("gemini-"))
+                    {
+                        character.llmModel = "gemini/" + character.llmModel;
+                    }
+                }
+            }
         }
     }
 }
