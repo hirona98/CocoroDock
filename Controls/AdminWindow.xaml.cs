@@ -1055,5 +1055,25 @@ namespace CocoroDock.Controls
             }
             return CallNextHookEx(_hookID, nCode, wParam, lParam);
         }
+
+        /// <summary>
+        /// ハイパーリンクをクリックしたときにブラウザで開く
+        /// </summary>
+        private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = e.Uri.AbsoluteUri,
+                    UseShellExecute = true
+                });
+                e.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"URLを開けませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 }

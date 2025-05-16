@@ -348,12 +348,29 @@
                                     </Grid>
                                 </StackPanel>
                             </GroupBox>
-
                             <!-- LLMパラメータ -->
-                            <GroupBox Header="LLM(gpt, gemini)"
+                            <GroupBox Header="LLM"
                                       Margin="0,0,20,20"
                                       Padding="10">
                                 <StackPanel>
+                                    <!-- LLM説明テキスト -->
+                                    <TextBlock TextWrapping="Wrap"
+                                               Margin="0,0,0,10"
+                                               Foreground="#FF4873CF">
+                                        <TextBlock.Inlines>
+                                            <Run Text="LLM Model は LiteLLM の書式で記載してください"/>
+                                            <LineBreak/>
+                                            <Run Text="ex) openai/gpt-4o-mini, gemini/gemini-2.0-flash, ollama/mistral"/>
+                                            <LineBreak/>
+                                            <Run Text="詳細は "/>
+                                            <Hyperlink NavigateUri="https://docs.litellm.ai/docs/providers"
+                                                       RequestNavigate="Hyperlink_RequestNavigate">
+                                                <Run Text="https://docs.litellm.ai/docs/providers"/>
+                                            </Hyperlink>
+                                            <Run Text=" を参照してください"/>
+                                        </TextBlock.Inlines>
+                                    </TextBlock>
+
                                     <Grid Margin="0,5">
                                         <CheckBox x:Name="IsUseLLMCheckBox"
                                                   Content="LLMを使用する"
