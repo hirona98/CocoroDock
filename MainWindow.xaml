@@ -5,12 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CocoroDock"
         xmlns:controls="clr-namespace:CocoroDock.Controls"
+        xmlns:viewmodels="clr-namespace:CocoroDock.ViewModels"
+        xmlns:converters="clr-namespace:CocoroDock.Converters"
         mc:Ignorable="d"
-                Title="CocoroAI Ver. 2.0.0 Beta"
+        Title="CocoroAI Ver. 2.0.0 Beta"
         Height="600"
         Width="500"
         ShowInTaskbar="True"
         WindowStartupLocation="CenterScreen">
+
+        <Window.Resources>
+                <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+                <converters:BoolToTextConverter x:Key="BoolToTextConverter"/>
+        </Window.Resources>
 
         <Grid>
                 <Grid.RowDefinitions>
@@ -39,15 +46,14 @@
                                                    FontWeight="SemiBold"/>
                                 </StackPanel>
 
-                                <Button x:Name="AdminButton"
-                                        Grid.Column="1"
+                                <Button Grid.Column="1"
                                         Content="Setting"
                                         Margin="0,0,20,0"
                                         Padding="15,5"
                                         Background="#4873CF"
                                         Foreground="WhiteSmoke"
                                         BorderThickness="0"
-                                        Click="AdminButton_Click"
+                                        Command="{Binding OpenAdminWindowCommand}"
                                         FontSize="14"/>
                         </Grid>
                 </Grid>
@@ -63,8 +69,14 @@
                            Height="30"
                            Background="#F0F0F0">
                         <StatusBarItem>
-                                <TextBlock x:Name="ConnectionStatusText"
-                                           Text="接続状態: 切断中"/>
+                                <TextBlock Text="{Binding StatusMessage, FallbackValue='接続状態: 切断中'}"/>
+                        </StatusBarItem>
+                        <StatusBarItem HorizontalAlignment="Right">
+                                <Button Content="{Binding IsAiRunning, Converter={StaticResource ResourceKey=BoolToTextConverter}, ConverterParameter='停止|起動'}"
+                                        Command="{Binding ToggleAiProcessCommand}"
+                                        Padding="5,0"
+                                        Background="Transparent"
+                                        BorderThickness="0"/>
                         </StatusBarItem>
                 </StatusBar>
         </Grid>

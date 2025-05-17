@@ -36,7 +36,7 @@ namespace CocoroDock.Services
 
             // WebSocketサーバーのイベントハンドラを設定
             _webSocketServer.MessageReceived += OnMessageReceived;
-            _webSocketServer.ConnectionError += (sender, error) => ErrorOccurred?.Invoke(this, error);
+            _webSocketServer.ConnectionError += OnConnectionError;
             _webSocketServer.ClientConnected += (sender, clientId) => Connected?.Invoke(this, EventArgs.Empty);
             _webSocketServer.ClientDisconnected += (sender, clientId) => Disconnected?.Invoke(this, EventArgs.Empty);
         }
@@ -90,8 +90,8 @@ namespace CocoroDock.Services
         {
             var payload = new ChatMessagePayload
             {
-                sessionId = _sessionId,
-                message = message
+                SessionId = _sessionId,
+                Message = message
             };
 
             await _webSocketServer.SendMessageAsync(MessageType.chat, payload);
@@ -106,8 +106,8 @@ namespace CocoroDock.Services
         {
             var payload = new ConfigMessagePayload
             {
-                settingKey = settingKey,
-                value = value
+                SettingKey = settingKey,
+                Value = value
             };
 
             await _webSocketServer.SendMessageAsync(MessageType.config, payload);
@@ -122,8 +122,8 @@ namespace CocoroDock.Services
         {
             var payload = new ControlMessagePayload
             {
-                command = command,
-                reason = reason
+                Command = command,
+                Reason = reason
             };
 
             await _webSocketServer.SendMessageAsync(MessageType.control, payload);
@@ -160,7 +160,7 @@ namespace CocoroDock.Services
 
                             if (chatResponse != null)
                             {
-                                ChatMessageReceived?.Invoke(this, chatResponse.response);
+                                ChatMessageReceived?.Invoke(this, chatResponse.Response);
                             }
                             break;
 
@@ -212,8 +212,24 @@ namespace CocoroDock.Services
             }
             catch (Exception ex)
             {
-                ErrorOccurred?.Invoke(this, $"メッセージ処理エラー: {ex.Message}");
+                string errorMessage = $"メッセージ処理エラー: {ex.Message}";
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error, 
+                    errorMessage, 
+                    ex);
+                ErrorOccurred?.Invoke(this, errorMessage);
             }
+        }
+        
+        /// <summary>
+        /// </summary>
+        private void OnConnectionError(object? sender, string error)
+        {
+            ErrorHandlingService.Instance.LogError(
+                ErrorHandlingService.ErrorLevel.Error, 
+                $"通信エラー: {error}");
+                
+            ErrorOccurred?.Invoke(this, error);
         }
 
         /// <summary>

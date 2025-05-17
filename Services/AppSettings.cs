@@ -114,6 +114,8 @@ namespace CocoroDock.Services
 
         public int CocoroDockPort { get; set; } = 55600;
         public int CocoroCorePort { get; set; } = 55601;
+        // アプリケーション設定
+        public string AiExecutablePath { get; set; } = string.Empty;
         // UI設定
         public bool IsTopmost { get; set; } = false;
         public bool IsEscapeCursor { get; set; } = false;
@@ -154,16 +156,16 @@ namespace CocoroDock.Services
             {
                 new CharacterSettings
                 {
-                    isReadOnly = false,
-                    modelName = "model_name",
-                    vrmFilePath = "vrm_file_path",
-                    isUseLLM = false,
-                    apiKey = "your_api_key",
-                    llmModel = "gpt-3.5-turbo",
-                    systemPrompt = "あなたは親切なアシスタントです。",
-                    isUseTTS = false,
-                    ttsEndpointURL = "http://localhost:50021",
-                    ttsSperkerID = "1",
+                    IsReadOnly = false,
+                    ModelName = "model_name",
+                    VrmFilePath = "vrm_file_path",
+                    IsUseLLM = false,
+                    ApiKey = "your_api_key",
+                    LlmModel = "gpt-3.5-turbo",
+                    SystemPrompt = "あなたは親切なアシスタントです。",
+                    IsUseTTS = false,
+                    TtsEndpointURL = "http://localhost:50021",
+                    TtsSperkerID = "1",
                 }
             };
         }
@@ -174,26 +176,26 @@ namespace CocoroDock.Services
         /// <param name="config">サーバーから受信した設定値</param>
         public void UpdateSettings(ConfigSettings config)
         {
-            CocoroDockPort = config.cocoroDockPort;
-            CocoroCorePort = config.cocoroCorePort;
-            IsTopmost = config.isTopmost;
-            IsEscapeCursor = config.isEscapeCursor;
-            IsInputVirtualKey = config.isInputVirtualKey;
-            VirtualKeyString = config.virtualKeyString;
-            IsAutoMove = config.isAutoMove;
-            IsEnableAmbientOcclusion = config.isEnableAmbientOcclusion;
-            MsaaLevel = config.msaaLevel;
-            CharacterShadow = config.characterShadow;
-            CharacterShadowResolution = config.characterShadowResolution;
-            BackgroundShadow = config.backgroundShadow;
-            BackgroundShadowResolution = config.backgroundShadowResolution;
-            WindowSize = config.windowSize > 0 ? (int)config.windowSize : 650;
-            CurrentCharacterIndex = config.currentCharacterIndex;
+            CocoroDockPort = config.CocoroDockPort;
+            CocoroCorePort = config.CocoroCorePort;
+            IsTopmost = config.IsTopmost;
+            IsEscapeCursor = config.IsEscapeCursor;
+            IsInputVirtualKey = config.IsInputVirtualKey;
+            VirtualKeyString = config.VirtualKeyString;
+            IsAutoMove = config.IsAutoMove;
+            IsEnableAmbientOcclusion = config.IsEnableAmbientOcclusion;
+            MsaaLevel = config.MsaaLevel;
+            CharacterShadow = config.CharacterShadow;
+            CharacterShadowResolution = config.CharacterShadowResolution;
+            BackgroundShadow = config.BackgroundShadow;
+            BackgroundShadowResolution = config.BackgroundShadowResolution;
+            WindowSize = config.WindowSize > 0 ? (int)config.WindowSize : 650;
+            CurrentCharacterIndex = config.CurrentCharacterIndex;
 
             // キャラクターリストを更新（もし受信したリストが空でなければ）
-            if (config.characterList != null && config.characterList.Count > 0)
+            if (config.CharacterList != null && config.CharacterList.Count > 0)
             {
-                CharacterList = new List<CharacterSettings>(config.characterList);
+                CharacterList = new List<CharacterSettings>(config.CharacterList);
             }
 
             // 設定読み込み完了フラグを設定
@@ -208,22 +210,22 @@ namespace CocoroDock.Services
         {
             return new ConfigSettings
             {
-                cocoroDockPort = CocoroDockPort,
-                cocoroCorePort = CocoroCorePort,
-                isTopmost = IsTopmost,
-                isEscapeCursor = IsEscapeCursor,
-                isInputVirtualKey = IsInputVirtualKey,
-                virtualKeyString = VirtualKeyString,
-                isAutoMove = IsAutoMove,
-                isEnableAmbientOcclusion = IsEnableAmbientOcclusion,
-                msaaLevel = MsaaLevel,
-                characterShadow = CharacterShadow,
-                characterShadowResolution = CharacterShadowResolution,
-                backgroundShadow = BackgroundShadow,
-                backgroundShadowResolution = BackgroundShadowResolution,
-                windowSize = WindowSize,
-                currentCharacterIndex = CurrentCharacterIndex,
-                characterList = new List<CharacterSettings>(CharacterList)
+                CocoroDockPort = CocoroDockPort,
+                CocoroCorePort = CocoroCorePort,
+                IsTopmost = IsTopmost,
+                IsEscapeCursor = IsEscapeCursor,
+                IsInputVirtualKey = IsInputVirtualKey,
+                VirtualKeyString = VirtualKeyString,
+                IsAutoMove = IsAutoMove,
+                IsEnableAmbientOcclusion = IsEnableAmbientOcclusion,
+                MsaaLevel = MsaaLevel,
+                CharacterShadow = CharacterShadow,
+                CharacterShadowResolution = CharacterShadowResolution,
+                BackgroundShadow = BackgroundShadow,
+                BackgroundShadowResolution = BackgroundShadowResolution,
+                WindowSize = WindowSize,
+                CurrentCharacterIndex = CurrentCharacterIndex,
+                CharacterList = new List<CharacterSettings>(CharacterList)
             };
         }
 
@@ -242,7 +244,10 @@ namespace CocoroDock.Services
             catch (Exception ex)
             {
                 // エラーが発生した場合はデフォルト設定を使用
-                Console.WriteLine($"設定ファイル読み込みエラー: {ex.Message}");
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error,
+                    "設定ファイル読み込みエラー",
+                    ex);
             }
         }
 
@@ -318,7 +323,10 @@ namespace CocoroDock.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"アプリケーション設定ファイル読み込みエラー: {ex.Message}");
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error,
+                    "アプリケーション設定ファイル読み込みエラー",
+                    ex);
             }
         }
 
@@ -346,7 +354,10 @@ namespace CocoroDock.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"デフォルト設定ファイル読み込みエラー: {ex.Message}");
+                    ErrorHandlingService.Instance.LogError(
+                        ErrorHandlingService.ErrorLevel.Error,
+                        "デフォルト設定ファイル読み込みエラー",
+                        ex);
                 }
             }
 
@@ -374,7 +385,10 @@ namespace CocoroDock.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"古い設定ファイル読み込みエラー: {ex.Message}");
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error,
+                    "古い設定ファイル読み込みエラー",
+                    ex);
             }
 
             return null;
@@ -388,42 +402,42 @@ namespace CocoroDock.Services
             try
             {
                 // 基本設定をマージ
-                defaultSettings.isTopmost = oldSettings.IsTopmost;
-                defaultSettings.isEscapeCursor = oldSettings.IsEscapeCursor;
-                defaultSettings.isInputVirtualKey = oldSettings.IsInputVirtualKey;
-                defaultSettings.virtualKeyString = oldSettings.VirtualKeyString;
-                defaultSettings.isAutoMove = oldSettings.IsAutoMove;
-                defaultSettings.isEnableAmbientOcclusion = oldSettings.IsEnableAmbientOcclusion;
-                defaultSettings.msaaLevel = oldSettings.MSAALevel;
-                defaultSettings.characterShadow = oldSettings.CharacterShadow;
-                defaultSettings.characterShadowResolution = oldSettings.CharacterShadowResolution;
-                defaultSettings.backgroundShadow = oldSettings.BackgroundShadow;
-                defaultSettings.backgroundShadowResolution = oldSettings.BackgroundShadowResolution;
-                defaultSettings.windowSize = oldSettings.WindowSize;
-                defaultSettings.currentCharacterIndex = oldSettings.CurrentCharacterIndex;
+                defaultSettings.IsTopmost = oldSettings.IsTopmost;
+                defaultSettings.IsEscapeCursor = oldSettings.IsEscapeCursor;
+                defaultSettings.IsInputVirtualKey = oldSettings.IsInputVirtualKey;
+                defaultSettings.VirtualKeyString = oldSettings.VirtualKeyString;
+                defaultSettings.IsAutoMove = oldSettings.IsAutoMove;
+                defaultSettings.IsEnableAmbientOcclusion = oldSettings.IsEnableAmbientOcclusion;
+                defaultSettings.MsaaLevel = oldSettings.MSAALevel;
+                defaultSettings.CharacterShadow = oldSettings.CharacterShadow;
+                defaultSettings.CharacterShadowResolution = oldSettings.CharacterShadowResolution;
+                defaultSettings.BackgroundShadow = oldSettings.BackgroundShadow;
+                defaultSettings.BackgroundShadowResolution = oldSettings.BackgroundShadowResolution;
+                defaultSettings.WindowSize = oldSettings.WindowSize;
+                defaultSettings.CurrentCharacterIndex = oldSettings.CurrentCharacterIndex;
 
                 // キャラクターリストの処理
                 if (oldSettings.CharacterList != null && oldSettings.CharacterList.Count > 0)
                 {
-                    defaultSettings.characterList.Clear();
+                    defaultSettings.CharacterList.Clear();
 
                     foreach (var oldChar in oldSettings.CharacterList)
                     {
                         var newChar = new CharacterSettings
                         {
-                            isReadOnly = oldChar.IsReadOnly,
-                            modelName = oldChar.ModelName,
-                            vrmFilePath = oldChar.VRMFilePath,
-                            isUseLLM = oldChar.IsUseLLM,
-                            apiKey = oldChar.ApiKey,
-                            llmModel = oldChar.LLMModel,
-                            systemPrompt = oldChar.SystemPrompt,
-                            isUseTTS = oldChar.IsUseTTS,
-                            ttsEndpointURL = oldChar.TTSEndpointURL,
-                            ttsSperkerID = oldChar.TTSSperkerID
+                            IsReadOnly = oldChar.IsReadOnly,
+                            ModelName = oldChar.ModelName,
+                            VrmFilePath = oldChar.VRMFilePath,
+                            IsUseLLM = oldChar.IsUseLLM,
+                            ApiKey = oldChar.ApiKey,
+                            LlmModel = oldChar.LLMModel,
+                            SystemPrompt = oldChar.SystemPrompt,
+                            IsUseTTS = oldChar.IsUseTTS,
+                            TtsEndpointURL = oldChar.TTSEndpointURL,
+                            TtsSperkerID = oldChar.TTSSperkerID
                         };
 
-                        defaultSettings.characterList.Add(newChar);
+                        defaultSettings.CharacterList.Add(newChar);
                     }
                 }
 
@@ -432,7 +446,10 @@ namespace CocoroDock.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"設定マージエラー: {ex.Message}");
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error,
+                    "設定マージエラー",
+                    ex);
             }
         }
 
@@ -462,7 +479,10 @@ namespace CocoroDock.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"アプリケーション設定ファイル保存エラー: {ex.Message}");
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error,
+                    "アプリケーション設定ファイル保存エラー",
+                    ex);
             }
         }
 
@@ -479,22 +499,22 @@ namespace CocoroDock.Services
         /// <param name="settings">更新する設定</param>
         private void UpdateLlmModelFormat(ConfigSettings settings)
         {
-            if (settings.characterList == null || settings.characterList.Count == 0)
+            if (settings.CharacterList == null || settings.CharacterList.Count == 0)
             {
                 return;
             }
 
-            foreach (var character in settings.characterList)
+            foreach (var character in settings.CharacterList)
             {
-                if (!string.IsNullOrEmpty(character.llmModel))
+                if (!string.IsNullOrEmpty(character.LlmModel))
                 {
-                    if (character.llmModel.StartsWith("gpt-"))
+                    if (character.LlmModel.StartsWith("gpt-"))
                     {
-                        character.llmModel = "openai/" + character.llmModel;
+                        character.LlmModel = "openai/" + character.LlmModel;
                     }
-                    else if (character.llmModel.StartsWith("gemini-"))
+                    else if (character.LlmModel.StartsWith("gemini-"))
                     {
-                        character.llmModel = "gemini/" + character.llmModel;
+                        character.LlmModel = "gemini/" + character.LlmModel;
                     }
                 }
             }

@@ -383,7 +383,7 @@ namespace CocoroDock.Communication
         {
             var payload = new ConfigRequestPayload
             {
-                action = "get"
+                Action = "get"
             };
 
             await SendMessageAsync(MessageType.config, payload);
@@ -397,8 +397,8 @@ namespace CocoroDock.Communication
         {
             var payload = new ConfigUpdatePayload
             {
-                action = "update",
-                settings = settings
+                Action = "update",
+                Settings = settings
             };
 
             await SendMessageAsync(MessageType.config, payload);

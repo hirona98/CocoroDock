@@ -5,9 +5,11 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:CocoroDock.Controls"
              xmlns:converters="clr-namespace:CocoroDock.Converters"
+             xmlns:viewmodels="clr-namespace:CocoroDock.ViewModels"
              mc:Ignorable="d"
              d:DesignHeight="450"
-             d:DesignWidth="600">
+             d:DesignWidth="600"
+             d:DataContext="{d:DesignInstance Type=viewmodels:ChatControlViewModel}">
 
         <UserControl.Resources>
                 <!-- コンバーター -->
@@ -138,7 +140,8 @@
                                          PreviewKeyDown="MessageTextBox_KeyDown"
                                          TextWrapping="Wrap"
                                          MaxLength="1000"
-                                         AcceptsReturn="True"/>
+                                         AcceptsReturn="True"
+                                         Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}"/>
                         </Border>
 
                         <Button x:Name="SendButton"
@@ -147,7 +150,7 @@
                                 Width="60"
                                 Height="55"
                                 Margin="5,0,0,0"
-                                Click="SendButton_Click"
+                                Command="{Binding SendMessageCommand}"
                                 Background="#4873CF"
                                 Foreground="WhiteSmoke"
                                 BorderThickness="0"
