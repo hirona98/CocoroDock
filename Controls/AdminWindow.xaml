@@ -5,11 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CocoroDock.Controls"
         xmlns:converters="clr-namespace:CocoroDock.Converters"
+        xmlns:viewmodels="clr-namespace:CocoroDock.ViewModels"
         mc:Ignorable="d"
         Title="設定"
         Height="800"
         Width="800"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner"
+        d:DataContext="{d:DesignInstance Type=viewmodels:AdminWindowViewModel}">
 
     <Window.Resources>
         <!-- タブスタイル -->
@@ -549,12 +551,13 @@
                         Margin="0,0,10,0"
                         Background="#4873CF"
                         Foreground="WhiteSmoke"
-                        Click="OkButton_Click"/>
+                        Command="{Binding SaveSettingsCommand}"/>
                 <Button x:Name="CancelButton"
                         Content="キャンセル"
                         Width="80"
                         Height="30"
-                        Click="CancelButton_Click"
+                        Command="{Binding CloseWindowCommand}"
+                        CommandParameter="{Binding ElementName=AdminWindow}"
                         Foreground="#FF4873CF"/>
             </StackPanel>
         </Border>

@@ -1,3 +1,4 @@
+using CocoroDock.ViewModels;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,11 +11,32 @@ namespace CocoroDock.Controls
     /// </summary>
     public partial class ChatControl : UserControl
     {
+        private ChatControlViewModel _viewModel;
+        
         public event EventHandler<string>? MessageSent;
 
         public ChatControl()
         {
             InitializeComponent();
+            
+            _viewModel = new ChatControlViewModel();
+            DataContext = _viewModel;
+            
+            _viewModel.MessageSent += OnViewModelMessageSent;
+            _viewModel.ChatCleared += OnViewModelChatCleared;
+        }
+        
+        private void OnViewModelMessageSent(object? sender, string message)
+        {
+            // UIにユーザーメッセージを追加
+            AddUserMessage(message);
+            
+            MessageSent?.Invoke(this, message);
+        }
+        
+        private void OnViewModelChatCleared(object? sender, EventArgs e)
+        {
+            ChatMessagesPanel.Children.Clear();
         }
 
         /// <summary>
@@ -30,18 +52,10 @@ namespace CocoroDock.Controls
         /// </summary>
         private void SendMessage()
         {
-            string message = MessageTextBox.Text.Trim();
-            if (string.IsNullOrEmpty(message))
-                return;
-
-            // UIにユーザーメッセージを追加
-            AddUserMessage(message);
-
-            // メッセージ送信イベント発火
-            MessageSent?.Invoke(this, message);
-
-            // テキストボックスをクリア
-            MessageTextBox.Clear();
+            if (_viewModel.SendMessageCommand.CanExecute(null))
+            {
+                _viewModel.SendMessageCommand.Execute(null);
+            }
         }
 
         /// <summary>
@@ -154,27 +168,6 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// テキストボックスのキー入力ハンドラ（Enterキーで送信）
-        /// </summary>
-        private void MessageTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            // Enterキーが押された場合
-            if (e.Key == Key.Enter)
-            {
-                // Shiftキーが押されていない場合は送信処理
-                if ((Keyboard.Modifiers & ModifierKeys.Shift) != ModifierKeys.Shift)
-                {
-                    // Enterキーのデフォルト動作（改行）を防止
-                    e.Handled = true;
-
-                    // 送信処理を実行
-                    SendMessage();
-                }
-                // Shift+Enterの場合はデフォルト動作（改行）をそのまま許可
-            }
-        }
-
-        /// <summary>
         /// テキストボックスのキー入力ハンドラ（Enterキーで送信、Shift+Enterで改行）
         /// </summary>
         private void MessageTextBox_KeyDown(object sender, KeyEventArgs e)
@@ -191,7 +184,11 @@ namespace CocoroDock.Controls
                 else
                 {
                     e.Handled = true;
-                    SendMessage();
+                    
+                    if (_viewModel.SendMessageCommand.CanExecute(null))
+                    {
+                        _viewModel.SendMessageCommand.Execute(null);
+                    }
                 }
             }
         }

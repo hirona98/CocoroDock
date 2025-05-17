@@ -1,5 +1,6 @@
 using CocoroDock.Communication;
 using CocoroDock.Services;
+using CocoroDock.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,6 +17,7 @@ namespace CocoroDock.Controls
     /// </summary>
     public partial class AdminWindow : Window
     {
+        private readonly AdminWindowViewModel _viewModel;
         // 表示設定を保存するための辞書
         private Dictionary<string, object> _displaySettings = new Dictionary<string, object>();
         private Dictionary<string, object> _originalDisplaySettings = new Dictionary<string, object>();
@@ -76,9 +78,12 @@ namespace CocoroDock.Controls
             public IntPtr dwExtraInfo;
         }
 
-        public AdminWindow()
+        public AdminWindow(CommunicationService? communicationService = null)
         {
             InitializeComponent();
+
+            _viewModel = new AdminWindowViewModel(communicationService);
+            DataContext = _viewModel;
 
             // グローバルキーボードフックの設定
             _proc = HookCallback;
