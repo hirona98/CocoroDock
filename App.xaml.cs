@@ -1,8 +1,11 @@
 ﻿using CocoroDock.Services;
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
@@ -32,48 +35,41 @@ namespace CocoroDock
     public partial class App : Application
     {
         private NotifyIcon? _notifyIcon;
+        private const string PipeName = "CocoroDockPipe";
+        private Thread? _pipeServerThread;
+        private CancellationTokenSource? _pipeServerCancellationTokenSource;
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            base.OnStartup(e);
-
-            // 二重起動チェック
-            string processName = Process.GetCurrentProcess().ProcessName;
-            Process[] processes = Process.GetProcessesByName(processName);
-            // 現在のプロセスを含めて2つ以上あれば、既に起動している
-            if (processes.Length > 1)
+            // 二重起動チェック - パイプクライアントを使用
+            if (IsProgramAlreadyRunning())
             {
-                // 既存のプロセスを探して最前面に表示
+                // 既存のプロセスにメッセージを送信して表示
                 try
                 {
-                    // 自分のプロセスID
-                    int currentPid = Process.GetCurrentProcess().Id;
-
-                    // 自分以外の同名プロセスを取得
-                    Process? existingProcess = processes.FirstOrDefault(p => p.Id != currentPid);
-
-                    if (existingProcess != null)
+                    using (var pipeClient = new NamedPipeClientStream(".", PipeName, PipeDirection.Out))
                     {
-                        // メインウィンドウのハンドルを取得して最前面に表示
-                        IntPtr mainWindowHandle = existingProcess.MainWindowHandle;
-                        if (mainWindowHandle != IntPtr.Zero)
+                        pipeClient.Connect(1000); // 1秒でタイムアウト
+                        using (var writer = new StreamWriter(pipeClient))
                         {
-                            // ウィンドウを最前面に表示
-                            NativeMethods.SetForegroundWindow(mainWindowHandle);
-                            NativeMethods.ShowWindow(mainWindowHandle, NativeMethods.SW_RESTORE);
+                            writer.WriteLine("SHOW_WINDOW");
+                            writer.Flush();
                         }
                     }
-
-                    // 自プロセスを終了
-                    Environment.Exit(0);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"既存プロセスの検出中にエラーが発生しました: {ex.Message}",
+                    MessageBox.Show($"既存プロセスへの接続に失敗しました: {ex.Message}",
                         "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Environment.Exit(1);
                 }
+
+                // 自プロセスを終了
+                Environment.Exit(0);
+                return;
             }
+
+            // パイプサーバーを開始
+            StartPipeServer();
 
             // システムトレイアイコンの初期化
             InitializeNotifyIcon();
@@ -89,8 +85,71 @@ namespace CocoroDock
             mainWindow.Show();
         }
 
+        // 名前付きパイプサーバーを開始
+        private void StartPipeServer()
+        {
+            _pipeServerCancellationTokenSource = new CancellationTokenSource();
+            _pipeServerThread = new Thread(() => PipeServerThread(_pipeServerCancellationTokenSource.Token))
+            {
+                IsBackground = true,
+                Name = "PipeServerThread"
+            };
+            _pipeServerThread.Start();
+        }
+
+        // パイプサーバースレッドの処理
+        private void PipeServerThread(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    using (var pipeServer = new NamedPipeServerStream(PipeName, PipeDirection.In))
+                    {
+                        pipeServer.WaitForConnection();
+
+                        using (var reader = new StreamReader(pipeServer))
+                        {
+                            string? message = reader.ReadLine();
+                            if (message == "SHOW_WINDOW")
+                            {
+                                // UIスレッドでメインウィンドウを表示
+                                Dispatcher.Invoke(() => ShowMainWindow());
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"パイプサーバーエラー: {ex.Message}");
+                    Thread.Sleep(1000); // エラー時は少し待機
+                }
+            }
+        }
+
+        // プログラムが既に実行中かチェック
+        private bool IsProgramAlreadyRunning()
+        {
+            try
+            {
+                using (var pipeClient = new NamedPipeClientStream(".", PipeName, PipeDirection.Out))
+                {
+                    pipeClient.Connect(10); // ほぼ即時接続を試みる
+                    return true; // 接続成功 = 既に実行中
+                }
+            }
+            catch
+            {
+                return false; // 接続失敗 = 実行中ではない
+            }
+        }
+
         protected override void OnExit(ExitEventArgs e)
         {
+            // パイプサーバースレッドを終了
+            _pipeServerCancellationTokenSource?.Cancel();
+            _pipeServerThread?.Join(1000); // 最大1秒待機
+
             // システムトレイアイコンの解放
             _notifyIcon?.Dispose();
 
