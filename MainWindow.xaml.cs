@@ -105,7 +105,7 @@ namespace CocoroDock
                         // UI更新
                         UpdateConnectionStatus(true);
 
-                        // 設定を要求
+                        // 設定を通知
                         await RequestConfigAsync();
                     }
                 }
@@ -120,7 +120,7 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// サーバーから設定情報を要求
+        /// クライアントに設定情報を通知
         /// </summary>
         private async Task RequestConfigAsync()
         {
