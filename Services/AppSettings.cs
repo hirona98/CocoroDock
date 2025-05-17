@@ -168,35 +168,55 @@ namespace CocoroDock.Services
         {
             try
             {
-                // ファイルパスを決定（appSetting.jsonがなければdefaultSetting.jsonを使用）
-                string settingsPath = File.Exists(AppSettingsFilePath)
-                    ? AppSettingsFilePath
-                    : DefaultSettingsFilePath;
-
-                // ファイルが存在するか確認
-                if (File.Exists(settingsPath))
+                string appDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
+                string userDataDirectory = Path.Combine(appDirectory, "UserData");
+                
+                if (!Directory.Exists(userDataDirectory))
                 {
-                    // ファイルからJSONを読み込む
-                    string json = File.ReadAllText(settingsPath);
+                    Directory.CreateDirectory(userDataDirectory);
+                }
+
+                // リソースディレクトリからデフォルト設定ファイルのパス
+                string resourceDefaultSettingsPath = Path.Combine(
+                    appDirectory, "Resource", "defaultSetting.json");
+
+                ConfigSettings? settings = null;
+
+                if (File.Exists(resourceDefaultSettingsPath))
+                {
+                    string defaultJson = File.ReadAllText(resourceDefaultSettingsPath);
                     var options = new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true,
-                        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // 日本語などの非ASCII文字の処理を最適化
+                        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                     };
-                    var settings = JsonSerializer.Deserialize<ConfigSettings>(json, options);
-
+                    settings = JsonSerializer.Deserialize<ConfigSettings>(defaultJson, options);
+                    
                     if (settings != null)
                     {
                         UpdateLlmModelFormat(settings);
-                        
-                        // 設定更新メソッドを呼び出して設定を適用
                         UpdateSettings(settings);
                     }
                 }
-                else
+
+                if (File.Exists(AppSettingsFilePath))
                 {
-                    Console.WriteLine($"設定ファイルが見つかりません: {settingsPath}");
+                    string userJson = File.ReadAllText(AppSettingsFilePath);
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                    };
+                    var userSettings = JsonSerializer.Deserialize<ConfigSettings>(userJson, options);
+                    
+                    if (userSettings != null)
+                    {
+                        UpdateLlmModelFormat(userSettings);
+                        UpdateSettings(userSettings);
+                    }
                 }
+
+                SaveAppSettings();
             }
             catch (Exception ex)
             {
