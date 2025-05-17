@@ -72,17 +72,21 @@ namespace CocoroDock
             StartPipeServer();
 
             // システムトレイアイコンの初期化
-            InitializeNotifyIcon();
-
-            // 未処理の例外ハンドラを登録
+            InitializeNotifyIcon();            // 未処理の例外ハンドラを登録
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Application.Current.DispatcherUnhandledException += Application_DispatcherUnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
 
-            // メインウィンドウを作成・表示
+            // メインウィンドウを作成するが、表示はしない
             MainWindow mainWindow = new MainWindow();
             Current.MainWindow = mainWindow; // MainWindowプロパティに明示的に設定
-            mainWindow.Show();
+
+            // コマンドライン引数をチェックして、表示フラグがある場合のみ表示する
+            bool showWindow = e.Args.Any(arg => arg.ToLower() == "/show" || arg.ToLower() == "-show");
+            if (showWindow)
+            {
+                mainWindow.Show();
+            }
         }
 
         // 名前付きパイプサーバーを開始
