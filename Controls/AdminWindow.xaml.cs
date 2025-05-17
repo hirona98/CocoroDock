@@ -626,7 +626,6 @@ namespace CocoroDock.Controls
         #endregion
 
         #region 共通ボタンイベントハンドラ
-
         /// <summary>
         /// OKボタンのクリックイベントハンドラ
         /// </summary>
@@ -635,9 +634,11 @@ namespace CocoroDock.Controls
             // 設定変更前の値を保存
             int lastSelectedIndex = AppSettings.Instance.CurrentCharacterIndex;
             string lastVRMFilePath = string.Empty;
+            bool lastIsUseLLM = false;
             if (lastSelectedIndex >= 0 && lastSelectedIndex < AppSettings.Instance.CharacterList.Count)
             {
                 lastVRMFilePath = AppSettings.Instance.CharacterList[lastSelectedIndex].vrmFilePath ?? string.Empty;
+                lastIsUseLLM = AppSettings.Instance.CharacterList[lastSelectedIndex].isUseLLM;
             }
 
             // すべてのタブの設定を保存
@@ -647,9 +648,11 @@ namespace CocoroDock.Controls
             bool isNeedsRestart = false;
             int currentSelectedIndex = AppSettings.Instance.CurrentCharacterIndex;
             string currentVRMFilePath = string.Empty;
+            bool currentIsUseLLM = false;
             if (currentSelectedIndex >= 0 && currentSelectedIndex < AppSettings.Instance.CharacterList.Count)
             {
                 currentVRMFilePath = AppSettings.Instance.CharacterList[currentSelectedIndex].vrmFilePath ?? string.Empty;
+                currentIsUseLLM = AppSettings.Instance.CharacterList[currentSelectedIndex].isUseLLM;
             }
             // SelectedIndexが変更された場合
             if (lastSelectedIndex != currentSelectedIndex)
@@ -658,6 +661,11 @@ namespace CocoroDock.Controls
             }
             // VRMFilePathが変更された場合（同じキャラクターの場合のみチェック）
             if (lastSelectedIndex == currentSelectedIndex && lastVRMFilePath != currentVRMFilePath)
+            {
+                isNeedsRestart = true;
+            }
+            // IsUseLLMが変更された場合（同じキャラクターの場合のみチェック）
+            if (lastSelectedIndex == currentSelectedIndex && lastIsUseLLM != currentIsUseLLM)
             {
                 isNeedsRestart = true;
             }
