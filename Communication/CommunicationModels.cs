@@ -123,7 +123,6 @@ namespace CocoroDock.Communication
         public int CocoroDockPort { get; set; }
         public int CocoroCorePort { get; set; }
         public string AiExecutablePath { get; set; } = string.Empty;
-        public bool AutoStartAi { get; set; }
         public bool IsTopmost { get; set; }
         public bool IsEscapeCursor { get; set; }
         public bool IsInputVirtualKey { get; set; }

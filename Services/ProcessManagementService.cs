@@ -44,10 +44,7 @@ namespace CocoroDock.Services
 
         public void Initialize()
         {
-            if (_appSettings.AutoStartAi)
-            {
-                Task.Delay(500).ContinueWith(_ => StartAiProcess());
-            }
+            Task.Delay(500).ContinueWith(_ => StartAiProcess());
         }
 
         public void ToggleAiProcess()
@@ -105,12 +102,12 @@ namespace CocoroDock.Services
             {
                 string errorMessage = $"AIプロセス起動エラー: {ex.Message}";
                 OnStatusChanged(errorMessage);
-                
+
                 ErrorHandlingService.Instance.LogError(
                     ErrorHandlingService.ErrorLevel.Error,
                     "AIプロセス起動エラー",
                     ex);
-                    
+
                 IsAiRunning = false;
                 _aiProcess = null;
             }
@@ -132,7 +129,7 @@ namespace CocoroDock.Services
                     try
                     {
                         _communicationService.SendControlCommandAsync("shutdown", "User requested shutdown").Wait();
-                        
+
                         Task.Delay(2000).Wait();
                     }
                     catch (Exception ex)
@@ -168,7 +165,7 @@ namespace CocoroDock.Services
             {
                 string errorMessage = $"AIプロセス停止エラー: {ex.Message}";
                 OnStatusChanged(errorMessage);
-                
+
                 ErrorHandlingService.Instance.LogError(
                     ErrorHandlingService.ErrorLevel.Error,
                     "AIプロセス停止エラー",

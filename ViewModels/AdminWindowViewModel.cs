@@ -18,7 +18,6 @@ namespace CocoroDock.ViewModels
         private readonly CommunicationService? _communicationService;
         private string _aiExecutablePath = "";
         private int _webSocketPort;
-        private bool _autoStartAi;
         private ObservableCollection<CharacterViewModel> _characters = new();
         private CharacterViewModel? _selectedCharacter;
         private bool _isLoading;
@@ -34,12 +33,6 @@ namespace CocoroDock.ViewModels
         {
             get => _webSocketPort;
             set => SetProperty(ref _webSocketPort, value);
-        }
-
-        public bool AutoStartAi
-        {
-            get => _autoStartAi;
-            set => SetProperty(ref _autoStartAi, value);
         }
 
         public ObservableCollection<CharacterViewModel> Characters
@@ -95,7 +88,6 @@ namespace CocoroDock.ViewModels
 
                 AiExecutablePath = _appSettings.AiExecutablePath;
                 WebSocketPort = _appSettings.CocoroDockPort;
-                AutoStartAi = _appSettings.AutoStartAi;
 
                 Characters.Clear();
                 if (_appSettings.CharacterList != null)
@@ -128,7 +120,6 @@ namespace CocoroDock.ViewModels
             {
                 _appSettings.AiExecutablePath = AiExecutablePath;
                 _appSettings.CocoroDockPort = WebSocketPort;
-                _appSettings.AutoStartAi = AutoStartAi;
 
                 _appSettings.CharacterList = Characters.Select(c => c.ToCharacterSettings()).ToList();
 

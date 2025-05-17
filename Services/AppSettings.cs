@@ -116,7 +116,6 @@ namespace CocoroDock.Services
         public int CocoroCorePort { get; set; } = 55601;
         // アプリケーション設定
         public string AiExecutablePath { get; set; } = string.Empty;
-        public bool AutoStartAi { get; set; } = false;
         // UI設定
         public bool IsTopmost { get; set; } = false;
         public bool IsEscapeCursor { get; set; } = false;
