@@ -667,14 +667,14 @@ namespace CocoroDock.Controls
                 if (Owner is MainWindow mainWindow)
                 {
                     // チャット履歴をクリア
-                    mainWindow.ChatControlInstance.ClearChat();
-
-                    var launchCocoroCore = typeof(MainWindow).GetMethod("LaunchCocoroCore", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    mainWindow.ChatControlInstance.ClearChat(); var launchCocoroCore = typeof(MainWindow).GetMethod("LaunchCocoroCore", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                     var launchCocoroShell = typeof(MainWindow).GetMethod("LaunchCocoroShell", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                     if (launchCocoroCore != null && launchCocoroShell != null)
                     {
-                        launchCocoroCore.Invoke(mainWindow, null);
-                        launchCocoroShell.Invoke(mainWindow, null);
+                        // ProcessOperation.RestartIfRunning (デフォルト値) を引数として渡す
+                        object[] parameters = new object[] { 0 }; // ProcessOperation.RestartIfRunning = 0
+                        launchCocoroCore.Invoke(mainWindow, parameters);
+                        launchCocoroShell.Invoke(mainWindow, parameters);
                     }
                 }
             }

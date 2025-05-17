@@ -51,14 +51,14 @@ namespace CocoroDock
         {
             try
             {
+                // AppSettingsから設定を取得
+                var settings = AppSettings.Instance;
 #if !DEBUG
                 // CocoroShell.exeを起動（既に起動していれば終了してから再起動）
                 LaunchCocoroShell();
                 // CocoroCore.exeを起動（既に起動していれば終了してから再起動）
                 LaunchCocoroCore();
 #endif
-                // AppSettingsから設定を取得
-                var settings = AppSettings.Instance;
 
                 // 通信サービスを初期化 (WebSocketServerを使用)
                 _communicationService = new CommunicationService(
@@ -404,10 +404,10 @@ namespace CocoroDock
             try
             {
                 // CocoroCore プロセスを終了
-                ProcessUtility("CocoroCore", ProcessOperation.Terminate);
+                LaunchCocoroCore(ProcessOperation.Terminate);
 
                 // CocoroShell プロセスを終了
-                ProcessUtility("CocoroShell", ProcessOperation.Terminate);
+                LaunchCocoroShell(ProcessOperation.Terminate);
             }
             catch (Exception ex)
             {
@@ -524,7 +524,8 @@ namespace CocoroDock
         /// <param name="appName">アプリケーション名</param>
         /// <param name="exePath">実行ファイルのパス（絶対パスまたは相対パス）</param>
         /// <param name="relativeDir">相対ディレクトリ（nullの場合は直接exePathを使用）</param>
-        private void LaunchExternalApplication(string appName, string exePath, string? relativeDir = null)
+        /// <param name="operation">プロセス操作の種類（終了のみか再起動か）</param>
+        private void LaunchExternalApplication(string appName, string exePath, string? relativeDir = null, ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
             try
             {
@@ -546,9 +547,15 @@ namespace CocoroDock
                     return;
                 }
 
-                // 同名の実行中プロセスをチェックして終了
+                // 同名の実行中プロセスをチェックして終了または再起動
                 string processName = Path.GetFileNameWithoutExtension(exePath);
-                ProcessUtility(processName, ProcessOperation.RestartIfRunning);
+                bool wasRunning = ProcessUtility(processName, operation);
+
+                // 終了のみの場合は起動しない
+                if (operation == ProcessOperation.Terminate)
+                {
+                    return;
+                }
 
                 // プロセス起動のためのパラメータを設定
                 ProcessStartInfo startInfo = new ProcessStartInfo
@@ -569,17 +576,27 @@ namespace CocoroDock
         /// <summary>
         /// CocoroShell.exeを起動する（既に起動している場合は終了してから再起動）
         /// </summary>
-        private void LaunchCocoroShell()
+        /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
+        private void LaunchCocoroShell(ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
-            LaunchExternalApplication("CocoroShell", "CocoroShell.exe", "CocoroShell");
+            LaunchExternalApplication("CocoroShell", "CocoroShell.exe", "CocoroShell", operation);
         }
 
         /// <summary>
         /// CocoroCore.exeを起動する（既に起動している場合は終了してから再起動）
         /// </summary>
-        private void LaunchCocoroCore()
+        /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
+        private void LaunchCocoroCore(ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
-            LaunchExternalApplication("CocoroCore", "CocoroCore.exe");
+#if !DEBUG
+            var settings = AppSettings.Instance;
+            if(settings.CharacterList[settings.CurrentCharacterIndex].isUseLLM)
+            {
+                LaunchExternalApplication("CocoroCore", "CocoroCore.exe", null, operation);
+            }else{
+                LaunchExternalApplication("CocoroCore", "CocoroCore.exe", null, ProcessOperation.Terminate);
+            }
+#endif
         }
 
         /// <summary>
