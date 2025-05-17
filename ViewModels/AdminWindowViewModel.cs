@@ -94,7 +94,7 @@ namespace CocoroDock.ViewModels
                 IsLoading = true;
 
                 AiExecutablePath = _appSettings.AiExecutablePath;
-                WebSocketPort = _appSettings.WebSocketPort;
+                WebSocketPort = _appSettings.CocoroDockPort;
                 AutoStartAi = _appSettings.AutoStartAi;
 
                 Characters.Clear();
@@ -127,7 +127,7 @@ namespace CocoroDock.ViewModels
             try
             {
                 _appSettings.AiExecutablePath = AiExecutablePath;
-                _appSettings.WebSocketPort = WebSocketPort;
+                _appSettings.CocoroDockPort = WebSocketPort;
                 _appSettings.AutoStartAi = AutoStartAi;
 
                 _appSettings.CharacterList = Characters.Select(c => c.ToCharacterSettings()).ToList();

@@ -102,11 +102,14 @@ namespace CocoroDock.Communication
     {
         public bool IsReadOnly { get; set; }
         public string ModelName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
         public string VrmFilePath { get; set; } = string.Empty;
         public bool IsUseLLM { get; set; }
         public string ApiKey { get; set; } = string.Empty;
         public string LlmModel { get; set; } = string.Empty;
         public string SystemPrompt { get; set; } = string.Empty;
+        public double Temperature { get; set; } = 0.7;
+        public int MaxTokens { get; set; } = 1000;
         public bool IsUseTTS { get; set; }
         public string TtsEndpointURL { get; set; } = string.Empty;
         public string TtsSperkerID { get; set; } = string.Empty;
@@ -119,6 +122,8 @@ namespace CocoroDock.Communication
     {
         public int CocoroDockPort { get; set; }
         public int CocoroCorePort { get; set; }
+        public string AiExecutablePath { get; set; } = string.Empty;
+        public bool AutoStartAi { get; set; }
         public bool IsTopmost { get; set; }
         public bool IsEscapeCursor { get; set; }
         public bool IsInputVirtualKey { get; set; }

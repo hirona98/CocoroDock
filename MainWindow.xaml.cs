@@ -1,3 +1,4 @@
+using CocoroDock.Communication;
 using CocoroDock.Controls;
 using CocoroDock.ViewModels;
 using System;

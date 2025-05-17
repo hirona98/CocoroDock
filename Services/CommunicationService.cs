@@ -90,8 +90,8 @@ namespace CocoroDock.Services
         {
             var payload = new ChatMessagePayload
             {
-                sessionId = _sessionId,
-                message = message
+                SessionId = _sessionId,
+                Message = message
             };
 
             await _webSocketServer.SendMessageAsync(MessageType.chat, payload);
@@ -106,8 +106,8 @@ namespace CocoroDock.Services
         {
             var payload = new ConfigMessagePayload
             {
-                settingKey = settingKey,
-                value = value
+                SettingKey = settingKey,
+                Value = value
             };
 
             await _webSocketServer.SendMessageAsync(MessageType.config, payload);
@@ -122,8 +122,8 @@ namespace CocoroDock.Services
         {
             var payload = new ControlMessagePayload
             {
-                command = command,
-                reason = reason
+                Command = command,
+                Reason = reason
             };
 
             await _webSocketServer.SendMessageAsync(MessageType.control, payload);
@@ -160,7 +160,7 @@ namespace CocoroDock.Services
 
                             if (chatResponse != null)
                             {
-                                ChatMessageReceived?.Invoke(this, chatResponse.response);
+                                ChatMessageReceived?.Invoke(this, chatResponse.Response);
                             }
                             break;
 

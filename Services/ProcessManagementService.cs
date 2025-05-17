@@ -38,7 +38,7 @@ namespace CocoroDock.Services
         private ProcessManagementService()
         {
             _appSettings = AppSettings.Instance;
-            _communicationService = new CommunicationService(_appSettings.WebSocketPort);
+            _communicationService = new CommunicationService(_appSettings.CocoroDockPort);
             IsAiRunning = false;
         }
 

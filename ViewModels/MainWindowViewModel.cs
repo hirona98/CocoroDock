@@ -46,7 +46,7 @@ namespace CocoroDock.ViewModels
         public MainWindowViewModel()
         {
             _appSettings = AppSettings.Instance;
-            _communicationService = new CommunicationService(_appSettings.WebSocketPort);
+            _communicationService = new CommunicationService(_appSettings.CocoroDockPort);
             _processManager = ProcessManagementService.Instance;
 
             OpenAdminWindowCommand = new RelayCommand(_ => OpenAdminWindow());
@@ -134,7 +134,7 @@ namespace CocoroDock.ViewModels
 
         private void OnStatusUpdateReceived(object? sender, StatusMessagePayload status)
         {
-            StatusMessage = status.message;
+            StatusMessage = status.Status;
         }
 
         private void OnErrorOccurred(object? sender, string error)

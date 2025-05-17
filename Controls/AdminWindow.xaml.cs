@@ -360,20 +360,20 @@ namespace CocoroDock.Controls
             {
                 var characterDict = new Dictionary<string, string>
                 {
-                    { "Name", character.modelName ?? "不明" },
-                    { "VRMFilePath", character.vrmFilePath ?? "" },
-                    { "IsUseLLM", character.isUseLLM.ToString() },
-                    { "ApiKey", character.apiKey ?? "" },
-                    { "LLMModel", character.llmModel ?? "" },
-                    { "SystemPrompt", character.systemPrompt ?? "" },
-                    { "IsUseTTS", character.isUseTTS.ToString() },
-                    { "TTSEndpointURL", character.ttsEndpointURL ?? "" },
-                    { "TTSSperkerID", character.ttsSperkerID ?? "" }
+                    { "Name", character.ModelName ?? "不明" },
+                    { "VRMFilePath", character.VrmFilePath ?? "" },
+                    { "IsUseLLM", character.IsUseLLM.ToString() },
+                    { "ApiKey", character.ApiKey ?? "" },
+                    { "LLMModel", character.LlmModel ?? "" },
+                    { "SystemPrompt", character.SystemPrompt ?? "" },
+                    { "IsUseTTS", character.IsUseTTS.ToString() },
+                    { "TTSEndpointURL", character.TtsEndpointURL ?? "" },
+                    { "TTSSperkerID", character.TtsSperkerID ?? "" }
                 };
                 _characterSettings.Add(characterDict);
 
                 // コンボボックスに項目を追加
-                var item = new ComboBoxItem { Content = character.modelName ?? "不明" };
+                var item = new ComboBoxItem { Content = character.ModelName ?? "不明" };
                 CharacterSelectComboBox.Items.Add(item);
             }
 
@@ -439,7 +439,7 @@ namespace CocoroDock.Controls
                 bool isReadOnly = false;
                 if (index < AppSettings.Instance.CharacterList.Count)
                 {
-                    isReadOnly = AppSettings.Instance.CharacterList[index].isReadOnly;
+                    isReadOnly = AppSettings.Instance.CharacterList[index].IsReadOnly;
                 }
                 CharacterNameTextBox.IsEnabled = !isReadOnly;
                 VRMFilePathTextBox.IsEnabled = !isReadOnly;
@@ -550,7 +550,7 @@ namespace CocoroDock.Controls
                 bool isReadOnly = false;
                 if (_currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
                 {
-                    isReadOnly = AppSettings.Instance.CharacterList[_currentCharacterIndex].isReadOnly;
+                    isReadOnly = AppSettings.Instance.CharacterList[_currentCharacterIndex].IsReadOnly;
                 }
 
                 // ReadOnlyの場合、元の名前とVRMファイルパスを保持
@@ -642,8 +642,8 @@ namespace CocoroDock.Controls
             bool lastIsUseLLM = false;
             if (lastSelectedIndex >= 0 && lastSelectedIndex < AppSettings.Instance.CharacterList.Count)
             {
-                lastVRMFilePath = AppSettings.Instance.CharacterList[lastSelectedIndex].vrmFilePath ?? string.Empty;
-                lastIsUseLLM = AppSettings.Instance.CharacterList[lastSelectedIndex].isUseLLM;
+                lastVRMFilePath = AppSettings.Instance.CharacterList[lastSelectedIndex].VrmFilePath ?? string.Empty;
+                lastIsUseLLM = AppSettings.Instance.CharacterList[lastSelectedIndex].IsUseLLM;
             }
 
             // すべてのタブの設定を保存
@@ -656,8 +656,8 @@ namespace CocoroDock.Controls
             bool currentIsUseLLM = false;
             if (currentSelectedIndex >= 0 && currentSelectedIndex < AppSettings.Instance.CharacterList.Count)
             {
-                currentVRMFilePath = AppSettings.Instance.CharacterList[currentSelectedIndex].vrmFilePath ?? string.Empty;
-                currentIsUseLLM = AppSettings.Instance.CharacterList[currentSelectedIndex].isUseLLM;
+                currentVRMFilePath = AppSettings.Instance.CharacterList[currentSelectedIndex].VrmFilePath ?? string.Empty;
+                currentIsUseLLM = AppSettings.Instance.CharacterList[currentSelectedIndex].IsUseLLM;
             }
             // SelectedIndexが変更された場合
             if (lastSelectedIndex != currentSelectedIndex)
@@ -904,8 +904,8 @@ namespace CocoroDock.Controls
                 CharacterSettings newCharacter = existingCharacter ?? new CharacterSettings();
 
                 // 基本項目の更新
-                newCharacter.modelName = character["Name"];
-                newCharacter.systemPrompt = character["SystemPrompt"];
+                newCharacter.ModelName = character["Name"];
+                newCharacter.SystemPrompt = character["SystemPrompt"];
 
                 // IsUseLLMの設定を更新
                 bool isUseLLM = false;
@@ -913,24 +913,24 @@ namespace CocoroDock.Controls
                 {
                     bool.TryParse(character["IsUseLLM"], out isUseLLM);
                 }
-                newCharacter.isUseLLM = isUseLLM;
+                newCharacter.IsUseLLM = isUseLLM;
 
                 // VRMFilePathの設定を更新
                 if (character.ContainsKey("VRMFilePath"))
                 {
-                    newCharacter.vrmFilePath = character["VRMFilePath"];
+                    newCharacter.VrmFilePath = character["VRMFilePath"];
                 }
 
                 // ApiKeyの設定を更新
                 if (character.ContainsKey("ApiKey"))
                 {
-                    newCharacter.apiKey = character["ApiKey"];
+                    newCharacter.ApiKey = character["ApiKey"];
                 }
 
                 // LLMModelの設定を更新
                 if (character.ContainsKey("LLMModel"))
                 {
-                    newCharacter.llmModel = character["LLMModel"];
+                    newCharacter.LlmModel = character["LLMModel"];
                 }
 
                 // IsUseTTSの設定を更新
@@ -939,22 +939,22 @@ namespace CocoroDock.Controls
                 {
                     bool.TryParse(character["IsUseTTS"], out isUseTTS);
                 }
-                newCharacter.isUseTTS = isUseTTS;
+                newCharacter.IsUseTTS = isUseTTS;
 
                 // TTSEndpointURLの設定を更新
                 if (character.ContainsKey("TTSEndpointURL"))
                 {
-                    newCharacter.ttsEndpointURL = character["TTSEndpointURL"];
+                    newCharacter.TtsEndpointURL = character["TTSEndpointURL"];
                 }
 
                 // TTSSperkerIDの設定を更新
                 if (character.ContainsKey("TTSSperkerID"))
                 {
-                    newCharacter.ttsSperkerID = character["TTSSperkerID"];
+                    newCharacter.TtsSperkerID = character["TTSSperkerID"];
                 }
 
                 // 既存の設定を保持（null になることはないという前提）
-                newCharacter.isReadOnly = existingCharacter?.isReadOnly ?? false;
+                newCharacter.IsReadOnly = existingCharacter?.IsReadOnly ?? false;
 
                 // リストに追加
                 newCharacterList.Add(newCharacter);
