@@ -11,11 +11,10 @@ namespace CocoroDock.ViewModels
     public class MainWindowViewModel : ViewModelBase
     {
         private readonly CommunicationService _communicationService;
+        private readonly ProcessManagementService _processManager;
         private readonly AppSettings _appSettings;
-        private Process? _aiProcess;
         private bool _isConnected;
         private string _statusMessage = "";
-        private bool _isAiRunning;
 
         public bool IsConnected
         {
@@ -31,8 +30,7 @@ namespace CocoroDock.ViewModels
 
         public bool IsAiRunning
         {
-            get => _isAiRunning;
-            private set => SetProperty(ref _isAiRunning, value);
+            get => _processManager.IsAiRunning;
         }
 
         public ICommand OpenAdminWindowCommand { get; }
@@ -49,9 +47,10 @@ namespace CocoroDock.ViewModels
         {
             _appSettings = AppSettings.Instance;
             _communicationService = new CommunicationService(_appSettings.WebSocketPort);
+            _processManager = ProcessManagementService.Instance;
 
             OpenAdminWindowCommand = new RelayCommand(_ => OpenAdminWindow());
-            ToggleAiProcessCommand = new RelayCommand(_ => ToggleAiProcess());
+            ToggleAiProcessCommand = new RelayCommand(_ => _processManager.ToggleAiProcess());
 
             _communicationService.ChatMessageReceived += OnChatMessageReceived;
             _communicationService.SystemMessageReceived += OnSystemMessageReceived;
@@ -59,6 +58,10 @@ namespace CocoroDock.ViewModels
             _communicationService.ErrorOccurred += OnErrorOccurred;
             _communicationService.Connected += OnConnected;
             _communicationService.Disconnected += OnDisconnected;
+
+            _processManager.StatusChanged += OnProcessStatusChanged;
+            _processManager.AiProcessStarted += (_, _) => OnPropertyChanged(nameof(IsAiRunning));
+            _processManager.AiProcessStopped += (_, _) => OnPropertyChanged(nameof(IsAiRunning));
 
             InitializeAsync();
         }
@@ -68,17 +71,15 @@ namespace CocoroDock.ViewModels
             try
             {
                 await _communicationService.StartServerAsync();
-
-                if (_appSettings.AutoStartAi)
-                {
-                    await Task.Delay(500); // 少し待機してからプロセス起動
-                    StartAiProcess();
-                }
+                _processManager.Initialize();
             }
             catch (Exception ex)
             {
                 StatusMessage = $"初期化エラー: {ex.Message}";
-                Debug.WriteLine($"初期化エラー: {ex.Message}");
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error,
+                    "初期化エラー",
+                    ex);
             }
         }
 
@@ -93,111 +94,16 @@ namespace CocoroDock.ViewModels
             catch (Exception ex)
             {
                 StatusMessage = $"管理画面オープンエラー: {ex.Message}";
-                Debug.WriteLine($"管理画面オープンエラー: {ex.Message}");
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error,
+                    "管理画面オープンエラー",
+                    ex);
             }
         }
 
-        private void ToggleAiProcess()
+        private void OnProcessStatusChanged(object? sender, string status)
         {
-            if (IsAiRunning)
-            {
-                StopAiProcess();
-            }
-            else
-            {
-                StartAiProcess();
-            }
-        }
-
-        private void StartAiProcess()
-        {
-            try
-            {
-                if (IsAiRunning || _aiProcess != null)
-                {
-                    return;
-                }
-
-                StatusMessage = "AIプロセスを起動中...";
-
-                string aiPath = _appSettings.AiExecutablePath;
-                if (string.IsNullOrEmpty(aiPath))
-                {
-                    StatusMessage = "AIの実行ファイルパスが設定されていません";
-                    return;
-                }
-
-                ProcessStartInfo startInfo = new ProcessStartInfo
-                {
-                    FileName = aiPath,
-                    UseShellExecute = true,
-                    CreateNoWindow = false
-                };
-
-                _aiProcess = Process.Start(startInfo);
-                if (_aiProcess != null)
-                {
-                    IsAiRunning = true;
-                    _aiProcess.EnableRaisingEvents = true;
-                    _aiProcess.Exited += AiProcess_Exited;
-                    StatusMessage = "AIプロセスを起動しました";
-                }
-                else
-                {
-                    StatusMessage = "AIプロセスの起動に失敗しました";
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"AIプロセス起動エラー: {ex.Message}";
-                Debug.WriteLine($"AIプロセス起動エラー: {ex.Message}");
-                IsAiRunning = false;
-                _aiProcess = null;
-            }
-        }
-
-        private void StopAiProcess()
-        {
-            try
-            {
-                if (!IsAiRunning || _aiProcess == null)
-                {
-                    return;
-                }
-
-                StatusMessage = "AIプロセスを停止中...";
-
-                if (!_aiProcess.HasExited)
-                {
-                    _communicationService.SendControlCommandAsync("shutdown", "User requested shutdown").Wait();
-                    
-                    Task.Delay(2000).Wait();
-                }
-
-                if (!_aiProcess.HasExited)
-                {
-                    _aiProcess.Kill();
-                }
-
-                _aiProcess = null;
-                IsAiRunning = false;
-                StatusMessage = "AIプロセスを停止しました";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"AIプロセス停止エラー: {ex.Message}";
-                Debug.WriteLine($"AIプロセス停止エラー: {ex.Message}");
-            }
-        }
-
-        private void AiProcess_Exited(object? sender, EventArgs e)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                IsAiRunning = false;
-                _aiProcess = null;
-                StatusMessage = "AIプロセスが終了しました";
-            });
+            StatusMessage = status;
         }
 
         public async Task SendChatMessageAsync(string message)
@@ -209,7 +115,10 @@ namespace CocoroDock.ViewModels
             catch (Exception ex)
             {
                 StatusMessage = $"メッセージ送信エラー: {ex.Message}";
-                Debug.WriteLine($"メッセージ送信エラー: {ex.Message}");
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error,
+                    "メッセージ送信エラー",
+                    ex);
             }
         }
 
@@ -252,8 +161,7 @@ namespace CocoroDock.ViewModels
 
         public void Dispose()
         {
-            StopAiProcess();
-
+            _processManager.Dispose();
             _communicationService.StopServerAsync().Wait();
             _communicationService.Dispose();
         }
