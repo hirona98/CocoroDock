@@ -69,6 +69,7 @@ namespace CocoroDock
                 _communicationService.ConfigResponseReceived += OnConfigResponseReceived;
                 _communicationService.StatusUpdateReceived += OnStatusUpdateReceived;
                 _communicationService.SystemMessageReceived += OnSystemMessageReceived;
+                _communicationService.ControlMessageReceived += OnControlMessageReceived;
                 _communicationService.ErrorOccurred += OnErrorOccurred;
                 _communicationService.Connected += OnConnected;
                 _communicationService.Disconnected += OnDisconnected;
@@ -316,6 +317,25 @@ namespace CocoroDock
                 });
             }
             // その他のレベル（Info等）は無視
+        }
+
+        /// <summary>
+        /// 制御メッセージ受信時のハンドラ
+        /// </summary>
+        private void OnControlMessageReceived(object? sender, ControlMessagePayload controlMessage)
+        {
+            // 制御コマンドの種類を確認
+            if (controlMessage.command == "shutdownCocoroAI")
+            {
+                RunOnUIThread(() =>
+                {
+                    // シャットダウン理由をログに記録
+                    Debug.WriteLine($"シャットダウン要求を受信しました: {controlMessage.reason}");
+
+                    // アプリケーションを正常に終了
+                    Application.Current.Shutdown();
+                });
+            }
         }
 
         /// <summary>

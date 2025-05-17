@@ -18,6 +18,7 @@ namespace CocoroDock.Services
         public event EventHandler<ConfigResponsePayload>? ConfigResponseReceived;
         public event EventHandler<StatusMessagePayload>? StatusUpdateReceived;
         public event EventHandler<SystemMessagePayload>? SystemMessageReceived;
+        public event EventHandler<ControlMessagePayload>? ControlMessageReceived;
         public event EventHandler<string>? ErrorOccurred;
         public event EventHandler? Connected;
         public event EventHandler? Disconnected;
@@ -190,6 +191,16 @@ namespace CocoroDock.Services
                             if (systemMessage != null)
                             {
                                 SystemMessageReceived?.Invoke(this, systemMessage);
+                            }
+                            break;
+
+                        case "control":
+                            var controlMessage = JsonSerializer.Deserialize<ControlMessagePayload>(
+                                payloadElement.GetRawText());
+
+                            if (controlMessage != null)
+                            {
+                                ControlMessageReceived?.Invoke(this, controlMessage);
                             }
                             break;
 
