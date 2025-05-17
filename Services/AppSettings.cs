@@ -5,9 +5,94 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Encodings.Web;
+using System.Text.Json.Serialization;
 
 namespace CocoroDock.Services
 {
+    /// <summary>
+    /// 古いバージョンのsetting.jsonのキャラクター設定クラス
+    /// </summary>
+    public class OldCharacterSettings
+    {
+        [JsonPropertyName("IsReadOnly")]
+        public bool IsReadOnly { get; set; }
+
+        [JsonPropertyName("ModelName")]
+        public string ModelName { get; set; } = string.Empty;
+
+        [JsonPropertyName("VRMFilePath")]
+        public string VRMFilePath { get; set; } = string.Empty;
+
+        [JsonPropertyName("IsUseLLM")]
+        public bool IsUseLLM { get; set; }
+
+        [JsonPropertyName("ApiKey")]
+        public string ApiKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("LLMModel")]
+        public string LLMModel { get; set; } = string.Empty;
+
+        [JsonPropertyName("SystemPrompt")]
+        public string SystemPrompt { get; set; } = string.Empty;
+
+        [JsonPropertyName("IsUseTTS")]
+        public bool IsUseTTS { get; set; }
+
+        [JsonPropertyName("TTSEndpointURL")]
+        public string TTSEndpointURL { get; set; } = string.Empty;
+
+        [JsonPropertyName("TTSSperkerID")]
+        public string TTSSperkerID { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// 古いバージョンのsetting.jsonの設定クラス
+    /// </summary>
+    public class OldConfigSettings
+    {
+        [JsonPropertyName("IsTopmost")]
+        public bool IsTopmost { get; set; }
+
+        [JsonPropertyName("IsEscapeCursor")]
+        public bool IsEscapeCursor { get; set; }
+
+        [JsonPropertyName("IsInputVirtualKey")]
+        public bool IsInputVirtualKey { get; set; }
+
+        [JsonPropertyName("VirtualKeyString")]
+        public string VirtualKeyString { get; set; } = string.Empty;
+
+        [JsonPropertyName("IsAutoMove")]
+        public bool IsAutoMove { get; set; }
+
+        [JsonPropertyName("IsEnableAmbientOcclusion")]
+        public bool IsEnableAmbientOcclusion { get; set; }
+
+        [JsonPropertyName("WindowSize")]
+        public float WindowSize { get; set; }
+
+        [JsonPropertyName("MSAALevel")]
+        public int MSAALevel { get; set; }
+
+        [JsonPropertyName("CharacterShadow")]
+        public int CharacterShadow { get; set; }
+
+        [JsonPropertyName("CharacterShadowResolution")]
+        public int CharacterShadowResolution { get; set; }
+
+        [JsonPropertyName("BackgroundShadow")]
+        public int BackgroundShadow { get; set; }
+
+        [JsonPropertyName("BackgroundShadowResolution")]
+        public int BackgroundShadowResolution { get; set; }
+
+        [JsonPropertyName("CurrentCharacterIndex")]
+        public int CurrentCharacterIndex { get; set; }
+
+        [JsonPropertyName("CharacterList")]
+        public List<OldCharacterSettings> CharacterList { get; set; } = new List<OldCharacterSettings>();
+    }
+
     /// <summary>
     /// アプリケーション設定を管理するクラス
     /// </summary>
@@ -168,39 +253,186 @@ namespace CocoroDock.Services
         {
             try
             {
-                // ファイルパスを決定（appSetting.jsonがなければdefaultSetting.jsonを使用）
-                string settingsPath = File.Exists(AppSettingsFilePath)
-                    ? AppSettingsFilePath
-                    : DefaultSettingsFilePath;
+                // ディレクトリの存在確認とない場合は作成
+                string userDataDir = Path.Combine(
+                    Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "",
+                    "UserData");
 
-                // ファイルが存在するか確認
-                if (File.Exists(settingsPath))
+                if (!Directory.Exists(userDataDir))
                 {
-                    // ファイルからJSONを読み込む
-                    string json = File.ReadAllText(settingsPath);
-                    var options = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true,
-                        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // 日本語などの非ASCII文字の処理を最適化
-                    };
-                    var settings = JsonSerializer.Deserialize<ConfigSettings>(json, options);
+                    Directory.CreateDirectory(userDataDir);
+                }
 
-                    if (settings != null)
+                // まずデフォルト設定を読み込む
+                ConfigSettings defaultSettings = LoadDefaultSettings();
+
+                // 設定ファイルが存在するか確認
+                if (File.Exists(AppSettingsFilePath))
+                {
+                    // 古いバージョンのsetting.jsonかどうかを確認
+                    string json = File.ReadAllText(AppSettingsFilePath);
+                    bool isOldFormat = json.Contains("\"IsTopmost\"") || json.Contains("\"CharacterList\"");
+
+                    if (isOldFormat)
                     {
-                        UpdateLlmModelFormat(settings);
-                        
-                        // 設定更新メソッドを呼び出して設定を適用
-                        UpdateSettings(settings);
+                        // 古いバージョンの設定を読み込んで変換
+                        var oldSettings = LoadOldSettings();
+                        if (oldSettings != null)
+                        {
+                            // デフォルト設定をベースに古い設定で上書き
+                            MergeSettings(defaultSettings, oldSettings);
+
+                            // 設定を適用
+                            UpdateSettings(defaultSettings);
+
+                            // 新しい形式で保存
+                            SaveAppSettings();
+
+                            Console.WriteLine("古い設定ファイルを新しい形式に変換しました");
+                        }
+                    }
+                    else
+                    {
+                        // 通常の読み込み処理
+                        var options = new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true,
+                            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                        };
+                        var settings = JsonSerializer.Deserialize<ConfigSettings>(json, options);
+
+                        if (settings != null)
+                        {
+                            UpdateLlmModelFormat(settings);
+                            UpdateSettings(settings);
+                        }
                     }
                 }
                 else
                 {
-                    Console.WriteLine($"設定ファイルが見つかりません: {settingsPath}");
+                    // 設定ファイルがない場合はデフォルト設定を適用して保存
+                    UpdateSettings(defaultSettings);
+                    SaveAppSettings();
+                    Console.WriteLine($"デフォルト設定をファイルに保存しました: {AppSettingsFilePath}");
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"アプリケーション設定ファイル読み込みエラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// デフォルト設定ファイルを読み込む
+        /// </summary>
+        private ConfigSettings LoadDefaultSettings()
+        {
+            if (File.Exists(DefaultSettingsFilePath))
+            {
+                try
+                {
+                    string json = File.ReadAllText(DefaultSettingsFilePath);
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                    };
+                    var defaultSettings = JsonSerializer.Deserialize<ConfigSettings>(json, options);
+
+                    if (defaultSettings != null)
+                    {
+                        return defaultSettings;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"デフォルト設定ファイル読み込みエラー: {ex.Message}");
+                }
+            }
+
+            // 読み込みに失敗した場合は空の設定を返す
+            return new ConfigSettings();
+        }        /// <summary>
+                 /// 古いバージョンの設定ファイルを読み込む
+                 /// </summary>
+        private OldConfigSettings? LoadOldSettings()
+        {
+            try
+            {
+                string json = File.ReadAllText(AppSettingsFilePath);
+
+                // 古いバージョンの設定ファイルかどうかを判断（大文字始まりのプロパティ名を持つ）
+                if (json.Contains("\"IsTopmost\"") || json.Contains("\"CharacterList\""))
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = false, // 大文字小文字を区別
+                        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                    };
+                    return JsonSerializer.Deserialize<OldConfigSettings>(json, options);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"古い設定ファイル読み込みエラー: {ex.Message}");
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 古い設定をデフォルト設定にマージする
+        /// </summary>
+        private void MergeSettings(ConfigSettings defaultSettings, OldConfigSettings oldSettings)
+        {
+            try
+            {
+                // 基本設定をマージ
+                defaultSettings.isTopmost = oldSettings.IsTopmost;
+                defaultSettings.isEscapeCursor = oldSettings.IsEscapeCursor;
+                defaultSettings.isInputVirtualKey = oldSettings.IsInputVirtualKey;
+                defaultSettings.virtualKeyString = oldSettings.VirtualKeyString;
+                defaultSettings.isAutoMove = oldSettings.IsAutoMove;
+                defaultSettings.isEnableAmbientOcclusion = oldSettings.IsEnableAmbientOcclusion;
+                defaultSettings.msaaLevel = oldSettings.MSAALevel;
+                defaultSettings.characterShadow = oldSettings.CharacterShadow;
+                defaultSettings.characterShadowResolution = oldSettings.CharacterShadowResolution;
+                defaultSettings.backgroundShadow = oldSettings.BackgroundShadow;
+                defaultSettings.backgroundShadowResolution = oldSettings.BackgroundShadowResolution;
+                defaultSettings.windowSize = oldSettings.WindowSize;
+                defaultSettings.currentCharacterIndex = oldSettings.CurrentCharacterIndex;
+
+                // キャラクターリストの処理
+                if (oldSettings.CharacterList != null && oldSettings.CharacterList.Count > 0)
+                {
+                    defaultSettings.characterList.Clear();
+
+                    foreach (var oldChar in oldSettings.CharacterList)
+                    {
+                        var newChar = new CharacterSettings
+                        {
+                            isReadOnly = oldChar.IsReadOnly,
+                            modelName = oldChar.ModelName,
+                            vrmFilePath = oldChar.VRMFilePath,
+                            isUseLLM = oldChar.IsUseLLM,
+                            apiKey = oldChar.ApiKey,
+                            llmModel = oldChar.LLMModel,
+                            systemPrompt = oldChar.SystemPrompt,
+                            isUseTTS = oldChar.IsUseTTS,
+                            ttsEndpointURL = oldChar.TTSEndpointURL,
+                            ttsSperkerID = oldChar.TTSSperkerID
+                        };
+
+                        defaultSettings.characterList.Add(newChar);
+                    }
+                }
+
+                // LLMモデル形式の更新
+                UpdateLlmModelFormat(defaultSettings);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"設定マージエラー: {ex.Message}");
             }
         }
 
