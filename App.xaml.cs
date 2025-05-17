@@ -1,13 +1,13 @@
-﻿using System;
-using System.Windows;
-using System.Windows.Threading;
-using System.Threading.Tasks;
+﻿using CocoroDock.Services;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
-using CocoroDock.Services;
-using MessageBox = System.Windows.MessageBox;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Threading;
 using Application = System.Windows.Application;
+using MessageBox = System.Windows.MessageBox;
 using NotifyIcon = System.Windows.Forms.NotifyIcon;
 
 // Win32 API呼び出し用クラス
