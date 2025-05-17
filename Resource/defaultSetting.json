@@ -1,6 +1,6 @@
 {
-    "cocoroDockPort": 55610,
-    "cocoroCorePort": 55611,
+    "cocoroDockPort": 55600,
+    "cocoroCorePort": 55601,
     "isTopmost": true,
     "isEscapeCursor": false,
     "isInputVirtualKey": true,
