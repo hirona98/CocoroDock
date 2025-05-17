@@ -37,9 +37,6 @@ namespace CocoroDock
         {
             base.OnStartup(e);
 
-            // システムトレイアイコンの初期化
-            InitializeNotifyIcon();
-
             // 二重起動チェック
             string processName = Process.GetCurrentProcess().ProcessName;
             Process[] processes = Process.GetProcessesByName(processName);
@@ -77,6 +74,9 @@ namespace CocoroDock
                     Environment.Exit(1);
                 }
             }
+
+            // システムトレイアイコンの初期化
+            InitializeNotifyIcon();
 
             // 未処理の例外ハンドラを登録
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
