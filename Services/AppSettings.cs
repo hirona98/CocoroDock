@@ -242,7 +242,10 @@ namespace CocoroDock.Services
             catch (Exception ex)
             {
                 // エラーが発生した場合はデフォルト設定を使用
-                Console.WriteLine($"設定ファイル読み込みエラー: {ex.Message}");
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error,
+                    "設定ファイル読み込みエラー",
+                    ex);
             }
         }
 
@@ -318,7 +321,10 @@ namespace CocoroDock.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"アプリケーション設定ファイル読み込みエラー: {ex.Message}");
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error,
+                    "アプリケーション設定ファイル読み込みエラー",
+                    ex);
             }
         }
 
@@ -346,7 +352,10 @@ namespace CocoroDock.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"デフォルト設定ファイル読み込みエラー: {ex.Message}");
+                    ErrorHandlingService.Instance.LogError(
+                        ErrorHandlingService.ErrorLevel.Error,
+                        "デフォルト設定ファイル読み込みエラー",
+                        ex);
                 }
             }
 
@@ -374,7 +383,10 @@ namespace CocoroDock.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"古い設定ファイル読み込みエラー: {ex.Message}");
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error,
+                    "古い設定ファイル読み込みエラー",
+                    ex);
             }
 
             return null;
@@ -432,7 +444,10 @@ namespace CocoroDock.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"設定マージエラー: {ex.Message}");
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error,
+                    "設定マージエラー",
+                    ex);
             }
         }
 
@@ -462,7 +477,10 @@ namespace CocoroDock.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"アプリケーション設定ファイル保存エラー: {ex.Message}");
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error,
+                    "アプリケーション設定ファイル保存エラー",
+                    ex);
             }
         }
 

@@ -270,9 +270,16 @@ namespace CocoroDock
         /// </summary>
         private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
+            ErrorHandlingService.Instance.LogError(
+                ErrorHandlingService.ErrorLevel.Error,
+                "UIスレッドでの未処理例外",
+                e.Exception);
+
             // エラーをユーザーに表示
-            MessageBox.Show($"エラーが発生しました: {e.Exception.Message}",
-                "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            ErrorHandlingService.Instance.ShowErrorMessage(
+                $"エラーが発生しました: {e.Exception.Message}",
+                "エラー",
+                ErrorHandlingService.ErrorLevel.Error);
 
             // 例外を処理済みとしてマーク（アプリケーションを継続）
             e.Handled = true;
@@ -283,6 +290,11 @@ namespace CocoroDock
         /// </summary>
         private void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
         {
+            ErrorHandlingService.Instance.LogError(
+                ErrorHandlingService.ErrorLevel.Warning,
+                "未監視のタスク例外",
+                e.Exception);
+                
             e.SetObserved(); // 例外を監視済みとしてマーク
         }
 
@@ -293,9 +305,16 @@ namespace CocoroDock
         {
             try
             {
-                string errorMessage = ex != null ? ex.Message : "不明なエラー";
-                MessageBox.Show($"致命的なエラー: {errorMessage}\n\nアプリケーションを終了します。",
-                    "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Fatal,
+                    message,
+                    ex);
+                
+                // エラーをユーザーに表示
+                ErrorHandlingService.Instance.ShowErrorMessage(
+                    $"致命的なエラー: {ex?.Message ?? "不明なエラー"}\n\nアプリケーションを終了します。",
+                    "エラー",
+                    ErrorHandlingService.ErrorLevel.Fatal);
             }
             finally
             {

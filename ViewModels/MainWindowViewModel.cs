@@ -232,6 +232,10 @@ namespace CocoroDock.ViewModels
         {
             StatusMessage = $"エラー: {error}";
             ErrorOccurred?.Invoke(this, error);
+            
+            ErrorHandlingService.Instance.LogError(
+                ErrorHandlingService.ErrorLevel.Error, 
+                error);
         }
 
         private void OnConnected(object? sender, EventArgs e)

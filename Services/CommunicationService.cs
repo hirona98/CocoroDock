@@ -36,7 +36,7 @@ namespace CocoroDock.Services
 
             // WebSocketサーバーのイベントハンドラを設定
             _webSocketServer.MessageReceived += OnMessageReceived;
-            _webSocketServer.ConnectionError += (sender, error) => ErrorOccurred?.Invoke(this, error);
+            _webSocketServer.ConnectionError += OnConnectionError;
             _webSocketServer.ClientConnected += (sender, clientId) => Connected?.Invoke(this, EventArgs.Empty);
             _webSocketServer.ClientDisconnected += (sender, clientId) => Disconnected?.Invoke(this, EventArgs.Empty);
         }
@@ -212,8 +212,24 @@ namespace CocoroDock.Services
             }
             catch (Exception ex)
             {
-                ErrorOccurred?.Invoke(this, $"メッセージ処理エラー: {ex.Message}");
+                string errorMessage = $"メッセージ処理エラー: {ex.Message}";
+                ErrorHandlingService.Instance.LogError(
+                    ErrorHandlingService.ErrorLevel.Error, 
+                    errorMessage, 
+                    ex);
+                ErrorOccurred?.Invoke(this, errorMessage);
             }
+        }
+        
+        /// <summary>
+        /// </summary>
+        private void OnConnectionError(object? sender, string error)
+        {
+            ErrorHandlingService.Instance.LogError(
+                ErrorHandlingService.ErrorLevel.Error, 
+                $"通信エラー: {error}");
+                
+            ErrorOccurred?.Invoke(this, error);
         }
 
         /// <summary>
