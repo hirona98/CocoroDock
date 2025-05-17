@@ -563,20 +563,6 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// ウィンドウの状態変更イベントハンドラ
-        /// </summary>
-        protected override void OnStateChanged(EventArgs e)
-        {
-            base.OnStateChanged(e);
-
-            // ウィンドウが最小化された場合は非表示にする
-            if (WindowState == WindowState.Minimized)
-            {
-                this.Hide();
-            }
-        }
-
-        /// <summary>
         /// ウィンドウのクローズイベントをキャンセルし、代わりに最小化する
         /// </summary>
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
