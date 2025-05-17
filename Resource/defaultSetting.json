@@ -12,8 +12,8 @@
     "characterShadowResolution": 0,
     "backgroundShadow": 2,
     "backgroundShadowResolution": 2,
-    "windowSize": 1000,
-    "currentCharacterIndex": 0,
+    "windowSize": 1200,
+    "currentCharacterIndex": 1,
     "characterList": [
         {
             "isReadOnly": true,
