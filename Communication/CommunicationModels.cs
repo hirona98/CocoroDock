@@ -19,15 +19,15 @@ namespace CocoroDock.Communication
     /// </summary>
     public class WebSocketMessage
     {
-        public string type { get; set; } = string.Empty;
-        public string timestamp { get; set; } = string.Empty;
-        public object? payload { get; set; }
+        public string Type { get; set; } = string.Empty;
+        public string Timestamp { get; set; } = string.Empty;
+        public object? Payload { get; set; }
 
         public WebSocketMessage(MessageType type, object payload)
         {
-            this.type = type.ToString();
-            timestamp = System.DateTime.Now.ToString("o"); // ISO 8601
-            this.payload = payload;
+            this.Type = type.ToString();
+            Timestamp = System.DateTime.Now.ToString("o"); // ISO 8601
+            this.Payload = payload;
         }
     }
 
@@ -36,9 +36,9 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ChatMessagePayload
     {
-        public string userId { get; set; } = string.Empty;
-        public string sessionId { get; set; } = string.Empty;
-        public string message { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+        public string SessionId { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -46,7 +46,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ChatResponsePayload
     {
-        public string response { get; set; } = string.Empty;
+        public string Response { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -54,7 +54,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ConfigRequestPayload
     {
-        public string action { get; set; } = string.Empty;
+        public string Action { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -62,8 +62,8 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ConfigMessagePayload
     {
-        public string settingKey { get; set; } = string.Empty;
-        public string value { get; set; } = string.Empty;
+        public string SettingKey { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -71,8 +71,8 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ConfigUpdatePayload
     {
-        public string action { get; set; } = string.Empty;
-        public ConfigSettings settings { get; set; } = new ConfigSettings();
+        public string Action { get; set; } = string.Empty;
+        public ConfigSettings Settings { get; set; } = new ConfigSettings();
     }
 
     /// <summary>
@@ -80,9 +80,9 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ConfigResponsePayload
     {
-        public string status { get; set; } = string.Empty;
-        public string message { get; set; } = string.Empty;
-        public ConfigSettings? settings { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public ConfigSettings? Settings { get; set; }
     }
 
     /// <summary>
@@ -90,9 +90,9 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ConfigResponseWithSettings
     {
-        public string type { get; set; } = string.Empty;
-        public string timestamp { get; set; } = string.Empty;
-        public ConfigResponsePayload? payload { get; set; }
+        public string Type { get; set; } = string.Empty;
+        public string Timestamp { get; set; } = string.Empty;
+        public ConfigResponsePayload? Payload { get; set; }
     }
 
     /// <summary>
@@ -100,16 +100,16 @@ namespace CocoroDock.Communication
     /// </summary>
     public class CharacterSettings
     {
-        public bool isReadOnly { get; set; }
-        public string modelName { get; set; } = string.Empty;
-        public string vrmFilePath { get; set; } = string.Empty;
-        public bool isUseLLM { get; set; }
-        public string apiKey { get; set; } = string.Empty;
-        public string llmModel { get; set; } = string.Empty;
-        public string systemPrompt { get; set; } = string.Empty;
-        public bool isUseTTS { get; set; }
-        public string ttsEndpointURL { get; set; } = string.Empty;
-        public string ttsSperkerID { get; set; } = string.Empty;
+        public bool IsReadOnly { get; set; }
+        public string ModelName { get; set; } = string.Empty;
+        public string VrmFilePath { get; set; } = string.Empty;
+        public bool IsUseLLM { get; set; }
+        public string ApiKey { get; set; } = string.Empty;
+        public string LlmModel { get; set; } = string.Empty;
+        public string SystemPrompt { get; set; } = string.Empty;
+        public bool IsUseTTS { get; set; }
+        public string TtsEndpointURL { get; set; } = string.Empty;
+        public string TtsSperkerID { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -117,22 +117,22 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ConfigSettings
     {
-        public int cocoroDockPort { get; set; }
-        public int cocoroCorePort { get; set; }
-        public bool isTopmost { get; set; }
-        public bool isEscapeCursor { get; set; }
-        public bool isInputVirtualKey { get; set; }
-        public string virtualKeyString { get; set; } = string.Empty;
-        public bool isAutoMove { get; set; }
-        public bool isEnableAmbientOcclusion { get; set; }
-        public int msaaLevel { get; set; }
-        public int characterShadow { get; set; }
-        public int characterShadowResolution { get; set; }
-        public int backgroundShadow { get; set; }
-        public int backgroundShadowResolution { get; set; }
-        public float windowSize { get; set; }
-        public int currentCharacterIndex { get; set; }
-        public List<CharacterSettings> characterList { get; set; } = new List<CharacterSettings>();
+        public int CocoroDockPort { get; set; }
+        public int CocoroCorePort { get; set; }
+        public bool IsTopmost { get; set; }
+        public bool IsEscapeCursor { get; set; }
+        public bool IsInputVirtualKey { get; set; }
+        public string VirtualKeyString { get; set; } = string.Empty;
+        public bool IsAutoMove { get; set; }
+        public bool IsEnableAmbientOcclusion { get; set; }
+        public int MsaaLevel { get; set; }
+        public int CharacterShadow { get; set; }
+        public int CharacterShadowResolution { get; set; }
+        public int BackgroundShadow { get; set; }
+        public int BackgroundShadowResolution { get; set; }
+        public float WindowSize { get; set; }
+        public int CurrentCharacterIndex { get; set; }
+        public List<CharacterSettings> CharacterList { get; set; } = new List<CharacterSettings>();
     }
 
     /// <summary>
@@ -140,8 +140,8 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ControlMessagePayload
     {
-        public string command { get; set; } = string.Empty;
-        public string reason { get; set; } = string.Empty;
+        public string Command { get; set; } = string.Empty;
+        public string Reason { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -149,8 +149,8 @@ namespace CocoroDock.Communication
     /// </summary>
     public class StatusMessagePayload
     {
-        public int currentCPU { get; set; }
-        public string status { get; set; } = string.Empty;
+        public int CurrentCPU { get; set; }
+        public string Status { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -158,7 +158,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class SystemMessagePayload
     {
-        public string level { get; set; } = string.Empty;
-        public string message { get; set; } = string.Empty;
+        public string Level { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
     }
 }

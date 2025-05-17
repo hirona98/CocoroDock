@@ -138,7 +138,7 @@ namespace CocoroDock.ViewModels
                 {
                     var configSettings = new ConfigSettings
                     {
-                        characterList = _appSettings.CharacterList
+                        CharacterList = _appSettings.CharacterList
                     };
 
                     Task.Run(async () =>
@@ -191,11 +191,11 @@ namespace CocoroDock.ViewModels
         {
             var newCharacter = new CharacterViewModel(new CharacterSettings
             {
-                name = "新しいキャラクター",
-                systemPrompt = "",
-                llmModel = "openai/gpt-3.5-turbo",
-                temperature = 0.7,
-                maxTokens = 1000
+                Name = "新しいキャラクター",
+                SystemPrompt = "",
+                LlmModel = "openai/gpt-3.5-turbo",
+                Temperature = 0.7,
+                MaxTokens = 1000
             });
 
             Characters.Add(newCharacter);
@@ -264,22 +264,22 @@ namespace CocoroDock.ViewModels
 
         public CharacterViewModel(CharacterSettings settings)
         {
-            Name = settings.name;
-            SystemPrompt = settings.systemPrompt;
-            LlmModel = settings.llmModel;
-            Temperature = settings.temperature;
-            MaxTokens = settings.maxTokens;
+            Name = settings.Name;
+            SystemPrompt = settings.SystemPrompt;
+            LlmModel = settings.LlmModel;
+            Temperature = settings.Temperature;
+            MaxTokens = settings.MaxTokens;
         }
 
         public CharacterSettings ToCharacterSettings()
         {
             return new CharacterSettings
             {
-                name = Name,
-                systemPrompt = SystemPrompt,
-                llmModel = LlmModel,
-                temperature = Temperature,
-                maxTokens = MaxTokens
+                Name = Name,
+                SystemPrompt = SystemPrompt,
+                LlmModel = LlmModel,
+                Temperature = Temperature,
+                MaxTokens = MaxTokens
             };
         }
     }

@@ -81,12 +81,12 @@ namespace CocoroDock
         private void OnSystemMessageReceived(object? sender, SystemMessagePayload systemMessage)
         {
             // levelがerrorの場合のみ処理する（Infoは無視）
-            if (systemMessage.level == "Error")
+            if (systemMessage.Level == "Error")
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     // エラーメッセージをチャットウィンドウに表示
-                    ChatControlInstance.AddSystemErrorMessage(systemMessage.message);
+                    ChatControlInstance.AddSystemErrorMessage(systemMessage.Message);
                 });
             }
         }
