@@ -1,9 +1,9 @@
 using CocoroDock.Communication;
 using CocoroDock.Controls;
 using CocoroDock.Services;
+using CocoroDock.Utilities;
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -15,9 +15,10 @@ namespace CocoroDock
     /// </summary>
     public partial class MainWindow : Window
     {
-        private CommunicationService? _communicationService;
+        private ICommunicationService? _communicationService;
         private Timer? _reconnectTimer; // 再接続用タイマー
         private const int ReconnectIntervalMs = 3000; // 再接続間隔（3秒）
+        private readonly IAppSettings _appSettings;
 
         public MainWindow()
         {
@@ -26,10 +27,16 @@ namespace CocoroDock
             // ウィンドウのロード時にメッセージテキストボックスにフォーカスを設定するイベントを追加
             this.Loaded += MainWindow_Loaded;
 
+            // 設定サービスの取得
+            _appSettings = AppSettings.Instance;
+
             // 初期化と接続
             InitializeApp();
         }
 
+        /// <summary>
+        /// チャット履歴をクリア
+        /// </summary>
         public void ClearChatHistory()
         {
             ChatControlInstance.ClearChat();
@@ -51,38 +58,54 @@ namespace CocoroDock
         {
             try
             {
-                // AppSettingsから設定を取得
-                var settings = AppSettings.Instance;
-#if !DEBUG
-                // CocoroShell.exeを起動（既に起動していれば終了してから再起動）
-                LaunchCocoroShell();
-                // CocoroCore.exeを起動（既に起動していれば終了してから再起動）
-                LaunchCocoroCore();
-#endif
+                // 外部プロセスの起動
+                InitializeExternalProcesses();
 
-                // 通信サービスを初期化 (WebSocketServerを使用)
-                _communicationService = new CommunicationService(
-                    settings.CocoroDockPort);
-
-                // 通信サービスのイベントハンドラを設定
-                _communicationService.ChatMessageReceived += OnChatMessageReceived;
-                _communicationService.ConfigResponseReceived += OnConfigResponseReceived;
-                _communicationService.StatusUpdateReceived += OnStatusUpdateReceived;
-                _communicationService.SystemMessageReceived += OnSystemMessageReceived;
-                _communicationService.ControlMessageReceived += OnControlMessageReceived;
-                _communicationService.ErrorOccurred += OnErrorOccurred;
-                _communicationService.Connected += OnConnected;
-                _communicationService.Disconnected += OnDisconnected;
+                // 通信サービスを初期化
+                InitializeCommunicationService();
 
                 // UIコントロールのイベントハンドラを登録
                 RegisterEventHandlers();
+
                 // サーバーの起動を開始
                 _ = StartWebSocketServerAsync();
             }
             catch (Exception ex)
             {
-                ShowError("初期化エラー", ex.Message);
+                UIHelper.ShowError("初期化エラー", ex.Message);
             }
+        }
+
+        /// <summary>
+        /// 外部プロセスを初期化
+        /// </summary>
+        private void InitializeExternalProcesses()
+        {
+#if !DEBUG
+            // CocoroShell.exeを起動（既に起動していれば終了してから再起動）
+            LaunchCocoroShell();
+            // CocoroCore.exeを起動（既に起動していれば終了してから再起動）
+            LaunchCocoroCore();
+#endif
+        }
+
+        /// <summary>
+        /// 通信サービスを初期化
+        /// </summary>
+        private void InitializeCommunicationService()
+        {
+            // 通信サービスを初期化 (WebSocketServerを使用)
+            _communicationService = new CommunicationService(_appSettings.CocoroDockPort);
+
+            // 通信サービスのイベントハンドラを設定
+            _communicationService.ChatMessageReceived += OnChatMessageReceived;
+            _communicationService.ConfigResponseReceived += OnConfigResponseReceived;
+            _communicationService.StatusUpdateReceived += OnStatusUpdateReceived;
+            _communicationService.SystemMessageReceived += OnSystemMessageReceived;
+            _communicationService.ControlMessageReceived += OnControlMessageReceived;
+            _communicationService.ErrorOccurred += OnErrorOccurred;
+            _communicationService.Connected += OnConnected;
+            _communicationService.Disconnected += OnDisconnected;
         }
 
         /// <summary>
@@ -95,19 +118,16 @@ namespace CocoroDock
                 // UI更新
                 UpdateConnectionStatus(false, "サーバーを起動中...");
 
-                if (_communicationService != null)
+                if (_communicationService != null && !_communicationService.IsServerRunning)
                 {
-                    if (_communicationService != null && !_communicationService.IsServerRunning)
-                    {
-                        // サーバーを起動
-                        await _communicationService.StartServerAsync();
+                    // サーバーを起動
+                    await _communicationService.StartServerAsync();
 
-                        // UI更新
-                        UpdateConnectionStatus(true);
+                    // UI更新
+                    UpdateConnectionStatus(true);
 
-                        // 設定を通知
-                        await RequestConfigAsync();
-                    }
+                    // 設定を通知
+                    await RequestConfigAsync();
                 }
             }
             catch (Exception)
@@ -127,22 +147,23 @@ namespace CocoroDock
             try
             {
                 // 設定読み込み状態をリセット
-                AppSettings.Instance.IsLoaded = false;
+                _appSettings.IsLoaded = false;
 
                 // サーバー側で管理している設定ファイルを読み込む
-                AppSettings.Instance.LoadAppSettings();
+                _appSettings.LoadAppSettings();
 
                 // 設定をUIに反映
                 ApplySettings();
+
                 // クライアントにも設定を通知
                 if (_communicationService != null && _communicationService.IsServerRunning)
                 {
-                    await _communicationService.UpdateConfigAsync(AppSettings.Instance.GetConfigSettings());
+                    await _communicationService.UpdateConfigAsync(_appSettings.GetConfigSettings());
                 }
             }
             catch (Exception ex)
             {
-                ShowError("設定取得エラー", ex.Message);
+                UIHelper.ShowError("設定取得エラー", ex.Message);
             }
         }
 
@@ -161,7 +182,7 @@ namespace CocoroDock
         private void UpdateConnectionStatus(bool isConnected, string? customMessage = null)
         {
             // UIスレッドで実行
-            RunOnUIThread(() =>
+            UIHelper.RunOnUIThread(() =>
             {
                 if (isConnected)
                 {
@@ -176,55 +197,14 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// エラーをメッセージボックスで表示
-        /// </summary>
-        private void ShowError(string title, string message)
-        {
-            RunOnUIThread(() =>
-            {
-                MessageBox.Show($"{title}: {message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
-            });
-        }
-
-        /// <summary>
-        /// UIスレッドでアクションを実行
-        /// </summary>
-        private void RunOnUIThread(Action action)
-        {
-            if (Application.Current?.Dispatcher != null)
-            {
-                if (Application.Current.Dispatcher.CheckAccess())
-                {
-                    action();
-                }
-                else
-                {
-                    try
-                    {
-                        Application.Current.Dispatcher.InvokeAsync(action);
-                    }
-                    catch (TaskCanceledException)
-                    {
-                        // キャンセルされた場合は無視
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"UI更新エラー: {ex.Message}");
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// 設定を適用
         /// </summary>
         private void ApplySettings()
         {
-            var settings = AppSettings.Instance;
-            RunOnUIThread(() =>
+            UIHelper.RunOnUIThread(() =>
             {
                 // 最前面表示の設定を適用
-                Topmost = settings.IsTopmost;
+                Topmost = _appSettings.IsTopmost;
 
                 // その他の設定はここに追加（必要に応じて）
             });
@@ -264,7 +244,7 @@ namespace CocoroDock
         /// </summary>
         private void OnChatMessageReceived(object? sender, string message)
         {
-            RunOnUIThread(() => ChatControlInstance.AddAiMessage(message));
+            UIHelper.RunOnUIThread(() => ChatControlInstance.AddAiMessage(message));
         }
 
         /// <summary>
@@ -272,26 +252,34 @@ namespace CocoroDock
         /// </summary>
         private void OnConfigResponseReceived(object? sender, ConfigResponsePayload response)
         {
-            RunOnUIThread(() =>
+            UIHelper.RunOnUIThread(() =>
             {
-                // 応答ステータスをチェック
-                if (response.status != "ok")
-                {
-                    // エラーの場合はメッセージを表示
-                    MessageBox.Show($"設定変更エラー: {response.message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                // 設定情報が含まれている場合は適用する
-                if (response.settings != null)
-                {
-                    // アプリケーション設定を更新
-                    AppSettings.Instance.UpdateSettings(response.settings);
-
-                    // 設定を画面に反映
-                    ApplySettings();
-                }
+                ProcessConfigResponse(response);
             });
+        }
+
+        /// <summary>
+        /// 設定レスポンスを処理
+        /// </summary>
+        private void ProcessConfigResponse(ConfigResponsePayload response)
+        {
+            // 応答ステータスをチェック
+            if (response.status != "ok")
+            {
+                // エラーの場合はメッセージを表示
+                MessageBox.Show($"設定変更エラー: {response.message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // 設定情報が含まれている場合は適用する
+            if (response.settings != null)
+            {
+                // アプリケーション設定を更新
+                _appSettings.UpdateSettings(response.settings);
+
+                // 設定を画面に反映
+                ApplySettings();
+            }
         }
 
         /// <summary>
@@ -310,13 +298,12 @@ namespace CocoroDock
             // levelがerrorの場合のみ処理する（Infoは無視）
             if (systemMessage.level == "Error")
             {
-                RunOnUIThread(() =>
+                UIHelper.RunOnUIThread(() =>
                 {
                     // エラーメッセージをチャットウィンドウに表示（中央グレー枠）
                     ChatControlInstance.AddSystemErrorMessage(systemMessage.message);
                 });
             }
-            // その他のレベル（Info等）は無視
         }
 
         /// <summary>
@@ -327,7 +314,7 @@ namespace CocoroDock
             // 制御コマンドの種類を確認
             if (controlMessage.command == "shutdownCocoroAI")
             {
-                RunOnUIThread(() =>
+                UIHelper.RunOnUIThread(() =>
                 {
                     // シャットダウン理由をログに記録
                     Debug.WriteLine($"シャットダウン要求を受信しました: {controlMessage.reason}");
@@ -343,7 +330,7 @@ namespace CocoroDock
         /// </summary>
         private void OnErrorOccurred(object? sender, string error)
         {
-            ShowError("エラー", error);
+            UIHelper.ShowError("エラー", error);
         }
 
         /// <summary>
@@ -417,63 +404,6 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// プロセス操作の種類を定義する列挙型
-        /// </summary>
-        private enum ProcessOperation
-        {
-            /// <summary>既存のプロセスを終了して新しいプロセスを起動</summary>
-            RestartIfRunning,
-            /// <summary>プロセスを強制終了</summary>
-            Terminate,
-            /// <summary>プロセスの存在チェックのみ</summary>
-            CheckOnly
-        }
-
-        /// <summary>
-        /// 指定した名前のプロセスに対して操作を行う
-        /// </summary>
-        /// <param name="processName">プロセス名（拡張子なし）</param>
-        /// <param name="operation">実行する操作</param>
-        /// <returns>プロセスが存在する場合はtrue、存在しない場合はfalse</returns>
-        private bool ProcessUtility(string processName, ProcessOperation operation)
-        {
-            try
-            {
-                Process[] processes = Process.GetProcessesByName(processName);
-                bool exists = processes.Length > 0;
-
-                // 操作に応じたプロセス処理
-                if (operation == ProcessOperation.Terminate || operation == ProcessOperation.RestartIfRunning)
-                {
-                    foreach (Process process in processes)
-                    {
-                        try
-                        {
-                            if (!process.HasExited)
-                            {
-                                process.Kill();
-                                process.WaitForExit(3000); // 最大3秒待機
-                                Debug.WriteLine($"{processName} プロセスを終了しました。");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"{processName} プロセス終了エラー: {ex.Message}");
-                            // プロセス終了のエラーはログに記録するだけで続行
-                        }
-                    }
-                }
-
-                return exists;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"{processName} プロセス操作エラー: {ex.Message}");
-                return false;
-            }
-        }
-
-        /// <summary>
         /// 管理ボタンクリック時のイベントハンドラ
         /// </summary>
         private void AdminButton_Click(object sender, RoutedEventArgs e)
@@ -487,7 +417,7 @@ namespace CocoroDock
             }
             catch (Exception ex)
             {
-                ShowError("設定取得エラー", ex.Message);
+                UIHelper.ShowError("設定取得エラー", ex.Message);
             }
         }
 
@@ -519,67 +449,12 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// 外部アプリケーションを起動する
-        /// </summary>
-        /// <param name="appName">アプリケーション名</param>
-        /// <param name="exePath">実行ファイルのパス（絶対パスまたは相対パス）</param>
-        /// <param name="relativeDir">相対ディレクトリ（nullの場合は直接exePathを使用）</param>
-        /// <param name="operation">プロセス操作の種類（終了のみか再起動か）</param>
-        private void LaunchExternalApplication(string appName, string exePath, string? relativeDir = null, ProcessOperation operation = ProcessOperation.RestartIfRunning)
-        {
-            try
-            {
-                // 実行ファイルパスの構築
-                string fullPath;
-                if (relativeDir != null)
-                {
-                    fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, relativeDir, exePath);
-                }
-                else
-                {
-                    fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, exePath);
-                }
-
-                // ファイルの存在確認
-                if (!File.Exists(fullPath))
-                {
-                    ShowError("起動エラー", $"{appName}が見つかりません。パス: {fullPath}");
-                    return;
-                }
-
-                // 同名の実行中プロセスをチェックして終了または再起動
-                string processName = Path.GetFileNameWithoutExtension(exePath);
-                bool wasRunning = ProcessUtility(processName, operation);
-
-                // 終了のみの場合は起動しない
-                if (operation == ProcessOperation.Terminate)
-                {
-                    return;
-                }
-
-                // プロセス起動のためのパラメータを設定
-                ProcessStartInfo startInfo = new ProcessStartInfo
-                {
-                    FileName = fullPath,
-                    UseShellExecute = true
-                };
-
-                // プロセスを起動
-                Process.Start(startInfo);
-            }
-            catch (Exception ex)
-            {
-                ShowError($"{appName}起動エラー", ex.Message);
-            }
-        }
-
-        /// <summary>
         /// CocoroShell.exeを起動する（既に起動している場合は終了してから再起動）
         /// </summary>
         /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
         private void LaunchCocoroShell(ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
-            LaunchExternalApplication("CocoroShell", "CocoroShell.exe", "CocoroShell", operation);
+            ProcessHelper.LaunchExternalApplication("CocoroShell", "CocoroShell.exe", "CocoroShell", operation);
         }
 
         /// <summary>
@@ -589,12 +464,15 @@ namespace CocoroDock
         private void LaunchCocoroCore(ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
 #if !DEBUG
-            var settings = AppSettings.Instance;
-            if(settings.CharacterList[settings.CurrentCharacterIndex].isUseLLM)
+            if(_appSettings.CharacterList.Count > 0 && 
+               _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count && 
+               _appSettings.CharacterList[_appSettings.CurrentCharacterIndex].isUseLLM)
             {
-                LaunchExternalApplication("CocoroCore", "CocoroCore.exe", null, operation);
-            }else{
-                LaunchExternalApplication("CocoroCore", "CocoroCore.exe", null, ProcessOperation.Terminate);
+                ProcessHelper.LaunchExternalApplication("CocoroCore", "CocoroCore.exe", null, operation);
+            }
+            else
+            {
+                ProcessHelper.LaunchExternalApplication("CocoroCore", "CocoroCore.exe", null, ProcessOperation.Terminate);
             }
 #endif
         }

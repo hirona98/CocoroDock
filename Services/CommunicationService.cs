@@ -1,6 +1,7 @@
 using CocoroDock.Communication;
+using CocoroDock.Utilities;
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -9,7 +10,7 @@ namespace CocoroDock.Services
     /// <summary>
     /// CocoroAIとの通信を管理するサービスクラス
     /// </summary>
-    public class CommunicationService : IDisposable
+    public class CommunicationService : ICommunicationService
     {
         private readonly WebSocketServer _webSocketServer;
         private string _sessionId;
@@ -151,68 +152,116 @@ namespace CocoroDock.Services
                     message.TryGetProperty("payload", out var payloadElement))
                 {
                     string type = typeElement.GetString() ?? string.Empty;
-
-                    switch (type)
-                    {
-                        case "chat":
-                            var chatResponse = JsonSerializer.Deserialize<ChatResponsePayload>(
-                                payloadElement.GetRawText());
-
-                            if (chatResponse != null)
-                            {
-                                ChatMessageReceived?.Invoke(this, chatResponse.response);
-                            }
-                            break;
-
-                        case "config":
-                            var configResponse = JsonSerializer.Deserialize<ConfigResponsePayload>(
-                                payloadElement.GetRawText());
-
-                            if (configResponse != null)
-                            {
-                                ConfigResponseReceived?.Invoke(this, configResponse);
-                            }
-                            break;
-
-                        case "status":
-                            var statusUpdate = JsonSerializer.Deserialize<StatusMessagePayload>(
-                                payloadElement.GetRawText());
-
-                            if (statusUpdate != null)
-                            {
-                                StatusUpdateReceived?.Invoke(this, statusUpdate);
-                            }
-                            break;
-
-                        case "system":
-                            var systemMessage = JsonSerializer.Deserialize<SystemMessagePayload>(
-                                payloadElement.GetRawText());
-
-                            if (systemMessage != null)
-                            {
-                                SystemMessageReceived?.Invoke(this, systemMessage);
-                            }
-                            break;
-
-                        case "control":
-                            var controlMessage = JsonSerializer.Deserialize<ControlMessagePayload>(
-                                payloadElement.GetRawText());
-
-                            if (controlMessage != null)
-                            {
-                                ControlMessageReceived?.Invoke(this, controlMessage);
-                            }
-                            break;
-
-                        default:
-                            // 未知のメッセージタイプ
-                            break;
-                    }
+                    ProcessMessageByType(type, payloadElement);
                 }
             }
             catch (Exception ex)
             {
                 ErrorOccurred?.Invoke(this, $"メッセージ処理エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// メッセージタイプに応じて処理を行う
+        /// </summary>
+        /// <param name="type">メッセージタイプ</param>
+        /// <param name="payloadElement">ペイロード要素</param>
+        private void ProcessMessageByType(string type, JsonElement payloadElement)
+        {
+            try
+            {
+                string payloadJson = payloadElement.GetRawText();
+
+                switch (type)
+                {
+                    case "chat":
+                        ProcessChatMessage(payloadJson);
+                        break;
+
+                    case "config":
+                        ProcessConfigMessage(payloadJson);
+                        break;
+
+                    case "status":
+                        ProcessStatusMessage(payloadJson);
+                        break;
+
+                    case "system":
+                        ProcessSystemMessage(payloadJson);
+                        break;
+
+                    case "control":
+                        ProcessControlMessage(payloadJson);
+                        break;
+
+                    default:
+                        Debug.WriteLine($"未知のメッセージタイプ: {type}");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorOccurred?.Invoke(this, $"メッセージタイプ処理エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// チャットメッセージを処理
+        /// </summary>
+        private void ProcessChatMessage(string payloadJson)
+        {
+            var chatResponse = MessageHelper.DeserializeFromJson<ChatResponsePayload>(payloadJson);
+            if (chatResponse != null)
+            {
+                ChatMessageReceived?.Invoke(this, chatResponse.response);
+            }
+        }
+
+        /// <summary>
+        /// 設定メッセージを処理
+        /// </summary>
+        private void ProcessConfigMessage(string payloadJson)
+        {
+            var configResponse = MessageHelper.DeserializeFromJson<ConfigResponsePayload>(payloadJson);
+            if (configResponse != null)
+            {
+                ConfigResponseReceived?.Invoke(this, configResponse);
+            }
+        }
+
+        /// <summary>
+        /// ステータスメッセージを処理
+        /// </summary>
+        private void ProcessStatusMessage(string payloadJson)
+        {
+            var statusUpdate = MessageHelper.DeserializeFromJson<StatusMessagePayload>(payloadJson);
+            if (statusUpdate != null)
+            {
+                StatusUpdateReceived?.Invoke(this, statusUpdate);
+            }
+        }
+
+        /// <summary>
+        /// システムメッセージを処理
+        /// </summary>
+        private void ProcessSystemMessage(string payloadJson)
+        {
+            var systemMessage = MessageHelper.DeserializeFromJson<SystemMessagePayload>(payloadJson);
+            if (systemMessage != null)
+            {
+                SystemMessageReceived?.Invoke(this, systemMessage);
+            }
+        }
+
+        /// <summary>
+        /// 制御メッセージを処理
+        /// </summary>
+        private void ProcessControlMessage(string payloadJson)
+        {
+            var controlMessage = MessageHelper.DeserializeFromJson<ControlMessagePayload>(payloadJson);
+            if (controlMessage != null)
+            {
+                ControlMessageReceived?.Invoke(this, controlMessage);
             }
         }
 

@@ -1,6 +1,8 @@
 using CocoroDock.Communication;
+using CocoroDock.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
@@ -96,7 +98,7 @@ namespace CocoroDock.Services
     /// <summary>
     /// アプリケーション設定を管理するクラス
     /// </summary>
-    public class AppSettings
+    public class AppSettings : IAppSettings
     {
         private static readonly Lazy<AppSettings> _instance = new Lazy<AppSettings>(() => new AppSettings());
 
@@ -242,7 +244,7 @@ namespace CocoroDock.Services
             catch (Exception ex)
             {
                 // エラーが発生した場合はデフォルト設定を使用
-                Console.WriteLine($"設定ファイル読み込みエラー: {ex.Message}");
+                Debug.WriteLine($"設定ファイル読み込みエラー: {ex.Message}");
             }
         }
 
@@ -254,14 +256,7 @@ namespace CocoroDock.Services
             try
             {
                 // ディレクトリの存在確認とない場合は作成
-                string userDataDir = Path.Combine(
-                    Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "",
-                    "UserData");
-
-                if (!Directory.Exists(userDataDir))
-                {
-                    Directory.CreateDirectory(userDataDir);
-                }
+                EnsureUserDataDirectoryExists();
 
                 // まずデフォルト設定を読み込む
                 ConfigSettings defaultSettings = LoadDefaultSettings();
@@ -269,56 +264,93 @@ namespace CocoroDock.Services
                 // 設定ファイルが存在するか確認
                 if (File.Exists(AppSettingsFilePath))
                 {
-                    // 古いバージョンのsetting.jsonかどうかを確認
-                    string json = File.ReadAllText(AppSettingsFilePath);
-                    bool isOldFormat = json.Contains("\"IsTopmost\"") || json.Contains("\"CharacterList\"");
-
-                    if (isOldFormat)
-                    {
-                        // 古いバージョンの設定を読み込んで変換
-                        var oldSettings = LoadOldSettings();
-                        if (oldSettings != null)
-                        {
-                            // デフォルト設定をベースに古い設定で上書き
-                            MergeSettings(defaultSettings, oldSettings);
-
-                            // 設定を適用
-                            UpdateSettings(defaultSettings);
-
-                            // 新しい形式で保存
-                            SaveAppSettings();
-
-                            Console.WriteLine("古い設定ファイルを新しい形式に変換しました");
-                        }
-                    }
-                    else
-                    {
-                        // 通常の読み込み処理
-                        var options = new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true,
-                            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                        };
-                        var settings = JsonSerializer.Deserialize<ConfigSettings>(json, options);
-
-                        if (settings != null)
-                        {
-                            UpdateLlmModelFormat(settings);
-                            UpdateSettings(settings);
-                        }
-                    }
+                    LoadExistingSettingsFile(defaultSettings);
                 }
                 else
                 {
                     // 設定ファイルがない場合はデフォルト設定を適用して保存
                     UpdateSettings(defaultSettings);
                     SaveAppSettings();
-                    Console.WriteLine($"デフォルト設定をファイルに保存しました: {AppSettingsFilePath}");
+                    Debug.WriteLine($"デフォルト設定をファイルに保存しました: {AppSettingsFilePath}");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"アプリケーション設定ファイル読み込みエラー: {ex.Message}");
+                Debug.WriteLine($"アプリケーション設定ファイル読み込みエラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// UserDataディレクトリの存在を確認し、必要なら作成する
+        /// </summary>
+        private void EnsureUserDataDirectoryExists()
+        {
+            string userDataDir = Path.Combine(
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "",
+                "UserData");
+
+            if (!Directory.Exists(userDataDir))
+            {
+                Directory.CreateDirectory(userDataDir);
+            }
+        }
+
+        /// <summary>
+        /// 既存の設定ファイルを読み込む
+        /// </summary>
+        private void LoadExistingSettingsFile(ConfigSettings defaultSettings)
+        {
+            string json = File.ReadAllText(AppSettingsFilePath);
+            bool isOldFormat = json.Contains("\"IsTopmost\"") || json.Contains("\"CharacterList\"");
+
+            if (isOldFormat)
+            {
+                ProcessOldFormatSettings(defaultSettings);
+            }
+            else
+            {
+                ProcessCurrentFormatSettings(json);
+            }
+        }
+
+        /// <summary>
+        /// 古いフォーマットの設定ファイルを処理する
+        /// </summary>
+        private void ProcessOldFormatSettings(ConfigSettings defaultSettings)
+        {
+            // 古いバージョンの設定を読み込んで変換
+            var oldSettings = LoadOldSettings();
+            if (oldSettings != null)
+            {
+                // デフォルト設定をベースに古い設定で上書き
+                MergeSettings(defaultSettings, oldSettings);
+
+                // 設定を適用
+                UpdateSettings(defaultSettings);
+
+                // 新しい形式で保存
+                SaveAppSettings();
+
+                Debug.WriteLine("古い設定ファイルを新しい形式に変換しました");
+            }
+        }
+
+        /// <summary>
+        /// 現在のフォーマットの設定ファイルを処理する
+        /// </summary>
+        private void ProcessCurrentFormatSettings(string json)
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
+            var settings = MessageHelper.DeserializeFromJson<ConfigSettings>(json);
+
+            if (settings != null)
+            {
+                UpdateLlmModelFormat(settings);
+                UpdateSettings(settings);
             }
         }
 
@@ -337,7 +369,7 @@ namespace CocoroDock.Services
                         PropertyNameCaseInsensitive = true,
                         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                     };
-                    var defaultSettings = JsonSerializer.Deserialize<ConfigSettings>(json, options);
+                    var defaultSettings = MessageHelper.DeserializeFromJson<ConfigSettings>(json);
 
                     if (defaultSettings != null)
                     {
@@ -346,15 +378,17 @@ namespace CocoroDock.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"デフォルト設定ファイル読み込みエラー: {ex.Message}");
+                    Debug.WriteLine($"デフォルト設定ファイル読み込みエラー: {ex.Message}");
                 }
             }
 
             // 読み込みに失敗した場合は空の設定を返す
             return new ConfigSettings();
-        }        /// <summary>
-                 /// 古いバージョンの設定ファイルを読み込む
-                 /// </summary>
+        }
+
+        /// <summary>
+        /// 古いバージョンの設定ファイルを読み込む
+        /// </summary>
         private OldConfigSettings? LoadOldSettings()
         {
             try
@@ -374,7 +408,7 @@ namespace CocoroDock.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"古い設定ファイル読み込みエラー: {ex.Message}");
+                Debug.WriteLine($"古い設定ファイル読み込みエラー: {ex.Message}");
             }
 
             return null;
@@ -403,36 +437,44 @@ namespace CocoroDock.Services
                 defaultSettings.currentCharacterIndex = oldSettings.CurrentCharacterIndex;
 
                 // キャラクターリストの処理
-                if (oldSettings.CharacterList != null && oldSettings.CharacterList.Count > 0)
-                {
-                    defaultSettings.characterList.Clear();
-
-                    foreach (var oldChar in oldSettings.CharacterList)
-                    {
-                        var newChar = new CharacterSettings
-                        {
-                            isReadOnly = oldChar.IsReadOnly,
-                            modelName = oldChar.ModelName,
-                            vrmFilePath = oldChar.VRMFilePath,
-                            isUseLLM = oldChar.IsUseLLM,
-                            apiKey = oldChar.ApiKey,
-                            llmModel = oldChar.LLMModel,
-                            systemPrompt = oldChar.SystemPrompt,
-                            isUseTTS = oldChar.IsUseTTS,
-                            ttsEndpointURL = oldChar.TTSEndpointURL,
-                            ttsSperkerID = oldChar.TTSSperkerID
-                        };
-
-                        defaultSettings.characterList.Add(newChar);
-                    }
-                }
+                ConvertCharacterList(defaultSettings, oldSettings);
 
                 // LLMモデル形式の更新
                 UpdateLlmModelFormat(defaultSettings);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"設定マージエラー: {ex.Message}");
+                Debug.WriteLine($"設定マージエラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 古いキャラクターリストを新しい形式に変換
+        /// </summary>
+        private void ConvertCharacterList(ConfigSettings defaultSettings, OldConfigSettings oldSettings)
+        {
+            if (oldSettings.CharacterList != null && oldSettings.CharacterList.Count > 0)
+            {
+                defaultSettings.characterList.Clear();
+
+                foreach (var oldChar in oldSettings.CharacterList)
+                {
+                    var newChar = new CharacterSettings
+                    {
+                        isReadOnly = oldChar.IsReadOnly,
+                        modelName = oldChar.ModelName,
+                        vrmFilePath = oldChar.VRMFilePath,
+                        isUseLLM = oldChar.IsUseLLM,
+                        apiKey = oldChar.ApiKey,
+                        llmModel = oldChar.LLMModel,
+                        systemPrompt = oldChar.SystemPrompt,
+                        isUseTTS = oldChar.IsUseTTS,
+                        ttsEndpointURL = oldChar.TTSEndpointURL,
+                        ttsSperkerID = oldChar.TTSSperkerID
+                    };
+
+                    defaultSettings.characterList.Add(newChar);
+                }
             }
         }
 
@@ -451,18 +493,18 @@ namespace CocoroDock.Services
                 {
                     WriteIndented = true, // 整形されたJSONを出力
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping // 日本語などの非ASCII文字をエスケープせずに出力
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // 日本語などの非ASCII文字をエスケープせずに出力
                 };
                 string json = JsonSerializer.Serialize(settings, options);
 
                 // ファイルに保存
                 File.WriteAllText(AppSettingsFilePath, json);
 
-                Console.WriteLine($"設定をファイルに保存しました: {AppSettingsFilePath}");
+                Debug.WriteLine($"設定をファイルに保存しました: {AppSettingsFilePath}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"アプリケーション設定ファイル保存エラー: {ex.Message}");
+                Debug.WriteLine($"アプリケーション設定ファイル保存エラー: {ex.Message}");
             }
         }
 
@@ -475,6 +517,7 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
+        /// LLMモデル形式を更新する
         /// </summary>
         /// <param name="settings">更新する設定</param>
         private void UpdateLlmModelFormat(ConfigSettings settings)
@@ -488,11 +531,11 @@ namespace CocoroDock.Services
             {
                 if (!string.IsNullOrEmpty(character.llmModel))
                 {
-                    if (character.llmModel.StartsWith("gpt-"))
+                    if (character.llmModel.StartsWith("gpt-") && !character.llmModel.Contains("/"))
                     {
                         character.llmModel = "openai/" + character.llmModel;
                     }
-                    else if (character.llmModel.StartsWith("gemini-"))
+                    else if (character.llmModel.StartsWith("gemini-") && !character.llmModel.Contains("/"))
                     {
                         character.llmModel = "gemini/" + character.llmModel;
                     }

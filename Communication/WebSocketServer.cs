@@ -1,3 +1,4 @@
+using CocoroDock.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -34,6 +35,7 @@ namespace CocoroDock.Communication
         /// <summary>
         /// WebSocketサーバーのコンストラクタ
         /// </summary>
+        /// <param name="host">ホスト名（例：127.0.0.1）</param>
         /// <param name="port">ポート番号（例：55600）</param>
         public WebSocketServer(string host, int port)
         {
@@ -88,16 +90,7 @@ namespace CocoroDock.Communication
                 _cts.Cancel();
 
                 // すべてのクライアント接続を閉じる
-                var closeTasks = new List<Task>();
-                foreach (var client in _clients)
-                {
-                    closeTasks.Add(CloseClientConnectionAsync(client.Key, client.Value));
-                }
-
-                if (closeTasks.Count > 0)
-                {
-                    await Task.WhenAll(closeTasks);
-                }
+                await CloseAllClientConnectionsAsync();
 
                 // リッスンタスクが完了するまで待機（必要に応じてタイムアウト設定も可能）
                 if (_listenTask != null)
@@ -124,6 +117,23 @@ namespace CocoroDock.Communication
         }
 
         /// <summary>
+        /// すべてのクライアント接続を閉じる
+        /// </summary>
+        private async Task CloseAllClientConnectionsAsync()
+        {
+            var closeTasks = new List<Task>();
+            foreach (var client in _clients)
+            {
+                closeTasks.Add(CloseClientConnectionAsync(client.Key, client.Value));
+            }
+
+            if (closeTasks.Count > 0)
+            {
+                await Task.WhenAll(closeTasks);
+            }
+        }
+
+        /// <summary>
         /// クライアント接続を待機するループ
         /// </summary>
         private async Task ListenForClientsAsync()
@@ -132,26 +142,8 @@ namespace CocoroDock.Communication
             {
                 while (_isRunning && !_cts.Token.IsCancellationRequested)
                 {
-                    HttpListenerContext context;
-                    try
-                    {
-                        context = await _httpListener.GetContextAsync();
-                    }
-                    catch (HttpListenerException)
-                    {
-                        // HttpListenerが停止された場合
-                        break;
-                    }
-                    catch (ObjectDisposedException)
-                    {
-                        // HttpListenerが破棄された場合
-                        break;
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        // HttpListenerがまだ起動していないか既に停止している場合
-                        break;
-                    }
+                    HttpListenerContext context = await GetContextSafelyAsync();
+                    if (context == null) continue;
 
                     if (context.Request.IsWebSocketRequest)
                     {
@@ -173,6 +165,32 @@ namespace CocoroDock.Communication
             {
                 Debug.WriteLine($"リッスンループエラー: {ex.Message}");
                 ConnectionError?.Invoke(this, $"リッスンループエラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 安全にHttpContextを取得する
+        /// </summary>
+        private async Task<HttpListenerContext> GetContextSafelyAsync()
+        {
+            try
+            {
+                return await _httpListener.GetContextAsync();
+            }
+            catch (HttpListenerException)
+            {
+                // HttpListenerが停止された場合
+                return null;
+            }
+            catch (ObjectDisposedException)
+            {
+                // HttpListenerが破棄された場合
+                return null;
+            }
+            catch (InvalidOperationException)
+            {
+                // HttpListenerがまだ起動していないか既に停止している場合
+                return null;
             }
         }
 
@@ -251,19 +269,7 @@ namespace CocoroDock.Communication
                     string base64Text = messageBuilder.ToString();
                     if (!string.IsNullOrEmpty(base64Text))
                     {
-                        try
-                        {
-                            var jsonBytes = Convert.FromBase64String(base64Text);
-                            var messageText = Encoding.UTF8.GetString(jsonBytes);
-                            // Debug.WriteLine($"デコード後のメッセージ: {messageText}");
-                            // デコードしたJSONメッセージをイベント購読者に通知
-                            MessageReceived?.Invoke(this, (clientId, messageText));
-                        }
-                        catch (FormatException ex)
-                        {
-                            Debug.WriteLine($"BASE64デコードエラー: {ex.Message}");
-                            MessageReceived?.Invoke(this, (clientId, base64Text));
-                        }
+                        ProcessReceivedMessage(clientId, base64Text);
                     }
                 }
             }
@@ -282,6 +288,24 @@ namespace CocoroDock.Communication
             finally
             {
                 await CloseClientConnectionAsync(clientId, webSocket);
+            }
+        }
+
+        /// <summary>
+        /// 受信したメッセージを処理する
+        /// </summary>
+        private void ProcessReceivedMessage(string clientId, string base64Text)
+        {
+            try
+            {
+                string messageText = MessageHelper.DecodeFromBase64(base64Text);
+                MessageReceived?.Invoke(this, (clientId, messageText));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"メッセージ処理エラー: {ex.Message}");
+                // 処理できない場合は元のテキストをそのまま通知
+                MessageReceived?.Invoke(this, (clientId, base64Text));
             }
         }
 
@@ -317,12 +341,10 @@ namespace CocoroDock.Communication
             {
                 try
                 {
-                    // UTF8でJSONをバイト配列に変換
-                    var jsonBytes = Encoding.UTF8.GetBytes(message);
-                    // BASE64エンコード
-                    var base64String = Convert.ToBase64String(jsonBytes);
+                    // メッセージをBase64エンコード
+                    string base64String = MessageHelper.EncodeToBase64(message);
                     var base64Bytes = Encoding.UTF8.GetBytes(base64String);
-                    // System.Diagnostics.Debug.WriteLine($"BASE64エンコード済み: {base64String}");
+                    
                     await client.SendAsync(
                         new ArraySegment<byte>(base64Bytes),
                         WebSocketMessageType.Text,
@@ -365,8 +387,8 @@ namespace CocoroDock.Communication
         {
             try
             {
-                var message = new WebSocketMessage(type, payload);
-                string json = JsonSerializer.Serialize(message);
+                var message = MessageHelper.CreateMessage(type, payload);
+                string json = MessageHelper.SerializeToJson(message);
                 await BroadcastMessageAsync(json);
             }
             catch (Exception ex)
@@ -417,36 +439,11 @@ namespace CocoroDock.Communication
                 // 実行フラグをリセット - これにより新しいリクエスト処理を停止
                 _isRunning = false;
 
-                // HttpListenerを確実に停止（既に停止している場合でも例外は発生しない）
-                try
-                {
-                    if (_httpListener.IsListening)
-                    {
-                        _httpListener?.Stop();
-                    }
-                }
-                catch (ObjectDisposedException)
-                {
-                    // 既に破棄されている場合は無視
-                }
+                // HttpListenerを確実に停止
+                StopHttpListener();
 
                 // 接続中のすべてのクライアントを強制切断
-                foreach (var client in _clients)
-                {
-                    try
-                    {
-                        // WebSocketを強制的に中断
-                        if (client.Value.State == WebSocketState.Open ||
-                            client.Value.State == WebSocketState.Connecting)
-                        {
-                            client.Value.Abort();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"クライアント強制終了エラー: {ex.Message}");
-                    }
-                }
+                AbortAllClients();
 
                 // クライアントリストをクリア
                 _clients.Clear();
@@ -457,6 +454,47 @@ namespace CocoroDock.Communication
             catch (Exception ex)
             {
                 Debug.WriteLine($"WebSocketServer破棄エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// HttpListenerを停止
+        /// </summary>
+        private void StopHttpListener()
+        {
+            try
+            {
+                if (_httpListener.IsListening)
+                {
+                    _httpListener?.Stop();
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // 既に破棄されている場合は無視
+            }
+        }
+
+        /// <summary>
+        /// すべてのクライアントを強制切断
+        /// </summary>
+        private void AbortAllClients()
+        {
+            foreach (var client in _clients)
+            {
+                try
+                {
+                    // WebSocketを強制的に中断
+                    if (client.Value.State == WebSocketState.Open ||
+                        client.Value.State == WebSocketState.Connecting)
+                    {
+                        client.Value.Abort();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"クライアント強制終了エラー: {ex.Message}");
+                }
             }
         }
     }
