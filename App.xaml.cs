@@ -83,9 +83,17 @@ namespace CocoroDock
 
             // コマンドライン引数をチェックして、表示フラグがある場合のみ表示する
             bool showWindow = e.Args.Any(arg => arg.ToLower() == "/show" || arg.ToLower() == "-show");
+            
+            // デバッグモードの場合は常に表示
+#if DEBUG
+            showWindow = true;
+#endif
+            
             if (showWindow)
             {
                 mainWindow.Show();
+                mainWindow.WindowState = WindowState.Normal;
+                mainWindow.Activate();
             }
         }
 
