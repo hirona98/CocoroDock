@@ -19,7 +19,7 @@ namespace CocoroDock.Communication
     {
         private readonly string _serverUrl;
         private readonly int _port;
-        private HttpListener _httpListener;
+        private HttpListener? _httpListener;
         private CancellationTokenSource _cts;
         private Task? _listenTask;
         private bool _isRunning;
@@ -123,8 +123,8 @@ namespace CocoroDock.Communication
                     await Task.WhenAny(_listenTask, Task.Delay(1000)); // 最大1秒待機
                 }
 
-                _httpListener.Stop();
-                _httpListener.Close();
+                _httpListener?.Stop();
+                _httpListener?.Close();
 
                 Debug.WriteLine("WebSocketサーバーを停止しました");
             }
@@ -166,7 +166,7 @@ namespace CocoroDock.Communication
             {
                 while (_isRunning && !_cts.Token.IsCancellationRequested)
                 {
-                    HttpListenerContext context = await GetContextSafelyAsync();
+                    HttpListenerContext? context = await GetContextSafelyAsync();
                     if (context == null) continue;
 
                     if (context.Request.IsWebSocketRequest)
@@ -195,10 +195,11 @@ namespace CocoroDock.Communication
         /// <summary>
         /// 安全にHttpContextを取得する
         /// </summary>
-        private async Task<HttpListenerContext> GetContextSafelyAsync()
+        private async Task<HttpListenerContext?> GetContextSafelyAsync()
         {
             try
             {
+                if (_httpListener == null) return null;
                 return await _httpListener.GetContextAsync();
             }
             catch (HttpListenerException)
