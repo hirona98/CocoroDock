@@ -440,7 +440,7 @@
                                     <!-- 記憶機能の有効/無効設定 -->
                                     <Grid Margin="0,10,0,5">
                                         <CheckBox x:Name="IsEnableMemoryCheckBox"
-                                                  Content="記憶機能を保持する"
+                                                  Content="記憶を保持する"
                                                   Foreground="#FF4873CF"
                                                   ToolTip="Enable memory"/>
                                     </Grid>
@@ -464,6 +464,55 @@
                                     <TextBlock TextWrapping="Wrap"
                                                Margin="100,0,0,10">
                                         長期記憶を保存する時にキャラクターがあなたを認識するIDです。変更すると別人と認識されます。
+                                    </TextBlock>
+                                    
+                                    <!-- 埋め込みモデル設定 -->
+                                    <Grid Margin="0,10,0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="API Key:"
+                                                   VerticalAlignment="Center"
+                                                   ToolTip="API Key"/>
+                                        <PasswordBox Grid.Column="1"
+                                                     x:Name="EmbeddedApiKeyPasswordBox"
+                                                     Margin="0,5"
+                                                     Foreground="#FF0078D7"/>
+                                    </Grid>
+                                    
+                                    <Grid Margin="0,5,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="埋め込みモデル:"
+                                                   VerticalAlignment="Center"
+                                                   ToolTip="Embedded Model"/>
+                                        <TextBox Grid.Column="1"
+                                                 x:Name="EmbeddedModelTextBox"
+                                                 Margin="0,5"
+                                                 Foreground="#FF0078D7"
+                                                 Text=""/>
+                                    </Grid>
+                                    
+                                    <!-- 埋め込みモデル説明テキスト -->
+                                    <TextBlock TextWrapping="Wrap"
+                                               Margin="100,0,0,10">
+                                        <TextBlock.Inlines>
+                                            <Run Text="長期記憶をベクトル化するための埋め込みモデルを設定します。LiteLLM の書式で記載してください"/>
+                                            <LineBreak/>
+                                            <Run Text="ex) openai/text-embedding-3-small, mistral/mistral-embed"/>
+                                            <LineBreak/>
+                                            <Run Text="詳細は "/>
+                                            <Hyperlink NavigateUri="https://docs.litellm.ai/docs/providers"
+                                                       RequestNavigate="Hyperlink_RequestNavigate">
+                                                <Run Text="https://docs.litellm.ai/docs/embedding/supported_embedding"/>
+                                            </Hyperlink>
+                                            <Run Text=" を参照してください"/>
+                                        </TextBlock.Inlines>
                                     </TextBlock>
                                 </StackPanel>
                             </GroupBox>

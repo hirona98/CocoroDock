@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(find:*)",
-      "Bash(dotnet --version)"
+      "Bash(dotnet --version)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }
