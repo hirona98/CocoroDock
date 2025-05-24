@@ -56,6 +56,14 @@ namespace CocoroDock.Communication
 
             try
             {
+                // HttpListenerが破棄されているか、前回の状態が残っている場合は新しいインスタンスを作成
+                if (_httpListener == null || _httpListener.IsListening)
+                {
+                    _httpListener?.Close();
+                    _httpListener = new HttpListener();
+                    _httpListener.Prefixes.Add(_serverUrl);
+                }
+
                 _httpListener.Start();
                 _isRunning = true;
 
@@ -65,6 +73,14 @@ namespace CocoroDock.Communication
                 await Task.CompletedTask;
 
                 Debug.WriteLine($"WebSocketサーバーを起動しました: {_serverUrl}");
+            }
+            catch (ObjectDisposedException objEx)
+            {
+                Debug.WriteLine($"HttpListenerが破棄されています。新しいインスタンスを作成します: {objEx.Message}");
+                // HttpListenerを再作成して再試行
+                _httpListener = new HttpListener();
+                _httpListener.Prefixes.Add(_serverUrl);
+                await StartAsync();
             }
             catch (HttpListenerException httpEx)
             {
@@ -119,9 +135,8 @@ namespace CocoroDock.Communication
             finally
             {
                 _clients.Clear();
+                _cts?.Dispose();
                 _cts = new CancellationTokenSource();
-                _httpListener = new HttpListener();
-                _httpListener.Prefixes.Add(_serverUrl);
             }
         }
 
@@ -353,7 +368,7 @@ namespace CocoroDock.Communication
                     // メッセージをBase64エンコード
                     string base64String = MessageHelper.EncodeToBase64(message);
                     var base64Bytes = Encoding.UTF8.GetBytes(base64String);
-                    
+
                     await client.SendAsync(
                         new ArraySegment<byte>(base64Bytes),
                         WebSocketMessageType.Text,
@@ -473,14 +488,25 @@ namespace CocoroDock.Communication
         {
             try
             {
-                if (_httpListener.IsListening)
+                if (_httpListener != null)
                 {
-                    _httpListener?.Stop();
+                    if (_httpListener.IsListening)
+                    {
+                        _httpListener.Stop();
+                    }
+                    _httpListener.Close();
+                    _httpListener = null;
                 }
             }
             catch (ObjectDisposedException)
             {
                 // 既に破棄されている場合は無視
+                _httpListener = null;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"HttpListener停止エラー: {ex.Message}");
+                _httpListener = null;
             }
         }
 

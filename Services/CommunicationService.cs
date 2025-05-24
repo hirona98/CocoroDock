@@ -55,7 +55,16 @@ namespace CocoroDock.Services
         /// </summary>
         public async Task StartServerAsync()
         {
-            await _webSocketServer.StartAsync();
+            try
+            {
+                await _webSocketServer.StartAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CommunicationService: サーバー起動エラー: {ex.Message}");
+                ErrorOccurred?.Invoke(this, $"サーバー起動に失敗しました: {ex.Message}");
+                throw;
+            }
         }
 
         /// <summary>
