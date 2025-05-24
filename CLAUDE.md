@@ -3,6 +3,9 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Build and Development Commands
+本プロジェクトは、Windowsを対象にしているが、コードの編集はWSL経由で君に手伝ってもらっている。
+参考までに、Windows上でのセットアップ方法を記載する。
+君が powershel 経由で起動してもいいよ。
 
 ```bash
 # Build the project
