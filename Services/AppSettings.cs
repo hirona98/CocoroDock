@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Text.Json;
 using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace CocoroDock.Services
@@ -352,6 +352,7 @@ namespace CocoroDock.Services
             {
                 UpdateLlmModelFormat(settings);
                 UpdateSettings(settings);
+                SaveAppSettings();
             }
         }
 
@@ -471,7 +472,8 @@ namespace CocoroDock.Services
                         systemPrompt = oldChar.SystemPrompt,
                         isUseTTS = oldChar.IsUseTTS,
                         ttsEndpointURL = oldChar.TTSEndpointURL,
-                        ttsSperkerID = oldChar.TTSSperkerID
+                        ttsSperkerID = oldChar.TTSSperkerID,
+                        userId = "User01" // デフォルトのUserIdを設定
                     };
 
                     defaultSettings.characterList.Add(newChar);
