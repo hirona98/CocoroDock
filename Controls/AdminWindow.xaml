@@ -410,27 +410,6 @@
                                         </TextBlock.Inlines>
                                     </TextBlock>
 
-                                    <!-- ユーザーIDの設定 -->
-                                    <Grid Margin="0,5,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0"
-                                                   Text="User ID:"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBox Grid.Column="1"
-                                                 x:Name="UserIdTextBox"
-                                                 Margin="0,5"
-                                                 Foreground="#FF0078D7"
-                                                 Text="User01"/>
-                                    </Grid>
-
-                                    <!-- ユーザーID説明テキスト -->
-                                    <TextBlock TextWrapping="Wrap"
-                                               Margin="100,0,0,10">
-                                        長期記憶を保存する時にキャラクターがあなたを認識するIDです。変更すると別人と認識されます。
-                                    </TextBlock>
 
                                     <Grid Margin="0,5">
                                         <Grid.ColumnDefinitions>
@@ -458,6 +437,27 @@
                                                   Foreground="#FF4873CF"
                                                   ToolTip="Enable memory function"/>
                                     </Grid>
+
+                                    <!-- ユーザーIDの設定 -->
+                                    <Grid Margin="0,5,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="User ID:"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBox Grid.Column="1"
+                                                 x:Name="UserIdTextBox"
+                                                 Margin="0,5"
+                                                 Foreground="#FF0078D7"
+                                                 Text="User01"/>
+                                    </Grid>
+                                    <!-- ユーザーID説明テキスト -->
+                                    <TextBlock TextWrapping="Wrap"
+                                               Margin="100,0,0,10">
+                                        長期記憶を保存する時にキャラクターがあなたを認識するIDです。変更すると別人と認識されます。
+                                    </TextBlock>
                                 </StackPanel>
                             </GroupBox>
 

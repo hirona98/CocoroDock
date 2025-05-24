@@ -167,8 +167,8 @@ namespace CocoroDock.Services
                     isUseTTS = false,
                     ttsEndpointURL = "http://localhost:50021",
                     ttsSperkerID = "1",
-                    userId = "User01",
-                    isEnableMemory = true
+                    isEnableMemory = true,
+                    userId = "User01"
                 }
             };
         }
@@ -477,8 +477,8 @@ namespace CocoroDock.Services
                         isUseTTS = oldChar.IsUseTTS,
                         ttsEndpointURL = oldChar.TTSEndpointURL,
                         ttsSperkerID = oldChar.TTSSperkerID,
-                        userId = "User01", // デフォルトのUserIdを設定
-                        isEnableMemory = true // デフォルトのisEnableMemoryを設定
+                        isEnableMemory = true,
+                        userId = "User01"
                     };
 
                     defaultSettings.characterList.Add(newChar);

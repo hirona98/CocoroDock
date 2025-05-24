@@ -364,8 +364,8 @@ namespace CocoroDock.Controls
                     { "IsUseTTS", character.isUseTTS.ToString() },
                     { "TTSEndpointURL", character.ttsEndpointURL ?? "" },
                     { "TTSSperkerID", character.ttsSperkerID ?? "" },
-                    { "UserId", character.userId ?? "User01" },
-                    { "IsEnableMemory", character.isEnableMemory.ToString() }
+                    { "IsEnableMemory", character.isEnableMemory.ToString() },
+                    { "UserId", character.userId ?? "User01" }
                 };
                 _characterSettings.Add(characterDict);
 
@@ -432,7 +432,7 @@ namespace CocoroDock.Controls
                     bool.TryParse(_characterSettings[index]["IsUseTTS"], out isUseTTS);
                 }
                 IsUseTTSCheckBox.IsChecked = isUseTTS;
-                
+
                 // IsEnableMemoryチェックボックスの状態を更新
                 bool isEnableMemory = true; // デフォルトはtrue
                 if (_characterSettings[index].ContainsKey("IsEnableMemory"))
@@ -494,8 +494,8 @@ namespace CocoroDock.Controls
                 { "IsUseTTS", "false"},
                 { "TTSEndpointURL", "" },
                 { "TTSSperkerID", "" },
-                { "UserId", "User01" },
-                { "IsEnableMemory", "true" }
+                { "IsEnableMemory", "true" },
+                { "UserId", "User01" }
             };
             _characterSettings.Add(newCharacter);
             var newItem = new ComboBoxItem { Content = newName };
@@ -553,8 +553,8 @@ namespace CocoroDock.Controls
                 var isUseTTS = IsUseTTSCheckBox.IsChecked ?? false;
                 var ttsEndpointURL = TTSEndpointURLTextBox.Text;
                 var ttsSperkerID = TTSSperkerIDTextBox.Text;
-                var userId = UserIdTextBox.Text;
                 var isEnableMemory = IsEnableMemoryCheckBox.IsChecked ?? true;
+                var userId = UserIdTextBox.Text;
 
                 // IsReadOnlyの状態を確認
                 bool isReadOnly = false;
@@ -606,9 +606,6 @@ namespace CocoroDock.Controls
                                             _characterSettings[_currentCharacterIndex]["TTSEndpointURL"] != ttsEndpointURL;
                 bool ttsSperkerIDChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("TTSSperkerID") ||
                                             _characterSettings[_currentCharacterIndex]["TTSSperkerID"] != ttsSperkerID;
-                bool userIdChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("UserId") ||
-                                     _characterSettings[_currentCharacterIndex]["UserId"] != userId;
-                
                 bool isEnableMemoryChanged = false;
                 if (_characterSettings[_currentCharacterIndex].ContainsKey("IsEnableMemory"))
                 {
@@ -620,6 +617,9 @@ namespace CocoroDock.Controls
                 {
                     isEnableMemoryChanged = !isEnableMemory; // デフォルトはtrueとして扱う
                 }
+                bool userIdChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("UserId") ||
+                                     _characterSettings[_currentCharacterIndex]["UserId"] != userId;
+
 
                 if (_characterSettings[_currentCharacterIndex]["Name"] != name ||
                     _characterSettings[_currentCharacterIndex]["SystemPrompt"] != systemPrompt ||
@@ -635,8 +635,8 @@ namespace CocoroDock.Controls
                     _characterSettings[_currentCharacterIndex]["TTSEndpointURL"] = ttsEndpointURL;
                     _characterSettings[_currentCharacterIndex]["TTSSperkerID"] = ttsSperkerID;
                     _characterSettings[_currentCharacterIndex]["IsUseTTS"] = isUseTTS.ToString();
-                    _characterSettings[_currentCharacterIndex]["UserId"] = userId;
                     _characterSettings[_currentCharacterIndex]["IsEnableMemory"] = isEnableMemory.ToString();
+                    _characterSettings[_currentCharacterIndex]["UserId"] = userId;
 
                     // コンボボックスの表示も更新
                     if (_currentCharacterIndex < CharacterSelectComboBox.Items.Count)
@@ -979,12 +979,6 @@ namespace CocoroDock.Controls
                     newCharacter.ttsSperkerID = character["TTSSperkerID"];
                 }
 
-                // UserIdの設定を更新
-                if (character.ContainsKey("UserId"))
-                {
-                    newCharacter.userId = character["UserId"];
-                }
-                
                 // IsEnableMemoryの設定を更新
                 bool isEnableMemory = true; // デフォルトはtrue
                 if (character.ContainsKey("IsEnableMemory"))
@@ -992,6 +986,12 @@ namespace CocoroDock.Controls
                     bool.TryParse(character["IsEnableMemory"], out isEnableMemory);
                 }
                 newCharacter.isEnableMemory = isEnableMemory;
+
+                // UserIdの設定を更新
+                if (character.ContainsKey("UserId"))
+                {
+                    newCharacter.userId = character["UserId"];
+                }
 
                 // 既存の設定を保持（null になることはないという前提）
                 newCharacter.isReadOnly = existingCharacter?.isReadOnly ?? false;
