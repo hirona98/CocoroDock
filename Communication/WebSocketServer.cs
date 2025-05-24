@@ -66,9 +66,18 @@ namespace CocoroDock.Communication
 
                 Debug.WriteLine($"WebSocketサーバーを起動しました: {_serverUrl}");
             }
+            catch (HttpListenerException httpEx)
+            {
+                Debug.WriteLine($"HttpListenerエラー: {httpEx.Message}");
+                Debug.WriteLine($"エラーコード: {httpEx.ErrorCode}");
+                Debug.WriteLine($"ネイティブエラーコード: {httpEx.NativeErrorCode}");
+                ConnectionError?.Invoke(this, $"HttpListenerエラー: {httpEx.Message} (エラーコード: {httpEx.ErrorCode})");
+                throw;
+            }
             catch (Exception ex)
             {
-                Debug.WriteLine($"サーバー起動エラー: {ex.Message}");
+                Debug.WriteLine($"サーバー起動エラー: {ex.GetType().Name}: {ex.Message}");
+                Debug.WriteLine($"スタックトレース: {ex.StackTrace}");
                 ConnectionError?.Invoke(this, $"サーバー起動エラー: {ex.Message}");
                 throw;
             }
