@@ -429,13 +429,20 @@
                                                  TextWrapping="Wrap"
                                                  VerticalScrollBarVisibility="Auto"/>
                                     </Grid>
+                                </StackPanel>
+                            </GroupBox>
 
+                            <!-- 記憶機能 -->
+                            <GroupBox Header="Memory"
+                                Margin="0,0,20,20"
+                                Padding="10">
+                                <StackPanel Margin="1,0,0,0">
                                     <!-- 記憶機能の有効/無効設定 -->
                                     <Grid Margin="0,10,0,5">
                                         <CheckBox x:Name="IsEnableMemoryCheckBox"
-                                                  Content="記憶機能を使用する"
+                                                  Content="記憶機能を保持する"
                                                   Foreground="#FF4873CF"
-                                                  ToolTip="Enable memory function"/>
+                                                  ToolTip="Enable memory"/>
                                     </Grid>
 
                                     <!-- ユーザーIDの設定 -->
@@ -460,7 +467,6 @@
                                     </TextBlock>
                                 </StackPanel>
                             </GroupBox>
-
 
                             <!-- TTSパラメータ -->
                             <GroupBox Header="TTS(VOICEVOX/SHAREVOX/AivisSpeech)"
