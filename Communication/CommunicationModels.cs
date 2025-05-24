@@ -111,6 +111,7 @@ namespace CocoroDock.Communication
         public string ttsEndpointURL { get; set; } = string.Empty;
         public string ttsSperkerID { get; set; } = string.Empty;
         public string userId { get; set; } = "User01"; // キャラクターごとのユーザーID
+        public bool isEnableMemory { get; set; } = true; // メモリ機能の有効/無効（デフォルト: true）
     }
 
     /// <summary>
@@ -118,9 +119,9 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ConfigSettings
     {
-        public int cocoroDockPort { get; set; }
-        public int cocoroCorePort { get; set; }
-        public int cocoroMemoryPort { get; set; }
+        public int cocoroDockPort { get; set; } = 55600;
+        public int cocoroCorePort { get; set; } = 55601;
+        public int cocoroMemoryPort { get; set; } = 55602;
         public bool isTopmost { get; set; }
         public bool isEscapeCursor { get; set; }
         public bool isInputVirtualKey { get; set; }

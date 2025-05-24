@@ -27,7 +27,8 @@
             "isUseTTS": false,
             "TTSEndpointURL": "http://localhost:50025",
             "TTSSperkerID": "18",
-            "userId": "User01"
+            "userId": "User01",
+            "isEnableMemory": true
         },
         {
             "isReadOnly": true,
@@ -40,7 +41,8 @@
             "isUseTTS": false,
             "TTSEndpointURL": "",
             "TTSSperkerID": "",
-            "userId": "User01"
+            "userId": "User01",
+            "isEnableMemory": true
         }
     ]
 }
