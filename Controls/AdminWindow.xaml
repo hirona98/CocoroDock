@@ -352,24 +352,7 @@
                             <GroupBox Header="LLM"
                                       Margin="0,0,20,20"
                                       Padding="10">
-                                <StackPanel>
-                                    <!-- LLM説明テキスト -->
-                                    <TextBlock TextWrapping="Wrap"
-                                               Margin="0,0,0,10"
-                                               Foreground="#FF4873CF">
-                                        <TextBlock.Inlines>
-                                            <Run Text="LLM Model は LiteLLM の書式で記載してください"/>
-                                            <LineBreak/>
-                                            <Run Text="ex) openai/gpt-4o-mini, gemini/gemini-2.0-flash, ollama/mistral"/>
-                                            <LineBreak/>
-                                            <Run Text="詳細は "/>
-                                            <Hyperlink NavigateUri="https://docs.litellm.ai/docs/providers"
-                                                       RequestNavigate="Hyperlink_RequestNavigate">
-                                                <Run Text="https://docs.litellm.ai/docs/providers"/>
-                                            </Hyperlink>
-                                            <Run Text=" を参照してください"/>
-                                        </TextBlock.Inlines>
-                                    </TextBlock>
+                                <StackPanel Margin="1,0,0,0">
 
                                     <Grid Margin="0,5">
                                         <CheckBox x:Name="IsUseLLMCheckBox"
@@ -396,7 +379,7 @@
                                     </Grid>
 
                                     <!-- LLMモデルの設定 -->
-                                    <Grid Margin="0,5">
+                                    <Grid Margin="0,5,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="100"/>
                                             <ColumnDefinition Width="*"/>
@@ -410,6 +393,22 @@
                                                  Foreground="#FF0078D7"
                                                  Text=""/>
                                     </Grid>
+                                    <!-- LLM説明テキスト -->
+                                    <TextBlock TextWrapping="Wrap"
+                                               Margin="100,0,0,10">
+                                        <TextBlock.Inlines>
+                                            <Run Text="LiteLLM の書式で記載してください"/>
+                                            <LineBreak/>
+                                            <Run Text="ex) openai/gpt-4o-mini, gemini/gemini-2.0-flash, ollama/mistral"/>
+                                            <LineBreak/>
+                                            <Run Text="詳細は "/>
+                                            <Hyperlink NavigateUri="https://docs.litellm.ai/docs/providers"
+                                                       RequestNavigate="Hyperlink_RequestNavigate">
+                                                <Run Text="https://docs.litellm.ai/docs/providers"/>
+                                            </Hyperlink>
+                                            <Run Text=" を参照してください"/>
+                                        </TextBlock.Inlines>
+                                    </TextBlock>
 
                                     <!-- ユーザーIDの設定 -->
                                     <Grid Margin="0,5,0,0">
@@ -429,9 +428,7 @@
 
                                     <!-- ユーザーID説明テキスト -->
                                     <TextBlock TextWrapping="Wrap"
-                                               Margin="100,0,0,10"
-                                               FontSize="13"
-                                               Foreground="#EE0078D7">
+                                               Margin="100,0,0,10">
                                         長期記憶を保存する時にキャラクターがあなたを認識するIDです。変更すると別人と認識されます。
                                     </TextBlock>
 
