@@ -363,7 +363,11 @@ namespace CocoroDock.Controls
                     { "SystemPrompt", character.systemPrompt ?? "" },
                     { "IsUseTTS", character.isUseTTS.ToString() },
                     { "TTSEndpointURL", character.ttsEndpointURL ?? "" },
-                    { "TTSSperkerID", character.ttsSperkerID ?? "" }
+                    { "TTSSperkerID", character.ttsSperkerID ?? "" },
+                    { "IsEnableMemory", character.isEnableMemory.ToString() },
+                    { "UserId", character.userId ?? "User01" },
+                    { "EmbeddedApiKey", character.embeddedApiKey ?? "" },
+                    { "EmbeddedModel", character.embeddedModel ?? "" }
                 };
                 _characterSettings.Add(characterDict);
 
@@ -413,6 +417,9 @@ namespace CocoroDock.Controls
                 SystemPromptTextBox.Text = _characterSettings[index]["SystemPrompt"];
                 TTSEndpointURLTextBox.Text = _characterSettings[index]["TTSEndpointURL"];
                 TTSSperkerIDTextBox.Text = _characterSettings[index]["TTSSperkerID"];
+                UserIdTextBox.Text = _characterSettings[index].ContainsKey("UserId") ? _characterSettings[index]["UserId"] : "User01";
+                EmbeddedApiKeyPasswordBox.Password = _characterSettings[index].ContainsKey("EmbeddedApiKey") ? _characterSettings[index]["EmbeddedApiKey"] : "";
+                EmbeddedModelTextBox.Text = _characterSettings[index].ContainsKey("EmbeddedModel") ? _characterSettings[index]["EmbeddedModel"] : "";
 
                 // IsUseLLMチェックボックスの状態を更新
                 bool isUseLLM = false;
@@ -429,6 +436,18 @@ namespace CocoroDock.Controls
                     bool.TryParse(_characterSettings[index]["IsUseTTS"], out isUseTTS);
                 }
                 IsUseTTSCheckBox.IsChecked = isUseTTS;
+
+                // IsEnableMemoryチェックボックスの状態を更新
+                bool isEnableMemory = true; // デフォルトはtrue
+                if (_characterSettings[index].ContainsKey("IsEnableMemory"))
+                {
+                    bool.TryParse(_characterSettings[index]["IsEnableMemory"], out isEnableMemory);
+                }
+                IsEnableMemoryCheckBox.IsChecked = isEnableMemory;
+
+                // 埋め込みモデル設定の更新
+                EmbeddedApiKeyPasswordBox.Password = _characterSettings[index].ContainsKey("EmbeddedApiKey") ? _characterSettings[index]["EmbeddedApiKey"] : "";
+                EmbeddedModelTextBox.Text = _characterSettings[index].ContainsKey("EmbeddedModel") ? _characterSettings[index]["EmbeddedModel"] : "";
 
                 // IsReadOnlyの状態を確認し、該当するUIコントロールの有効/無効を設定
                 bool isReadOnly = false;
@@ -482,7 +501,11 @@ namespace CocoroDock.Controls
                 { "SystemPrompt", "" },
                 { "IsUseTTS", "false"},
                 { "TTSEndpointURL", "" },
-                { "TTSSperkerID", "" }
+                { "TTSSperkerID", "" },
+                { "IsEnableMemory", "true" },
+                { "UserId", "User01" },
+                { "EmbeddedApiKey", "" },
+                { "EmbeddedModel", "" }
             };
             _characterSettings.Add(newCharacter);
             var newItem = new ComboBoxItem { Content = newName };
@@ -540,6 +563,10 @@ namespace CocoroDock.Controls
                 var isUseTTS = IsUseTTSCheckBox.IsChecked ?? false;
                 var ttsEndpointURL = TTSEndpointURLTextBox.Text;
                 var ttsSperkerID = TTSSperkerIDTextBox.Text;
+                var isEnableMemory = IsEnableMemoryCheckBox.IsChecked ?? true;
+                var userId = UserIdTextBox.Text;
+                var embeddedApiKey = EmbeddedApiKeyPasswordBox.Password;
+                var embeddedModel = EmbeddedModelTextBox.Text;
 
                 // IsReadOnlyの状態を確認
                 bool isReadOnly = false;
@@ -591,11 +618,30 @@ namespace CocoroDock.Controls
                                             _characterSettings[_currentCharacterIndex]["TTSEndpointURL"] != ttsEndpointURL;
                 bool ttsSperkerIDChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("TTSSperkerID") ||
                                             _characterSettings[_currentCharacterIndex]["TTSSperkerID"] != ttsSperkerID;
+                bool isEnableMemoryChanged = false;
+                if (_characterSettings[_currentCharacterIndex].ContainsKey("IsEnableMemory"))
+                {
+                    bool currentIsEnableMemory = true;
+                    bool.TryParse(_characterSettings[_currentCharacterIndex]["IsEnableMemory"], out currentIsEnableMemory);
+                    isEnableMemoryChanged = currentIsEnableMemory != isEnableMemory;
+                }
+                else
+                {
+                    isEnableMemoryChanged = !isEnableMemory; // デフォルトはtrueとして扱う
+                }
+                bool userIdChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("UserId") ||
+                                     _characterSettings[_currentCharacterIndex]["UserId"] != userId;
+                bool embeddedApiKeyChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("EmbeddedApiKey") ||
+                                     _characterSettings[_currentCharacterIndex]["EmbeddedApiKey"] != embeddedApiKey;
+                bool embeddedModelChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("EmbeddedModel") ||
+                                     _characterSettings[_currentCharacterIndex]["EmbeddedModel"] != embeddedModel;
+
 
                 if (_characterSettings[_currentCharacterIndex]["Name"] != name ||
                     _characterSettings[_currentCharacterIndex]["SystemPrompt"] != systemPrompt ||
                     isUseLLMChanged || isUseTTSChanged || vrmFilePathChanged || apiKeyChanged || llmModelChanged ||
-                    ttsEndpointURLChanged || ttsSperkerIDChanged)
+                    ttsEndpointURLChanged || ttsSperkerIDChanged || userIdChanged || isEnableMemoryChanged ||
+                    embeddedApiKeyChanged || embeddedModelChanged)
                 {
                     _characterSettings[_currentCharacterIndex]["Name"] = name;
                     _characterSettings[_currentCharacterIndex]["SystemPrompt"] = systemPrompt;
@@ -606,6 +652,10 @@ namespace CocoroDock.Controls
                     _characterSettings[_currentCharacterIndex]["TTSEndpointURL"] = ttsEndpointURL;
                     _characterSettings[_currentCharacterIndex]["TTSSperkerID"] = ttsSperkerID;
                     _characterSettings[_currentCharacterIndex]["IsUseTTS"] = isUseTTS.ToString();
+                    _characterSettings[_currentCharacterIndex]["IsEnableMemory"] = isEnableMemory.ToString();
+                    _characterSettings[_currentCharacterIndex]["UserId"] = userId;
+                    _characterSettings[_currentCharacterIndex]["EmbeddedApiKey"] = embeddedApiKey;
+                    _characterSettings[_currentCharacterIndex]["EmbeddedModel"] = embeddedModel;
 
                     // コンボボックスの表示も更新
                     if (_currentCharacterIndex < CharacterSelectComboBox.Items.Count)
@@ -946,6 +996,32 @@ namespace CocoroDock.Controls
                 if (character.ContainsKey("TTSSperkerID"))
                 {
                     newCharacter.ttsSperkerID = character["TTSSperkerID"];
+                }
+
+                // IsEnableMemoryの設定を更新
+                bool isEnableMemory = true; // デフォルトはtrue
+                if (character.ContainsKey("IsEnableMemory"))
+                {
+                    bool.TryParse(character["IsEnableMemory"], out isEnableMemory);
+                }
+                newCharacter.isEnableMemory = isEnableMemory;
+
+                // UserIdの設定を更新
+                if (character.ContainsKey("UserId"))
+                {
+                    newCharacter.userId = character["UserId"];
+                }
+
+                // EmbeddedApiKeyの設定を更新
+                if (character.ContainsKey("EmbeddedApiKey"))
+                {
+                    newCharacter.embeddedApiKey = character["EmbeddedApiKey"];
+                }
+
+                // EmbeddedModelの設定を更新
+                if (character.ContainsKey("EmbeddedModel"))
+                {
+                    newCharacter.embeddedModel = character["EmbeddedModel"];
                 }
 
                 // 既存の設定を保持（null になることはないという前提）

@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Text.Json;
 using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace CocoroDock.Services
@@ -116,6 +116,7 @@ namespace CocoroDock.Services
 
         public int CocoroDockPort { get; set; } = 55600;
         public int CocoroCorePort { get; set; } = 55601;
+        public int CocoroMemoryPort { get; set; } = 55602;
         // UI設定
         public bool IsTopmost { get; set; } = false;
         public bool IsEscapeCursor { get; set; } = false;
@@ -160,12 +161,16 @@ namespace CocoroDock.Services
                     modelName = "model_name",
                     vrmFilePath = "vrm_file_path",
                     isUseLLM = false,
-                    apiKey = "your_api_key",
-                    llmModel = "gpt-3.5-turbo",
+                    apiKey = "",
+                    llmModel = "openai/gpt-4o-mini",
                     systemPrompt = "あなたは親切なアシスタントです。",
                     isUseTTS = false,
                     ttsEndpointURL = "http://localhost:50021",
                     ttsSperkerID = "1",
+                    isEnableMemory = true,
+                    userId = "User01",
+                    embeddedApiKey = "",
+                    embeddedModel = "openai/text-embedding-3-small"
                 }
             };
         }
@@ -178,6 +183,7 @@ namespace CocoroDock.Services
         {
             CocoroDockPort = config.cocoroDockPort;
             CocoroCorePort = config.cocoroCorePort;
+            CocoroMemoryPort = config.cocoroMemoryPort;
             IsTopmost = config.isTopmost;
             IsEscapeCursor = config.isEscapeCursor;
             IsInputVirtualKey = config.isInputVirtualKey;
@@ -212,6 +218,7 @@ namespace CocoroDock.Services
             {
                 cocoroDockPort = CocoroDockPort,
                 cocoroCorePort = CocoroCorePort,
+                cocoroMemoryPort = CocoroMemoryPort,
                 isTopmost = IsTopmost,
                 isEscapeCursor = IsEscapeCursor,
                 isInputVirtualKey = IsInputVirtualKey,
@@ -351,6 +358,7 @@ namespace CocoroDock.Services
             {
                 UpdateLlmModelFormat(settings);
                 UpdateSettings(settings);
+                SaveAppSettings();
             }
         }
 
@@ -470,7 +478,11 @@ namespace CocoroDock.Services
                         systemPrompt = oldChar.SystemPrompt,
                         isUseTTS = oldChar.IsUseTTS,
                         ttsEndpointURL = oldChar.TTSEndpointURL,
-                        ttsSperkerID = oldChar.TTSSperkerID
+                        ttsSperkerID = oldChar.TTSSperkerID,
+                        isEnableMemory = true,
+                        userId = "User01",
+                        embeddedApiKey = "",
+                        embeddedModel = ""
                     };
 
                     defaultSettings.characterList.Add(newChar);
