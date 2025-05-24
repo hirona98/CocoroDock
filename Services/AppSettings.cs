@@ -116,6 +116,7 @@ namespace CocoroDock.Services
 
         public int CocoroDockPort { get; set; } = 55600;
         public int CocoroCorePort { get; set; } = 55601;
+        public int CocoroMemoryPort { get; set; } = 55602;
         // UI設定
         public bool IsTopmost { get; set; } = false;
         public bool IsEscapeCursor { get; set; } = false;
@@ -179,6 +180,7 @@ namespace CocoroDock.Services
         {
             CocoroDockPort = config.cocoroDockPort;
             CocoroCorePort = config.cocoroCorePort;
+            CocoroMemoryPort = config.cocoroMemoryPort;
             IsTopmost = config.isTopmost;
             IsEscapeCursor = config.isEscapeCursor;
             IsInputVirtualKey = config.isInputVirtualKey;
@@ -213,6 +215,7 @@ namespace CocoroDock.Services
             {
                 cocoroDockPort = CocoroDockPort,
                 cocoroCorePort = CocoroCorePort,
+                cocoroMemoryPort = CocoroMemoryPort,
                 isTopmost = IsTopmost,
                 isEscapeCursor = IsEscapeCursor,
                 isInputVirtualKey = IsInputVirtualKey,

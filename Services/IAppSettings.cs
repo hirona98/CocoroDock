@@ -19,6 +19,11 @@ namespace CocoroDock.Services
         int CocoroCorePort { get; set; }
 
         /// <summary>
+        /// CocoroMemoryポート
+        /// </summary>
+        int CocoroMemoryPort { get; set; }
+
+        /// <summary>
         /// 最前面表示
         /// </summary>
         bool IsTopmost { get; set; }
