@@ -110,6 +110,7 @@ namespace CocoroDock.Communication
         public bool isUseTTS { get; set; }
         public string ttsEndpointURL { get; set; } = string.Empty;
         public string ttsSperkerID { get; set; } = string.Empty;
+        public string userId { get; set; } = "User01"; // キャラクターごとのユーザーID
     }
 
     /// <summary>

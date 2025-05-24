@@ -363,7 +363,8 @@ namespace CocoroDock.Controls
                     { "SystemPrompt", character.systemPrompt ?? "" },
                     { "IsUseTTS", character.isUseTTS.ToString() },
                     { "TTSEndpointURL", character.ttsEndpointURL ?? "" },
-                    { "TTSSperkerID", character.ttsSperkerID ?? "" }
+                    { "TTSSperkerID", character.ttsSperkerID ?? "" },
+                    { "UserId", character.userId ?? "User01" }
                 };
                 _characterSettings.Add(characterDict);
 
@@ -413,6 +414,7 @@ namespace CocoroDock.Controls
                 SystemPromptTextBox.Text = _characterSettings[index]["SystemPrompt"];
                 TTSEndpointURLTextBox.Text = _characterSettings[index]["TTSEndpointURL"];
                 TTSSperkerIDTextBox.Text = _characterSettings[index]["TTSSperkerID"];
+                UserIdTextBox.Text = _characterSettings[index].ContainsKey("UserId") ? _characterSettings[index]["UserId"] : "User01";
 
                 // IsUseLLMチェックボックスの状態を更新
                 bool isUseLLM = false;
@@ -482,7 +484,8 @@ namespace CocoroDock.Controls
                 { "SystemPrompt", "" },
                 { "IsUseTTS", "false"},
                 { "TTSEndpointURL", "" },
-                { "TTSSperkerID", "" }
+                { "TTSSperkerID", "" },
+                { "UserId", "User01" }
             };
             _characterSettings.Add(newCharacter);
             var newItem = new ComboBoxItem { Content = newName };
@@ -540,6 +543,7 @@ namespace CocoroDock.Controls
                 var isUseTTS = IsUseTTSCheckBox.IsChecked ?? false;
                 var ttsEndpointURL = TTSEndpointURLTextBox.Text;
                 var ttsSperkerID = TTSSperkerIDTextBox.Text;
+                var userId = UserIdTextBox.Text;
 
                 // IsReadOnlyの状態を確認
                 bool isReadOnly = false;
@@ -591,11 +595,13 @@ namespace CocoroDock.Controls
                                             _characterSettings[_currentCharacterIndex]["TTSEndpointURL"] != ttsEndpointURL;
                 bool ttsSperkerIDChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("TTSSperkerID") ||
                                             _characterSettings[_currentCharacterIndex]["TTSSperkerID"] != ttsSperkerID;
+                bool userIdChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("UserId") ||
+                                     _characterSettings[_currentCharacterIndex]["UserId"] != userId;
 
                 if (_characterSettings[_currentCharacterIndex]["Name"] != name ||
                     _characterSettings[_currentCharacterIndex]["SystemPrompt"] != systemPrompt ||
                     isUseLLMChanged || isUseTTSChanged || vrmFilePathChanged || apiKeyChanged || llmModelChanged ||
-                    ttsEndpointURLChanged || ttsSperkerIDChanged)
+                    ttsEndpointURLChanged || ttsSperkerIDChanged || userIdChanged)
                 {
                     _characterSettings[_currentCharacterIndex]["Name"] = name;
                     _characterSettings[_currentCharacterIndex]["SystemPrompt"] = systemPrompt;
@@ -606,6 +612,7 @@ namespace CocoroDock.Controls
                     _characterSettings[_currentCharacterIndex]["TTSEndpointURL"] = ttsEndpointURL;
                     _characterSettings[_currentCharacterIndex]["TTSSperkerID"] = ttsSperkerID;
                     _characterSettings[_currentCharacterIndex]["IsUseTTS"] = isUseTTS.ToString();
+                    _characterSettings[_currentCharacterIndex]["UserId"] = userId;
 
                     // コンボボックスの表示も更新
                     if (_currentCharacterIndex < CharacterSelectComboBox.Items.Count)
@@ -946,6 +953,12 @@ namespace CocoroDock.Controls
                 if (character.ContainsKey("TTSSperkerID"))
                 {
                     newCharacter.ttsSperkerID = character["TTSSperkerID"];
+                }
+
+                // UserIdの設定を更新
+                if (character.ContainsKey("UserId"))
+                {
+                    newCharacter.userId = character["UserId"];
                 }
 
                 // 既存の設定を保持（null になることはないという前提）

@@ -166,6 +166,7 @@ namespace CocoroDock.Services
                     isUseTTS = false,
                     ttsEndpointURL = "http://localhost:50021",
                     ttsSperkerID = "1",
+                    userId = "User01"
                 }
             };
         }
