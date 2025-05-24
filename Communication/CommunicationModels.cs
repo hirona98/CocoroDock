@@ -124,6 +124,7 @@ namespace CocoroDock.Communication
         public int cocoroDockPort { get; set; } = 55600;
         public int cocoroCorePort { get; set; } = 55601;
         public int cocoroMemoryPort { get; set; } = 55602;
+        public int cocoroMemoryDBPort { get; set; } = 55603;
         public bool isTopmost { get; set; }
         public bool isEscapeCursor { get; set; }
         public bool isInputVirtualKey { get; set; }
