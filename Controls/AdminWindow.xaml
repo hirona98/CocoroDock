@@ -570,6 +570,35 @@
                                 </StackPanel>
                             </GroupBox>
 
+                            <!-- STTパラメータ -->
+                            <GroupBox Header="STT (OpenAI Only)"
+                                      Margin="0,0,20,20"
+                                      Padding="10">
+                                <StackPanel>
+                                    <Grid Margin="0,5">
+                                        <CheckBox x:Name="IsUseSTTCheckBox"
+                                                  Content="STTを使用する"
+                                                  Foreground="#FF4873CF"
+                                                  ToolTip="Use STT"/>
+                                    </Grid>
+
+                                    <!-- STT APIキーの設定 -->
+                                    <Grid Margin="0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="STT API Key:"
+                                                   VerticalAlignment="Center"/>
+                                        <PasswordBox Grid.Column="1"
+                                                     x:Name="STTApiKeyPasswordBox"
+                                                     Margin="0,5"
+                                                     Foreground="#FF0078D7"/>
+                                    </Grid>
+                                </StackPanel>
+                            </GroupBox>
+
                             <Button x:Name="DeleteCharacterButton"
                                     Content="このキャラクターを削除"
                                     Padding="15,5"

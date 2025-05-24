@@ -367,7 +367,9 @@ namespace CocoroDock.Controls
                     { "IsEnableMemory", character.isEnableMemory.ToString() },
                     { "UserId", character.userId ?? "" },
                     { "EmbeddedApiKey", character.embeddedApiKey ?? "" },
-                    { "EmbeddedModel", character.embeddedModel ?? "" }
+                    { "EmbeddedModel", character.embeddedModel ?? "" },
+                    { "IsUseSTT", character.isUseSTT.ToString() },
+                    { "STTApiKey", character.sttApiKey ?? "" }
                 };
                 _characterSettings.Add(characterDict);
 
@@ -420,6 +422,7 @@ namespace CocoroDock.Controls
                 UserIdTextBox.Text = _characterSettings[index].ContainsKey("UserId") ? _characterSettings[index]["UserId"] : "";
                 EmbeddedApiKeyPasswordBox.Password = _characterSettings[index].ContainsKey("EmbeddedApiKey") ? _characterSettings[index]["EmbeddedApiKey"] : "";
                 EmbeddedModelTextBox.Text = _characterSettings[index].ContainsKey("EmbeddedModel") ? _characterSettings[index]["EmbeddedModel"] : "";
+                STTApiKeyPasswordBox.Password = _characterSettings[index].ContainsKey("STTApiKey") ? _characterSettings[index]["STTApiKey"] : "";
 
                 // IsUseLLMチェックボックスの状態を更新
                 bool isUseLLM = false;
@@ -448,6 +451,14 @@ namespace CocoroDock.Controls
                 // 埋め込みモデル設定の更新
                 EmbeddedApiKeyPasswordBox.Password = _characterSettings[index].ContainsKey("EmbeddedApiKey") ? _characterSettings[index]["EmbeddedApiKey"] : "";
                 EmbeddedModelTextBox.Text = _characterSettings[index].ContainsKey("EmbeddedModel") ? _characterSettings[index]["EmbeddedModel"] : "";
+
+                // IsUseSTTチェックボックスの状態を更新
+                bool isUseSTT = false;
+                if (_characterSettings[index].ContainsKey("IsUseSTT"))
+                {
+                    bool.TryParse(_characterSettings[index]["IsUseSTT"], out isUseSTT);
+                }
+                IsUseSTTCheckBox.IsChecked = isUseSTT;
 
                 // IsReadOnlyの状態を確認し、該当するUIコントロールの有効/無効を設定
                 bool isReadOnly = false;
@@ -505,7 +516,9 @@ namespace CocoroDock.Controls
                 { "IsEnableMemory", "true" },
                 { "UserId", "" },
                 { "EmbeddedApiKey", "" },
-                { "EmbeddedModel", "" }
+                { "EmbeddedModel", "" },
+                { "IsUseSTT", "false" },
+                { "STTApiKey", "" }
             };
             _characterSettings.Add(newCharacter);
             var newItem = new ComboBoxItem { Content = newName };
@@ -567,6 +580,8 @@ namespace CocoroDock.Controls
                 var userId = UserIdTextBox.Text;
                 var embeddedApiKey = EmbeddedApiKeyPasswordBox.Password;
                 var embeddedModel = EmbeddedModelTextBox.Text;
+                var isUseSTT = IsUseSTTCheckBox.IsChecked ?? false;
+                var sttApiKey = STTApiKeyPasswordBox.Password;
 
                 // IsReadOnlyの状態を確認
                 bool isReadOnly = false;
@@ -635,13 +650,26 @@ namespace CocoroDock.Controls
                                      _characterSettings[_currentCharacterIndex]["EmbeddedApiKey"] != embeddedApiKey;
                 bool embeddedModelChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("EmbeddedModel") ||
                                      _characterSettings[_currentCharacterIndex]["EmbeddedModel"] != embeddedModel;
+                bool isUseSTTChanged = false;
+                if (_characterSettings[_currentCharacterIndex].ContainsKey("IsUseSTT"))
+                {
+                    bool currentIsUseSTT = false;
+                    bool.TryParse(_characterSettings[_currentCharacterIndex]["IsUseSTT"], out currentIsUseSTT);
+                    isUseSTTChanged = currentIsUseSTT != isUseSTT;
+                }
+                else
+                {
+                    isUseSTTChanged = isUseSTT; // デフォルトはfalseとして扱う
+                }
+                bool sttApiKeyChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("STTApiKey") ||
+                                     _characterSettings[_currentCharacterIndex]["STTApiKey"] != sttApiKey;
 
 
                 if (_characterSettings[_currentCharacterIndex]["Name"] != name ||
                     _characterSettings[_currentCharacterIndex]["SystemPrompt"] != systemPrompt ||
                     isUseLLMChanged || isUseTTSChanged || vrmFilePathChanged || apiKeyChanged || llmModelChanged ||
                     ttsEndpointURLChanged || ttsSperkerIDChanged || userIdChanged || isEnableMemoryChanged ||
-                    embeddedApiKeyChanged || embeddedModelChanged)
+                    embeddedApiKeyChanged || embeddedModelChanged || isUseSTTChanged || sttApiKeyChanged)
                 {
                     _characterSettings[_currentCharacterIndex]["Name"] = name;
                     _characterSettings[_currentCharacterIndex]["SystemPrompt"] = systemPrompt;
@@ -656,6 +684,8 @@ namespace CocoroDock.Controls
                     _characterSettings[_currentCharacterIndex]["UserId"] = userId;
                     _characterSettings[_currentCharacterIndex]["EmbeddedApiKey"] = embeddedApiKey;
                     _characterSettings[_currentCharacterIndex]["EmbeddedModel"] = embeddedModel;
+                    _characterSettings[_currentCharacterIndex]["IsUseSTT"] = isUseSTT.ToString();
+                    _characterSettings[_currentCharacterIndex]["STTApiKey"] = sttApiKey;
 
                     // コンボボックスの表示も更新
                     if (_currentCharacterIndex < CharacterSelectComboBox.Items.Count)
@@ -1022,6 +1052,20 @@ namespace CocoroDock.Controls
                 if (character.ContainsKey("EmbeddedModel"))
                 {
                     newCharacter.embeddedModel = character["EmbeddedModel"];
+                }
+
+                // IsUseSTTの設定を更新
+                bool isUseSTT = false;
+                if (character.ContainsKey("IsUseSTT"))
+                {
+                    bool.TryParse(character["IsUseSTT"], out isUseSTT);
+                }
+                newCharacter.isUseSTT = isUseSTT;
+
+                // STTApiKeyの設定を更新
+                if (character.ContainsKey("STTApiKey"))
+                {
+                    newCharacter.sttApiKey = character["STTApiKey"];
                 }
 
                 // 既存の設定を保持（null になることはないという前提）
