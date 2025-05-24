@@ -29,6 +29,10 @@ https://github.com/uezo/aiavatarkit/blob/main/LICENSE
 Copyright (c) uezo
 https://github.com/uezo/ChatdollKit/blob/master/LICENSE
 
+◆ ChatMemory ◆
+Copyright (c) uezo
+https://github.com/uezo/chatmemory/blob/main/LICENSE
+
 ◆ UniWindowController ◆
 Copyright (c) 2020 Kirurobo
 https://github.com/kirurobo/UniWindowController/blob/main/LICENSE.txt
