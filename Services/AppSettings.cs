@@ -171,7 +171,9 @@ namespace CocoroDock.Services
                     isEnableMemory = true,
                     userId = "",
                     embeddedApiKey = "",
-                    embeddedModel = "openai/text-embedding-3-small"
+                    embeddedModel = "openai/text-embedding-3-small",
+                    isUseSTT = false,
+                    sttApiKey = ""
                 }
             };
         }
@@ -485,7 +487,9 @@ namespace CocoroDock.Services
                         isEnableMemory = true,
                         userId = "",
                         embeddedApiKey = "",
-                        embeddedModel = ""
+                        embeddedModel = "",
+                        isUseSTT = false,
+                        sttApiKey = ""
                     };
 
                     defaultSettings.characterList.Add(newChar);
