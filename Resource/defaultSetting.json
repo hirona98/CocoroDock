@@ -31,7 +31,9 @@
             "isEnableMemory": false,
             "userId": "",
             "embeddedApiKey": "",
-            "embeddedModel": "ollama/nomic-embed-text"
+            "embeddedModel": "ollama/nomic-embed-text",
+            "isUseSTT": false,
+            "sttApiKey": ""
         },
         {
             "isReadOnly": true,
@@ -47,7 +49,9 @@
             "isEnableMemory": false,
             "userId": "",
             "embeddedApiKey": "",
-            "embeddedModel": "openai/text-embedding-3-small"
+            "embeddedModel": "openai/text-embedding-3-small",
+            "isUseSTT": false,
+            "sttApiKey": ""
         }
     ]
 }
