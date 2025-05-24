@@ -28,7 +28,7 @@
             "ttsEndpointURL": "http://localhost:50025",
             "ttsSperkerID": "18",
             "isEnableMemory": false,
-            "userId": "User01",
+            "userId": "",
             "embeddedApiKey": "",
             "embeddedModel": "ollama/nomic-embed-text"
         },
@@ -44,7 +44,7 @@
             "ttsEndpointURL": "",
             "ttsSperkerID": "",
             "isEnableMemory": false,
-            "userId": "User01",
+            "userId": "",
             "embeddedApiKey": "",
             "embeddedModel": "openai/text-embedding-3-small"
         }

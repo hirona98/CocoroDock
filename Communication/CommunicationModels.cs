@@ -111,7 +111,7 @@ namespace CocoroDock.Communication
         public string ttsEndpointURL { get; set; } = string.Empty;
         public string ttsSperkerID { get; set; } = string.Empty;
         public bool isEnableMemory { get; set; } = true; // メモリ機能の有効/無効（デフォルト: true）
-        public string userId { get; set; } = "User01";
+        public string userId { get; set; } = "";
         public string embeddedApiKey { get; set; } = string.Empty; // 埋め込みモデル用APIキー
         public string embeddedModel { get; set; } = "openai/text-embedding-3-small"; // 埋め込みモデル名
     }

@@ -168,7 +168,7 @@ namespace CocoroDock.Services
                     ttsEndpointURL = "http://localhost:50021",
                     ttsSperkerID = "1",
                     isEnableMemory = true,
-                    userId = "User01",
+                    userId = "",
                     embeddedApiKey = "",
                     embeddedModel = "openai/text-embedding-3-small"
                 }
@@ -480,7 +480,7 @@ namespace CocoroDock.Services
                         ttsEndpointURL = oldChar.TTSEndpointURL,
                         ttsSperkerID = oldChar.TTSSperkerID,
                         isEnableMemory = true,
-                        userId = "User01",
+                        userId = "",
                         embeddedApiKey = "",
                         embeddedModel = ""
                     };

@@ -365,7 +365,7 @@ namespace CocoroDock.Controls
                     { "TTSEndpointURL", character.ttsEndpointURL ?? "" },
                     { "TTSSperkerID", character.ttsSperkerID ?? "" },
                     { "IsEnableMemory", character.isEnableMemory.ToString() },
-                    { "UserId", character.userId ?? "User01" },
+                    { "UserId", character.userId ?? "" },
                     { "EmbeddedApiKey", character.embeddedApiKey ?? "" },
                     { "EmbeddedModel", character.embeddedModel ?? "" }
                 };
@@ -417,7 +417,7 @@ namespace CocoroDock.Controls
                 SystemPromptTextBox.Text = _characterSettings[index]["SystemPrompt"];
                 TTSEndpointURLTextBox.Text = _characterSettings[index]["TTSEndpointURL"];
                 TTSSperkerIDTextBox.Text = _characterSettings[index]["TTSSperkerID"];
-                UserIdTextBox.Text = _characterSettings[index].ContainsKey("UserId") ? _characterSettings[index]["UserId"] : "User01";
+                UserIdTextBox.Text = _characterSettings[index].ContainsKey("UserId") ? _characterSettings[index]["UserId"] : "";
                 EmbeddedApiKeyPasswordBox.Password = _characterSettings[index].ContainsKey("EmbeddedApiKey") ? _characterSettings[index]["EmbeddedApiKey"] : "";
                 EmbeddedModelTextBox.Text = _characterSettings[index].ContainsKey("EmbeddedModel") ? _characterSettings[index]["EmbeddedModel"] : "";
 
@@ -503,7 +503,7 @@ namespace CocoroDock.Controls
                 { "TTSEndpointURL", "" },
                 { "TTSSperkerID", "" },
                 { "IsEnableMemory", "true" },
-                { "UserId", "User01" },
+                { "UserId", "" },
                 { "EmbeddedApiKey", "" },
                 { "EmbeddedModel", "" }
             };
