@@ -117,6 +117,13 @@ namespace CocoroDock.Utilities
                     UseShellExecute = true
                 };
 
+                // CocoroMemoryの場合はウィンドウを非表示にする
+                if (processName.Equals("CocoroMemory", StringComparison.OrdinalIgnoreCase))
+                {
+                    startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                    startInfo.CreateNoWindow = true;
+                }
+
                 // プロセスを起動
                 Process.Start(startInfo);
             }
