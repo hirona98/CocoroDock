@@ -3,7 +3,8 @@
     "allow": [
       "Bash(find:*)",
       "Bash(dotnet --version)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

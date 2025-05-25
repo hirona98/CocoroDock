@@ -44,13 +44,37 @@ namespace CocoroDock.Utilities
                         {
                             if (!process.HasExited)
                             {
-                                process.CloseMainWindow();
-                                process.WaitForExit(10000);
-                                if (!process.HasExited)
+                                // より丁寧な停止方法
+                                try
                                 {
-                                    process.Kill();
+                                    // taskkillでSIGTERMを送信（/Fなし）
+                                    Process taskkillProcess = Process.Start(new ProcessStartInfo
+                                    {
+                                        FileName = "taskkill",
+                                        Arguments = $"/PID {process.Id}",
+                                        CreateNoWindow = true,
+                                        UseShellExecute = false
+                                    });
+                                    taskkillProcess?.WaitForExit();
+
+                                    if (!process.WaitForExit(2000))
+                                    {
+                                        // それでも終了しない場合は強制終了
+                                        process.Kill();
+                                        process.WaitForExit(2000);
+                                    }
                                 }
-                                process.WaitForExit(3000); // 最大3秒待機
+                                catch
+                                {
+                                    // エラーが発生した場合は従来の方法
+                                    process.CloseMainWindow();
+                                    process.WaitForExit(5000);
+                                    if (!process.HasExited)
+                                    {
+                                        process.Kill();
+                                        process.WaitForExit(2000);
+                                    }
+                                }
                                 Debug.WriteLine($"{processName} プロセスを終了しました。");
                             }
                         }
