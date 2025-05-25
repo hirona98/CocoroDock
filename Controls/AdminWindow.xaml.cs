@@ -369,6 +369,7 @@ namespace CocoroDock.Controls
                     { "EmbeddedApiKey", character.embeddedApiKey ?? "" },
                     { "EmbeddedModel", character.embeddedModel ?? "" },
                     { "IsUseSTT", character.isUseSTT.ToString() },
+                    { "STTWakeWord", character.sttWakeWord ?? "" },
                     { "STTApiKey", character.sttApiKey ?? "" }
                 };
                 _characterSettings.Add(characterDict);
@@ -422,6 +423,7 @@ namespace CocoroDock.Controls
                 UserIdTextBox.Text = _characterSettings[index].ContainsKey("UserId") ? _characterSettings[index]["UserId"] : "";
                 EmbeddedApiKeyPasswordBox.Password = _characterSettings[index].ContainsKey("EmbeddedApiKey") ? _characterSettings[index]["EmbeddedApiKey"] : "";
                 EmbeddedModelTextBox.Text = _characterSettings[index].ContainsKey("EmbeddedModel") ? _characterSettings[index]["EmbeddedModel"] : "";
+                STTWakeWordTextBox.Text = _characterSettings[index].ContainsKey("STTWakeWord") ? _characterSettings[index]["STTWakeWord"] : "";
                 STTApiKeyPasswordBox.Password = _characterSettings[index].ContainsKey("STTApiKey") ? _characterSettings[index]["STTApiKey"] : "";
 
                 // IsUseLLMチェックボックスの状態を更新
@@ -518,6 +520,7 @@ namespace CocoroDock.Controls
                 { "EmbeddedApiKey", "" },
                 { "EmbeddedModel", "" },
                 { "IsUseSTT", "false" },
+                { "STTWakeWord", "" },
                 { "STTApiKey", "" }
             };
             _characterSettings.Add(newCharacter);
@@ -581,6 +584,7 @@ namespace CocoroDock.Controls
                 var embeddedApiKey = EmbeddedApiKeyPasswordBox.Password;
                 var embeddedModel = EmbeddedModelTextBox.Text;
                 var isUseSTT = IsUseSTTCheckBox.IsChecked ?? false;
+                var sttWakeWord = STTWakeWordTextBox.Text;
                 var sttApiKey = STTApiKeyPasswordBox.Password;
 
                 // IsReadOnlyの状態を確認
@@ -661,6 +665,8 @@ namespace CocoroDock.Controls
                 {
                     isUseSTTChanged = isUseSTT; // デフォルトはfalseとして扱う
                 }
+                bool sttWakeWordChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("STTWakeWord") ||
+                                     _characterSettings[_currentCharacterIndex]["STTWakeWord"] != sttWakeWord;
                 bool sttApiKeyChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("STTApiKey") ||
                                      _characterSettings[_currentCharacterIndex]["STTApiKey"] != sttApiKey;
 
@@ -669,7 +675,7 @@ namespace CocoroDock.Controls
                     _characterSettings[_currentCharacterIndex]["SystemPrompt"] != systemPrompt ||
                     isUseLLMChanged || isUseTTSChanged || vrmFilePathChanged || apiKeyChanged || llmModelChanged ||
                     ttsEndpointURLChanged || ttsSperkerIDChanged || userIdChanged || isEnableMemoryChanged ||
-                    embeddedApiKeyChanged || embeddedModelChanged || isUseSTTChanged || sttApiKeyChanged)
+                    embeddedApiKeyChanged || embeddedModelChanged || isUseSTTChanged || sttWakeWordChanged || sttApiKeyChanged)
                 {
                     _characterSettings[_currentCharacterIndex]["Name"] = name;
                     _characterSettings[_currentCharacterIndex]["SystemPrompt"] = systemPrompt;
@@ -685,6 +691,7 @@ namespace CocoroDock.Controls
                     _characterSettings[_currentCharacterIndex]["EmbeddedApiKey"] = embeddedApiKey;
                     _characterSettings[_currentCharacterIndex]["EmbeddedModel"] = embeddedModel;
                     _characterSettings[_currentCharacterIndex]["IsUseSTT"] = isUseSTT.ToString();
+                    _characterSettings[_currentCharacterIndex]["STTWakeWord"] = sttWakeWord;
                     _characterSettings[_currentCharacterIndex]["STTApiKey"] = sttApiKey;
 
                     // コンボボックスの表示も更新
@@ -738,35 +745,54 @@ namespace CocoroDock.Controls
             // VRMFilePathかSelectedIndexが変更されたかチェック
             bool isNeedsRestart = false;
             int currentSelectedIndex = AppSettings.Instance.CurrentCharacterIndex;
-            string currentVRMFilePath = string.Empty;
-            bool currentIsUseLLM = false;
-            bool currentIsEnableMemory = true;
-            if (currentSelectedIndex >= 0 && currentSelectedIndex < AppSettings.Instance.CharacterList.Count)
-            {
-                currentVRMFilePath = AppSettings.Instance.CharacterList[currentSelectedIndex].vrmFilePath ?? string.Empty;
-                currentIsUseLLM = AppSettings.Instance.CharacterList[currentSelectedIndex].isUseLLM;
-                currentIsEnableMemory = AppSettings.Instance.CharacterList[currentSelectedIndex].isEnableMemory;
-            }
             // SelectedIndexが変更された場合
             if (lastSelectedIndex != currentSelectedIndex)
             {
                 isNeedsRestart = true;
             }
-            // VRMFilePathが変更された場合（同じキャラクターの場合のみチェック）
-            if (lastSelectedIndex == currentSelectedIndex && lastVRMFilePath != currentVRMFilePath)
+
+            // キャラクター設定の変更を検出（元の設定と比較）（同じキャラクターの場合のみチェック）
+            if (lastSelectedIndex == currentSelectedIndex && _originalCharacterSettings != null)
             {
-                isNeedsRestart = true;
+                // すべてのキャラクターの設定を比較
+                for (int i = 0; i < _characterSettings.Count && i < _originalCharacterSettings.Count; i++)
+                {
+                    var current = _characterSettings[i];
+                    var original = _originalCharacterSettings[i];
+
+                    // 各項目を比較
+                    foreach (var key in current.Keys)
+                    {
+                        if (!original.ContainsKey(key) || current[key] != original[key])
+                        {
+                            isNeedsRestart = true;
+                            break;
+                        }
+                    }
+
+                    // originalにあってcurrentにない項目もチェック
+                    foreach (var key in original.Keys)
+                    {
+                        if (!current.ContainsKey(key))
+                        {
+                            isNeedsRestart = true;
+                            break;
+                        }
+                    }
+
+                    if (isNeedsRestart)
+                    {
+                        break;
+                    }
+                }
+
+                // キャラクター数が変更された場合
+                if (_characterSettings.Count != _originalCharacterSettings.Count)
+                {
+                    isNeedsRestart = true;
+                }
             }
-            // IsUseLLMが変更された場合（同じキャラクターの場合のみチェック）
-            if (lastSelectedIndex == currentSelectedIndex && lastIsUseLLM != currentIsUseLLM)
-            {
-                isNeedsRestart = true;
-            }
-            // IsEnableMemoryが変更された場合（同じキャラクターの場合のみチェック）
-            if (lastSelectedIndex == currentSelectedIndex && lastIsEnableMemory != currentIsEnableMemory)
-            {
-                isNeedsRestart = true;
-            }
+
             // 設定が変更された場合、メッセージボックスを表示して CocoroCore と CocoroShell を再起動
             if (isNeedsRestart)
             {
@@ -774,7 +800,7 @@ namespace CocoroDock.Controls
                 {
                     // チャット履歴をクリア
                     mainWindow.ChatControlInstance.ClearChat();
-                    
+
                     var launchCocoroCore = typeof(MainWindow).GetMethod("LaunchCocoroCore", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                     var launchCocoroShell = typeof(MainWindow).GetMethod("LaunchCocoroShell", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                     var launchCocoroMemory = typeof(MainWindow).GetMethod("LaunchCocoroMemory", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -1084,6 +1110,12 @@ namespace CocoroDock.Controls
                 }
                 newCharacter.isUseSTT = isUseSTT;
 
+                // STTWakeWordの設定を更新
+                if (character.ContainsKey("STTWakeWord"))
+                {
+                    newCharacter.sttWakeWord = character["STTWakeWord"];
+                }
+
                 // STTApiKeyの設定を更新
                 if (character.ContainsKey("STTApiKey"))
                 {
@@ -1241,11 +1273,11 @@ namespace CocoroDock.Controls
         private bool ValidateCharacterSettings()
         {
             var warnings = new List<string>();
-            
+
             foreach (var character in _characterSettings)
             {
                 string characterName = character["Name"];
-                
+
                 // LLMが有効なのにLLM Modelが空欄
                 bool isUseLLM = false;
                 if (character.ContainsKey("IsUseLLM"))
@@ -1305,6 +1337,10 @@ namespace CocoroDock.Controls
                 }
                 if (isUseSTT)
                 {
+                    if (string.IsNullOrWhiteSpace(character.ContainsKey("STTWakeWord") ? character["STTWakeWord"] : ""))
+                    {
+                        warnings.Add($"・キャラクター「{characterName}」でSTTが有効ですが、STT 起動ワードが空欄です");
+                    }
                     if (string.IsNullOrWhiteSpace(character.ContainsKey("STTApiKey") ? character["STTApiKey"] : ""))
                     {
                         warnings.Add($"・キャラクター「{characterName}」でSTTが有効ですが、STT APIキーが空欄です");
@@ -1338,7 +1374,7 @@ namespace CocoroDock.Controls
             var character = _characterSettings[characterIndex];
             string characterName = character["Name"];
             var warnings = new List<string>();
-            
+
             // LLMが有効なのにLLM Modelが空欄
             bool isUseLLM = false;
             if (character.ContainsKey("IsUseLLM"))
@@ -1398,6 +1434,10 @@ namespace CocoroDock.Controls
             }
             if (isUseSTT)
             {
+                if (string.IsNullOrWhiteSpace(character.ContainsKey("STTWakeWord") ? character["STTWakeWord"] : ""))
+                {
+                    warnings.Add($"・STTが有効ですが、STT 起動ワードが空欄です");
+                }
                 if (string.IsNullOrWhiteSpace(character.ContainsKey("STTApiKey") ? character["STTApiKey"] : ""))
                 {
                     warnings.Add($"・STTが有効ですが、STT APIキーが空欄です");

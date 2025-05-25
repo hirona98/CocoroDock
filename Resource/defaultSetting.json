@@ -33,6 +33,7 @@
             "embeddedApiKey": "",
             "embeddedModel": "ollama/nomic-embed-text",
             "isUseSTT": false,
+            "sttWakeWord": "つくよみちゃん",
             "sttApiKey": ""
         },
         {
@@ -51,6 +52,7 @@
             "embeddedApiKey": "",
             "embeddedModel": "openai/text-embedding-3-small",
             "isUseSTT": false,
+            "sttWakeWord": "こんにちは",
             "sttApiKey": ""
         }
     ]

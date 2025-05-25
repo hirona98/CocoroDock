@@ -173,6 +173,7 @@ namespace CocoroDock.Services
                     embeddedApiKey = "",
                     embeddedModel = "openai/text-embedding-3-small",
                     isUseSTT = false,
+                    sttWakeWord = "",
                     sttApiKey = ""
                 }
             };
@@ -489,6 +490,7 @@ namespace CocoroDock.Services
                         embeddedApiKey = "",
                         embeddedModel = "",
                         isUseSTT = false,
+                        sttWakeWord = "",
                         sttApiKey = ""
                     };
 

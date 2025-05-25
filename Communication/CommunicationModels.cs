@@ -115,6 +115,7 @@ namespace CocoroDock.Communication
         public string embeddedApiKey { get; set; } = string.Empty; // 埋め込みモデル用APIキー
         public string embeddedModel { get; set; } = "openai/text-embedding-3-small"; // 埋め込みモデル名
         public bool isUseSTT { get; set; } = false; // STT（音声認識）機能の有効/無効
+        public string sttWakeWord { get; set; } = string.Empty; // STT起動ワード
         public string sttApiKey { get; set; } = string.Empty; // STT用APIキー
     }
 

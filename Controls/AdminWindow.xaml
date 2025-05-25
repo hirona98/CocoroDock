@@ -272,7 +272,7 @@
                                   VerticalScrollBarVisibility="Auto">
                         <StackPanel>
                             <!-- キャラクター選択 -->
-                            <GroupBox Header="キャラクター選択（要再起動）"
+                            <GroupBox Header="キャラクター選択"
                                       Margin="0,0,20,20"
                                       Padding="10"
                                       ToolTip="Select Character (Restart Required)">
@@ -581,6 +581,27 @@
                                                   Foreground="#FF4873CF"
                                                   ToolTip="Use STT"/>
                                     </Grid>
+
+                                    <!-- STT起動ワードの設定 -->
+                                    <Grid Margin="0,5,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Wake Word:"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBox Grid.Column="1"
+                                                 x:Name="STTWakeWordTextBox"
+                                                 Margin="0,5"
+                                                 Foreground="#FF0078D7"
+                                                 ToolTip="Wake word for STT"/>
+                                    </Grid>
+                                    <!-- STT起動ワード説明テキスト -->
+                                    <TextBlock TextWrapping="Wrap"
+                                               Margin="100,0,0,10">
+                                        音声認識を開始するキーワードです。起動直後は反応が遅くなることがあります。
+                                    </TextBlock>
 
                                     <!-- STT APIキーの設定 -->
                                     <Grid Margin="0,5">
