@@ -473,11 +473,11 @@ namespace CocoroDock
                _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count && 
                _appSettings.CharacterList[_appSettings.CurrentCharacterIndex].isUseLLM)
             {
-                ProcessHelper.LaunchExternalApplication("CocoroCore", "CocoroCore.exe", null, operation);
+                ProcessHelper.LaunchExternalApplication("CocoroCore", "CocoroCore.exe","CocoroCore", operation);
             }
             else
             {
-                ProcessHelper.LaunchExternalApplication("CocoroCore", "CocoroCore.exe", null, ProcessOperation.Terminate);
+                ProcessHelper.LaunchExternalApplication("CocoroCore", "CocoroCore.exe", "CocoroCore", ProcessOperation.Terminate);
             }
 #endif
         }
@@ -494,12 +494,12 @@ namespace CocoroDock
                _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count && 
                _appSettings.CharacterList[_appSettings.CurrentCharacterIndex].isEnableMemory)
             {
-                ProcessHelper.LaunchExternalApplication("CocoroMemory", "CocoroMemory.exe", null, operation);
+                ProcessHelper.LaunchExternalApplication("CocoroMemory", "CocoroMemory.exe", "CocoroMemory", operation);
             }
             else
             {
                 // 記憶機能が無効な場合は終了
-                ProcessHelper.LaunchExternalApplication("CocoroMemory", "CocoroMemory.exe", null, ProcessOperation.Terminate);
+                ProcessHelper.LaunchExternalApplication("CocoroMemory", "CocoroMemory.exe", "CocoroMemory", ProcessOperation.Terminate);
             }
 #endif
         }
