@@ -724,10 +724,12 @@ namespace CocoroDock.Controls
             int lastSelectedIndex = AppSettings.Instance.CurrentCharacterIndex;
             string lastVRMFilePath = string.Empty;
             bool lastIsUseLLM = false;
+            bool lastIsEnableMemory = true;
             if (lastSelectedIndex >= 0 && lastSelectedIndex < AppSettings.Instance.CharacterList.Count)
             {
                 lastVRMFilePath = AppSettings.Instance.CharacterList[lastSelectedIndex].vrmFilePath ?? string.Empty;
                 lastIsUseLLM = AppSettings.Instance.CharacterList[lastSelectedIndex].isUseLLM;
+                lastIsEnableMemory = AppSettings.Instance.CharacterList[lastSelectedIndex].isEnableMemory;
             }
 
             // すべてのタブの設定を保存
@@ -738,10 +740,12 @@ namespace CocoroDock.Controls
             int currentSelectedIndex = AppSettings.Instance.CurrentCharacterIndex;
             string currentVRMFilePath = string.Empty;
             bool currentIsUseLLM = false;
+            bool currentIsEnableMemory = true;
             if (currentSelectedIndex >= 0 && currentSelectedIndex < AppSettings.Instance.CharacterList.Count)
             {
                 currentVRMFilePath = AppSettings.Instance.CharacterList[currentSelectedIndex].vrmFilePath ?? string.Empty;
                 currentIsUseLLM = AppSettings.Instance.CharacterList[currentSelectedIndex].isUseLLM;
+                currentIsEnableMemory = AppSettings.Instance.CharacterList[currentSelectedIndex].isEnableMemory;
             }
             // SelectedIndexが変更された場合
             if (lastSelectedIndex != currentSelectedIndex)
@@ -758,20 +762,29 @@ namespace CocoroDock.Controls
             {
                 isNeedsRestart = true;
             }
+            // IsEnableMemoryが変更された場合（同じキャラクターの場合のみチェック）
+            if (lastSelectedIndex == currentSelectedIndex && lastIsEnableMemory != currentIsEnableMemory)
+            {
+                isNeedsRestart = true;
+            }
             // 設定が変更された場合、メッセージボックスを表示して CocoroCore と CocoroShell を再起動
             if (isNeedsRestart)
             {
                 if (Owner is MainWindow mainWindow)
                 {
                     // チャット履歴をクリア
-                    mainWindow.ChatControlInstance.ClearChat(); var launchCocoroCore = typeof(MainWindow).GetMethod("LaunchCocoroCore", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    mainWindow.ChatControlInstance.ClearChat();
+                    
+                    var launchCocoroCore = typeof(MainWindow).GetMethod("LaunchCocoroCore", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                     var launchCocoroShell = typeof(MainWindow).GetMethod("LaunchCocoroShell", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    if (launchCocoroCore != null && launchCocoroShell != null)
+                    var launchCocoroMemory = typeof(MainWindow).GetMethod("LaunchCocoroMemory", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    if (launchCocoroCore != null && launchCocoroShell != null && launchCocoroMemory != null)
                     {
                         // ProcessOperation.RestartIfRunning (デフォルト値) を引数として渡す
                         object[] parameters = new object[] { 0 }; // ProcessOperation.RestartIfRunning = 0
                         launchCocoroCore.Invoke(mainWindow, parameters);
                         launchCocoroShell.Invoke(mainWindow, parameters);
+                        launchCocoroMemory.Invoke(mainWindow, parameters);
                     }
                 }
             }

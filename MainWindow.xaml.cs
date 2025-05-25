@@ -86,6 +86,8 @@ namespace CocoroDock
             LaunchCocoroShell();
             // CocoroCore.exeを起動（既に起動していれば終了してから再起動）
             LaunchCocoroCore();
+            // CocoroMemory.exeを起動（既に起動していれば終了してから再起動）
+            LaunchCocoroMemory();
 #endif
         }
 
@@ -395,6 +397,9 @@ namespace CocoroDock
 
                 // CocoroShell プロセスを終了
                 LaunchCocoroShell(ProcessOperation.Terminate);
+
+                // CocoroMemory プロセスを終了
+                LaunchCocoroMemory(ProcessOperation.Terminate);
             }
             catch (Exception ex)
             {
@@ -473,6 +478,28 @@ namespace CocoroDock
             else
             {
                 ProcessHelper.LaunchExternalApplication("CocoroCore", "CocoroCore.exe", null, ProcessOperation.Terminate);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// CocoroMemory.exeを起動する（既に起動している場合は終了してから再起動）
+        /// </summary>
+        /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
+        private void LaunchCocoroMemory(ProcessOperation operation = ProcessOperation.RestartIfRunning)
+        {
+#if !DEBUG
+            // 現在のキャラクターが有効で、記憶機能が有効な場合のみ起動
+            if(_appSettings.CharacterList.Count > 0 && 
+               _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count && 
+               _appSettings.CharacterList[_appSettings.CurrentCharacterIndex].isEnableMemory)
+            {
+                ProcessHelper.LaunchExternalApplication("CocoroMemory", "CocoroMemory.exe", null, operation);
+            }
+            else
+            {
+                // 記憶機能が無効な場合は終了
+                ProcessHelper.LaunchExternalApplication("CocoroMemory", "CocoroMemory.exe", null, ProcessOperation.Terminate);
             }
 #endif
         }
