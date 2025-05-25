@@ -61,3 +61,8 @@ https://github.com/hecomi/uLipSync/blob/main/LICENSE.md
 ◆ このソフトウェアについて ◆
 Copyright (c) ヒロナ
 https://alice-encoder.booth.pm/
+
+
+=============================================================================
+LLM関連機能ライセンス: CocoroCoreフォルダを参照願います
+長期記憶機能ライセンス: CocoroMemoryフォルダを参照願います
