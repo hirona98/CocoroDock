@@ -44,7 +44,12 @@ namespace CocoroDock.Utilities
                         {
                             if (!process.HasExited)
                             {
-                                process.Kill();
+                                process.CloseMainWindow();
+                                process.WaitForExit(10000);
+                                if (!process.HasExited)
+                                {
+                                    process.Kill();
+                                }
                                 process.WaitForExit(3000); // 最大3秒待機
                                 Debug.WriteLine($"{processName} プロセスを終了しました。");
                             }
