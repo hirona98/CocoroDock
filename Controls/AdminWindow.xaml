@@ -518,7 +518,7 @@
                             </GroupBox>
 
                             <!-- TTSパラメータ -->
-                            <GroupBox Header="TTS(VOICEVOX/SHAREVOX/AivisSpeech)"
+                            <GroupBox Header="TTS (VOICEVOX/SHAREVOX/AivisSpeech)"
                                       Margin="0,0,20,20"
                                       Padding="10">
                                 <StackPanel>
@@ -571,13 +571,13 @@
                             </GroupBox>
 
                             <!-- STTパラメータ -->
-                            <GroupBox Header="STT (OpenAI Only)"
+                            <GroupBox Header="STT (Speech-to-Text)"
                                       Margin="0,0,20,20"
                                       Padding="10">
                                 <StackPanel>
                                     <Grid Margin="0,5">
                                         <CheckBox x:Name="IsUseSTTCheckBox"
-                                                  Content="STTを使用する"
+                                                  Content="STTを使用する (OpenAI Only)"
                                                   Foreground="#FF4873CF"
                                                   ToolTip="Use STT"/>
                                     </Grid>

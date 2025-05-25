@@ -711,6 +711,15 @@ namespace CocoroDock.Controls
         /// </summary>
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
+            // 現在のキャラクター設定を一時保存
+            SaveCurrentCharacterSettings();
+
+            // バリデーション（警告のみ）
+            if (!ValidateCharacterSettings())
+            {
+                return;
+            }
+
             // 設定変更前の値を保存
             int lastSelectedIndex = AppSettings.Instance.CurrentCharacterIndex;
             string lastVRMFilePath = string.Empty;
@@ -1209,6 +1218,184 @@ namespace CocoroDock.Controls
             catch (Exception ex)
             {
                 MessageBox.Show($"URLを開けませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// キャラクター設定のバリデーション（警告のみ）
+        /// </summary>
+        /// <returns>続行する場合はtrue、キャンセルする場合はfalse</returns>
+        private bool ValidateCharacterSettings()
+        {
+            var warnings = new List<string>();
+            
+            foreach (var character in _characterSettings)
+            {
+                string characterName = character["Name"];
+                
+                // LLMが有効なのにLLM Modelが空欄
+                bool isUseLLM = false;
+                if (character.ContainsKey("IsUseLLM"))
+                {
+                    bool.TryParse(character["IsUseLLM"], out isUseLLM);
+                }
+                if (isUseLLM && string.IsNullOrWhiteSpace(character["LLMModel"]))
+                {
+                    warnings.Add($"・キャラクター「{characterName}」でLLMが有効ですが、LLM Modelが空欄です");
+                }
+
+                // 記憶機能が有効なのに関連する各項目が空欄
+                bool isEnableMemory = true;
+                if (character.ContainsKey("IsEnableMemory"))
+                {
+                    bool.TryParse(character["IsEnableMemory"], out isEnableMemory);
+                }
+                if (isEnableMemory)
+                {
+                    if (string.IsNullOrWhiteSpace(character.ContainsKey("UserId") ? character["UserId"] : ""))
+                    {
+                        warnings.Add($"・キャラクター「{characterName}」で記憶機能が有効ですが、ユーザーIDが空欄です");
+                    }
+                    if (string.IsNullOrWhiteSpace(character.ContainsKey("EmbeddedApiKey") ? character["EmbeddedApiKey"] : ""))
+                    {
+                        warnings.Add($"・キャラクター「{characterName}」で記憶機能が有効ですが、埋め込みAPIキーが空欄です");
+                    }
+                    if (string.IsNullOrWhiteSpace(character.ContainsKey("EmbeddedModel") ? character["EmbeddedModel"] : ""))
+                    {
+                        warnings.Add($"・キャラクター「{characterName}」で記憶機能が有効ですが、埋め込みモデルが空欄です");
+                    }
+                }
+
+                // TTSが有効なのに関連する各項目が空欄
+                bool isUseTTS = false;
+                if (character.ContainsKey("IsUseTTS"))
+                {
+                    bool.TryParse(character["IsUseTTS"], out isUseTTS);
+                }
+                if (isUseTTS)
+                {
+                    if (string.IsNullOrWhiteSpace(character["TTSEndpointURL"]))
+                    {
+                        warnings.Add($"・キャラクター「{characterName}」でTTSが有効ですが、TTSエンドポイントURLが空欄です");
+                    }
+                    if (string.IsNullOrWhiteSpace(character["TTSSperkerID"]))
+                    {
+                        warnings.Add($"・キャラクター「{characterName}」でTTSが有効ですが、TTSスピーカーIDが空欄です");
+                    }
+                }
+
+                // STTが有効なのに関連する各項目が空欄
+                bool isUseSTT = false;
+                if (character.ContainsKey("IsUseSTT"))
+                {
+                    bool.TryParse(character["IsUseSTT"], out isUseSTT);
+                }
+                if (isUseSTT)
+                {
+                    if (string.IsNullOrWhiteSpace(character.ContainsKey("STTApiKey") ? character["STTApiKey"] : ""))
+                    {
+                        warnings.Add($"・キャラクター「{characterName}」でSTTが有効ですが、STT APIキーが空欄です");
+                    }
+                }
+            }
+
+            // 警告がある場合はまとめて表示
+            if (warnings.Count > 0)
+            {
+                string message = "以下の設定に問題があります:\n\n" + string.Join("\n", warnings) + "\n\nこのまま保存しますか？";
+                var result = MessageBox.Show(message, "設定の警告", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (result == MessageBoxResult.No)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 単一キャラクター設定のバリデーション（警告のみ）
+        /// </summary>
+        private void ValidateSingleCharacterSettings(int characterIndex)
+        {
+            if (characterIndex < 0 || characterIndex >= _characterSettings.Count)
+            {
+                return;
+            }
+
+            var character = _characterSettings[characterIndex];
+            string characterName = character["Name"];
+            var warnings = new List<string>();
+            
+            // LLMが有効なのにLLM Modelが空欄
+            bool isUseLLM = false;
+            if (character.ContainsKey("IsUseLLM"))
+            {
+                bool.TryParse(character["IsUseLLM"], out isUseLLM);
+            }
+            if (isUseLLM && string.IsNullOrWhiteSpace(character["LLMModel"]))
+            {
+                warnings.Add($"・LLMが有効ですが、LLM Modelが空欄です");
+            }
+
+            // 記憶機能が有効なのに関連する各項目が空欄
+            bool isEnableMemory = true;
+            if (character.ContainsKey("IsEnableMemory"))
+            {
+                bool.TryParse(character["IsEnableMemory"], out isEnableMemory);
+            }
+            if (isEnableMemory)
+            {
+                if (string.IsNullOrWhiteSpace(character.ContainsKey("UserId") ? character["UserId"] : ""))
+                {
+                    warnings.Add($"・記憶機能が有効ですが、ユーザーIDが空欄です");
+                }
+                if (string.IsNullOrWhiteSpace(character.ContainsKey("EmbeddedApiKey") ? character["EmbeddedApiKey"] : ""))
+                {
+                    warnings.Add($"・記憶機能が有効ですが、埋め込みAPIキーが空欄です");
+                }
+                if (string.IsNullOrWhiteSpace(character.ContainsKey("EmbeddedModel") ? character["EmbeddedModel"] : ""))
+                {
+                    warnings.Add($"・記憶機能が有効ですが、埋め込みモデルが空欄です");
+                }
+            }
+
+            // TTSが有効なのに関連する各項目が空欄
+            bool isUseTTS = false;
+            if (character.ContainsKey("IsUseTTS"))
+            {
+                bool.TryParse(character["IsUseTTS"], out isUseTTS);
+            }
+            if (isUseTTS)
+            {
+                if (string.IsNullOrWhiteSpace(character["TTSEndpointURL"]))
+                {
+                    warnings.Add($"・TTSが有効ですが、TTSエンドポイントURLが空欄です");
+                }
+                if (string.IsNullOrWhiteSpace(character["TTSSperkerID"]))
+                {
+                    warnings.Add($"・TTSが有効ですが、TTSスピーカーIDが空欄です");
+                }
+            }
+
+            // STTが有効なのに関連する各項目が空欄
+            bool isUseSTT = false;
+            if (character.ContainsKey("IsUseSTT"))
+            {
+                bool.TryParse(character["IsUseSTT"], out isUseSTT);
+            }
+            if (isUseSTT)
+            {
+                if (string.IsNullOrWhiteSpace(character.ContainsKey("STTApiKey") ? character["STTApiKey"] : ""))
+                {
+                    warnings.Add($"・STTが有効ですが、STT APIキーが空欄です");
+                }
+            }
+
+            // 警告がある場合は表示
+            if (warnings.Count > 0)
+            {
+                string message = $"キャラクター「{characterName}」の設定に問題があります:\n\n" + string.Join("\n", warnings);
+                MessageBox.Show(message, "設定の警告", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
     }
