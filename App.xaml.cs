@@ -35,7 +35,7 @@ namespace CocoroDock
     public partial class App : Application
     {
         private NotifyIcon? _notifyIcon;
-        private const string PipeName = "CocoroDockPipe";
+        private static readonly string PipeName = GetPipeNameFromExecutable();
         private Thread? _pipeServerThread;
         private CancellationTokenSource? _pipeServerCancellationTokenSource;
 
@@ -220,6 +220,29 @@ namespace CocoroDock
             catch (Exception ex)
             {
                 Console.WriteLine($"システムトレイアイコンの初期化エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 実行ファイル名からパイプ名を生成する
+        /// </summary>
+        private static string GetPipeNameFromExecutable()
+        {
+            try
+            {
+                // 実行ファイルのフルパスを取得
+                string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                
+                // ファイル名（拡張子なし）を取得
+                string exeName = Path.GetFileNameWithoutExtension(exePath);
+                
+                // パイプ名を生成（ファイル名 + "Pipe"）
+                return $"{exeName}Pipe";
+            }
+            catch
+            {
+                // エラーが発生した場合はデフォルト名を返す
+                return "CocoroDockPipe";
             }
         }
 
