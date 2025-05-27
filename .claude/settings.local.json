@@ -4,7 +4,10 @@
       "Bash(find:*)",
       "Bash(dotnet --version)",
       "Bash(grep:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(dotnet build)",
+      "Bash(dotnet --list-sdks)",
+      "Bash(powershell.exe:*)"
     ],
     "deny": []
   }
