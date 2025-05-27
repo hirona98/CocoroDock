@@ -7,6 +7,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 参考までに、Windows上でのセットアップ方法を記載する。
 君が powershel 経由で起動してもいいよ。
 
+### WSL環境でのコマンド
+```bash
+# Build the project (WSL上から実行)
+powershell.exe -Command "dotnet build"
+
+# Run the application (WSL上から実行)
+powershell.exe -Command "dotnet run"
+
+# Clean build artifacts (WSL上から実行)
+powershell.exe -Command "dotnet clean"
+
+# Publish for deployment (WSL上から実行)
+powershell.exe -Command "dotnet publish"
+```
+
+### Windows環境でのコマンド
 ```bash
 # Build the project
 dotnet build
