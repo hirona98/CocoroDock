@@ -662,6 +662,7 @@
                                       x:Name="AnimationSetComboBox"
                                       Margin="0,5,10,5"
                                       Foreground="#FF4873CF"
+                                      IsEditable="True"
                                       DisplayMemberPath="animeSetName"
                                       SelectedValuePath="animeSetName"/>
                             

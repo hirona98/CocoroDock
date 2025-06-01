@@ -84,11 +84,11 @@ namespace CocoroDock.Controls
         public AdminWindow() : this(null)
         {
         }
-        
+
         public AdminWindow(ICommunicationService? communicationService)
         {
             InitializeComponent();
-            
+
             _communicationService = communicationService;
 
             // グローバルキーボードフックの設定
@@ -478,6 +478,14 @@ namespace CocoroDock.Controls
             // コンボボックスの選択変更イベントを設定
             AnimationSetComboBox.SelectionChanged -= AnimationSetComboBox_SelectionChanged;
             AnimationSetComboBox.SelectionChanged += AnimationSetComboBox_SelectionChanged;
+            
+            // テキスト変更イベントを設定（名前の編集用）
+            AnimationSetComboBox.LostFocus -= AnimationSetComboBox_LostFocus;
+            AnimationSetComboBox.LostFocus += AnimationSetComboBox_LostFocus;
+            
+            // コンボボックスのロード時イベントを設定
+            AnimationSetComboBox.Loaded -= AnimationSetComboBox_Loaded;
+            AnimationSetComboBox.Loaded += AnimationSetComboBox_Loaded;
         }
 
         /// <summary>
@@ -561,6 +569,17 @@ namespace CocoroDock.Controls
                     AppSettings.Instance.CharacterList[_currentCharacterIndex].currentAnimationSettingIndex =
                         AnimationSetComboBox.SelectedIndex;
                 }
+                
+                // テキストの選択を解除
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    var textBox = AnimationSetComboBox.Template.FindName("PART_EditableTextBox", AnimationSetComboBox) as TextBox;
+                    if (textBox != null)
+                    {
+                        textBox.SelectionLength = 0;
+                        textBox.CaretIndex = 0;
+                    }
+                }), System.Windows.Threading.DispatcherPriority.Background);
             }
         }
 
@@ -635,7 +654,7 @@ namespace CocoroDock.Controls
                         displayName = anim.displayName,
                         animationType = anim.animationType,
                         animationName = anim.animationName,
-                        isEnabled = false
+                        isEnabled = true
                     });
                 }
             }
@@ -644,6 +663,46 @@ namespace CocoroDock.Controls
             AnimationSetComboBox.ItemsSource = null;
             AnimationSetComboBox.ItemsSource = _animationSettings;
             AnimationSetComboBox.SelectedIndex = _animationSettings.Count - 1;
+        }
+
+        /// <summary>
+        /// アニメーションセットコンボボックスのロード時の処理
+        /// </summary>
+        private void AnimationSetComboBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            // テキストボックス部分の選択を解除
+            if (sender is ComboBox comboBox)
+            {
+                var textBox = comboBox.Template.FindName("PART_EditableTextBox", comboBox) as TextBox;
+                if (textBox != null)
+                {
+                    textBox.SelectionLength = 0;
+                    textBox.CaretIndex = 0;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// アニメーションセットコンボボックスのフォーカス喪失時の処理
+        /// </summary>
+        private void AnimationSetComboBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (AnimationSetComboBox.SelectedIndex >= 0 && 
+                AnimationSetComboBox.SelectedIndex < _animationSettings.Count)
+            {
+                var newName = AnimationSetComboBox.Text?.Trim();
+                if (!string.IsNullOrEmpty(newName))
+                {
+                    // 選択されているアニメーションセットの名前を更新
+                    _animationSettings[AnimationSetComboBox.SelectedIndex].animeSetName = newName;
+                    
+                    // コンボボックスを更新（表示を反映）
+                    var selectedIndex = AnimationSetComboBox.SelectedIndex;
+                    AnimationSetComboBox.ItemsSource = null;
+                    AnimationSetComboBox.ItemsSource = _animationSettings;
+                    AnimationSetComboBox.SelectedIndex = selectedIndex;
+                }
+            }
         }
         
         /// <summary>
@@ -657,14 +716,14 @@ namespace CocoroDock.Controls
                 MessageBox.Show("最後のアニメーションセットは削除できません。", "削除不可", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            
+
             // 現在選択されているセットのインデックスを取得
             int selectedIndex = AnimationSetComboBox.SelectedIndex;
             if (selectedIndex < 0 || selectedIndex >= _animationSettings.Count)
             {
                 return;
             }
-            
+
             // 削除確認
             var selectedSet = _animationSettings[selectedIndex];
             var result = MessageBox.Show($"アニメーションセット「{selectedSet.animeSetName}」を削除しますか？", "削除確認", MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -672,21 +731,21 @@ namespace CocoroDock.Controls
             {
                 return;
             }
-            
+
             // セットを削除
             _animationSettings.RemoveAt(selectedIndex);
-            
+
             // コンボボックスを更新
             AnimationSetComboBox.ItemsSource = null;
             AnimationSetComboBox.ItemsSource = _animationSettings;
-            
+
             // 新しい選択インデックスを設定
             if (selectedIndex >= _animationSettings.Count)
             {
                 selectedIndex = _animationSettings.Count - 1;
             }
             AnimationSetComboBox.SelectedIndex = selectedIndex;
-            
+
             // 各キャラクターのアニメーション設定インデックスを調整
             foreach (var character in AppSettings.Instance.CharacterList)
             {
