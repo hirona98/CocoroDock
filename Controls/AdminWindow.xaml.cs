@@ -487,8 +487,23 @@ namespace CocoroDock.Controls
         {
             AnimationListPanel.Children.Clear();
 
+            int? previousAnimationType = null;
+
             foreach (var animation in animations)
             {
+                // animationTypeが変わったらセパレーターを追加
+                if (previousAnimationType.HasValue && previousAnimationType.Value != animation.animationType)
+                {
+                    var separator = new Border
+                    {
+                        Height = 1,
+                        Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0xCC, 0xCC, 0xCC)),
+                        Margin = new Thickness(0, 10, 0, 10)
+                    };
+                    AnimationListPanel.Children.Add(separator);
+                }
+                previousAnimationType = animation.animationType;
+
                 var grid = new Grid();
                 grid.Margin = new Thickness(0, 5, 0, 5);
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
