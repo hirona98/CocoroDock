@@ -639,62 +639,59 @@
             <TabItem Header="Animation"
                      Style="{StaticResource AdminTabItemStyle}"
                      ToolTip="Animation setting">
-                <Grid Margin="20">
+                <Grid Margin="20,20,0,20">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Animation set グループボックス -->
-                    <GroupBox Grid.Row="1"
-                              Header="Animation set"
-                              Margin="0,0,0,10"
-                              Padding="10">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="80"/>
-                                <ColumnDefinition Width="80"/>
-                            </Grid.ColumnDefinitions>
-                            
-                            <ComboBox Grid.Column="0"
-                                      x:Name="AnimationSetComboBox"
-                                      Margin="0,5,10,5"
-                                      Foreground="#FF4873CF"
-                                      IsEditable="True"
-                                      DisplayMemberPath="animeSetName"
-                                      SelectedValuePath="animeSetName"/>
-                            
-                            <Button Grid.Column="1"
-                                    x:Name="AddAnimationSetButton"
-                                    Content="追加"
-                                    Margin="0,5,5,5"
-                                    Padding="10,5"
-                                    Foreground="#FF4873CF"
-                                    Click="AddAnimationSetButton_Click"/>
+                    <ScrollViewer Grid.Row="0"
+                                  VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <!-- Animation set グループボックス -->
+                            <GroupBox Header="Animation set"
+                                      Margin="0,0,20,20"
+                                      Padding="10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="80"/>
+                                    </Grid.ColumnDefinitions>
                                     
-                            <Button Grid.Column="2"
-                                    x:Name="DeleteAnimationSetButton"
-                                    Content="削除"
-                                    Margin="0,5,0,5"
-                                    Padding="10,5"
-                                    Background="#d32f2f"
-                                    Foreground="WhiteSmoke"
-                                    Click="DeleteAnimationSetButton_Click"/>
-                        </Grid>
-                    </GroupBox>
+                                    <ComboBox Grid.Column="0"
+                                              x:Name="AnimationSetComboBox"
+                                              Margin="0,5,10,5"
+                                              Foreground="#FF4873CF"
+                                              IsEditable="True"
+                                              DisplayMemberPath="animeSetName"
+                                              SelectedValuePath="animeSetName"/>
+                                    
+                                    <Button Grid.Column="1"
+                                            x:Name="AddAnimationSetButton"
+                                            Content="追加"
+                                            Margin="0,5,5,5"
+                                            Padding="10,5"
+                                            Foreground="#FF4873CF"
+                                            Click="AddAnimationSetButton_Click"/>
+                                            
+                                    <Button Grid.Column="2"
+                                            x:Name="DeleteAnimationSetButton"
+                                            Content="削除"
+                                            Margin="0,5,0,5"
+                                            Padding="10,5"
+                                            Background="#d32f2f"
+                                            Foreground="WhiteSmoke"
+                                            Click="DeleteAnimationSetButton_Click"/>
+                                </Grid>
+                            </GroupBox>
 
-                    <!-- Animation ON/OFF グループボックス -->
-                    <GroupBox Grid.Row="2"
-                              Header="Animation ON/OFF"
-                              Padding="10">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <StackPanel x:Name="AnimationListPanel">
+                            <!-- アニメーションリスト -->
+                            <StackPanel x:Name="AnimationListPanel"
+                                        Margin="0,0,20,0">
                                 <!-- アニメーション項目がここに動的に追加されます -->
                             </StackPanel>
-                        </ScrollViewer>
-                    </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </TabItem>
 

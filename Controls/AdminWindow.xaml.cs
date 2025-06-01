@@ -4,6 +4,7 @@ using CocoroDock.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -478,11 +479,11 @@ namespace CocoroDock.Controls
             // コンボボックスの選択変更イベントを設定
             AnimationSetComboBox.SelectionChanged -= AnimationSetComboBox_SelectionChanged;
             AnimationSetComboBox.SelectionChanged += AnimationSetComboBox_SelectionChanged;
-            
+
             // テキスト変更イベントを設定（名前の編集用）
             AnimationSetComboBox.LostFocus -= AnimationSetComboBox_LostFocus;
             AnimationSetComboBox.LostFocus += AnimationSetComboBox_LostFocus;
-            
+
             // コンボボックスのロード時イベントを設定
             AnimationSetComboBox.Loaded -= AnimationSetComboBox_Loaded;
             AnimationSetComboBox.Loaded += AnimationSetComboBox_Loaded;
@@ -495,59 +496,82 @@ namespace CocoroDock.Controls
         {
             AnimationListPanel.Children.Clear();
 
-            int? previousAnimationType = null;
+            // animationTypeでグループ化
+            var groupedAnimations = animations.GroupBy(a => a.animationType).OrderBy(g => g.Key);
 
-            foreach (var animation in animations)
+            foreach (var group in groupedAnimations)
             {
-                // animationTypeが変わったらセパレーターを追加
-                if (previousAnimationType.HasValue && previousAnimationType.Value != animation.animationType)
+                // グループボックスを作成
+                var groupBox = new GroupBox
                 {
-                    var separator = new Border
+                    Header = GetAnimationTypeDisplayName(group.Key),
+                    Margin = new Thickness(0, 0, 0, 10),
+                    Padding = new Thickness(10)
+                };
+
+                // グループボックス内のスタックパネル
+                var stackPanel = new StackPanel();
+
+                foreach (var animation in group)
+                {
+                    var grid = new Grid();
+                    grid.Margin = new Thickness(0, 5, 0, 5);
+                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                    // Playボタン
+                    var playButton = new Button
                     {
-                        Height = 1,
-                        Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0xCC, 0xCC, 0xCC)),
-                        Margin = new Thickness(0, 10, 0, 10)
+                        Content = "Play",
+                        Margin = new Thickness(0, 0, 10, 0),
+                        Padding = new Thickness(10, 5, 10, 5),
+                        Tag = animation,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x48, 0x73, 0xCF))
                     };
-                    AnimationListPanel.Children.Add(separator);
+                    playButton.Click += PlayAnimationButton_Click;
+                    Grid.SetColumn(playButton, 0);
+
+                    // チェックボックス
+                    var checkBox = new CheckBox
+                    {
+                        Content = animation.displayName,
+                        IsChecked = animation.isEnabled,
+                        Tag = animation,
+                        Margin = new Thickness(0, 0, 0, 0),
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x48, 0x73, 0xCF))
+                    };
+                    checkBox.Checked += AnimationCheckBox_Checked;
+                    checkBox.Unchecked += AnimationCheckBox_Unchecked;
+                    Grid.SetColumn(checkBox, 1);
+
+                    grid.Children.Add(playButton);
+                    grid.Children.Add(checkBox);
+
+                    stackPanel.Children.Add(grid);
                 }
-                previousAnimationType = animation.animationType;
 
-                var grid = new Grid();
-                grid.Margin = new Thickness(0, 5, 0, 5);
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                groupBox.Content = stackPanel;
+                AnimationListPanel.Children.Add(groupBox);
+            }
+        }
 
-                // Playボタン
-                var playButton = new Button
-                {
-                    Content = "Play",
-                    Margin = new Thickness(0, 0, 10, 0),
-                    Padding = new Thickness(10, 5, 10, 5),
-                    Tag = animation,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x48, 0x73, 0xCF))
-                };
-                playButton.Click += PlayAnimationButton_Click;
-                Grid.SetColumn(playButton, 0);
-
-                // チェックボックス
-                var checkBox = new CheckBox
-                {
-                    Content = animation.displayName,
-                    IsChecked = animation.isEnabled,
-                    Tag = animation,
-                    Margin = new Thickness(0, 0, 0, 0),
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x48, 0x73, 0xCF))
-                };
-                checkBox.Checked += AnimationCheckBox_Checked;
-                checkBox.Unchecked += AnimationCheckBox_Unchecked;
-                Grid.SetColumn(checkBox, 1);
-
-                grid.Children.Add(playButton);
-                grid.Children.Add(checkBox);
-
-                AnimationListPanel.Children.Add(grid);
+        /// <summary>
+        /// アニメーションタイプの表示名を取得
+        /// </summary>
+        private string GetAnimationTypeDisplayName(int animationType)
+        {
+            switch (animationType)
+            {
+                case 0:
+                    return "Standing Animation ON/OFF";
+                case 1:
+                    return "Sitting Floor Animation ON/OFF";
+                case 2:
+                    return "Lying Down Animation ON/OFF";
+                default:
+                    return "Unknown";
             }
         }
 
@@ -569,7 +593,7 @@ namespace CocoroDock.Controls
                     AppSettings.Instance.CharacterList[_currentCharacterIndex].currentAnimationSettingIndex =
                         AnimationSetComboBox.SelectedIndex;
                 }
-                
+
                 // テキストの選択を解除
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -681,13 +705,13 @@ namespace CocoroDock.Controls
                 }
             }
         }
-        
+
         /// <summary>
         /// アニメーションセットコンボボックスのフォーカス喪失時の処理
         /// </summary>
         private void AnimationSetComboBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (AnimationSetComboBox.SelectedIndex >= 0 && 
+            if (AnimationSetComboBox.SelectedIndex >= 0 &&
                 AnimationSetComboBox.SelectedIndex < _animationSettings.Count)
             {
                 var newName = AnimationSetComboBox.Text?.Trim();
@@ -695,7 +719,7 @@ namespace CocoroDock.Controls
                 {
                     // 選択されているアニメーションセットの名前を更新
                     _animationSettings[AnimationSetComboBox.SelectedIndex].animeSetName = newName;
-                    
+
                     // コンボボックスを更新（表示を反映）
                     var selectedIndex = AnimationSetComboBox.SelectedIndex;
                     AnimationSetComboBox.ItemsSource = null;
@@ -704,7 +728,7 @@ namespace CocoroDock.Controls
                 }
             }
         }
-        
+
         /// <summary>
         /// アニメーションセット削除ボタンクリック時の処理
         /// </summary>
