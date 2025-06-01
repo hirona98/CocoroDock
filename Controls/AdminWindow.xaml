@@ -44,6 +44,7 @@
 
         <!-- 変換器 -->
         <converters:PercentageConverter x:Key="PercentageConverter"/>
+        <converters:AnimationTypeConverter x:Key="AnimationTypeConverter"/>
     </Window.Resources>
 
     <Grid>
@@ -631,6 +632,60 @@
                                     ToolTip="Delete this character"/>
                         </StackPanel>
                     </ScrollViewer>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Animation"
+                     Style="{StaticResource AdminTabItemStyle}"
+                     ToolTip="Animation setting">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- アニメーション設定タイトル -->
+                    <TextBlock Grid.Row="0"
+                               Text="アニメーション設定"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Margin="0,0,0,10"
+                               Foreground="#FF4873CF"/>
+
+                    <DataGrid x:Name="AnimationSettingsDataGrid"
+                              Grid.Row="1"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              GridLinesVisibility="Horizontal"
+                              HeadersVisibility="Column"
+                              BorderThickness="1"
+                              BorderBrush="#CCCCCC">
+                        <DataGrid.Columns>
+                            <!-- 有効/無効チェックボックス -->
+                            <DataGridCheckBoxColumn Header="有効"
+                                                    Binding="{Binding isEnabled}"
+                                                    Width="50"/>
+                            
+                            <!-- アニメーションタイプ -->
+                            <DataGridTextColumn Header="タイプ"
+                                                Binding="{Binding animationType, Converter={StaticResource AnimationTypeConverter}}"
+                                                Width="80"
+                                                IsReadOnly="True"/>
+                            
+                            <!-- 表示名 -->
+                            <DataGridTextColumn Header="表示名"
+                                                Binding="{Binding displayName}"
+                                                Width="*"
+                                                IsReadOnly="True"/>
+                            
+                            <!-- アニメーション名 -->
+                            <DataGridTextColumn Header="アニメーション名"
+                                                Binding="{Binding animationName}"
+                                                Width="*"
+                                                IsReadOnly="True"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </Grid>
             </TabItem>
 

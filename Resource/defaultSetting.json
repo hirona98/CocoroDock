@@ -55,5 +55,583 @@
             "sttWakeWord": "こんにちは",
             "sttApiKey": ""
         }
+    ],
+    "currentAnimationSettingIndex": 0,
+    "animationSettings": [
+        {
+            "animeSetName": "デフォルト",
+            "animations": [
+                {
+                    "displayName": "立ち_待機01",
+                    "animationType": 0,
+                    "animationName": "DT_01_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機02",
+                    "animationType": 0,
+                    "animationName": "DT_02_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機03",
+                    "animationType": 0,
+                    "animationName": "DT_03_wait_natural_F_00_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機04",
+                    "animationType": 0,
+                    "animationName": "DT_04_wait_natural_F_00_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機05",
+                    "animationType": 0,
+                    "animationName": "DT_05_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機06",
+                    "animationType": 0,
+                    "animationName": "DT_06_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機07",
+                    "animationType": 0,
+                    "animationName": "DT_07_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機08",
+                    "animationType": 0,
+                    "animationName": "DT_08_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機09",
+                    "animationType": 0,
+                    "animationName": "DT_09_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機10",
+                    "animationType": 0,
+                    "animationName": "DT_10_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機11",
+                    "animationType": 0,
+                    "animationName": "DT_11_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機12",
+                    "animationType": 0,
+                    "animationName": "DT_12_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機13",
+                    "animationType": 0,
+                    "animationName": "DT_13_wait_natural_F_002_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機14",
+                    "animationType": 0,
+                    "animationName": "DT_14_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機15",
+                    "animationType": 0,
+                    "animationName": "DT_15_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機16",
+                    "animationType": 0,
+                    "animationName": "DT_16_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機17",
+                    "animationType": 0,
+                    "animationName": "DT_17_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機18",
+                    "animationType": 0,
+                    "animationName": "DT_18_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機19",
+                    "animationType": 0,
+                    "animationName": "DT_19_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機20",
+                    "animationType": 0,
+                    "animationName": "DT_20_wait_natural_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_01_Waitmotion_cute_F_001_FBX01",
+                    "animationType": 0,
+                    "animationName": "BJ_01_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_02_Waitmotion_cute_F_002_FBX02",
+                    "animationType": 0,
+                    "animationName": "BJ_02_Waitmotion_cute_F_002_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_03_Waitmotion_cute_F_001_FBX03",
+                    "animationType": 0,
+                    "animationName": "BJ_03_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_04_Waitmotion_cute_F_001_FBX04",
+                    "animationType": 0,
+                    "animationName": "BJ_04_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_05_Waitmotion_cute_F_001_FBX05",
+                    "animationType": 0,
+                    "animationName": "BJ_05_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_06_Waitmotion_cute_F_001_FBX06",
+                    "animationType": 0,
+                    "animationName": "BJ_06_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_07_Waitmotion_cute_F_001_FBX07",
+                    "animationType": 0,
+                    "animationName": "BJ_07_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_08_Waitmotion_cute_F_001_FBX08",
+                    "animationType": 0,
+                    "animationName": "BJ_08_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_09_Waitmotion_cute_F_001_FBX09",
+                    "animationType": 0,
+                    "animationName": "BJ_09_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_10_Waitmotion_cute_F_001_FBX10",
+                    "animationType": 0,
+                    "animationName": "BJ_10_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_11_Waitmotion_cute_F_001_FBX11",
+                    "animationType": 0,
+                    "animationName": "BJ_11_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_12_Waitmotion_cute_F_001_FBX12",
+                    "animationType": 0,
+                    "animationName": "BJ_12_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_13_Waitmotion_cute_F_001_FBX13",
+                    "animationType": 0,
+                    "animationName": "BJ_13_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_14_Waitmotion_cute_F_001_FBX14",
+                    "animationType": 0,
+                    "animationName": "BJ_14_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_15_Waitmotion_cute_F_001_FBX15",
+                    "animationType": 0,
+                    "animationName": "BJ_15_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_16_Waitmotion_cute_F_001_FBX16",
+                    "animationType": 0,
+                    "animationName": "BJ_16_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_18_Waitmotion_cute_F_001_FBX18",
+                    "animationType": 0,
+                    "animationName": "BJ_18_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_19_Waitmotion_cute_F_001_FBX19",
+                    "animationType": 0,
+                    "animationName": "BJ_19_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_BJ_20_Waitmotion_cute_F_001_FBX20",
+                    "animationType": 0,
+                    "animationName": "BJ_20_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_ストレッチ01",
+                    "animationType": 0,
+                    "animationName": "DY_01_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_ストレッチ03",
+                    "animationType": 0,
+                    "animationName": "DY_03_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_ストレッチ05",
+                    "animationType": 0,
+                    "animationName": "DY_05_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_ストレッチ07",
+                    "animationType": 0,
+                    "animationName": "DY_07_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_ストレッチ09",
+                    "animationType": 0,
+                    "animationName": "DY_09_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_ストレッチ10",
+                    "animationType": 0,
+                    "animationName": "DY_10_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_ストレッチ11",
+                    "animationType": 0,
+                    "animationName": "DY_11_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_ストレッチ12",
+                    "animationType": 0,
+                    "animationName": "DY_12_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_ストレッチ13",
+                    "animationType": 0,
+                    "animationName": "DY_13_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_ストレッチ14",
+                    "animationType": 0,
+                    "animationName": "DY_14_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_ストレッチ15",
+                    "animationType": 0,
+                    "animationName": "DY_15_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_ストレッチ16",
+                    "animationType": 0,
+                    "animationName": "DY_16_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_ストレッチ20",
+                    "animationType": 0,
+                    "animationName": "DY_20_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機01",
+                    "animationType": 0,
+                    "animationName": "EB_01_wait_natural_M_002_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機02",
+                    "animationType": 0,
+                    "animationName": "EB_02_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機03",
+                    "animationType": 0,
+                    "animationName": "EB_03_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機04",
+                    "animationType": 0,
+                    "animationName": "EB_04_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機05",
+                    "animationType": 0,
+                    "animationName": "EB_05_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機06",
+                    "animationType": 0,
+                    "animationName": "EB_06_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機07",
+                    "animationType": 0,
+                    "animationName": "EB_07_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機08",
+                    "animationType": 0,
+                    "animationName": "EB_08_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機09",
+                    "animationType": 0,
+                    "animationName": "EB_09_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機10",
+                    "animationType": 0,
+                    "animationName": "EB_10_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機11",
+                    "animationType": 0,
+                    "animationName": "EB_11_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機12",
+                    "animationType": 0,
+                    "animationName": "EB_12_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機13",
+                    "animationType": 0,
+                    "animationName": "EB_13_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機14",
+                    "animationType": 0,
+                    "animationName": "EB_14_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機15",
+                    "animationType": 0,
+                    "animationName": "EB_15_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機16",
+                    "animationType": 0,
+                    "animationName": "EB_16_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機17",
+                    "animationType": 0,
+                    "animationName": "EB_17_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機18",
+                    "animationType": 0,
+                    "animationName": "EB_18_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機19",
+                    "animationType": 0,
+                    "animationName": "EB_19_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_待機20",
+                    "animationType": 0,
+                    "animationName": "EB_20_wait_natural_M_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_眠い01",
+                    "animationType": 0,
+                    "animationName": "EK_01_sleepy_languid_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "立ち_眠い02",
+                    "animationType": 0,
+                    "animationName": "EK_02_sleepy_languid_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_BJ_17_Waitmotion_cute_F_001_FBX17",
+                    "animationType": 1,
+                    "animationName": "BJ_17_Waitmotion_cute_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_ストレッチ17",
+                    "animationType": 1,
+                    "animationName": "DY_17_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_ストレッチ18",
+                    "animationType": 1,
+                    "animationName": "DY_18_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_ストレッチ19",
+                    "animationType": 1,
+                    "animationName": "DY_19_stretching_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_待機01",
+                    "animationType": 1,
+                    "animationName": "EJ_01_wait_sitliedown_F_009_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_待機02",
+                    "animationType": 1,
+                    "animationName": "EJ_02_wait_sitliedown_F_005_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_待機03",
+                    "animationType": 1,
+                    "animationName": "EJ_03_wait_sitliedown_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_待機04",
+                    "animationType": 1,
+                    "animationName": "EJ_04_wait_sitliedown_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_待機05",
+                    "animationType": 1,
+                    "animationName": "EJ_05_wait_sitliedown_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_待機06",
+                    "animationType": 1,
+                    "animationName": "EJ_06_wait_sitliedown_F_007_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_待機07",
+                    "animationType": 1,
+                    "animationName": "EJ_07_wait_sitliedown_F_002_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_待機07",
+                    "animationType": 1,
+                    "animationName": "EJ_07_wait_sitliedown_F_002_FBX 0",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_待機08",
+                    "animationType": 1,
+                    "animationName": "EJ_08_wait_sitliedown_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_眠い03",
+                    "animationType": 1,
+                    "animationName": "EK_03_sleepy_languid_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_眠い04",
+                    "animationType": 1,
+                    "animationName": "EK_04_sleepy_languid_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_眠い05",
+                    "animationType": 1,
+                    "animationName": "EK_05_sleepy_languid_F_001_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_眠い06",
+                    "animationType": 1,
+                    "animationName": "EK_06_sleepy_languid_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_眠い07",
+                    "animationType": 1,
+                    "animationName": "EK_07_sleepy_languid_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_眠い08",
+                    "animationType": 1,
+                    "animationName": "EK_08_sleepy_languid_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_眠い09",
+                    "animationType": 1,
+                    "animationName": "EK_09_sleepy_languid_F_FBX",
+                    "isEnabled": true
+                },
+                {
+                    "displayName": "座り_眠い10",
+                    "animationType": 1,
+                    "animationName": "EK_10_sleepy_languid_F_FBX",
+                    "isEnabled": true
+                }
+            ]
+        }
     ]
 }

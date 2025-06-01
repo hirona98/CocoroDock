@@ -136,6 +136,10 @@ namespace CocoroDock.Services
         public int CurrentCharacterIndex { get; set; } = 0;
         public List<CharacterSettings> CharacterList { get; set; } = new List<CharacterSettings>();
 
+        // アニメーション設定
+        public int CurrentAnimationSettingIndex { get; set; } = 0;
+        public List<AnimationSetting> AnimationSettings { get; set; } = new List<AnimationSetting>();
+
         public bool IsLoaded { get; set; } = false;
 
         // コンストラクタはprivate（シングルトンパターン）
@@ -174,7 +178,19 @@ namespace CocoroDock.Services
                     embeddedModel = "openai/text-embedding-3-small",
                     isUseSTT = false,
                     sttWakeWord = "",
-                    sttApiKey = ""
+                    sttApiKey = "",
+                    animationSetting = new AnimationSetting(),
+                    currentAnimationSettingIndex = 0
+                }
+            };
+
+            // デフォルトのアニメーション設定を初期化
+            AnimationSettings = new List<AnimationSetting>
+            {
+                new AnimationSetting
+                {
+                    animeSetName = "デフォルト",
+                    animations = new List<AnimationConfig>()
                 }
             };
         }
@@ -209,6 +225,13 @@ namespace CocoroDock.Services
                 CharacterList = new List<CharacterSettings>(config.characterList);
             }
 
+            // アニメーション設定を更新
+            CurrentAnimationSettingIndex = config.currentAnimationSettingIndex;
+            if (config.animationSettings != null && config.animationSettings.Count > 0)
+            {
+                AnimationSettings = new List<AnimationSetting>(config.animationSettings);
+            }
+
             // 設定読み込み完了フラグを設定
             IsLoaded = true;
         }
@@ -238,7 +261,9 @@ namespace CocoroDock.Services
                 backgroundShadowResolution = BackgroundShadowResolution,
                 windowSize = WindowSize,
                 currentCharacterIndex = CurrentCharacterIndex,
-                characterList = new List<CharacterSettings>(CharacterList)
+                characterList = new List<CharacterSettings>(CharacterList),
+                currentAnimationSettingIndex = CurrentAnimationSettingIndex,
+                animationSettings = new List<AnimationSetting>(AnimationSettings)
             };
         }
 
@@ -491,7 +516,9 @@ namespace CocoroDock.Services
                         embeddedModel = "",
                         isUseSTT = false,
                         sttWakeWord = "",
-                        sttApiKey = ""
+                        sttApiKey = "",
+                        animationSetting = new AnimationSetting(),
+                        currentAnimationSettingIndex = 0
                     };
 
                     defaultSettings.characterList.Add(newChar);

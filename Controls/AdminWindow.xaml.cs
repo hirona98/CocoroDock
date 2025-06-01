@@ -31,7 +31,11 @@ namespace CocoroDock.Controls
         private bool _settingsChanged = false;
 
         // 通信サービス
-        private CommunicationService? _communicationService;        // キーボードフック用
+        private CommunicationService? _communicationService;
+
+        // アニメーション設定を保存するためのリスト
+        private List<AnimationSetting> _animationSettings = new List<AnimationSetting>();
+        private List<AnimationSetting> _originalAnimationSettings = new List<AnimationSetting>();        // キーボードフック用
         private HwndSource? _source;
         private bool _isCapturingKey = false;
         private bool _isWinKeyPressed = false; // Windowsキーの状態
@@ -386,6 +390,12 @@ namespace CocoroDock.Controls
             CharacterSelectComboBox.SelectedIndex = currentIndex;
             CharacterSelectComboBox.SelectionChanged += CharacterSelectComboBox_SelectionChanged;
             UpdateCharacterUI(currentIndex);
+
+            // アニメーション設定を初期化
+            _animationSettings = new List<AnimationSetting>(appSettings.AnimationSettings);
+            
+            // 現在のキャラクターのアニメーション設定を表示
+            UpdateAnimationUI();
         }
 
         /// <summary>
@@ -402,9 +412,57 @@ namespace CocoroDock.Controls
             {
                 _originalCharacterSettings.Add(new Dictionary<string, string>(character));
             }
+
+            // アニメーション設定のディープコピー
+            _originalAnimationSettings = new List<AnimationSetting>();
+            foreach (var animSetting in _animationSettings)
+            {
+                var newAnimSetting = new AnimationSetting
+                {
+                    animeSetName = animSetting.animeSetName,
+                    animations = new List<AnimationConfig>()
+                };
+                foreach (var anim in animSetting.animations)
+                {
+                    newAnimSetting.animations.Add(new AnimationConfig
+                    {
+                        displayName = anim.displayName,
+                        animationType = anim.animationType,
+                        animationName = anim.animationName,
+                        isEnabled = anim.isEnabled
+                    });
+                }
+                _originalAnimationSettings.Add(newAnimSetting);
+            }
         }
 
         #endregion
+
+        /// <summary>
+        /// アニメーション設定をUIに反映
+        /// </summary>
+        private void UpdateAnimationUI()
+        {
+            if (_currentCharacterIndex >= 0 && _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
+            {
+                var character = AppSettings.Instance.CharacterList[_currentCharacterIndex];
+                
+                // キャラクターのアニメーション設定を取得
+                if (character.currentAnimationSettingIndex >= 0 && 
+                    character.currentAnimationSettingIndex < _animationSettings.Count)
+                {
+                    var animSetting = _animationSettings[character.currentAnimationSettingIndex];
+                    
+                    // DataGridにアニメーション設定を表示
+                    AnimationSettingsDataGrid.ItemsSource = animSetting.animations;
+                }
+                else if (_animationSettings.Count > 0)
+                {
+                    // インデックスが範囲外の場合は最初の設定を使用
+                    AnimationSettingsDataGrid.ItemsSource = _animationSettings[0].animations;
+                }
+            }
+        }
 
         /// <summary>
         /// キャラクター情報をUIに反映
@@ -491,6 +549,8 @@ namespace CocoroDock.Controls
             if (selectedIndex >= 0)
             {
                 UpdateCharacterUI(selectedIndex);
+                // アニメーション設定も更新
+                UpdateAnimationUI();
             }
         }
 
@@ -906,6 +966,28 @@ namespace CocoroDock.Controls
             {
                 _characterSettings.Add(new Dictionary<string, string>(character));
             }
+
+            // アニメーション設定の復元
+            _animationSettings.Clear();
+            foreach (var animSetting in _originalAnimationSettings)
+            {
+                var newAnimSetting = new AnimationSetting
+                {
+                    animeSetName = animSetting.animeSetName,
+                    animations = new List<AnimationConfig>()
+                };
+                foreach (var anim in animSetting.animations)
+                {
+                    newAnimSetting.animations.Add(new AnimationConfig
+                    {
+                        displayName = anim.displayName,
+                        animationType = anim.animationType,
+                        animationName = anim.animationName,
+                        isEnabled = anim.isEnabled
+                    });
+                }
+                _animationSettings.Add(newAnimSetting);
+            }
         }
 
         #endregion
@@ -1131,6 +1213,10 @@ namespace CocoroDock.Controls
 
             // 更新したリストをAppSettingsに設定
             appSettings.CharacterList = newCharacterList;
+
+            // アニメーション設定の更新
+            appSettings.CurrentAnimationSettingIndex = AppSettings.Instance.CurrentAnimationSettingIndex;
+            appSettings.AnimationSettings = new List<AnimationSetting>(_animationSettings);
         }
 
         #endregion
