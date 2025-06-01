@@ -572,12 +572,6 @@
                     "isEnabled": true
                 },
                 {
-                    "displayName": "EJ_07 床で足を伸ばして座りつつ普通に待機 0",
-                    "animationType": 1,
-                    "animationName": "EJ_07_wait_sitliedown_F_002_FBX 0",
-                    "isEnabled": true
-                },
-                {
                     "displayName": "EJ_08 床で正座しつつじっと待機",
                     "animationType": 1,
                     "animationName": "EJ_08_wait_sitliedown_F_001_FBX",
