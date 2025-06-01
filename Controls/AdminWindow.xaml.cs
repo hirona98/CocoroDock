@@ -1,5 +1,6 @@
 using CocoroDock.Communication;
 using CocoroDock.Services;
+using CocoroDock.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -31,7 +32,7 @@ namespace CocoroDock.Controls
         private bool _settingsChanged = false;
 
         // 通信サービス
-        private CommunicationService? _communicationService;
+        private ICommunicationService? _communicationService;
 
         // アニメーション設定を保存するためのリスト
         private List<AnimationSetting> _animationSettings = new List<AnimationSetting>();
@@ -80,9 +81,15 @@ namespace CocoroDock.Controls
             public IntPtr dwExtraInfo;
         }
 
-        public AdminWindow()
+        public AdminWindow() : this(null)
+        {
+        }
+        
+        public AdminWindow(ICommunicationService? communicationService)
         {
             InitializeComponent();
+            
+            _communicationService = communicationService;
 
             // グローバルキーボードフックの設定
             _proc = HookCallback;
@@ -567,9 +574,28 @@ namespace CocoroDock.Controls
         /// <summary>
         /// アニメーション再生ボタンクリック時の処理
         /// </summary>
-        private void PlayAnimationButton_Click(object sender, RoutedEventArgs e)
+        private async void PlayAnimationButton_Click(object sender, RoutedEventArgs e)
         {
-            // 実装は別途行うとのことなので、ここは空のままにしておきます
+            if (sender is Button button && button.Tag is AnimationConfig animation)
+            {
+                if (_communicationService != null)
+                {
+                    try
+                    {
+                        // CocoroShellにアニメーション再生指示を送信
+                        await _communicationService.SendControlCommandAsync("playAnimation", animation.animationName);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"アニメーション再生エラー: {ex.Message}");
+                        UIHelper.ShowError("アニメーション再生エラー", ex.Message);
+                    }
+                }
+                else
+                {
+                    UIHelper.ShowError("通信エラー", "通信サービスが利用できません。");
+                }
+            }
         }
 
         /// <summary>
