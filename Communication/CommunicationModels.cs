@@ -117,6 +117,8 @@ namespace CocoroDock.Communication
         public bool isUseSTT { get; set; } = false; // STT（音声認識）機能の有効/無効
         public string sttWakeWord { get; set; } = string.Empty; // STT起動ワード
         public string sttApiKey { get; set; } = string.Empty; // STT用APIキー
+        public AnimationSetting animationSetting { get; set; } = new AnimationSetting(); // アニメーション設定
+        public int currentAnimationSettingIndex { get; set; } = 0; // 現在選択中のアニメーション設定セット
     }
 
     /// <summary>
@@ -142,6 +144,8 @@ namespace CocoroDock.Communication
         public float windowSize { get; set; }
         public int currentCharacterIndex { get; set; }
         public List<CharacterSettings> characterList { get; set; } = new List<CharacterSettings>();
+        public int currentAnimationSettingIndex { get; set; } = 0;
+        public List<AnimationSetting> animationSettings { get; set; } = new List<AnimationSetting>();
     }
 
     /// <summary>
@@ -169,5 +173,25 @@ namespace CocoroDock.Communication
     {
         public string level { get; set; } = string.Empty;
         public string message { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// アニメーション設定クラス
+    /// </summary>
+    public class AnimationSetting
+    {
+        public string animeSetName { get; set; } = "デフォルト"; // 設定セット名
+        public List<AnimationConfig> animations { get; set; } = new List<AnimationConfig>(); // 個別アニメーション設定
+    }
+
+    /// <summary>
+    /// 個別アニメーション設定クラス
+    /// </summary>
+    public class AnimationConfig
+    {
+        public string displayName { get; set; } = ""; // UI表示名（例：「立ち_手を振る」）
+        public int animationType { get; set; } = 0; // 0:Standing, 1:SittingFloor (2:LyingDownは非表示)
+        public string animationName { get; set; } = ""; // Animator内での名前（例：「DT_01_wait_natural_F_001_FBX」）
+        public bool isEnabled { get; set; } = true; // 有効/無効
     }
 }

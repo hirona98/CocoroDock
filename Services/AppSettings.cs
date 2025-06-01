@@ -136,6 +136,10 @@ namespace CocoroDock.Services
         public int CurrentCharacterIndex { get; set; } = 0;
         public List<CharacterSettings> CharacterList { get; set; } = new List<CharacterSettings>();
 
+        // アニメーション設定
+        public int CurrentAnimationSettingIndex { get; set; } = 0;
+        public List<AnimationSetting> AnimationSettings { get; set; } = new List<AnimationSetting>();
+
         public bool IsLoaded { get; set; } = false;
 
         // コンストラクタはprivate（シングルトンパターン）
@@ -174,7 +178,19 @@ namespace CocoroDock.Services
                     embeddedModel = "openai/text-embedding-3-small",
                     isUseSTT = false,
                     sttWakeWord = "",
-                    sttApiKey = ""
+                    sttApiKey = "",
+                    animationSetting = new AnimationSetting(),
+                    currentAnimationSettingIndex = 0
+                }
+            };
+
+            // デフォルトのアニメーション設定を初期化
+            AnimationSettings = new List<AnimationSetting>
+            {
+                new AnimationSetting
+                {
+                    animeSetName = "デフォルト",
+                    animations = new List<AnimationConfig>()
                 }
             };
         }
@@ -209,6 +225,13 @@ namespace CocoroDock.Services
                 CharacterList = new List<CharacterSettings>(config.characterList);
             }
 
+            // アニメーション設定を更新
+            CurrentAnimationSettingIndex = config.currentAnimationSettingIndex;
+            if (config.animationSettings != null && config.animationSettings.Count > 0)
+            {
+                AnimationSettings = new List<AnimationSetting>(config.animationSettings);
+            }
+
             // 設定読み込み完了フラグを設定
             IsLoaded = true;
         }
@@ -238,7 +261,9 @@ namespace CocoroDock.Services
                 backgroundShadowResolution = BackgroundShadowResolution,
                 windowSize = WindowSize,
                 currentCharacterIndex = CurrentCharacterIndex,
-                characterList = new List<CharacterSettings>(CharacterList)
+                characterList = new List<CharacterSettings>(CharacterList),
+                currentAnimationSettingIndex = CurrentAnimationSettingIndex,
+                animationSettings = new List<AnimationSetting>(AnimationSettings)
             };
         }
 
@@ -322,7 +347,7 @@ namespace CocoroDock.Services
             }
             else
             {
-                ProcessCurrentFormatSettings(json);
+                ProcessCurrentFormatSettings(json, defaultSettings);
             }
         }
 
@@ -351,7 +376,7 @@ namespace CocoroDock.Services
         /// <summary>
         /// 現在のフォーマットの設定ファイルを処理する
         /// </summary>
-        private void ProcessCurrentFormatSettings(string json)
+        private void ProcessCurrentFormatSettings(string json, ConfigSettings defaultSettings)
         {
             var options = new JsonSerializerOptions
             {
@@ -362,8 +387,10 @@ namespace CocoroDock.Services
 
             if (settings != null)
             {
-                UpdateLlmModelFormat(settings);
-                UpdateSettings(settings);
+                // デフォルト設定をベースに、setting.jsonの値で上書き
+                MergeCurrentSettings(defaultSettings, settings);
+                UpdateLlmModelFormat(defaultSettings);
+                UpdateSettings(defaultSettings);
                 SaveAppSettings();
             }
         }
@@ -491,7 +518,9 @@ namespace CocoroDock.Services
                         embeddedModel = "",
                         isUseSTT = false,
                         sttWakeWord = "",
-                        sttApiKey = ""
+                        sttApiKey = "",
+                        animationSetting = new AnimationSetting(),
+                        currentAnimationSettingIndex = 0
                     };
 
                     defaultSettings.characterList.Add(newChar);
@@ -535,6 +564,53 @@ namespace CocoroDock.Services
         public void SaveSettings()
         {
             SaveAppSettings();
+        }
+
+        /// <summary>
+        /// 現在の形式の設定をマージする
+        /// </summary>
+        /// <param name="defaultSettings">デフォルト設定（マージ先）</param>
+        /// <param name="userSettings">ユーザー設定（マージ元）</param>
+        private void MergeCurrentSettings(ConfigSettings defaultSettings, ConfigSettings userSettings)
+        {
+            // ポート設定
+            if (userSettings.cocoroDockPort > 0) defaultSettings.cocoroDockPort = userSettings.cocoroDockPort;
+            if (userSettings.cocoroCorePort > 0) defaultSettings.cocoroCorePort = userSettings.cocoroCorePort;
+            if (userSettings.cocoroMemoryPort > 0) defaultSettings.cocoroMemoryPort = userSettings.cocoroMemoryPort;
+            if (userSettings.cocoroMemoryDBPort > 0) defaultSettings.cocoroMemoryDBPort = userSettings.cocoroMemoryDBPort;
+
+            // UI設定
+            defaultSettings.isTopmost = userSettings.isTopmost;
+            defaultSettings.isEscapeCursor = userSettings.isEscapeCursor;
+            defaultSettings.isInputVirtualKey = userSettings.isInputVirtualKey;
+            if (!string.IsNullOrEmpty(userSettings.virtualKeyString))
+                defaultSettings.virtualKeyString = userSettings.virtualKeyString;
+            defaultSettings.isAutoMove = userSettings.isAutoMove;
+            defaultSettings.isEnableAmbientOcclusion = userSettings.isEnableAmbientOcclusion;
+
+            // グラフィックス設定
+            if (userSettings.msaaLevel >= 0) defaultSettings.msaaLevel = userSettings.msaaLevel;
+            if (userSettings.characterShadow >= 0) defaultSettings.characterShadow = userSettings.characterShadow;
+            if (userSettings.characterShadowResolution >= 0) defaultSettings.characterShadowResolution = userSettings.characterShadowResolution;
+            if (userSettings.backgroundShadow >= 0) defaultSettings.backgroundShadow = userSettings.backgroundShadow;
+            if (userSettings.backgroundShadowResolution >= 0) defaultSettings.backgroundShadowResolution = userSettings.backgroundShadowResolution;
+            if (userSettings.windowSize > 0) defaultSettings.windowSize = userSettings.windowSize;
+
+            // キャラクター設定
+            if (userSettings.currentCharacterIndex >= 0) defaultSettings.currentCharacterIndex = userSettings.currentCharacterIndex;
+            if (userSettings.characterList != null && userSettings.characterList.Count > 0)
+            {
+                // キャラクターリストはユーザー設定で完全に置き換える
+                defaultSettings.characterList = new List<CharacterSettings>(userSettings.characterList);
+            }
+
+            // アニメーション設定
+            if (userSettings.currentAnimationSettingIndex >= 0) defaultSettings.currentAnimationSettingIndex = userSettings.currentAnimationSettingIndex;
+            if (userSettings.animationSettings != null && userSettings.animationSettings.Count > 0)
+            {
+                // アニメーション設定もユーザー設定で完全に置き換える
+                defaultSettings.animationSettings = new List<AnimationSetting>(userSettings.animationSettings);
+            }
         }
 
         /// <summary>

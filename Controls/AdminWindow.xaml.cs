@@ -1,8 +1,10 @@
 using CocoroDock.Communication;
 using CocoroDock.Services;
+using CocoroDock.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -31,7 +33,11 @@ namespace CocoroDock.Controls
         private bool _settingsChanged = false;
 
         // 通信サービス
-        private CommunicationService? _communicationService;        // キーボードフック用
+        private ICommunicationService? _communicationService;
+
+        // アニメーション設定を保存するためのリスト
+        private List<AnimationSetting> _animationSettings = new List<AnimationSetting>();
+        private List<AnimationSetting> _originalAnimationSettings = new List<AnimationSetting>();        // キーボードフック用
         private HwndSource? _source;
         private bool _isCapturingKey = false;
         private bool _isWinKeyPressed = false; // Windowsキーの状態
@@ -76,9 +82,15 @@ namespace CocoroDock.Controls
             public IntPtr dwExtraInfo;
         }
 
-        public AdminWindow()
+        public AdminWindow() : this(null)
+        {
+        }
+
+        public AdminWindow(ICommunicationService? communicationService)
         {
             InitializeComponent();
+
+            _communicationService = communicationService;
 
             // グローバルキーボードフックの設定
             _proc = HookCallback;
@@ -386,6 +398,12 @@ namespace CocoroDock.Controls
             CharacterSelectComboBox.SelectedIndex = currentIndex;
             CharacterSelectComboBox.SelectionChanged += CharacterSelectComboBox_SelectionChanged;
             UpdateCharacterUI(currentIndex);
+
+            // アニメーション設定を初期化
+            _animationSettings = new List<AnimationSetting>(appSettings.AnimationSettings);
+
+            // 現在のキャラクターのアニメーション設定を表示
+            UpdateAnimationUI();
         }
 
         /// <summary>
@@ -402,9 +420,365 @@ namespace CocoroDock.Controls
             {
                 _originalCharacterSettings.Add(new Dictionary<string, string>(character));
             }
+
+            // アニメーション設定のディープコピー
+            _originalAnimationSettings = new List<AnimationSetting>();
+            foreach (var animSetting in _animationSettings)
+            {
+                var newAnimSetting = new AnimationSetting
+                {
+                    animeSetName = animSetting.animeSetName,
+                    animations = new List<AnimationConfig>()
+                };
+                foreach (var anim in animSetting.animations)
+                {
+                    newAnimSetting.animations.Add(new AnimationConfig
+                    {
+                        displayName = anim.displayName,
+                        animationType = anim.animationType,
+                        animationName = anim.animationName,
+                        isEnabled = anim.isEnabled
+                    });
+                }
+                _originalAnimationSettings.Add(newAnimSetting);
+            }
         }
 
         #endregion
+
+        /// <summary>
+        /// アニメーション設定をUIに反映
+        /// </summary>
+        private void UpdateAnimationUI()
+        {
+            // アニメーションセットをコンボボックスに設定
+            AnimationSetComboBox.ItemsSource = _animationSettings;
+
+            if (_currentCharacterIndex >= 0 && _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
+            {
+                var character = AppSettings.Instance.CharacterList[_currentCharacterIndex];
+
+                // キャラクターのアニメーション設定を取得
+                if (character.currentAnimationSettingIndex >= 0 &&
+                    character.currentAnimationSettingIndex < _animationSettings.Count)
+                {
+                    AnimationSetComboBox.SelectedIndex = character.currentAnimationSettingIndex;
+                    var animSetting = _animationSettings[character.currentAnimationSettingIndex];
+
+                    // アニメーションリストを更新
+                    UpdateAnimationListPanel(animSetting.animations);
+                }
+                else if (_animationSettings.Count > 0)
+                {
+                    // インデックスが範囲外の場合は最初の設定を使用
+                    AnimationSetComboBox.SelectedIndex = 0;
+                    UpdateAnimationListPanel(_animationSettings[0].animations);
+                }
+            }
+
+            // コンボボックスの選択変更イベントを設定
+            AnimationSetComboBox.SelectionChanged -= AnimationSetComboBox_SelectionChanged;
+            AnimationSetComboBox.SelectionChanged += AnimationSetComboBox_SelectionChanged;
+
+            // テキスト変更イベントを設定（名前の編集用）
+            AnimationSetComboBox.LostFocus -= AnimationSetComboBox_LostFocus;
+            AnimationSetComboBox.LostFocus += AnimationSetComboBox_LostFocus;
+
+            // コンボボックスのロード時イベントを設定
+            AnimationSetComboBox.Loaded -= AnimationSetComboBox_Loaded;
+            AnimationSetComboBox.Loaded += AnimationSetComboBox_Loaded;
+        }
+
+        /// <summary>
+        /// アニメーションリストパネルを更新
+        /// </summary>
+        private void UpdateAnimationListPanel(List<AnimationConfig> animations)
+        {
+            AnimationListPanel.Children.Clear();
+
+            // animationTypeでグループ化
+            var groupedAnimations = animations.GroupBy(a => a.animationType).OrderBy(g => g.Key);
+
+            foreach (var group in groupedAnimations)
+            {
+                // グループボックスを作成
+                var groupBox = new GroupBox
+                {
+                    Header = GetAnimationTypeDisplayName(group.Key),
+                    Margin = new Thickness(0, 0, 0, 10),
+                    Padding = new Thickness(10)
+                };
+
+                // グループボックス内のスタックパネル
+                var stackPanel = new StackPanel();
+
+                foreach (var animation in group)
+                {
+                    var grid = new Grid();
+                    grid.Margin = new Thickness(0, 5, 0, 5);
+                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                    // Playボタン
+                    var playButton = new Button
+                    {
+                        Content = "Play",
+                        Margin = new Thickness(0, 0, 10, 0),
+                        Padding = new Thickness(10, 5, 10, 5),
+                        Tag = animation,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x48, 0x73, 0xCF))
+                    };
+                    playButton.Click += PlayAnimationButton_Click;
+                    Grid.SetColumn(playButton, 0);
+
+                    // チェックボックス
+                    var checkBox = new CheckBox
+                    {
+                        Content = animation.displayName,
+                        IsChecked = animation.isEnabled,
+                        Tag = animation,
+                        Margin = new Thickness(0, 0, 0, 0),
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x48, 0x73, 0xCF))
+                    };
+                    checkBox.Checked += AnimationCheckBox_Checked;
+                    checkBox.Unchecked += AnimationCheckBox_Unchecked;
+                    Grid.SetColumn(checkBox, 1);
+
+                    grid.Children.Add(playButton);
+                    grid.Children.Add(checkBox);
+
+                    stackPanel.Children.Add(grid);
+                }
+
+                groupBox.Content = stackPanel;
+                AnimationListPanel.Children.Add(groupBox);
+            }
+        }
+
+        /// <summary>
+        /// アニメーションタイプの表示名を取得
+        /// </summary>
+        private string GetAnimationTypeDisplayName(int animationType)
+        {
+            switch (animationType)
+            {
+                case 0:
+                    return "Standing Animation ON/OFF";
+                case 1:
+                    return "Sitting Floor Animation ON/OFF";
+                case 2:
+                    return "Lying Down Animation ON/OFF";
+                default:
+                    return "Unknown";
+            }
+        }
+
+        /// <summary>
+        /// アニメーションセット選択変更時の処理
+        /// </summary>
+        private void AnimationSetComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (AnimationSetComboBox.SelectedIndex >= 0 &&
+                AnimationSetComboBox.SelectedIndex < _animationSettings.Count)
+            {
+                var animSetting = _animationSettings[AnimationSetComboBox.SelectedIndex];
+                UpdateAnimationListPanel(animSetting.animations);
+
+                // 現在のキャラクターのアニメーション設定インデックスを更新
+                if (_currentCharacterIndex >= 0 &&
+                    _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
+                {
+                    AppSettings.Instance.CharacterList[_currentCharacterIndex].currentAnimationSettingIndex =
+                        AnimationSetComboBox.SelectedIndex;
+                }
+
+                // テキストの選択を解除
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    var textBox = AnimationSetComboBox.Template.FindName("PART_EditableTextBox", AnimationSetComboBox) as TextBox;
+                    if (textBox != null)
+                    {
+                        textBox.SelectionLength = 0;
+                        textBox.CaretIndex = 0;
+                    }
+                }), System.Windows.Threading.DispatcherPriority.Background);
+            }
+        }
+
+        /// <summary>
+        /// アニメーションチェックボックスのチェック時の処理
+        /// </summary>
+        private void AnimationCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is CheckBox checkBox && checkBox.Tag is AnimationConfig animation)
+            {
+                animation.isEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// アニメーションチェックボックスのアンチェック時の処理
+        /// </summary>
+        private void AnimationCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (sender is CheckBox checkBox && checkBox.Tag is AnimationConfig animation)
+            {
+                animation.isEnabled = false;
+            }
+        }
+
+        /// <summary>
+        /// アニメーション再生ボタンクリック時の処理
+        /// </summary>
+        private async void PlayAnimationButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is AnimationConfig animation)
+            {
+                if (_communicationService != null)
+                {
+                    try
+                    {
+                        // CocoroShellにアニメーション再生指示を送信
+                        await _communicationService.SendControlCommandAsync("playAnimation", animation.animationName);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"アニメーション再生エラー: {ex.Message}");
+                        UIHelper.ShowError("アニメーション再生エラー", ex.Message);
+                    }
+                }
+                else
+                {
+                    UIHelper.ShowError("通信エラー", "通信サービスが利用できません。");
+                }
+            }
+        }
+
+        /// <summary>
+        /// アニメーションセット追加ボタンクリック時の処理
+        /// </summary>
+        private void AddAnimationSetButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 新しいアニメーションセットを追加
+            var newSet = new AnimationSetting
+            {
+                animeSetName = "新規セット" + (_animationSettings.Count + 1),
+                animations = new List<AnimationConfig>()
+            };
+
+            // デフォルトのアニメーションリストを作成（既存の最初のセットからコピー）
+            if (_animationSettings.Count > 0 && _animationSettings[0].animations.Count > 0)
+            {
+                foreach (var anim in _animationSettings[0].animations)
+                {
+                    newSet.animations.Add(new AnimationConfig
+                    {
+                        displayName = anim.displayName,
+                        animationType = anim.animationType,
+                        animationName = anim.animationName,
+                        isEnabled = true
+                    });
+                }
+            }
+
+            _animationSettings.Add(newSet);
+            AnimationSetComboBox.ItemsSource = null;
+            AnimationSetComboBox.ItemsSource = _animationSettings;
+            AnimationSetComboBox.SelectedIndex = _animationSettings.Count - 1;
+        }
+
+        /// <summary>
+        /// アニメーションセットコンボボックスのロード時の処理
+        /// </summary>
+        private void AnimationSetComboBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            // テキストボックス部分の選択を解除
+            if (sender is ComboBox comboBox)
+            {
+                var textBox = comboBox.Template.FindName("PART_EditableTextBox", comboBox) as TextBox;
+                if (textBox != null)
+                {
+                    textBox.SelectionLength = 0;
+                    textBox.CaretIndex = 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// アニメーションセットコンボボックスのフォーカス喪失時の処理
+        /// </summary>
+        private void AnimationSetComboBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (AnimationSetComboBox.SelectedIndex >= 0 &&
+                AnimationSetComboBox.SelectedIndex < _animationSettings.Count)
+            {
+                var newName = AnimationSetComboBox.Text?.Trim();
+                if (!string.IsNullOrEmpty(newName))
+                {
+                    // 選択されているアニメーションセットの名前を更新
+                    _animationSettings[AnimationSetComboBox.SelectedIndex].animeSetName = newName;
+
+                    // コンボボックスを更新（表示を反映）
+                    var selectedIndex = AnimationSetComboBox.SelectedIndex;
+                    AnimationSetComboBox.ItemsSource = null;
+                    AnimationSetComboBox.ItemsSource = _animationSettings;
+                    AnimationSetComboBox.SelectedIndex = selectedIndex;
+                }
+            }
+        }
+
+        /// <summary>
+        /// アニメーションセット削除ボタンクリック時の処理
+        /// </summary>
+        private void DeleteAnimationSetButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 最後の1個は削除できないようにする
+            if (_animationSettings.Count <= 1)
+            {
+                MessageBox.Show("最後のアニメーションセットは削除できません。", "削除不可", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // 現在選択されているセットのインデックスを取得
+            int selectedIndex = AnimationSetComboBox.SelectedIndex;
+            if (selectedIndex < 0 || selectedIndex >= _animationSettings.Count)
+            {
+                return;
+            }
+
+            // 削除確認
+            var selectedSet = _animationSettings[selectedIndex];
+            var result = MessageBox.Show($"アニメーションセット「{selectedSet.animeSetName}」を削除しますか？", "削除確認", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            // セットを削除
+            _animationSettings.RemoveAt(selectedIndex);
+
+            // コンボボックスを更新
+            AnimationSetComboBox.ItemsSource = null;
+            AnimationSetComboBox.ItemsSource = _animationSettings;
+
+            // 新しい選択インデックスを設定
+            if (selectedIndex >= _animationSettings.Count)
+            {
+                selectedIndex = _animationSettings.Count - 1;
+            }
+            AnimationSetComboBox.SelectedIndex = selectedIndex;
+
+            // 各キャラクターのアニメーション設定インデックスを調整
+            foreach (var character in AppSettings.Instance.CharacterList)
+            {
+                if (character.currentAnimationSettingIndex >= _animationSettings.Count)
+                {
+                    character.currentAnimationSettingIndex = 0;
+                }
+            }
+        }
 
         /// <summary>
         /// キャラクター情報をUIに反映
@@ -491,6 +865,8 @@ namespace CocoroDock.Controls
             if (selectedIndex >= 0)
             {
                 UpdateCharacterUI(selectedIndex);
+                // アニメーション設定も更新
+                UpdateAnimationUI();
             }
         }
 
@@ -906,6 +1282,28 @@ namespace CocoroDock.Controls
             {
                 _characterSettings.Add(new Dictionary<string, string>(character));
             }
+
+            // アニメーション設定の復元
+            _animationSettings.Clear();
+            foreach (var animSetting in _originalAnimationSettings)
+            {
+                var newAnimSetting = new AnimationSetting
+                {
+                    animeSetName = animSetting.animeSetName,
+                    animations = new List<AnimationConfig>()
+                };
+                foreach (var anim in animSetting.animations)
+                {
+                    newAnimSetting.animations.Add(new AnimationConfig
+                    {
+                        displayName = anim.displayName,
+                        animationType = anim.animationType,
+                        animationName = anim.animationName,
+                        isEnabled = anim.isEnabled
+                    });
+                }
+                _animationSettings.Add(newAnimSetting);
+            }
         }
 
         #endregion
@@ -1131,6 +1529,10 @@ namespace CocoroDock.Controls
 
             // 更新したリストをAppSettingsに設定
             appSettings.CharacterList = newCharacterList;
+
+            // アニメーション設定の更新
+            appSettings.CurrentAnimationSettingIndex = AppSettings.Instance.CurrentAnimationSettingIndex;
+            appSettings.AnimationSettings = new List<AnimationSetting>(_animationSettings);
         }
 
         #endregion
