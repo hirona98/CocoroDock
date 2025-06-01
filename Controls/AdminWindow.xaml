@@ -280,7 +280,8 @@
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="85"/>
                                     </Grid.ColumnDefinitions>
 
                                     <ComboBox x:Name="CharacterSelectComboBox"
@@ -292,12 +293,22 @@
 
                                     <Button x:Name="AddCharacterButton"
                                             Grid.Column="1"
-                                            Content="キャラクターを追加"
+                                            Content="追加"
                                             Margin="0,5,0,5"
                                             Padding="10,5"
                                             Click="AddCharacterButton_Click"
                                             Foreground="#FF4873CF"
                                             ToolTip="Add character"/>
+
+                                    <Button x:Name="DeleteCharacterButton"
+                                            Grid.Column="2"
+                                            Content="削除"
+                                            Margin="5,5,0,5"
+                                            Padding="10,5"
+                                            Background="#d32f2f"
+                                            Foreground="WhiteSmoke"
+                                            Click="DeleteCharacterButton_Click"
+                                            ToolTip="Delete this character"/>
                                 </Grid>
                             </GroupBox>
 
@@ -620,16 +631,6 @@
                                     </Grid>
                                 </StackPanel>
                             </GroupBox>
-
-                            <Button x:Name="DeleteCharacterButton"
-                                    Content="このキャラクターを削除"
-                                    Padding="15,5"
-                                    Background="#d32f2f"
-                                    Foreground="WhiteSmoke"
-                                    Click="DeleteCharacterButton_Click"
-                                    HorizontalAlignment="Left"
-                                    Margin="0,10,0,0"
-                                    ToolTip="Delete this character"/>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
@@ -653,8 +654,8 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="80"/>
                             </Grid.ColumnDefinitions>
                             
                             <ComboBox Grid.Column="0"
@@ -666,7 +667,7 @@
                             
                             <Button Grid.Column="1"
                                     x:Name="AddAnimationSetButton"
-                                    Content="セット追加"
+                                    Content="追加"
                                     Margin="0,5,5,5"
                                     Padding="10,5"
                                     Foreground="#FF4873CF"
@@ -674,7 +675,7 @@
                                     
                             <Button Grid.Column="2"
                                     x:Name="DeleteAnimationSetButton"
-                                    Content="セット削除"
+                                    Content="削除"
                                     Margin="0,5,0,5"
                                     Padding="10,5"
                                     Background="#d32f2f"
