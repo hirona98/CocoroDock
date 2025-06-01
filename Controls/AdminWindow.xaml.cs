@@ -1169,6 +1169,60 @@ namespace CocoroDock.Controls
                 }
             }
 
+            // アニメーション設定が変更されたかチェック
+            if (!isNeedsRestart)
+            {
+                // アニメーション設定数が変更された場合
+                if (_animationSettings.Count != _originalAnimationSettings.Count)
+                {
+                    isNeedsRestart = true;
+                }
+                else
+                {
+                    // 各アニメーション設定を比較
+                    for (int i = 0; i < _animationSettings.Count; i++)
+                    {
+                        var current = _animationSettings[i];
+                        var original = _originalAnimationSettings[i];
+
+                        // セット名が変更された場合
+                        if (current.animeSetName != original.animeSetName)
+                        {
+                            isNeedsRestart = true;
+                            break;
+                        }
+
+                        // アニメーション数が変更された場合
+                        if (current.animations.Count != original.animations.Count)
+                        {
+                            isNeedsRestart = true;
+                            break;
+                        }
+
+                        // 各アニメーションの設定を比較
+                        for (int j = 0; j < current.animations.Count; j++)
+                        {
+                            var currentAnim = current.animations[j];
+                            var originalAnim = original.animations[j];
+
+                            if (currentAnim.displayName != originalAnim.displayName ||
+                                currentAnim.animationType != originalAnim.animationType ||
+                                currentAnim.animationName != originalAnim.animationName ||
+                                currentAnim.isEnabled != originalAnim.isEnabled)
+                            {
+                                isNeedsRestart = true;
+                                break;
+                            }
+                        }
+
+                        if (isNeedsRestart)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
             // 設定が変更された場合、メッセージボックスを表示して CocoroCore と CocoroShell を再起動
             if (isNeedsRestart)
             {
