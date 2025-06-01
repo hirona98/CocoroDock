@@ -641,51 +641,58 @@
                 <Grid Margin="20">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- アニメーション設定タイトル -->
-                    <TextBlock Grid.Row="0"
-                               Text="アニメーション設定"
-                               FontSize="16"
-                               FontWeight="Bold"
-                               Margin="0,0,0,10"
-                               Foreground="#FF4873CF"/>
+                    <!-- Animation set グループボックス -->
+                    <GroupBox Grid.Row="1"
+                              Header="Animation set"
+                              Margin="0,0,0,10"
+                              Padding="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <ComboBox Grid.Column="0"
+                                      x:Name="AnimationSetComboBox"
+                                      Margin="0,5,10,5"
+                                      Foreground="#FF4873CF"
+                                      DisplayMemberPath="animeSetName"
+                                      SelectedValuePath="animeSetName"/>
+                            
+                            <Button Grid.Column="1"
+                                    x:Name="AddAnimationSetButton"
+                                    Content="セット追加"
+                                    Margin="0,5,5,5"
+                                    Padding="10,5"
+                                    Foreground="#FF4873CF"
+                                    Click="AddAnimationSetButton_Click"/>
+                                    
+                            <Button Grid.Column="2"
+                                    x:Name="DeleteAnimationSetButton"
+                                    Content="セット削除"
+                                    Margin="0,5,0,5"
+                                    Padding="10,5"
+                                    Background="#d32f2f"
+                                    Foreground="WhiteSmoke"
+                                    Click="DeleteAnimationSetButton_Click"/>
+                        </Grid>
+                    </GroupBox>
 
-                    <DataGrid x:Name="AnimationSettingsDataGrid"
-                              Grid.Row="1"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              CanUserDeleteRows="False"
-                              GridLinesVisibility="Horizontal"
-                              HeadersVisibility="Column"
-                              BorderThickness="1"
-                              BorderBrush="#CCCCCC">
-                        <DataGrid.Columns>
-                            <!-- 有効/無効チェックボックス -->
-                            <DataGridCheckBoxColumn Header="有効"
-                                                    Binding="{Binding isEnabled}"
-                                                    Width="50"/>
-                            
-                            <!-- アニメーションタイプ -->
-                            <DataGridTextColumn Header="タイプ"
-                                                Binding="{Binding animationType, Converter={StaticResource AnimationTypeConverter}}"
-                                                Width="80"
-                                                IsReadOnly="True"/>
-                            
-                            <!-- 表示名 -->
-                            <DataGridTextColumn Header="表示名"
-                                                Binding="{Binding displayName}"
-                                                Width="*"
-                                                IsReadOnly="True"/>
-                            
-                            <!-- アニメーション名 -->
-                            <DataGridTextColumn Header="アニメーション名"
-                                                Binding="{Binding animationName}"
-                                                Width="*"
-                                                IsReadOnly="True"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <!-- Animation ON/OFF グループボックス -->
+                    <GroupBox Grid.Row="2"
+                              Header="Animation ON/OFF"
+                              Padding="10">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel x:Name="AnimationListPanel">
+                                <!-- アニメーション項目がここに動的に追加されます -->
+                            </StackPanel>
+                        </ScrollViewer>
+                    </GroupBox>
                 </Grid>
             </TabItem>
 
