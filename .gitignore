@@ -6,6 +6,9 @@
 # CocoroDock
 performance.db
 context.db
+.claude/
+.github/
+CLAUDE.md
 
 # dotenv files
 .env
