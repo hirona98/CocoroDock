@@ -16,6 +16,7 @@ namespace CocoroDock
     public partial class MainWindow : Window
     {
         private ICommunicationService? _communicationService;
+        private NotificationApiServer? _notificationApiServer;
         private Timer? _reconnectTimer; // 再接続用タイマー
         private const int ReconnectIntervalMs = 3000; // 再接続間隔（3秒）
         private readonly IAppSettings _appSettings;
@@ -69,6 +70,9 @@ namespace CocoroDock
 
                 // サーバーの起動を開始
                 _ = StartWebSocketServerAsync();
+
+                // 通知APIサーバーの起動を開始
+                _ = StartNotificationApiServerAsync();
             }
             catch (Exception ex)
             {
@@ -362,6 +366,14 @@ namespace CocoroDock
         {
             try
             {
+                // 通知APIサーバーを停止
+                if (_notificationApiServer != null)
+                {
+                    _notificationApiServer.StopAsync().Wait(TimeSpan.FromSeconds(5));
+                    _notificationApiServer.Dispose();
+                    _notificationApiServer = null;
+                }
+
                 // 接続中ならリソース解放
                 if (_communicationService != null)
                 {
@@ -423,6 +435,28 @@ namespace CocoroDock
             catch (Exception ex)
             {
                 UIHelper.ShowError("設定取得エラー", ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 通知APIサーバーを起動（非同期タスク）
+        /// </summary>
+        private async Task StartNotificationApiServerAsync()
+        {
+            try
+            {
+                // 設定が有効な場合のみ起動
+                if (_appSettings.IsEnableNotificationApi && _communicationService != null)
+                {
+                    _notificationApiServer = new NotificationApiServer(_appSettings.NotificationApiPort, _communicationService);
+                    await _notificationApiServer.StartAsync();
+                    Debug.WriteLine($"通知APIサーバーを起動しました: ポート {_appSettings.NotificationApiPort}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"通知APIサーバー起動エラー: {ex.Message}");
+                UIHelper.ShowError("通知APIサーバー起動エラー", ex.Message);
             }
         }
 

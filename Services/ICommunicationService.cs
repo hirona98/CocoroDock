@@ -99,5 +99,12 @@ namespace CocoroDock.Services
         /// 新しいチャットセッションを開始
         /// </summary>
         void StartNewSession();
+
+        /// <summary>
+        /// 指定されたタイプとペイロードのメッセージを送信
+        /// </summary>
+        /// <param name="type">メッセージタイプ</param>
+        /// <param name="payload">ペイロードデータ</param>
+        Task SendMessageAsync(MessageType type, object payload);
     }
 }

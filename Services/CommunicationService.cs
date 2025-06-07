@@ -184,6 +184,7 @@ namespace CocoroDock.Services
                 switch (type)
                 {
                     case "chat":
+                    case "notification":
                         ProcessChatMessage(payloadJson);
                         break;
 
@@ -272,6 +273,16 @@ namespace CocoroDock.Services
             {
                 ControlMessageReceived?.Invoke(this, controlMessage);
             }
+        }
+
+        /// <summary>
+        /// 指定されたタイプとペイロードのメッセージを送信
+        /// </summary>
+        /// <param name="type">メッセージタイプ</param>
+        /// <param name="payload">ペイロードデータ</param>
+        public async Task SendMessageAsync(MessageType type, object payload)
+        {
+            await _webSocketServer.SendMessageAsync(type, payload);
         }
 
         /// <summary>

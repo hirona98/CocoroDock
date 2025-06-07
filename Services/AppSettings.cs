@@ -118,6 +118,9 @@ namespace CocoroDock.Services
         public int CocoroCorePort { get; set; } = 55601;
         public int CocoroMemoryPort { get; set; } = 55602;
         public int CocoroMemoryDBPort { get; set; } = 55603;
+        public int NotificationApiPort { get; set; } = 55604;
+        // 通知API設定
+        public bool IsEnableNotificationApi { get; set; } = true;
         // UI設定
         public bool IsTopmost { get; set; } = false;
         public bool IsEscapeCursor { get; set; } = false;
@@ -205,6 +208,8 @@ namespace CocoroDock.Services
             CocoroCorePort = config.cocoroCorePort;
             CocoroMemoryPort = config.cocoroMemoryPort;
             CocoroMemoryDBPort = config.cocoroMemoryDBPort;
+            NotificationApiPort = config.notificationApiPort;
+            IsEnableNotificationApi = config.isEnableNotificationApi;
             IsTopmost = config.isTopmost;
             IsEscapeCursor = config.isEscapeCursor;
             IsInputVirtualKey = config.isInputVirtualKey;
@@ -248,6 +253,8 @@ namespace CocoroDock.Services
                 cocoroCorePort = CocoroCorePort,
                 cocoroMemoryPort = CocoroMemoryPort,
                 cocoroMemoryDBPort = CocoroMemoryDBPort,
+                notificationApiPort = NotificationApiPort,
+                isEnableNotificationApi = IsEnableNotificationApi,
                 isTopmost = IsTopmost,
                 isEscapeCursor = IsEscapeCursor,
                 isInputVirtualKey = IsInputVirtualKey,
@@ -578,7 +585,10 @@ namespace CocoroDock.Services
             if (userSettings.cocoroCorePort > 0) defaultSettings.cocoroCorePort = userSettings.cocoroCorePort;
             if (userSettings.cocoroMemoryPort > 0) defaultSettings.cocoroMemoryPort = userSettings.cocoroMemoryPort;
             if (userSettings.cocoroMemoryDBPort > 0) defaultSettings.cocoroMemoryDBPort = userSettings.cocoroMemoryDBPort;
+            if (userSettings.notificationApiPort > 0) defaultSettings.notificationApiPort = userSettings.notificationApiPort;
 
+            // 通知API設定
+            defaultSettings.isEnableNotificationApi = userSettings.isEnableNotificationApi;
             // UI設定
             defaultSettings.isTopmost = userSettings.isTopmost;
             defaultSettings.isEscapeCursor = userSettings.isEscapeCursor;
