@@ -100,6 +100,14 @@ namespace CocoroDock.Communication
                             return;
                         }
 
+                        const int maxMessageLength = 5000;
+                        if (request.message.Length + request.from.Length > maxMessageLength)
+                        {
+                            context.Response.StatusCode = 400;
+                            await context.Response.WriteAsJsonAsync(new { error = $"Field 'message' exceeds maximum length of {maxMessageLength} characters" });
+                            return;
+                        }
+
                         if (string.IsNullOrWhiteSpace(request.from))
                         {
                             context.Response.StatusCode = 400;
