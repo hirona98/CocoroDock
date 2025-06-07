@@ -16,6 +16,7 @@ namespace CocoroDock
     public partial class MainWindow : Window
     {
         private ICommunicationService? _communicationService;
+        private NotificationApiServer? _notificationApiServer;
         private Timer? _reconnectTimer; // 再接続用タイマー
         private const int ReconnectIntervalMs = 3000; // 再接続間隔（3秒）
         private readonly IAppSettings _appSettings;
@@ -69,6 +70,9 @@ namespace CocoroDock
 
                 // サーバーの起動を開始
                 _ = StartWebSocketServerAsync();
+
+                // 通知APIサーバーの起動を開始
+                _ = StartNotificationApiServerAsync();
             }
             catch (Exception ex)
             {
@@ -101,6 +105,7 @@ namespace CocoroDock
 
             // 通信サービスのイベントハンドラを設定
             _communicationService.ChatMessageReceived += OnChatMessageReceived;
+            _communicationService.NotificationMessageReceived += OnNotificationMessageReceived;
             _communicationService.ConfigResponseReceived += OnConfigResponseReceived;
             _communicationService.StatusUpdateReceived += OnStatusUpdateReceived;
             _communicationService.SystemMessageReceived += OnSystemMessageReceived;
@@ -250,6 +255,18 @@ namespace CocoroDock
         }
 
         /// <summary>
+        /// 通知メッセージ受信時のハンドラ
+        /// </summary>
+        private void OnNotificationMessageReceived(object? sender, ChatMessagePayload notification)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                // 通知メッセージをチャットウィンドウに表示
+                ChatControlInstance.AddNotificationMessage(notification.userId, notification.message);
+            });
+        }
+
+        /// <summary>
         /// 設定レスポンス受信時のハンドラ
         /// </summary>
         private void OnConfigResponseReceived(object? sender, ConfigResponsePayload response)
@@ -362,6 +379,14 @@ namespace CocoroDock
         {
             try
             {
+                // 通知APIサーバーを停止
+                if (_notificationApiServer != null)
+                {
+                    _notificationApiServer.StopAsync().Wait(TimeSpan.FromSeconds(5));
+                    _notificationApiServer.Dispose();
+                    _notificationApiServer = null;
+                }
+
                 // 接続中ならリソース解放
                 if (_communicationService != null)
                 {
@@ -423,6 +448,83 @@ namespace CocoroDock
             catch (Exception ex)
             {
                 UIHelper.ShowError("設定取得エラー", ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 通知APIサーバーを起動（非同期タスク）
+        /// </summary>
+        private async Task StartNotificationApiServerAsync()
+        {
+            try
+            {
+                // 設定が有効な場合のみ起動
+                if (_appSettings.IsEnableNotificationApi && _communicationService != null)
+                {
+                    _notificationApiServer = new NotificationApiServer(_appSettings.NotificationApiPort, _communicationService);
+                    await _notificationApiServer.StartAsync();
+                    Debug.WriteLine($"通知APIサーバーを起動しました: ポート {_appSettings.NotificationApiPort}");
+                }
+            }
+            catch (InvalidOperationException ioEx)
+            {
+                Debug.WriteLine($"通知APIサーバー起動エラー: {ioEx.Message}");
+
+                // ユーザーフレンドリーなエラーメッセージを表示
+                string userMessage = ioEx.Message;
+                if (ioEx.InnerException is System.Net.Sockets.SocketException)
+                {
+                    userMessage = $"通知APIサーバーを起動できませんでした。\n\n{ioEx.Message}\n\n設定画面でポート番号を変更するか、競合するアプリケーションを終了してください。";
+                }
+
+                UIHelper.ShowError("通知APIサーバー起動エラー", userMessage);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"通知APIサーバー起動エラー: {ex.Message}");
+                Debug.WriteLine($"エラータイプ: {ex.GetType().FullName}");
+                Debug.WriteLine($"スタックトレース: {ex.StackTrace}");
+
+                UIHelper.ShowError("通知APIサーバー起動エラー",
+                    $"予期しないエラーが発生しました。\n\n{ex.Message}\n\n詳細はログを確認してください。");
+            }
+        }
+
+        /// <summary>
+        /// 通知APIサーバーの設定を更新（有効/無効を切り替え）
+        /// </summary>
+        /// <param name="isEnabled">有効にする場合はtrue</param>
+        public async Task UpdateNotificationApiServerAsync(bool isEnabled)
+        {
+            try
+            {
+                if (isEnabled)
+                {
+                    // 既に起動している場合は何もしない
+                    if (_notificationApiServer != null)
+                    {
+                        return;
+                    }
+
+                    // サーバーを起動
+                    await StartNotificationApiServerAsync();
+                }
+                else
+                {
+                    // サーバーを停止
+                    if (_notificationApiServer != null)
+                    {
+                        await _notificationApiServer.StopAsync();
+                        _notificationApiServer = null;
+                        Debug.WriteLine("通知APIサーバーを停止しました");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"通知APIサーバーの更新エラー: {ex.Message}");
+                UIHelper.ShowError("通知APIサーバー更新エラー", 
+                    $"通知APIサーバーの状態変更中にエラーが発生しました。\n\n{ex.Message}");
             }
         }
 

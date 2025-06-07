@@ -263,6 +263,9 @@ namespace CocoroDock.Controls
 
             // License.txtの内容を読み込んでLicenseTextBoxに表示
             LoadLicenseText();
+
+            // API説明テキストを設定
+            SetApiDescriptionText();
         }
 
         /// <summary>
@@ -280,6 +283,7 @@ namespace CocoroDock.Controls
             VirtualKeyStringTextBox.Text = appSettings.VirtualKeyString;
             AutoMoveCheckBox.IsChecked = appSettings.IsAutoMove;
             AmbientOcclusionCheckBox.IsChecked = appSettings.IsEnableAmbientOcclusion;
+            IsEnableNotificationApiCheckBox.IsChecked = appSettings.IsEnableNotificationApi;
             foreach (ComboBoxItem item in MSAAComboBox.Items)
             {
                 if (item.Tag != null &&
@@ -346,7 +350,8 @@ namespace CocoroDock.Controls
                 { "CharacterShadowResolution", appSettings.CharacterShadowResolution },
                 { "BackgroundShadow", appSettings.BackgroundShadow },
                 { "BackgroundShadowResolution", appSettings.BackgroundShadowResolution },
-                { "WindowSize", appSettings.WindowSize }
+                { "WindowSize", appSettings.WindowSize },
+                { "IsEnableNotificationApi", appSettings.IsEnableNotificationApi }
             };
         }
 
@@ -1108,6 +1113,11 @@ namespace CocoroDock.Controls
             string lastVRMFilePath = string.Empty;
             bool lastIsUseLLM = false;
             bool lastIsEnableMemory = true;
+            bool lastIsEnableNotificationApi = false;
+            if (_originalDisplaySettings.ContainsKey("IsEnableNotificationApi"))
+            {
+                lastIsEnableNotificationApi = (bool)_originalDisplaySettings["IsEnableNotificationApi"];
+            }
             if (lastSelectedIndex >= 0 && lastSelectedIndex < AppSettings.Instance.CharacterList.Count)
             {
                 lastVRMFilePath = AppSettings.Instance.CharacterList[lastSelectedIndex].vrmFilePath ?? string.Empty;
@@ -1116,7 +1126,7 @@ namespace CocoroDock.Controls
             }
 
             // すべてのタブの設定を保存
-            SaveAllSettings();
+            SaveAllSettings(lastIsEnableNotificationApi);
 
             // VRMFilePathかSelectedIndexが変更されたかチェック
             bool isNeedsRestart = false;
@@ -1278,7 +1288,8 @@ namespace CocoroDock.Controls
         /// <summary>
         /// すべてのタブの設定を保存する
         /// </summary>
-        private async void SaveAllSettings()
+        /// <param name="lastIsEnableNotificationApi">変更前の通知API有効フラグ</param>
+        private async void SaveAllSettings(bool lastIsEnableNotificationApi)
         {
             try
             {
@@ -1314,6 +1325,17 @@ namespace CocoroDock.Controls
                 {
                     MessageBox.Show($"クライアントへの設定通知に失敗しました。\n\n設定自体は保存されています。\n\nエラー: {errorMessage}",
                         "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
+                // 通知APIサーバーの設定が変更された場合の処理
+                bool currentIsEnableNotificationApi = (bool)_displaySettings["IsEnableNotificationApi"];
+                if (lastIsEnableNotificationApi != currentIsEnableNotificationApi)
+                {
+                    // MainWindowに通知APIサーバーの状態変更を通知
+                    if (Owner is MainWindow mainWindow)
+                    {
+                        await mainWindow.UpdateNotificationApiServerAsync(currentIsEnableNotificationApi);
+                    }
                 }
             }
             catch (System.Exception ex)
@@ -1435,6 +1457,7 @@ namespace CocoroDock.Controls
             _displaySettings["BackgroundShadowResolution"] = backShadowRes;
 
             _displaySettings["WindowSize"] = WindowSizeSlider.Value;
+            _displaySettings["IsEnableNotificationApi"] = IsEnableNotificationApiCheckBox.IsChecked ?? false;
         }
 
         /// <summary>
@@ -1457,6 +1480,7 @@ namespace CocoroDock.Controls
             appSettings.BackgroundShadow = (int)_displaySettings["BackgroundShadow"];
             appSettings.BackgroundShadowResolution = (int)_displaySettings["BackgroundShadowResolution"];
             appSettings.WindowSize = (double)_displaySettings["WindowSize"] > 0 ? (int)(double)_displaySettings["WindowSize"] : 650;
+            appSettings.IsEnableNotificationApi = (bool)_displaySettings["IsEnableNotificationApi"];
 
             // キャラクター設定の更新
             appSettings.CurrentCharacterIndex = _currentCharacterIndex;
@@ -1644,6 +1668,37 @@ namespace CocoroDock.Controls
                 // エラーが発生した場合
                 LicenseTextBox.Text = $"ライセンスファイルの読み込み中にエラーが発生しました: {ex.Message}";
             }
+        }
+
+        /// <summary>
+        /// API説明テキストを設定
+        /// </summary>
+        private void SetApiDescriptionText()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("エンドポイント:");
+            sb.AppendLine("POST http://localhost:55604/api/v1/notification");
+            sb.AppendLine();
+            sb.AppendLine("リクエストボディ (JSON):");
+            sb.AppendLine("{");
+            sb.AppendLine("  \"from\": \"アプリ名\",");
+            sb.AppendLine("  \"message\": \"通知メッセージ\"");
+            sb.AppendLine("}");
+            sb.AppendLine();
+            sb.AppendLine("レスポンス:");
+            sb.AppendLine("HTTP/1.1 204 No Content");
+            sb.AppendLine();
+            sb.AppendLine("使用例 (cURL):");
+            sb.AppendLine("curl -X POST http://localhost:55604/api/v1/notification \\");
+            sb.AppendLine("  -H \"Content-Type: application/json\" \\");
+            sb.AppendLine("  -d '{\"from\":\"MyApp\",\"message\":\"処理完了\"}'");
+            sb.AppendLine();
+            sb.AppendLine("使用例 (PowerShell):");
+            sb.AppendLine("Invoke-RestMethod -Method Post `");
+            sb.AppendLine("  -Uri \"http://localhost:55604/api/v1/notification\" `");
+            sb.AppendLine("  -ContentType \"application/json\" `");
+            sb.AppendLine("  -Body '{\"from\":\"MyApp\",\"message\":\"処理完了\"}'");
+            ApiDescriptionTextBox.Text = sb.ToString();
         }
 
         /// <summary>

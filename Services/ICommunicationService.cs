@@ -15,6 +15,11 @@ namespace CocoroDock.Services
         event EventHandler<string>? ChatMessageReceived;
 
         /// <summary>
+        /// 通知メッセージ受信イベント
+        /// </summary>
+        event EventHandler<ChatMessagePayload>? NotificationMessageReceived;
+
+        /// <summary>
         /// 設定レスポンス受信イベント
         /// </summary>
         event EventHandler<ConfigResponsePayload>? ConfigResponseReceived;
@@ -99,5 +104,12 @@ namespace CocoroDock.Services
         /// 新しいチャットセッションを開始
         /// </summary>
         void StartNewSession();
+
+        /// <summary>
+        /// 指定されたタイプとペイロードのメッセージを送信
+        /// </summary>
+        /// <param name="type">メッセージタイプ</param>
+        /// <param name="payload">ペイロードデータ</param>
+        Task SendMessageAsync(MessageType type, object payload);
     }
 }

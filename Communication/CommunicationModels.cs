@@ -8,6 +8,7 @@ namespace CocoroDock.Communication
     public enum MessageType
     {
         chat,
+        notification,
         config,
         control,
         status,
@@ -36,7 +37,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ChatMessagePayload
     {
-        public string userId { get; set; } = string.Empty;
+        public string userId { get; set; } = string.Empty; // 現状未使用
         public string sessionId { get; set; } = string.Empty;
         public string message { get; set; } = string.Empty;
     }
@@ -130,6 +131,8 @@ namespace CocoroDock.Communication
         public int cocoroCorePort { get; set; } = 55601;
         public int cocoroMemoryPort { get; set; } = 55602;
         public int cocoroMemoryDBPort { get; set; } = 55603;
+        public int notificationApiPort { get; set; } = 55604;
+        public bool isEnableNotificationApi { get; set; } = true;
         public bool isTopmost { get; set; }
         public bool isEscapeCursor { get; set; }
         public bool isInputVirtualKey { get; set; }
