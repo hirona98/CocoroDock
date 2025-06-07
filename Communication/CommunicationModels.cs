@@ -132,7 +132,7 @@ namespace CocoroDock.Communication
         public int cocoroMemoryPort { get; set; } = 55602;
         public int cocoroMemoryDBPort { get; set; } = 55603;
         public int notificationApiPort { get; set; } = 55604;
-        public bool isEnableNotificationApi { get; set; } = true;
+        public bool isEnableNotificationApi { get; set; } = false;
         public bool isTopmost { get; set; }
         public bool isEscapeCursor { get; set; }
         public bool isInputVirtualKey { get; set; }

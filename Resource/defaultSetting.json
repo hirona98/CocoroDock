@@ -4,7 +4,7 @@
   "cocoroMemoryPort": 55602,
   "cocoroMemoryDBPort": 55603,
   "notificationApiPort": 55604,
-  "isEnableNotificationApi": true,
+  "isEnableNotificationApi": false,
   "isTopmost": true,
   "isEscapeCursor": false,
   "isInputVirtualKey": false,
