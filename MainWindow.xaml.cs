@@ -491,6 +491,44 @@ namespace CocoroDock
         }
 
         /// <summary>
+        /// 通知APIサーバーの設定を更新（有効/無効を切り替え）
+        /// </summary>
+        /// <param name="isEnabled">有効にする場合はtrue</param>
+        public async Task UpdateNotificationApiServerAsync(bool isEnabled)
+        {
+            try
+            {
+                if (isEnabled)
+                {
+                    // 既に起動している場合は何もしない
+                    if (_notificationApiServer != null)
+                    {
+                        return;
+                    }
+
+                    // サーバーを起動
+                    await StartNotificationApiServerAsync();
+                }
+                else
+                {
+                    // サーバーを停止
+                    if (_notificationApiServer != null)
+                    {
+                        await _notificationApiServer.StopAsync();
+                        _notificationApiServer = null;
+                        Debug.WriteLine("通知APIサーバーを停止しました");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"通知APIサーバーの更新エラー: {ex.Message}");
+                UIHelper.ShowError("通知APIサーバー更新エラー", 
+                    $"通知APIサーバーの状態変更中にエラーが発生しました。\n\n{ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// サーバー再起動タイマーを開始
         /// </summary>
         private void StartServerRestartTimer()

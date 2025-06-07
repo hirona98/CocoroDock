@@ -1113,6 +1113,11 @@ namespace CocoroDock.Controls
             string lastVRMFilePath = string.Empty;
             bool lastIsUseLLM = false;
             bool lastIsEnableMemory = true;
+            bool lastIsEnableNotificationApi = false;
+            if (_originalDisplaySettings.ContainsKey("IsEnableNotificationApi"))
+            {
+                lastIsEnableNotificationApi = (bool)_originalDisplaySettings["IsEnableNotificationApi"];
+            }
             if (lastSelectedIndex >= 0 && lastSelectedIndex < AppSettings.Instance.CharacterList.Count)
             {
                 lastVRMFilePath = AppSettings.Instance.CharacterList[lastSelectedIndex].vrmFilePath ?? string.Empty;
@@ -1121,7 +1126,7 @@ namespace CocoroDock.Controls
             }
 
             // すべてのタブの設定を保存
-            SaveAllSettings();
+            SaveAllSettings(lastIsEnableNotificationApi);
 
             // VRMFilePathかSelectedIndexが変更されたかチェック
             bool isNeedsRestart = false;
@@ -1283,7 +1288,8 @@ namespace CocoroDock.Controls
         /// <summary>
         /// すべてのタブの設定を保存する
         /// </summary>
-        private async void SaveAllSettings()
+        /// <param name="lastIsEnableNotificationApi">変更前の通知API有効フラグ</param>
+        private async void SaveAllSettings(bool lastIsEnableNotificationApi)
         {
             try
             {
@@ -1319,6 +1325,17 @@ namespace CocoroDock.Controls
                 {
                     MessageBox.Show($"クライアントへの設定通知に失敗しました。\n\n設定自体は保存されています。\n\nエラー: {errorMessage}",
                         "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
+                // 通知APIサーバーの設定が変更された場合の処理
+                bool currentIsEnableNotificationApi = (bool)_displaySettings["IsEnableNotificationApi"];
+                if (lastIsEnableNotificationApi != currentIsEnableNotificationApi)
+                {
+                    // MainWindowに通知APIサーバーの状態変更を通知
+                    if (Owner is MainWindow mainWindow)
+                    {
+                        await mainWindow.UpdateNotificationApiServerAsync(currentIsEnableNotificationApi);
+                    }
                 }
             }
             catch (System.Exception ex)

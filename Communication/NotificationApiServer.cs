@@ -199,6 +199,11 @@ namespace CocoroDock.Communication
                     {
                         // 正常な終了
                     }
+                    catch (System.Net.Sockets.SocketException sockEx) when (sockEx.Message.Contains("スレッドの終了") || sockEx.Message.Contains("thread exit"))
+                    {
+                        // サーバー停止時の正常なソケット終了
+                        Debug.WriteLine("APIサーバーが正常に停止されました");
+                    }
                     catch (Exception ex)
                     {
                         Debug.WriteLine($"APIサーバー実行エラー: {ex.Message}");
