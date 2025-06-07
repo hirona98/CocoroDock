@@ -116,15 +116,47 @@ namespace CocoroDock.Controls
 
             var bubble = new Border
             {
-                Style = (Style)Resources["SystemErrorBubbleStyle"]
+                Style = (Style)Resources["SystemMessageBubbleStyle"]
             };
 
             var messageContent = new StackPanel();
 
             var messageText = new TextBlock
             {
-                Style = (Style)Resources["SystemErrorMessageTextStyle"],
+                Style = (Style)Resources["SystemMessageTextStyle"],
                 Text = message
+            };
+
+            messageContent.Children.Add(messageText);
+            bubble.Child = messageContent;
+            messageContainer.Children.Add(bubble);
+
+            ChatMessagesPanel.Children.Add(messageContainer);
+
+            // 自動スクロール
+            ChatScrollViewer.ScrollToEnd();
+        }
+
+        /// <summary>
+        /// 通知メッセージをUIに追加（中央のグレー枠に白文字で表示）
+        /// </summary>
+        /// <param name="from">通知元のアプリ名</param>
+        /// <param name="message">通知メッセージ</param>
+        public void AddNotificationMessage(string from, string message)
+        {
+            var messageContainer = new StackPanel();
+
+            var bubble = new Border
+            {
+                Style = (Style)Resources["SystemMessageBubbleStyle"]
+            };
+
+            var messageContent = new StackPanel();
+
+            var messageText = new TextBlock
+            {
+                Style = (Style)Resources["SystemMessageTextStyle"],
+                Text = $"[{from}] {message}"
             };
 
             messageContent.Children.Add(messageText);

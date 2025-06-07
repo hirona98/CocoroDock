@@ -15,6 +15,11 @@ namespace CocoroDock.Services
         event EventHandler<string>? ChatMessageReceived;
 
         /// <summary>
+        /// 通知メッセージ受信イベント
+        /// </summary>
+        event EventHandler<ChatMessagePayload>? NotificationMessageReceived;
+
+        /// <summary>
         /// 設定レスポンス受信イベント
         /// </summary>
         event EventHandler<ConfigResponsePayload>? ConfigResponseReceived;

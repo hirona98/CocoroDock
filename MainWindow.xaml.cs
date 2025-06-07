@@ -105,6 +105,7 @@ namespace CocoroDock
 
             // 通信サービスのイベントハンドラを設定
             _communicationService.ChatMessageReceived += OnChatMessageReceived;
+            _communicationService.NotificationMessageReceived += OnNotificationMessageReceived;
             _communicationService.ConfigResponseReceived += OnConfigResponseReceived;
             _communicationService.StatusUpdateReceived += OnStatusUpdateReceived;
             _communicationService.SystemMessageReceived += OnSystemMessageReceived;
@@ -251,6 +252,18 @@ namespace CocoroDock
         private void OnChatMessageReceived(object? sender, string message)
         {
             UIHelper.RunOnUIThread(() => ChatControlInstance.AddAiMessage(message));
+        }
+
+        /// <summary>
+        /// 通知メッセージ受信時のハンドラ
+        /// </summary>
+        private void OnNotificationMessageReceived(object? sender, ChatMessagePayload notification)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                // 通知メッセージをチャットウィンドウに表示
+                ChatControlInstance.AddNotificationMessage(notification.userId, notification.message);
+            });
         }
 
         /// <summary>
@@ -456,14 +469,14 @@ namespace CocoroDock
             catch (InvalidOperationException ioEx)
             {
                 Debug.WriteLine($"通知APIサーバー起動エラー: {ioEx.Message}");
-                
+
                 // ユーザーフレンドリーなエラーメッセージを表示
                 string userMessage = ioEx.Message;
                 if (ioEx.InnerException is System.Net.Sockets.SocketException)
                 {
                     userMessage = $"通知APIサーバーを起動できませんでした。\n\n{ioEx.Message}\n\n設定画面でポート番号を変更するか、競合するアプリケーションを終了してください。";
                 }
-                
+
                 UIHelper.ShowError("通知APIサーバー起動エラー", userMessage);
             }
             catch (Exception ex)
@@ -471,8 +484,8 @@ namespace CocoroDock
                 Debug.WriteLine($"通知APIサーバー起動エラー: {ex.Message}");
                 Debug.WriteLine($"エラータイプ: {ex.GetType().FullName}");
                 Debug.WriteLine($"スタックトレース: {ex.StackTrace}");
-                
-                UIHelper.ShowError("通知APIサーバー起動エラー", 
+
+                UIHelper.ShowError("通知APIサーバー起動エラー",
                     $"予期しないエラーが発生しました。\n\n{ex.Message}\n\n詳細はログを確認してください。");
             }
         }

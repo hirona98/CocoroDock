@@ -16,6 +16,7 @@ namespace CocoroDock.Services
         private string _sessionId;
 
         public event EventHandler<string>? ChatMessageReceived;
+        public event EventHandler<ChatMessagePayload>? NotificationMessageReceived;
         public event EventHandler<ConfigResponsePayload>? ConfigResponseReceived;
         public event EventHandler<StatusMessagePayload>? StatusUpdateReceived;
         public event EventHandler<SystemMessagePayload>? SystemMessageReceived;
@@ -184,7 +185,6 @@ namespace CocoroDock.Services
                 switch (type)
                 {
                     case "chat":
-                    case "notification":
                         ProcessChatMessage(payloadJson);
                         break;
 
@@ -273,6 +273,15 @@ namespace CocoroDock.Services
             {
                 ControlMessageReceived?.Invoke(this, controlMessage);
             }
+        }
+
+        /// <summary>
+        /// 通知メッセージ受信イベントを発火（内部使用）
+        /// </summary>
+        /// <param name="notification">通知メッセージペイロード</param>
+        public void RaiseNotificationMessageReceived(ChatMessagePayload notification)
+        {
+            NotificationMessageReceived?.Invoke(this, notification);
         }
 
         /// <summary>

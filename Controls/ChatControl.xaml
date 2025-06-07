@@ -46,11 +46,15 @@
                                 Value="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ScrollViewer}}, Path=ActualWidth, Converter={StaticResource PercentageConverter}, ConverterParameter=0.9}"/>
                 </Style>
 
-                <!-- システムエラーメッセージバブルスタイル -->
-                <Style x:Key="SystemErrorBubbleStyle"
+                <!-- システムメッセージバブルスタイル -->
+                <Style x:Key="SystemMessageBubbleStyle"
                        TargetType="Border">
                         <Setter Property="Background"
-                                Value="#CCCCCC"/>
+                                Value="White"/>
+                        <Setter Property="BorderBrush"
+                                Value="#4873CF"/>
+                        <Setter Property="BorderThickness"
+                                Value="1"/>
                         <Setter Property="CornerRadius"
                                 Value="10"/>
                         <Setter Property="Padding"
@@ -83,15 +87,15 @@
                                 Value="#FF303030"/>
                 </Style>
 
-                <!-- システムエラーメッセージテキストスタイル -->
-                <Style x:Key="SystemErrorMessageTextStyle"
+                <!-- システムメッセージテキストスタイル -->
+                <Style x:Key="SystemMessageTextStyle"
                        TargetType="TextBlock">
                         <Setter Property="TextWrapping"
                                 Value="Wrap"/>
                         <Setter Property="FontSize"
                                 Value="14"/>
                         <Setter Property="Foreground"
-                                Value="#FF525252"/>
+                                Value="#4873CF"/>
                         <Setter Property="HorizontalAlignment"
                                 Value="Center"/>
                 </Style>

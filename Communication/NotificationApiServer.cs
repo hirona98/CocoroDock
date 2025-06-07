@@ -122,15 +122,21 @@ namespace CocoroDock.Communication
                             message = request.message.Trim()
                         };
 
-                        // WebSocket経由でメッセージ送信
+                        // 通知メッセージを処理
                         try
                         {
+                            // チャットウィンドウに表示
+                            if (_communicationService is CommunicationService communicationService)
+                            {
+                                communicationService.RaiseNotificationMessageReceived(chatPayload);
+                            }
+
+                            // WebSocket経由で他のクライアントに転送
                             await _communicationService.SendMessageAsync(MessageType.notification, chatPayload);
-                            Debug.WriteLine($"通知を転送しました: from={request.from}, message={request.message}");
                         }
                         catch (InvalidOperationException ioEx)
                         {
-                            Debug.WriteLine($"WebSocket送信エラー: {ioEx.Message}");
+                            Debug.WriteLine($"通知送信エラー: {ioEx.Message}");
                             context.Response.StatusCode = 503;
                             await context.Response.WriteAsJsonAsync(new { error = "Service temporarily unavailable" });
                             return;
