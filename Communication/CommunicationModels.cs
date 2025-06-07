@@ -37,7 +37,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ChatMessagePayload
     {
-        public string userId { get; set; } = string.Empty;
+        public string userId { get; set; } = string.Empty; // 現状未使用
         public string sessionId { get; set; } = string.Empty;
         public string message { get; set; } = string.Empty;
     }

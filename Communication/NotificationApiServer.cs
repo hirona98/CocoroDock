@@ -131,8 +131,21 @@ namespace CocoroDock.Communication
                                 communicationService.RaiseNotificationMessageReceived(chatPayload);
                             }
 
-                            // WebSocket経由で他のクライアントに転送
-                            await _communicationService.SendMessageAsync(MessageType.notification, chatPayload);
+                            // WebSocket経由で他のクライアントに転送（XMLタグで囲んで）
+                            var notificationJson = System.Text.Json.JsonSerializer.Serialize(request, new System.Text.Json.JsonSerializerOptions
+                            {
+                                WriteIndented = true
+                            });
+                            var formattedMessage = $"<cocoro-notification>\n{notificationJson}\n</cocoro-notification>";
+
+                            var taggedPayload = new ChatMessagePayload
+                            {
+                                userId = chatPayload.userId,
+                                sessionId = chatPayload.sessionId,
+                                message = formattedMessage
+                            };
+
+                            await _communicationService.SendMessageAsync(MessageType.notification, taggedPayload);
                         }
                         catch (InvalidOperationException ioEx)
                         {
