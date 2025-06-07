@@ -11,6 +11,7 @@ CocoroCore に合わせてそのうち作り直すと思うので、かな～り
 
 プルリクしたい場合はお気軽にどうぞ！
 
+CocoroAI全体構成は CocoroCoreリポジトリの CocoroAI全体構成.drawio を参照願います
 ----
 
 ## 開発環境
