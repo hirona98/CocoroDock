@@ -695,6 +695,43 @@
                 </Grid>
             </TabItem>
 
+            <TabItem Header="System"
+                     Style="{StaticResource AdminTabItemStyle}"
+                     ToolTip="System setting">
+                <Grid Margin="20,20,20,20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <ScrollViewer Grid.Row="0"
+                                  VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <!-- 通知API設定 -->
+                            <GroupBox Header="通知API設定"
+                                      Margin="0,0,0,20"
+                                      Padding="10">
+                                <StackPanel>
+                                    <!-- 通知要求を受けるチェックボックス -->
+                                    <CheckBox x:Name="IsEnableNotificationApiCheckBox"
+                                              Content="通知要求を受ける"
+                                              Margin="0,5,0,10"
+                                              Foreground="#FF4873CF"
+                                              ToolTip="Enable notification API"/>
+                                    <!-- API説明 -->
+                                    <TextBox x:Name="ApiDescriptionTextBox"
+                                                IsReadOnly="True"
+                                                BorderThickness="0"
+                                                VerticalScrollBarVisibility="Auto"
+                                                Foreground="#FF4873CF"
+                                                TextWrapping="Wrap"
+                                                AcceptsReturn="True" />
+                                </StackPanel>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+
             <TabItem Header="License"
                      Style="{StaticResource AdminTabItemStyle}"
                      ToolTip="License">
