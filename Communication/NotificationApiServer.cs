@@ -34,9 +34,9 @@ namespace CocoroDock.Communication
         /// <summary>
         /// APIサーバーを開始
         /// </summary>
-        public async Task StartAsync()
+        public Task StartAsync()
         {
-            if (_host != null) return;
+            if (_host != null) return Task.CompletedTask;
 
             try
             {
@@ -236,6 +236,8 @@ namespace CocoroDock.Communication
                 Debug.WriteLine($"エラータイプ: {ex.GetType().FullName}");
                 throw new InvalidOperationException($"APIサーバーの起動に失敗しました: {ex.Message}", ex);
             }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
