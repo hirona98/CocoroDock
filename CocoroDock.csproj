@@ -6,7 +6,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-    <Version>2.2.1</Version>
+    <Version>2.3.0</Version>
     <Authors>Hirona</Authors>
     <Company>AliceEncoder</Company>
     <Description>CocoroAIのチャット及び設定画面</Description>

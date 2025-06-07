@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:CocoroDock"
         xmlns:controls="clr-namespace:CocoroDock.Controls"
         mc:Ignorable="d"
-        Title="CocoroAI Ver. 2.2.1 Beta"
+        Title="CocoroAI Ver. 2.3.0 Beta"
         Height="600"
         Width="500"
         ShowInTaskbar="True"
