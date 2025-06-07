@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -55,36 +56,101 @@ namespace CocoroDock.Communication
 
                 var app = builder.Build();
 
+                // グローバル例外ハンドラー
+                app.UseExceptionHandler(appError =>
+                {
+                    appError.Run(async context =>
+                    {
+                        context.Response.StatusCode = 500;
+                        context.Response.ContentType = "application/json";
+
+                        var contextFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+                        if (contextFeature != null)
+                        {
+                            Debug.WriteLine($"APIサーバー例外: {contextFeature.Error}");
+                            await context.Response.WriteAsJsonAsync(new { error = "Internal server error" });
+                        }
+                    });
+                });
+
                 // エンドポイントの設定
-                app.MapPost("/api/v1/notification", async (HttpContext context, [FromBody] NotificationRequest request) =>
+                app.MapPost("/api/v1/notification", async (HttpContext context) =>
                 {
                     try
                     {
+                        // リクエストボディの読み取り
+                        NotificationRequest? request = null;
+                        try
+                        {
+                            request = await context.Request.ReadFromJsonAsync<NotificationRequest>();
+                        }
+                        catch (System.Text.Json.JsonException jsonEx)
+                        {
+                            Debug.WriteLine($"JSONパースエラー: {jsonEx.Message}");
+                            context.Response.StatusCode = 400;
+                            await context.Response.WriteAsJsonAsync(new { error = "Invalid JSON format" });
+                            return;
+                        }
+
                         // リクエストの検証
-                        if (string.IsNullOrEmpty(request?.from) || string.IsNullOrEmpty(request?.message))
+                        if (request == null)
                         {
                             context.Response.StatusCode = 400;
-                            await context.Response.WriteAsJsonAsync(new { error = "Invalid request format" });
+                            await context.Response.WriteAsJsonAsync(new { error = "Request body is required" });
+                            return;
+                        }
+
+                        if (string.IsNullOrWhiteSpace(request.from))
+                        {
+                            context.Response.StatusCode = 400;
+                            await context.Response.WriteAsJsonAsync(new { error = "Field 'from' is required and cannot be empty" });
+                            return;
+                        }
+
+                        if (string.IsNullOrWhiteSpace(request.message))
+                        {
+                            context.Response.StatusCode = 400;
+                            await context.Response.WriteAsJsonAsync(new { error = "Field 'message' is required and cannot be empty" });
                             return;
                         }
 
                         // 通知をChatメッセージとして転送
                         var chatPayload = new ChatMessagePayload
                         {
-                            userId = request.from,
+                            userId = request.from.Trim(),
                             sessionId = $"notification_{DateTime.Now:yyyyMMddHHmmss}",
-                            message = request.message
+                            message = request.message.Trim()
                         };
 
                         // WebSocket経由でメッセージ送信
-                        await _communicationService.SendMessageAsync(MessageType.notification, chatPayload);
+                        try
+                        {
+                            await _communicationService.SendMessageAsync(MessageType.notification, chatPayload);
+                            Debug.WriteLine($"通知を転送しました: from={request.from}, message={request.message}");
+                        }
+                        catch (InvalidOperationException ioEx)
+                        {
+                            Debug.WriteLine($"WebSocket送信エラー: {ioEx.Message}");
+                            context.Response.StatusCode = 503;
+                            await context.Response.WriteAsJsonAsync(new { error = "Service temporarily unavailable" });
+                            return;
+                        }
 
                         // 204 No Content を返す
                         context.Response.StatusCode = 204;
+                        await context.Response.CompleteAsync();
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        // タスクがキャンセルされた場合は何もしない
+                        Debug.WriteLine("通知処理がキャンセルされました");
+                        context.Response.StatusCode = 499; // Client Closed Request
+                        await context.Response.CompleteAsync();
                     }
                     catch (Exception ex)
                     {
                         Debug.WriteLine($"通知処理エラー: {ex.Message}");
+                        Debug.WriteLine($"スタックトレース: {ex.StackTrace}");
                         context.Response.StatusCode = 500;
                         await context.Response.WriteAsJsonAsync(new { error = "Internal server error" });
                     }
@@ -114,10 +180,34 @@ namespace CocoroDock.Communication
 
                 Debug.WriteLine($"通知APIサーバーを起動しました: http://localhost:{_port}");
             }
+            catch (System.Net.Sockets.SocketException sockEx)
+            {
+                Debug.WriteLine($"ソケットエラー: {sockEx.Message}");
+                Debug.WriteLine($"エラーコード: {sockEx.ErrorCode}");
+
+                if (sockEx.ErrorCode == 10048) // WSAEADDRINUSE
+                {
+                    throw new InvalidOperationException($"ポート {_port} は既に使用されています。別のポートを指定するか、使用中のアプリケーションを終了してください。", sockEx);
+                }
+                else if (sockEx.ErrorCode == 10013) // WSAEACCES
+                {
+                    throw new InvalidOperationException($"ポート {_port} へのアクセスが拒否されました。管理者権限が必要な可能性があります。", sockEx);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"ネットワークエラーが発生しました: {sockEx.Message}", sockEx);
+                }
+            }
+            catch (System.IO.IOException ioEx)
+            {
+                Debug.WriteLine($"I/Oエラー: {ioEx.Message}");
+                throw new InvalidOperationException("APIサーバーの起動中にI/Oエラーが発生しました。", ioEx);
+            }
             catch (Exception ex)
             {
                 Debug.WriteLine($"APIサーバー起動エラー: {ex.Message}");
-                throw;
+                Debug.WriteLine($"エラータイプ: {ex.GetType().FullName}");
+                throw new InvalidOperationException($"APIサーバーの起動に失敗しました: {ex.Message}", ex);
             }
         }
 
@@ -131,7 +221,10 @@ namespace CocoroDock.Communication
             try
             {
                 _cts?.Cancel();
-                await _host.StopAsync(TimeSpan.FromSeconds(5));
+
+                var stopTask = _host.StopAsync(TimeSpan.FromSeconds(5));
+                await stopTask.ConfigureAwait(false);
+
                 _host.Dispose();
                 _host = null;
                 _cts?.Dispose();
@@ -139,9 +232,35 @@ namespace CocoroDock.Communication
 
                 Debug.WriteLine("通知APIサーバーを停止しました");
             }
+            catch (TaskCanceledException)
+            {
+                Debug.WriteLine("APIサーバーの停止がタイムアウトしました");
+            }
+            catch (ObjectDisposedException)
+            {
+                Debug.WriteLine("APIサーバーは既に破棄されています");
+            }
             catch (Exception ex)
             {
                 Debug.WriteLine($"APIサーバー停止エラー: {ex.Message}");
+                Debug.WriteLine($"エラータイプ: {ex.GetType().FullName}");
+
+                // エラーが発生してもリソースをクリーンアップ
+                try
+                {
+                    _host?.Dispose();
+                }
+                catch { }
+
+                _host = null;
+
+                try
+                {
+                    _cts?.Dispose();
+                }
+                catch { }
+
+                _cts = null;
             }
         }
 
