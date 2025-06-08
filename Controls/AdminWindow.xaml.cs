@@ -1277,6 +1277,14 @@ namespace CocoroDock.Controls
                             break;
                         }
 
+                        // 姿勢変更ループ回数が変更された場合
+                        if (current.postureChangeLoopCountStanding != original.postureChangeLoopCountStanding ||
+                            current.postureChangeLoopCountSittingFloor != original.postureChangeLoopCountSittingFloor)
+                        {
+                            isNeedsRestart = true;
+                            break;
+                        }
+
                         // アニメーション数が変更された場合
                         if (current.animations.Count != original.animations.Count)
                         {
