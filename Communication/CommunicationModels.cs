@@ -118,6 +118,9 @@ namespace CocoroDock.Communication
         public bool isUseSTT { get; set; } = false; // STT（音声認識）機能の有効/無効
         public string sttWakeWord { get; set; } = string.Empty; // STT起動ワード
         public string sttApiKey { get; set; } = string.Empty; // STT用APIキー
+        public bool isConvertMToon { get; set; } = false; // UnlitをMToonに変換するかどうか
+        public bool isEnableShadowOff { get; set; } = true; // 影オフ機能の有効/無効（デフォルト: true）
+        public string shadowOffMesh { get; set; } = "Face, U_Char_1"; // 影を落とさないメッシュ名
     }
 
     /// <summary>
@@ -142,9 +145,6 @@ namespace CocoroDock.Communication
         public int characterShadowResolution { get; set; }
         public int backgroundShadow { get; set; }
         public int backgroundShadowResolution { get; set; }
-        public bool isConvertMToon { get; set; }
-        public bool isEnableShadowOff { get; set; }
-        public string shadowOffMesh { get; set; } = string.Empty;
         public float windowSize { get; set; }
         public int currentCharacterIndex { get; set; }
         public int currentAnimationSettingIndex { get; set; } = 0;

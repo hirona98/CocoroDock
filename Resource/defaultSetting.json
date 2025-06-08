@@ -16,9 +16,6 @@
   "characterShadowResolution": 0,
   "backgroundShadow": 2,
   "backgroundShadowResolution": 2,
-  "isConvertMToon": false,
-  "isEnableShadowOff": true,
-  "shadowOffMesh": "Face, U_Char_1",
   "windowSize": 1200,
   "currentCharacterIndex": 1,
   "characterList": [
@@ -39,7 +36,10 @@
       "embeddedModel": "ollama/nomic-embed-text",
       "isUseSTT": false,
       "sttWakeWord": "つくよみちゃん",
-      "sttApiKey": ""
+      "sttApiKey": "",
+      "isConvertMToon": false,
+      "isEnableShadowOff": true,
+      "shadowOffMesh": "Face, U_Char_1"
     },
     {
       "isReadOnly": true,
@@ -58,7 +58,10 @@
       "embeddedModel": "openai/text-embedding-3-small",
       "isUseSTT": false,
       "sttWakeWord": "こんにちは",
-      "sttApiKey": ""
+      "sttApiKey": "",
+      "isConvertMToon": false,
+      "isEnableShadowOff": true,
+      "shadowOffMesh": "Face, U_Char_1"
     }
   ],
   "currentAnimationSettingIndex": 0,

@@ -94,21 +94,6 @@ namespace CocoroDock.Services
         int BackgroundShadowResolution { get; set; }
 
         /// <summary>
-        /// UnlitをMToonに変換するかどうか
-        /// </summary>
-        bool IsConvertMToon { get; set; }
-
-        /// <summary>
-        /// 影を受けないメッシュを有効にするか
-        /// </summary>
-        bool IsEnableShadowOff { get; set; }
-
-        /// <summary>
-        /// 影を受けないメッシュの名前
-        /// </summary>
-        string ShadowOffMesh { get; set; }
-
-        /// <summary>
         /// ウィンドウサイズ
         /// </summary>
         int WindowSize { get; set; }

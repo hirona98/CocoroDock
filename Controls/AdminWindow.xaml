@@ -228,36 +228,6 @@
                                 </ComboBox>
                             </StackPanel>
 
-                            <!-- MToon変換設定 -->
-                            <CheckBox x:Name="ConvertMToonCheckBox"
-                                      Content="UnlitをMToonに変換する"
-                                      Margin="0,10,0,0"
-                                      Foreground="#FF4873CF"
-                                      ToolTip="Convert Unlit to MToon"/>
-
-                            <!-- 影オフメッシュ設定 -->
-                            <CheckBox x:Name="EnableShadowOffCheckBox"
-                                      Content="指定したメッシュに影を落とさない（顔の場合はFaceやU_Char_1など）"
-                                      Margin="0,15,0,0"
-                                      Foreground="#FF4873CF"
-                                      ToolTip="Enable shadow off mesh"
-                                      Checked="EnableShadowOffCheckBox_Checked"
-                                      Unchecked="EnableShadowOffCheckBox_Unchecked"/>
-
-                            <!-- 影オフメッシュ名設定 -->
-                            <StackPanel Orientation="Horizontal"
-                                        Margin="20,5,0,0">
-                                <TextBlock Text="影を落とさないメッシュ名:"
-                                           VerticalAlignment="Center"
-                                           Foreground="#FF4873CF"
-                                           Width="150"
-                                           ToolTip="Shadow off mesh names"/>
-                                <TextBox x:Name="ShadowOffMeshTextBox"
-                                         Width="200"
-                                         Foreground="#FF4873CF"
-                                         ToolTip="カンマ区切りでメッシュ名を入力 (例: Face, U_Char_1)"/>
-                            </StackPanel>
-
                             <!-- ウィンドウサイズ設定 -->
                             <GroupBox Header="キャラクターサイズ"
                                       Margin="0,15,0,0"
@@ -390,6 +360,51 @@
                                     </Grid>
                                 </StackPanel>
                             </GroupBox>
+
+                            <!-- マテリアル・影設定 -->
+                            <GroupBox Header="マテリアル・影設定"
+                                      Margin="0,0,20,20"
+                                      Padding="10">
+                                <StackPanel>
+                                    <!-- MToon変換設定 -->
+                                    <CheckBox x:Name="ConvertMToonCheckBox"
+                                              Content="UnlitをMToonに変換する"
+                                              Margin="0,5,0,10"
+                                              Foreground="#FF4873CF"
+                                              ToolTip="Convert Unlit to MToon"/>
+
+                                    <!-- 影オフメッシュ設定 -->
+                                    <CheckBox x:Name="EnableShadowOffCheckBox"
+                                              Content="指定したメッシュに影を落とさない"
+                                              Margin="0,5,0,5"
+                                              Foreground="#FF4873CF"
+                                              ToolTip="Enable shadow off mesh"
+                                              Checked="EnableShadowOffCheckBox_Checked"
+                                              Unchecked="EnableShadowOffCheckBox_Unchecked"/>
+
+                                    <!-- 影オフメッシュ名設定 -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="メッシュ名:"
+                                                   VerticalAlignment="Center" Margin="20,0,0,0"/>
+                                        <TextBox Grid.Column="1"
+                                                 x:Name="ShadowOffMeshTextBox"
+                                                 Margin="0,5"
+                                                 Foreground="#FF0078D7"
+                                                 ToolTip="カンマ区切りでメッシュ名を入力 (例: Face, U_Char_1)"/>
+                                    </Grid>
+                                    <!-- 影設定説明テキスト -->
+                                    <TextBlock TextWrapping="Wrap"
+                                               Margin="100,0,0,10">
+                                        顔など特定のメッシュに影を落としたくない場合に使用します
+                                    </TextBlock>
+                                </StackPanel>
+                            </GroupBox>
+                            
                             <!-- LLMパラメータ -->
                             <GroupBox Header="LLM"
                                       Margin="0,0,20,20"

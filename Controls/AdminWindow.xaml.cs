@@ -335,11 +335,6 @@ namespace CocoroDock.Controls
                 }
             }
             WindowSizeSlider.Value = appSettings.WindowSize;
-            ConvertMToonCheckBox.IsChecked = appSettings.IsConvertMToon;
-            EnableShadowOffCheckBox.IsChecked = appSettings.IsEnableShadowOff;
-            ShadowOffMeshTextBox.Text = appSettings.ShadowOffMesh;
-            // EnableShadowOffがチェックされていない場合はテキストボックスを無効化
-            ShadowOffMeshTextBox.IsEnabled = appSettings.IsEnableShadowOff;
 
             // 設定を辞書に保存
             _displaySettings = new Dictionary<string, object>
@@ -355,9 +350,6 @@ namespace CocoroDock.Controls
                 { "CharacterShadowResolution", appSettings.CharacterShadowResolution },
                 { "BackgroundShadow", appSettings.BackgroundShadow },
                 { "BackgroundShadowResolution", appSettings.BackgroundShadowResolution },
-                { "IsConvertMToon", appSettings.IsConvertMToon },
-                { "IsEnableShadowOff", appSettings.IsEnableShadowOff },
-                { "ShadowOffMesh", appSettings.ShadowOffMesh },
                 { "WindowSize", appSettings.WindowSize },
                 { "IsEnableNotificationApi", appSettings.IsEnableNotificationApi }
             };
@@ -395,7 +387,10 @@ namespace CocoroDock.Controls
                     { "EmbeddedModel", character.embeddedModel ?? "" },
                     { "IsUseSTT", character.isUseSTT.ToString() },
                     { "STTWakeWord", character.sttWakeWord ?? "" },
-                    { "STTApiKey", character.sttApiKey ?? "" }
+                    { "STTApiKey", character.sttApiKey ?? "" },
+                    { "IsEnableShadowOff", character.isEnableShadowOff.ToString() },
+                    { "ShadowOffMesh", character.shadowOffMesh ?? "Face, U_Char_1" },
+                    { "IsConvertMToon", character.isConvertMToon.ToString() }
                 };
                 _characterSettings.Add(characterDict);
 
@@ -859,6 +854,31 @@ namespace CocoroDock.Controls
                 }
                 IsUseSTTCheckBox.IsChecked = isUseSTT;
 
+                // Shadow設定の更新
+                bool isEnableShadowOff = true; // デフォルトはtrue
+                if (_characterSettings[index].ContainsKey("IsEnableShadowOff"))
+                {
+                    bool.TryParse(_characterSettings[index]["IsEnableShadowOff"], out isEnableShadowOff);
+                }
+                EnableShadowOffCheckBox.IsChecked = isEnableShadowOff;
+                
+                string shadowOffMesh = "Face, U_Char_1"; // デフォルト値
+                if (_characterSettings[index].ContainsKey("ShadowOffMesh"))
+                {
+                    shadowOffMesh = _characterSettings[index]["ShadowOffMesh"];
+                }
+                ShadowOffMeshTextBox.Text = shadowOffMesh;
+                // EnableShadowOffがチェックされていない場合はテキストボックスを無効化
+                ShadowOffMeshTextBox.IsEnabled = isEnableShadowOff;
+
+                // IsConvertMToonチェックボックスの状態を更新
+                bool isConvertMToon = false;
+                if (_characterSettings[index].ContainsKey("IsConvertMToon"))
+                {
+                    bool.TryParse(_characterSettings[index]["IsConvertMToon"], out isConvertMToon);
+                }
+                ConvertMToonCheckBox.IsChecked = isConvertMToon;
+
                 // IsReadOnlyの状態を確認し、該当するUIコントロールの有効/無効を設定
                 bool isReadOnly = false;
                 if (index < AppSettings.Instance.CharacterList.Count)
@@ -920,7 +940,10 @@ namespace CocoroDock.Controls
                 { "EmbeddedModel", "" },
                 { "IsUseSTT", "false" },
                 { "STTWakeWord", "" },
-                { "STTApiKey", "" }
+                { "STTApiKey", "" },
+                { "IsEnableShadowOff", "true" },
+                { "ShadowOffMesh", "Face, U_Char_1" },
+                { "IsConvertMToon", "false" }
             };
             _characterSettings.Add(newCharacter);
             var newItem = new ComboBoxItem { Content = newName };
@@ -985,6 +1008,9 @@ namespace CocoroDock.Controls
                 var isUseSTT = IsUseSTTCheckBox.IsChecked ?? false;
                 var sttWakeWord = STTWakeWordTextBox.Text;
                 var sttApiKey = STTApiKeyPasswordBox.Password;
+                var isEnableShadowOff = EnableShadowOffCheckBox.IsChecked ?? true;
+                var shadowOffMesh = ShadowOffMeshTextBox.Text;
+                var isConvertMToon = ConvertMToonCheckBox.IsChecked ?? false;
 
                 // IsReadOnlyの状態を確認
                 bool isReadOnly = false;
@@ -1068,13 +1094,41 @@ namespace CocoroDock.Controls
                                      _characterSettings[_currentCharacterIndex]["STTWakeWord"] != sttWakeWord;
                 bool sttApiKeyChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("STTApiKey") ||
                                      _characterSettings[_currentCharacterIndex]["STTApiKey"] != sttApiKey;
+                
+                bool isEnableShadowOffChanged = false;
+                if (_characterSettings[_currentCharacterIndex].ContainsKey("IsEnableShadowOff"))
+                {
+                    bool currentIsEnableShadowOff = true;
+                    bool.TryParse(_characterSettings[_currentCharacterIndex]["IsEnableShadowOff"], out currentIsEnableShadowOff);
+                    isEnableShadowOffChanged = currentIsEnableShadowOff != isEnableShadowOff;
+                }
+                else
+                {
+                    isEnableShadowOffChanged = !isEnableShadowOff; // デフォルトはtrueとして扱う
+                }
+                
+                bool shadowOffMeshChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("ShadowOffMesh") ||
+                                         _characterSettings[_currentCharacterIndex]["ShadowOffMesh"] != shadowOffMesh;
+                
+                bool isConvertMToonChanged = false;
+                if (_characterSettings[_currentCharacterIndex].ContainsKey("IsConvertMToon"))
+                {
+                    bool currentIsConvertMToon = false;
+                    bool.TryParse(_characterSettings[_currentCharacterIndex]["IsConvertMToon"], out currentIsConvertMToon);
+                    isConvertMToonChanged = currentIsConvertMToon != isConvertMToon;
+                }
+                else
+                {
+                    isConvertMToonChanged = isConvertMToon; // デフォルトはfalseとして扱う
+                }
 
 
                 if (_characterSettings[_currentCharacterIndex]["Name"] != name ||
                     _characterSettings[_currentCharacterIndex]["SystemPrompt"] != systemPrompt ||
                     isUseLLMChanged || isUseTTSChanged || vrmFilePathChanged || apiKeyChanged || llmModelChanged ||
                     ttsEndpointURLChanged || ttsSperkerIDChanged || userIdChanged || isEnableMemoryChanged ||
-                    embeddedApiKeyChanged || embeddedModelChanged || isUseSTTChanged || sttWakeWordChanged || sttApiKeyChanged)
+                    embeddedApiKeyChanged || embeddedModelChanged || isUseSTTChanged || sttWakeWordChanged || sttApiKeyChanged ||
+                    isEnableShadowOffChanged || shadowOffMeshChanged || isConvertMToonChanged)
                 {
                     _characterSettings[_currentCharacterIndex]["Name"] = name;
                     _characterSettings[_currentCharacterIndex]["SystemPrompt"] = systemPrompt;
@@ -1092,6 +1146,9 @@ namespace CocoroDock.Controls
                     _characterSettings[_currentCharacterIndex]["IsUseSTT"] = isUseSTT.ToString();
                     _characterSettings[_currentCharacterIndex]["STTWakeWord"] = sttWakeWord;
                     _characterSettings[_currentCharacterIndex]["STTApiKey"] = sttApiKey;
+                    _characterSettings[_currentCharacterIndex]["IsEnableShadowOff"] = isEnableShadowOff.ToString();
+                    _characterSettings[_currentCharacterIndex]["ShadowOffMesh"] = shadowOffMesh;
+                    _characterSettings[_currentCharacterIndex]["IsConvertMToon"] = isConvertMToon.ToString();
 
                     // コンボボックスの表示も更新
                     if (_currentCharacterIndex < CharacterSelectComboBox.Items.Count)
@@ -1474,9 +1531,6 @@ namespace CocoroDock.Controls
             }
             _displaySettings["BackgroundShadowResolution"] = backShadowRes;
 
-            _displaySettings["IsConvertMToon"] = ConvertMToonCheckBox.IsChecked ?? false;
-            _displaySettings["IsEnableShadowOff"] = EnableShadowOffCheckBox.IsChecked ?? false;
-            _displaySettings["ShadowOffMesh"] = ShadowOffMeshTextBox.Text;
             _displaySettings["WindowSize"] = WindowSizeSlider.Value;
             _displaySettings["IsEnableNotificationApi"] = IsEnableNotificationApiCheckBox.IsChecked ?? false;
         }
@@ -1500,9 +1554,6 @@ namespace CocoroDock.Controls
             appSettings.CharacterShadowResolution = (int)_displaySettings["CharacterShadowResolution"];
             appSettings.BackgroundShadow = (int)_displaySettings["BackgroundShadow"];
             appSettings.BackgroundShadowResolution = (int)_displaySettings["BackgroundShadowResolution"];
-            appSettings.IsConvertMToon = (bool)_displaySettings["IsConvertMToon"];
-            appSettings.IsEnableShadowOff = (bool)_displaySettings["IsEnableShadowOff"];
-            appSettings.ShadowOffMesh = (string)_displaySettings["ShadowOffMesh"];
             appSettings.WindowSize = (double)_displaySettings["WindowSize"] > 0 ? (int)(double)_displaySettings["WindowSize"] : 650;
             appSettings.IsEnableNotificationApi = (bool)_displaySettings["IsEnableNotificationApi"];
 
@@ -1621,6 +1672,31 @@ namespace CocoroDock.Controls
                 {
                     newCharacter.sttApiKey = character["STTApiKey"];
                 }
+
+                // Shadow設定を更新
+                bool isEnableShadowOff = true; // デフォルトはtrue
+                if (character.ContainsKey("IsEnableShadowOff"))
+                {
+                    bool.TryParse(character["IsEnableShadowOff"], out isEnableShadowOff);
+                }
+                newCharacter.isEnableShadowOff = isEnableShadowOff;
+
+                if (character.ContainsKey("ShadowOffMesh"))
+                {
+                    newCharacter.shadowOffMesh = character["ShadowOffMesh"];
+                }
+                else
+                {
+                    newCharacter.shadowOffMesh = "Face, U_Char_1"; // デフォルト値
+                }
+
+                // IsConvertMToonの設定を更新
+                bool isConvertMToon = false;
+                if (character.ContainsKey("IsConvertMToon"))
+                {
+                    bool.TryParse(character["IsConvertMToon"], out isConvertMToon);
+                }
+                newCharacter.isConvertMToon = isConvertMToon;
 
                 // 既存の設定を保持（null になることはないという前提）
                 newCharacter.isReadOnly = existingCharacter?.isReadOnly ?? false;
