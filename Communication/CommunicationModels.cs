@@ -184,6 +184,8 @@ namespace CocoroDock.Communication
     public class AnimationSetting
     {
         public string animeSetName { get; set; } = "デフォルト"; // 設定セット名
+        public int postureChangeLoopCountStanding { get; set; } = 30; // 立ち姿勢の変更ループ回数
+        public int postureChangeLoopCountSittingFloor { get; set; } = 30; // 座り姿勢の変更ループ回数
         public List<AnimationConfig> animations { get; set; } = new List<AnimationConfig>(); // 個別アニメーション設定
     }
 

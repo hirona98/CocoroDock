@@ -472,12 +472,20 @@ namespace CocoroDock.Controls
 
                     // アニメーションリストを更新
                     UpdateAnimationListPanel(animSetting.animations);
+
+                    // PostureChangeLoopCountを表示
+                    PostureChangeLoopCountStandingTextBox.Text = animSetting.postureChangeLoopCountStanding.ToString();
+                    PostureChangeLoopCountSittingFloorTextBox.Text = animSetting.postureChangeLoopCountSittingFloor.ToString();
                 }
                 else if (_animationSettings.Count > 0)
                 {
                     // インデックスが範囲外の場合は最初の設定を使用
                     AnimationSetComboBox.SelectedIndex = 0;
                     UpdateAnimationListPanel(_animationSettings[0].animations);
+
+                    // PostureChangeLoopCountを表示
+                    PostureChangeLoopCountStandingTextBox.Text = _animationSettings[0].postureChangeLoopCountStanding.ToString();
+                    PostureChangeLoopCountSittingFloorTextBox.Text = _animationSettings[0].postureChangeLoopCountSittingFloor.ToString();
                 }
             }
 
@@ -591,6 +599,10 @@ namespace CocoroDock.Controls
                 var animSetting = _animationSettings[AnimationSetComboBox.SelectedIndex];
                 UpdateAnimationListPanel(animSetting.animations);
 
+                // PostureChangeLoopCountを表示
+                PostureChangeLoopCountStandingTextBox.Text = animSetting.postureChangeLoopCountStanding.ToString();
+                PostureChangeLoopCountSittingFloorTextBox.Text = animSetting.postureChangeLoopCountSittingFloor.ToString();
+
                 // 現在のキャラクターのアニメーション設定インデックスを更新
                 if (_currentCharacterIndex >= 0 &&
                     _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
@@ -670,6 +682,8 @@ namespace CocoroDock.Controls
             var newSet = new AnimationSetting
             {
                 animeSetName = "新規セット" + (_animationSettings.Count + 1),
+                postureChangeLoopCountStanding = 30,
+                postureChangeLoopCountSittingFloor = 30,
                 animations = new List<AnimationConfig>()
             };
 
@@ -1960,6 +1974,42 @@ namespace CocoroDock.Controls
             {
                 string message = $"キャラクター「{characterName}」の設定に問題があります:\n\n" + string.Join("\n", warnings);
                 MessageBox.Show(message, "設定の警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        /// <summary>
+        /// PostureChangeLoopCountStandingテキストボックスの値変更時の処理
+        /// </summary>
+        private void PostureChangeLoopCountStandingTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (AnimationSetComboBox.SelectedIndex >= 0 &&
+                AnimationSetComboBox.SelectedIndex < _animationSettings.Count)
+            {
+                if (int.TryParse(PostureChangeLoopCountStandingTextBox.Text, out int loopCount))
+                {
+                    if (loopCount > 0 && loopCount <= 100) // 妥当な範囲の値のみ受け付ける
+                    {
+                        _animationSettings[AnimationSetComboBox.SelectedIndex].postureChangeLoopCountStanding = loopCount;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// PostureChangeLoopCountSittingFloorテキストボックスの値変更時の処理
+        /// </summary>
+        private void PostureChangeLoopCountSittingFloorTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (AnimationSetComboBox.SelectedIndex >= 0 &&
+                AnimationSetComboBox.SelectedIndex < _animationSettings.Count)
+            {
+                if (int.TryParse(PostureChangeLoopCountSittingFloorTextBox.Text, out int loopCount))
+                {
+                    if (loopCount > 0 && loopCount <= 100) // 妥当な範囲の値のみ受け付ける
+                    {
+                        _animationSettings[AnimationSetComboBox.SelectedIndex].postureChangeLoopCountSittingFloor = loopCount;
+                    }
+                }
             }
         }
     }

@@ -62,6 +62,8 @@
   "animationSettings": [
     {
       "animeSetName": "デフォルト",
+      "postureChangeLoopCountStanding": 30,
+      "postureChangeLoopCountSittingFloor": 30,
       "animations": [
         {
           "displayName": "DT_01 通常待機（両腕おろし）",
