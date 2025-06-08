@@ -118,8 +118,6 @@ namespace CocoroDock.Communication
         public bool isUseSTT { get; set; } = false; // STT（音声認識）機能の有効/無効
         public string sttWakeWord { get; set; } = string.Empty; // STT起動ワード
         public string sttApiKey { get; set; } = string.Empty; // STT用APIキー
-        public AnimationSetting animationSetting { get; set; } = new AnimationSetting(); // アニメーション設定
-        public int currentAnimationSettingIndex { get; set; } = 0; // 現在選択中のアニメーション設定セット
     }
 
     /// <summary>
@@ -144,10 +142,13 @@ namespace CocoroDock.Communication
         public int characterShadowResolution { get; set; }
         public int backgroundShadow { get; set; }
         public int backgroundShadowResolution { get; set; }
+        public bool isConvertMToon { get; set; }
+        public bool isEnableShadowOff { get; set; }
+        public string shadowOffMesh { get; set; } = string.Empty;
         public float windowSize { get; set; }
         public int currentCharacterIndex { get; set; }
-        public List<CharacterSettings> characterList { get; set; } = new List<CharacterSettings>();
         public int currentAnimationSettingIndex { get; set; } = 0;
+        public List<CharacterSettings> characterList { get; set; } = new List<CharacterSettings>();
         public List<AnimationSetting> animationSettings { get; set; } = new List<AnimationSetting>();
     }
 

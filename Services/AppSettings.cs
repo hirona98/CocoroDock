@@ -133,6 +133,9 @@ namespace CocoroDock.Services
         public int CharacterShadowResolution { get; set; } = 0;
         public int BackgroundShadow { get; set; } = 0;
         public int BackgroundShadowResolution { get; set; } = 0;
+        public bool IsConvertMToon { get; set; } = false;
+        public bool IsEnableShadowOff { get; set; } = true;
+        public string ShadowOffMesh { get; set; } = "Face, U_Char_1";
         public int WindowSize { get; set; } = 650;
 
         // キャラクター設定
@@ -181,9 +184,7 @@ namespace CocoroDock.Services
                     embeddedModel = "openai/text-embedding-3-small",
                     isUseSTT = false,
                     sttWakeWord = "",
-                    sttApiKey = "",
-                    animationSetting = new AnimationSetting(),
-                    currentAnimationSettingIndex = 0
+                    sttApiKey = ""
                 }
             };
 
@@ -193,6 +194,8 @@ namespace CocoroDock.Services
                 new AnimationSetting
                 {
                     animeSetName = "デフォルト",
+                    postureChangeLoopCountStanding = 30,
+                    postureChangeLoopCountSittingFloor = 30,
                     animations = new List<AnimationConfig>()
                 }
             };
@@ -221,6 +224,9 @@ namespace CocoroDock.Services
             CharacterShadowResolution = config.characterShadowResolution;
             BackgroundShadow = config.backgroundShadow;
             BackgroundShadowResolution = config.backgroundShadowResolution;
+            IsConvertMToon = config.isConvertMToon;
+            IsEnableShadowOff = config.isEnableShadowOff;
+            ShadowOffMesh = config.shadowOffMesh;
             WindowSize = config.windowSize > 0 ? (int)config.windowSize : 650;
             CurrentCharacterIndex = config.currentCharacterIndex;
 
@@ -266,6 +272,9 @@ namespace CocoroDock.Services
                 characterShadowResolution = CharacterShadowResolution,
                 backgroundShadow = BackgroundShadow,
                 backgroundShadowResolution = BackgroundShadowResolution,
+                isConvertMToon = IsConvertMToon,
+                isEnableShadowOff = IsEnableShadowOff,
+                shadowOffMesh = ShadowOffMesh,
                 windowSize = WindowSize,
                 currentCharacterIndex = CurrentCharacterIndex,
                 characterList = new List<CharacterSettings>(CharacterList),
@@ -526,8 +535,6 @@ namespace CocoroDock.Services
                         isUseSTT = false,
                         sttWakeWord = "",
                         sttApiKey = "",
-                        animationSetting = new AnimationSetting(),
-                        currentAnimationSettingIndex = 0
                     };
 
                     defaultSettings.characterList.Add(newChar);

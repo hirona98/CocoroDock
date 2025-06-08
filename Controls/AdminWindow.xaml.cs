@@ -335,6 +335,11 @@ namespace CocoroDock.Controls
                 }
             }
             WindowSizeSlider.Value = appSettings.WindowSize;
+            ConvertMToonCheckBox.IsChecked = appSettings.IsConvertMToon;
+            EnableShadowOffCheckBox.IsChecked = appSettings.IsEnableShadowOff;
+            ShadowOffMeshTextBox.Text = appSettings.ShadowOffMesh;
+            // EnableShadowOffがチェックされていない場合はテキストボックスを無効化
+            ShadowOffMeshTextBox.IsEnabled = appSettings.IsEnableShadowOff;
 
             // 設定を辞書に保存
             _displaySettings = new Dictionary<string, object>
@@ -350,6 +355,9 @@ namespace CocoroDock.Controls
                 { "CharacterShadowResolution", appSettings.CharacterShadowResolution },
                 { "BackgroundShadow", appSettings.BackgroundShadow },
                 { "BackgroundShadowResolution", appSettings.BackgroundShadowResolution },
+                { "IsConvertMToon", appSettings.IsConvertMToon },
+                { "IsEnableShadowOff", appSettings.IsEnableShadowOff },
+                { "ShadowOffMesh", appSettings.ShadowOffMesh },
                 { "WindowSize", appSettings.WindowSize },
                 { "IsEnableNotificationApi", appSettings.IsEnableNotificationApi }
             };
@@ -461,14 +469,14 @@ namespace CocoroDock.Controls
 
             if (_currentCharacterIndex >= 0 && _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
             {
-                var character = AppSettings.Instance.CharacterList[_currentCharacterIndex];
+                var animationIndex = AppSettings.Instance.CurrentAnimationSettingIndex;
 
                 // キャラクターのアニメーション設定を取得
-                if (character.currentAnimationSettingIndex >= 0 &&
-                    character.currentAnimationSettingIndex < _animationSettings.Count)
+                if (animationIndex >= 0 &&
+                    animationIndex < _animationSettings.Count)
                 {
-                    AnimationSetComboBox.SelectedIndex = character.currentAnimationSettingIndex;
-                    var animSetting = _animationSettings[character.currentAnimationSettingIndex];
+                    AnimationSetComboBox.SelectedIndex = animationIndex;
+                    var animSetting = _animationSettings[animationIndex];
 
                     // アニメーションリストを更新
                     UpdateAnimationListPanel(animSetting.animations);
@@ -607,8 +615,7 @@ namespace CocoroDock.Controls
                 if (_currentCharacterIndex >= 0 &&
                     _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
                 {
-                    AppSettings.Instance.CharacterList[_currentCharacterIndex].currentAnimationSettingIndex =
-                        AnimationSetComboBox.SelectedIndex;
+                    AppSettings.Instance.CurrentAnimationSettingIndex = AnimationSetComboBox.SelectedIndex;
                 }
 
                 // テキストの選択を解除
@@ -789,13 +796,10 @@ namespace CocoroDock.Controls
             }
             AnimationSetComboBox.SelectedIndex = selectedIndex;
 
-            // 各キャラクターのアニメーション設定インデックスを調整
-            foreach (var character in AppSettings.Instance.CharacterList)
+            // アニメーション設定インデックスを調整
+            if (AppSettings.Instance.CurrentAnimationSettingIndex >= _animationSettings.Count)
             {
-                if (character.currentAnimationSettingIndex >= _animationSettings.Count)
-                {
-                    character.currentAnimationSettingIndex = 0;
-                }
+                AppSettings.Instance.CurrentAnimationSettingIndex = 0;
             }
         }
 
@@ -1470,6 +1474,9 @@ namespace CocoroDock.Controls
             }
             _displaySettings["BackgroundShadowResolution"] = backShadowRes;
 
+            _displaySettings["IsConvertMToon"] = ConvertMToonCheckBox.IsChecked ?? false;
+            _displaySettings["IsEnableShadowOff"] = EnableShadowOffCheckBox.IsChecked ?? false;
+            _displaySettings["ShadowOffMesh"] = ShadowOffMeshTextBox.Text;
             _displaySettings["WindowSize"] = WindowSizeSlider.Value;
             _displaySettings["IsEnableNotificationApi"] = IsEnableNotificationApiCheckBox.IsChecked ?? false;
         }
@@ -1493,6 +1500,9 @@ namespace CocoroDock.Controls
             appSettings.CharacterShadowResolution = (int)_displaySettings["CharacterShadowResolution"];
             appSettings.BackgroundShadow = (int)_displaySettings["BackgroundShadow"];
             appSettings.BackgroundShadowResolution = (int)_displaySettings["BackgroundShadowResolution"];
+            appSettings.IsConvertMToon = (bool)_displaySettings["IsConvertMToon"];
+            appSettings.IsEnableShadowOff = (bool)_displaySettings["IsEnableShadowOff"];
+            appSettings.ShadowOffMesh = (string)_displaySettings["ShadowOffMesh"];
             appSettings.WindowSize = (double)_displaySettings["WindowSize"] > 0 ? (int)(double)_displaySettings["WindowSize"] : 650;
             appSettings.IsEnableNotificationApi = (bool)_displaySettings["IsEnableNotificationApi"];
 
@@ -2010,6 +2020,30 @@ namespace CocoroDock.Controls
                         _animationSettings[AnimationSetComboBox.SelectedIndex].postureChangeLoopCountSittingFloor = loopCount;
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// EnableShadowOffCheckBoxのチェック時の処理
+        /// </summary>
+        private void EnableShadowOffCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            // チェックが入った時はテキストボックスを無効化
+            if (ShadowOffMeshTextBox != null)
+            {
+                ShadowOffMeshTextBox.IsEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// EnableShadowOffCheckBoxのアンチェック時の処理
+        /// </summary>
+        private void EnableShadowOffCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            // チェックが外れた時はテキストボックスを有効化
+            if (ShadowOffMeshTextBox != null)
+            {
+                ShadowOffMeshTextBox.IsEnabled = false;
             }
         }
     }

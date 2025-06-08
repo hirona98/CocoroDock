@@ -228,9 +228,39 @@
                                 </ComboBox>
                             </StackPanel>
 
+                            <!-- MToon変換設定 -->
+                            <CheckBox x:Name="ConvertMToonCheckBox"
+                                      Content="UnlitをMToonに変換する"
+                                      Margin="0,10,0,0"
+                                      Foreground="#FF4873CF"
+                                      ToolTip="Convert Unlit to MToon"/>
+
+                            <!-- 影オフメッシュ設定 -->
+                            <CheckBox x:Name="EnableShadowOffCheckBox"
+                                      Content="指定したメッシュに影を落とさない（顔の場合はFaceやU_Char_1など）"
+                                      Margin="0,15,0,0"
+                                      Foreground="#FF4873CF"
+                                      ToolTip="Enable shadow off mesh"
+                                      Checked="EnableShadowOffCheckBox_Checked"
+                                      Unchecked="EnableShadowOffCheckBox_Unchecked"/>
+
+                            <!-- 影オフメッシュ名設定 -->
+                            <StackPanel Orientation="Horizontal"
+                                        Margin="20,5,0,0">
+                                <TextBlock Text="影を落とさないメッシュ名:"
+                                           VerticalAlignment="Center"
+                                           Foreground="#FF4873CF"
+                                           Width="150"
+                                           ToolTip="Shadow off mesh names"/>
+                                <TextBox x:Name="ShadowOffMeshTextBox"
+                                         Width="200"
+                                         Foreground="#FF4873CF"
+                                         ToolTip="カンマ区切りでメッシュ名を入力 (例: Face, U_Char_1)"/>
+                            </StackPanel>
+
                             <!-- ウィンドウサイズ設定 -->
                             <GroupBox Header="キャラクターサイズ"
-                                      Margin="0,10,0,0"
+                                      Margin="0,15,0,0"
                                       Padding="10"
                                       ToolTip="Character size">
                                 <Grid>

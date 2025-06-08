@@ -16,6 +16,9 @@
   "characterShadowResolution": 0,
   "backgroundShadow": 2,
   "backgroundShadowResolution": 2,
+  "isConvertMToon": false,
+  "isEnableShadowOff": true,
+  "shadowOffMesh": "Face, U_Char_1",
   "windowSize": 1200,
   "currentCharacterIndex": 1,
   "characterList": [
