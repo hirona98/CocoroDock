@@ -18,8 +18,6 @@ namespace CocoroDock.Services
         public event EventHandler<string>? ChatMessageReceived;
         public event EventHandler<ChatMessagePayload>? NotificationMessageReceived;
         public event EventHandler<ConfigResponsePayload>? ConfigResponseReceived;
-        public event EventHandler<StatusMessagePayload>? StatusUpdateReceived;
-        public event EventHandler<SystemMessagePayload>? SystemMessageReceived;
         public event EventHandler<ControlMessagePayload>? ControlMessageReceived;
         public event EventHandler<string>? ErrorOccurred;
         public event EventHandler? Connected;
@@ -192,14 +190,6 @@ namespace CocoroDock.Services
                         ProcessConfigMessage(payloadJson);
                         break;
 
-                    case "status":
-                        ProcessStatusMessage(payloadJson);
-                        break;
-
-                    case "system":
-                        ProcessSystemMessage(payloadJson);
-                        break;
-
                     case "control":
                         ProcessControlMessage(payloadJson);
                         break;
@@ -236,30 +226,6 @@ namespace CocoroDock.Services
             if (configResponse != null)
             {
                 ConfigResponseReceived?.Invoke(this, configResponse);
-            }
-        }
-
-        /// <summary>
-        /// ステータスメッセージを処理
-        /// </summary>
-        private void ProcessStatusMessage(string payloadJson)
-        {
-            var statusUpdate = MessageHelper.DeserializeFromJson<StatusMessagePayload>(payloadJson);
-            if (statusUpdate != null)
-            {
-                StatusUpdateReceived?.Invoke(this, statusUpdate);
-            }
-        }
-
-        /// <summary>
-        /// システムメッセージを処理
-        /// </summary>
-        private void ProcessSystemMessage(string payloadJson)
-        {
-            var systemMessage = MessageHelper.DeserializeFromJson<SystemMessagePayload>(payloadJson);
-            if (systemMessage != null)
-            {
-                SystemMessageReceived?.Invoke(this, systemMessage);
             }
         }
 

@@ -107,8 +107,6 @@ namespace CocoroDock
             _communicationService.ChatMessageReceived += OnChatMessageReceived;
             _communicationService.NotificationMessageReceived += OnNotificationMessageReceived;
             _communicationService.ConfigResponseReceived += OnConfigResponseReceived;
-            _communicationService.StatusUpdateReceived += OnStatusUpdateReceived;
-            _communicationService.SystemMessageReceived += OnSystemMessageReceived;
             _communicationService.ControlMessageReceived += OnControlMessageReceived;
             _communicationService.ErrorOccurred += OnErrorOccurred;
             _communicationService.Connected += OnConnected;
@@ -298,30 +296,6 @@ namespace CocoroDock
 
                 // 設定を画面に反映
                 ApplySettings();
-            }
-        }
-
-        /// <summary>
-        /// 状態更新受信時のハンドラ
-        /// </summary>
-        private void OnStatusUpdateReceived(object? sender, StatusMessagePayload status)
-        {
-            // 必要なステータス処理を実装する場合はここに追加
-        }
-
-        /// <summary>
-        /// システムメッセージ受信時のハンドラ
-        /// </summary>
-        private void OnSystemMessageReceived(object? sender, SystemMessagePayload systemMessage)
-        {
-            // levelがerrorの場合のみ処理する（Infoは無視）
-            if (systemMessage.level == "Error")
-            {
-                UIHelper.RunOnUIThread(() =>
-                {
-                    // エラーメッセージをチャットウィンドウに表示（中央グレー枠）
-                    ChatControlInstance.AddSystemErrorMessage(systemMessage.message);
-                });
             }
         }
 
@@ -523,7 +497,7 @@ namespace CocoroDock
             catch (Exception ex)
             {
                 Debug.WriteLine($"通知APIサーバーの更新エラー: {ex.Message}");
-                UIHelper.ShowError("通知APIサーバー更新エラー", 
+                UIHelper.ShowError("通知APIサーバー更新エラー",
                     $"通知APIサーバーの状態変更中にエラーが発生しました。\n\n{ex.Message}");
             }
         }

@@ -162,24 +162,6 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// 状態通知ペイロードクラス
-    /// </summary>
-    public class StatusMessagePayload
-    {
-        public int currentCPU { get; set; }
-        public string status { get; set; } = string.Empty;
-    }
-
-    /// <summary>
-    /// システムメッセージペイロードクラス
-    /// </summary>
-    public class SystemMessagePayload
-    {
-        public string level { get; set; } = string.Empty;
-        public string message { get; set; } = string.Empty;
-    }
-
-    /// <summary>
     /// アニメーション設定クラス
     /// </summary>
     public class AnimationSetting

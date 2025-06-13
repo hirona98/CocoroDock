@@ -25,16 +25,6 @@ namespace CocoroDock.Services
         event EventHandler<ConfigResponsePayload>? ConfigResponseReceived;
 
         /// <summary>
-        /// ステータス更新受信イベント
-        /// </summary>
-        event EventHandler<StatusMessagePayload>? StatusUpdateReceived;
-
-        /// <summary>
-        /// システムメッセージ受信イベント
-        /// </summary>
-        event EventHandler<SystemMessagePayload>? SystemMessageReceived;
-
-        /// <summary>
         /// 制御メッセージ受信イベント
         /// </summary>
         event EventHandler<ControlMessagePayload>? ControlMessageReceived;
