@@ -5,39 +5,39 @@ using System.Threading.Tasks;
 namespace CocoroDock.Services
 {
     /// <summary>
+    /// ステータス更新用のイベント引数
+    /// </summary>
+    public class StatusUpdateEventArgs : EventArgs
+    {
+        public bool IsConnected { get; }
+        public string? Message { get; }
+
+        public StatusUpdateEventArgs(bool isConnected, string? message = null)
+        {
+            IsConnected = isConnected;
+            Message = message;
+        }
+    }
+
+    /// <summary>
     /// 通信サービスのインターフェース
     /// </summary>
     public interface ICommunicationService : IDisposable
     {
         /// <summary>
-        /// チャットメッセージ受信イベント
+        /// チャットメッセージ受信イベント（CocoroDock APIから）
         /// </summary>
-        event EventHandler<string>? ChatMessageReceived;
+        event EventHandler<ChatRequest>? ChatMessageReceived;
 
         /// <summary>
-        /// 通知メッセージ受信イベント
+        /// 通知メッセージ受信イベント（Notification APIから）
         /// </summary>
         event EventHandler<ChatMessagePayload>? NotificationMessageReceived;
 
         /// <summary>
-        /// 設定レスポンス受信イベント
+        /// 制御コマンド受信イベント（CocoroDock APIから）
         /// </summary>
-        event EventHandler<ConfigResponsePayload>? ConfigResponseReceived;
-
-        /// <summary>
-        /// ステータス更新受信イベント
-        /// </summary>
-        event EventHandler<StatusMessagePayload>? StatusUpdateReceived;
-
-        /// <summary>
-        /// システムメッセージ受信イベント
-        /// </summary>
-        event EventHandler<SystemMessagePayload>? SystemMessageReceived;
-
-        /// <summary>
-        /// 制御メッセージ受信イベント
-        /// </summary>
-        event EventHandler<ControlMessagePayload>? ControlMessageReceived;
+        event EventHandler<ControlRequest>? ControlCommandReceived;
 
         /// <summary>
         /// エラー発生イベント
@@ -45,71 +45,64 @@ namespace CocoroDock.Services
         event EventHandler<string>? ErrorOccurred;
 
         /// <summary>
-        /// 接続イベント
+        /// ステータス更新要求イベント
         /// </summary>
-        event EventHandler? Connected;
+        event EventHandler<StatusUpdateEventArgs>? StatusUpdateRequested;
 
         /// <summary>
-        /// 切断イベント
-        /// </summary>
-        event EventHandler? Disconnected;
-
-        /// <summary>
-        /// サーバーが起動しているかどうか
+        /// APIサーバーが起動しているかどうか
         /// </summary>
         bool IsServerRunning { get; }
 
         /// <summary>
-        /// サーバーを開始
+        /// APIサーバーを開始
         /// </summary>
         Task StartServerAsync();
 
         /// <summary>
-        /// サーバーを停止
+        /// APIサーバーを停止
         /// </summary>
         Task StopServerAsync();
 
         /// <summary>
-        /// 設定情報を要求
+        /// 現在の設定を取得
         /// </summary>
-        Task RequestConfigAsync();
+        ConfigSettings GetCurrentConfig();
 
         /// <summary>
-        /// 設定情報を更新
+        /// 設定を更新して保存
         /// </summary>
         /// <param name="settings">更新する設定情報</param>
-        Task UpdateConfigAsync(ConfigSettings settings);
+        void UpdateAndSaveConfig(ConfigSettings settings);
 
         /// <summary>
-        /// チャットメッセージを送信
+        /// CocoroCoreにチャットメッセージを送信
         /// </summary>
         /// <param name="message">送信メッセージ</param>
-        Task SendChatMessageAsync(string message);
+        /// <param name="characterName">キャラクター名（オプション）</param>
+        Task SendChatToCoreAsync(string message, string? characterName = null);
 
         /// <summary>
-        /// 設定を変更
+        /// 新しい会話セッションを開始
         /// </summary>
-        /// <param name="settingKey">設定キー</param>
-        /// <param name="value">設定値</param>
-        Task ChangeConfigAsync(string settingKey, string value);
+        void StartNewConversation();
 
         /// <summary>
-        /// 制御コマンドを送信
+        /// CocoroShellにアニメーションコマンドを送信
+        /// </summary>
+        /// <param name="animationName">アニメーション名</param>
+        Task SendAnimationToShellAsync(string animationName);
+
+        /// <summary>
+        /// CocoroShellに制御コマンドを送信
         /// </summary>
         /// <param name="command">コマンド名</param>
-        /// <param name="reason">理由</param>
-        Task SendControlCommandAsync(string command, string reason);
+        Task SendControlToShellAsync(string command);
 
         /// <summary>
-        /// 新しいチャットセッションを開始
+        /// 通知メッセージを処理（Notification API用）
         /// </summary>
-        void StartNewSession();
-
-        /// <summary>
-        /// 指定されたタイプとペイロードのメッセージを送信
-        /// </summary>
-        /// <param name="type">メッセージタイプ</param>
-        /// <param name="payload">ペイロードデータ</param>
-        Task SendMessageAsync(MessageType type, object payload);
+        /// <param name="notification">通知メッセージ</param>
+        Task ProcessNotificationAsync(ChatMessagePayload notification);
     }
 }

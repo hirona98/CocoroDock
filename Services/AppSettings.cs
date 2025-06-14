@@ -118,6 +118,7 @@ namespace CocoroDock.Services
         public int CocoroCorePort { get; set; } = 55601;
         public int CocoroMemoryPort { get; set; } = 55602;
         public int CocoroMemoryDBPort { get; set; } = 55603;
+        public int CocoroShellPort { get; set; } = 55605;
         public int NotificationApiPort { get; set; } = 55604;
         // 通知API設定
         public bool IsEnableNotificationApi { get; set; } = true;
