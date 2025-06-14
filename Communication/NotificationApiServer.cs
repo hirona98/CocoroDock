@@ -183,9 +183,6 @@ namespace CocoroDock.Communication
                     }
                 });
 
-                // ヘルスチェックエンドポイント（オプション）
-                app.MapGet("/api/v1/health", () => Results.Ok(new { status = "healthy" }));
-
                 _host = app;
 
                 // バックグラウンドでサーバーを起動

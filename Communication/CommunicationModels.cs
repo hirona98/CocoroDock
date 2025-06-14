@@ -11,7 +11,6 @@ namespace CocoroDock.Communication
         notification,
         config,
         control,
-        status,
         system
     }
 
