@@ -69,27 +69,43 @@
 
                 <!-- メッセージテキストスタイル -->
                 <Style x:Key="UserMessageTextStyle"
-                       TargetType="TextBlock">
+                       TargetType="TextBox">
                         <Setter Property="TextWrapping"
                                 Value="Wrap"/>
                         <Setter Property="FontSize"
                                 Value="14"/>
                         <Setter Property="Foreground"
                                 Value="WhiteSmoke"/>
+                        <Setter Property="IsReadOnly"
+                                Value="True"/>
+                        <Setter Property="BorderThickness"
+                                Value="0"/>
+                        <Setter Property="Background"
+                                Value="Transparent"/>
+                        <Setter Property="Cursor"
+                                Value="IBeam"/>
                 </Style>
                 <Style x:Key="AiMessageTextStyle"
-                       TargetType="TextBlock">
+                       TargetType="TextBox">
                         <Setter Property="TextWrapping"
                                 Value="Wrap"/>
                         <Setter Property="FontSize"
                                 Value="14"/>
                         <Setter Property="Foreground"
                                 Value="#FF303030"/>
+                        <Setter Property="IsReadOnly"
+                                Value="True"/>
+                        <Setter Property="BorderThickness"
+                                Value="0"/>
+                        <Setter Property="Background"
+                                Value="Transparent"/>
+                        <Setter Property="Cursor"
+                                Value="IBeam"/>
                 </Style>
 
                 <!-- システムメッセージテキストスタイル -->
                 <Style x:Key="SystemMessageTextStyle"
-                       TargetType="TextBlock">
+                       TargetType="TextBox">
                         <Setter Property="TextWrapping"
                                 Value="Wrap"/>
                         <Setter Property="FontSize"
@@ -98,6 +114,14 @@
                                 Value="#4873CF"/>
                         <Setter Property="HorizontalAlignment"
                                 Value="Center"/>
+                        <Setter Property="IsReadOnly"
+                                Value="True"/>
+                        <Setter Property="BorderThickness"
+                                Value="0"/>
+                        <Setter Property="Background"
+                                Value="Transparent"/>
+                        <Setter Property="Cursor"
+                                Value="IBeam"/>
                 </Style>
         </UserControl.Resources>
 

@@ -56,7 +56,7 @@ namespace CocoroDock.Controls
 
             var messageContent = new StackPanel();
 
-            var messageText = new TextBlock
+            var messageText = new TextBox
             {
                 Style = (Style)Resources["UserMessageTextStyle"],
                 Text = message
@@ -87,7 +87,7 @@ namespace CocoroDock.Controls
 
             var messageContent = new StackPanel();
 
-            var messageText = new TextBlock
+            var messageText = new TextBox
             {
                 Style = (Style)Resources["AiMessageTextStyle"],
                 Text = message
@@ -118,7 +118,7 @@ namespace CocoroDock.Controls
 
             var messageContent = new StackPanel();
 
-            var messageText = new TextBlock
+            var messageText = new TextBox
             {
                 Style = (Style)Resources["SystemMessageTextStyle"],
                 Text = message
@@ -150,7 +150,7 @@ namespace CocoroDock.Controls
 
             var messageContent = new StackPanel();
 
-            var messageText = new TextBlock
+            var messageText = new TextBox
             {
                 Style = (Style)Resources["SystemMessageTextStyle"],
                 Text = $"[{from}] {message}"
