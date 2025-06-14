@@ -34,10 +34,7 @@ namespace CocoroDock.Controls
             if (string.IsNullOrEmpty(message))
                 return;
 
-            // UIにユーザーメッセージを追加
-            AddUserMessage(message);
-
-            // メッセージ送信イベント発火
+            // メッセージ送信イベント発火（UIへの追加はMainWindowで行う）
             MessageSent?.Invoke(this, message);
 
             // テキストボックスをクリア

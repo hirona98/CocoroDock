@@ -1,35 +1,8 @@
+using System;
 using System.Collections.Generic;
 
 namespace CocoroDock.Communication
 {
-    /// <summary>
-    /// WebSocketメッセージタイプ定義
-    /// </summary>
-    public enum MessageType
-    {
-        chat,
-        notification,
-        config,
-        control,
-        system
-    }
-
-    /// <summary>
-    /// WebSocketメッセージ基本構造
-    /// </summary>
-    public class WebSocketMessage
-    {
-        public string type { get; set; } = string.Empty;
-        public string timestamp { get; set; } = string.Empty;
-        public object? payload { get; set; }
-
-        public WebSocketMessage(MessageType type, object payload)
-        {
-            this.type = type.ToString();
-            timestamp = System.DateTime.Now.ToString("o"); // ISO 8601
-            this.payload = payload;
-        }
-    }
 
     /// <summary>
     /// チャットメッセージペイロードクラス
@@ -41,59 +14,6 @@ namespace CocoroDock.Communication
         public string message { get; set; } = string.Empty;
     }
 
-    /// <summary>
-    /// チャットレスポンスペイロードクラス
-    /// </summary>
-    public class ChatResponsePayload
-    {
-        public string response { get; set; } = string.Empty;
-    }
-
-    /// <summary>
-    /// 設定リクエストペイロードクラス
-    /// </summary>
-    public class ConfigRequestPayload
-    {
-        public string action { get; set; } = string.Empty;
-    }
-
-    /// <summary>
-    /// 設定メッセージペイロードクラス
-    /// </summary>
-    public class ConfigMessagePayload
-    {
-        public string settingKey { get; set; } = string.Empty;
-        public string value { get; set; } = string.Empty;
-    }
-
-    /// <summary>
-    /// 設定更新ペイロードクラス
-    /// </summary>
-    public class ConfigUpdatePayload
-    {
-        public string action { get; set; } = string.Empty;
-        public ConfigSettings settings { get; set; } = new ConfigSettings();
-    }
-
-    /// <summary>
-    /// 設定レスポンスペイロードクラス
-    /// </summary>
-    public class ConfigResponsePayload
-    {
-        public string status { get; set; } = string.Empty;
-        public string message { get; set; } = string.Empty;
-        public ConfigSettings? settings { get; set; }
-    }
-
-    /// <summary>
-    /// 設定レスポンスを含むメッセージクラス
-    /// </summary>
-    public class ConfigResponseWithSettings
-    {
-        public string type { get; set; } = string.Empty;
-        public string timestamp { get; set; } = string.Empty;
-        public ConfigResponsePayload? payload { get; set; }
-    }
 
     /// <summary>
     /// キャラクター設定クラス
@@ -151,14 +71,6 @@ namespace CocoroDock.Communication
         public List<AnimationSetting> animationSettings { get; set; } = new List<AnimationSetting>();
     }
 
-    /// <summary>
-    /// 制御メッセージペイロードクラス
-    /// </summary>
-    public class ControlMessagePayload
-    {
-        public string command { get; set; } = string.Empty;
-        public string reason { get; set; } = string.Empty;
-    }
 
     /// <summary>
     /// アニメーション設定クラス
@@ -181,4 +93,117 @@ namespace CocoroDock.Communication
         public string animationName { get; set; } = ""; // Animator内での名前（例：「DT_01_wait_natural_F_001_FBX」）
         public bool isEnabled { get; set; } = true; // 有効/無効
     }
+
+    #region REST API ペイロードクラス
+
+    /// <summary>
+    /// CocoroDock API: チャットリクエスト
+    /// </summary>
+    public class ChatRequest
+    {
+        public string role { get; set; } = string.Empty; // "user" | "assistant"
+        public string content { get; set; } = string.Empty;
+        public DateTime timestamp { get; set; } = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// CocoroDock API: 制御コマンドリクエスト
+    /// </summary>
+    public class ControlRequest
+    {
+        public string command { get; set; } = string.Empty; // "shutdown" | "restart" | "reloadConfig"
+        public Dictionary<string, object>? @params { get; set; }
+        public string? reason { get; set; }
+    }
+
+    /// <summary>
+    /// 標準レスポンス
+    /// </summary>
+    public class StandardResponse
+    {
+        public string status { get; set; } = "success"; // "success" | "error"
+        public string message { get; set; } = string.Empty;
+        public DateTime timestamp { get; set; } = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// エラーレスポンス
+    /// </summary>
+    public class ErrorResponse
+    {
+        public string status { get; set; } = "error";
+        public string message { get; set; } = string.Empty;
+        public string? errorCode { get; set; }
+        public DateTime timestamp { get; set; } = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// CocoroShell API: チャットリクエスト
+    /// </summary>
+    public class ShellChatRequest
+    {
+        public string content { get; set; } = string.Empty;
+        public VoiceParams? voiceParams { get; set; }
+        public string? animation { get; set; } // "talk" | "idle" | null
+        public string? characterName { get; set; }
+    }
+
+    /// <summary>
+    /// 音声パラメータ
+    /// </summary>
+    public class VoiceParams
+    {
+        public int speaker_id { get; set; } = 1;
+        public float speed { get; set; } = 1.0f;
+        public float pitch { get; set; } = 0.0f;
+        public float volume { get; set; } = 1.0f;
+    }
+
+    /// <summary>
+    /// CocoroShell API: アニメーションリクエスト
+    /// </summary>
+    public class AnimationRequest
+    {
+        public string animationName { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// CocoroShell API: 制御コマンドリクエスト
+    /// </summary>
+    public class ShellControlRequest
+    {
+        public string command { get; set; } = string.Empty;
+        public Dictionary<string, object>? @params { get; set; }
+    }
+
+    /// <summary>
+    /// CocoroCore API: チャットリクエスト (AIAvatarKit仕様準拠)
+    /// </summary>
+    public class CoreChatRequest
+    {
+        public string type { get; set; } = "invoke"; // AIAvatarKit: リクエストタイプ
+        public string session_id { get; set; } = string.Empty; // セッションID
+        public string user_id { get; set; } = string.Empty; // ユーザーID
+        public string? context_id { get; set; } // コンテキストID（会話継続用）
+        public string text { get; set; } = string.Empty; // テキストメッセージ
+        public string? audio_data { get; set; } // Base64エンコードされた音声データ
+        public List<object>? files { get; set; } // 添付ファイル
+        public Dictionary<string, object>? system_prompt_params { get; set; } // システムプロンプトパラメータ
+        public Dictionary<string, object>? metadata { get; set; } // メタデータ
+    }
+
+    /// <summary>
+    /// CocoroCore API: 通知リクエスト (AIAvatarKit仕様準拠)
+    /// </summary>
+    public class CoreNotificationRequest
+    {
+        public string type { get; set; } = "invoke"; // AIAvatarKit: リクエストタイプ
+        public string session_id { get; set; } = string.Empty; // セッションID
+        public string user_id { get; set; } = string.Empty; // ユーザーID（送信者）
+        public string? context_id { get; set; } // コンテキストID
+        public string text { get; set; } = string.Empty; // 通知メッセージ
+        public Dictionary<string, object>? metadata { get; set; } // メタデータ
+    }
+
+    #endregion
 }

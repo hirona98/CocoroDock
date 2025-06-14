@@ -29,6 +29,11 @@ namespace CocoroDock.Services
         int CocoroMemoryDBPort { get; set; }
 
         /// <summary>
+        /// CocoroShellポート
+        /// </summary>
+        int CocoroShellPort { get; set; }
+
+        /// <summary>
         /// 通知API有効/無効
         /// </summary>
         bool IsEnableNotificationApi { get; set; }

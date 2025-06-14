@@ -4,6 +4,7 @@ using CocoroDock.Services;
 using CocoroDock.Utilities;
 using System;
 using System.Diagnostics;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -16,9 +17,6 @@ namespace CocoroDock
     public partial class MainWindow : Window
     {
         private ICommunicationService? _communicationService;
-        private NotificationApiServer? _notificationApiServer;
-        private Timer? _reconnectTimer; // 再接続用タイマー
-        private const int ReconnectIntervalMs = 3000; // 再接続間隔（3秒）
         private readonly IAppSettings _appSettings;
 
         public MainWindow()
@@ -41,6 +39,7 @@ namespace CocoroDock
         public void ClearChatHistory()
         {
             ChatControlInstance.ClearChat();
+            _communicationService?.StartNewConversation();
         }
 
         /// <summary>
@@ -68,11 +67,8 @@ namespace CocoroDock
                 // UIコントロールのイベントハンドラを登録
                 RegisterEventHandlers();
 
-                // サーバーの起動を開始
-                _ = StartWebSocketServerAsync();
-
-                // 通知APIサーバーの起動を開始
-                _ = StartNotificationApiServerAsync();
+                // APIサーバーの起動を開始
+                _ = StartApiServerAsync();
             }
             catch (Exception ex)
             {
@@ -100,23 +96,19 @@ namespace CocoroDock
         /// </summary>
         private void InitializeCommunicationService()
         {
-            // 通信サービスを初期化 (WebSocketServerを使用)
-            _communicationService = new CommunicationService(_appSettings.CocoroDockPort);
-
-            // 通信サービスのイベントハンドラを設定
+            // 通信サービスを初期化 (REST APIサーバーを使用)
+            _communicationService = new CommunicationService(_appSettings);            // 通信サービスのイベントハンドラを設定
             _communicationService.ChatMessageReceived += OnChatMessageReceived;
             _communicationService.NotificationMessageReceived += OnNotificationMessageReceived;
-            _communicationService.ConfigResponseReceived += OnConfigResponseReceived;
-            _communicationService.ControlMessageReceived += OnControlMessageReceived;
+            _communicationService.ControlCommandReceived += OnControlCommandReceived;
             _communicationService.ErrorOccurred += OnErrorOccurred;
-            _communicationService.Connected += OnConnected;
-            _communicationService.Disconnected += OnDisconnected;
+            _communicationService.StatusUpdateRequested += OnStatusUpdateRequested;
         }
 
         /// <summary>
-        /// WebSocketサーバーを起動（非同期タスク）
+        /// APIサーバーを起動（非同期タスク）
         /// </summary>
-        private async Task StartWebSocketServerAsync()
+        private async Task StartApiServerAsync()
         {
             try
             {
@@ -125,27 +117,25 @@ namespace CocoroDock
 
                 if (_communicationService != null && !_communicationService.IsServerRunning)
                 {
-                    // サーバーを起動
+                    // APIサーバーを起動
                     await _communicationService.StartServerAsync();
 
                     // UI更新
                     UpdateConnectionStatus(true);
 
-                    // 設定を通知
+                    // 設定をリロード
                     await RequestConfigAsync();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 UpdateConnectionStatus(false, "サーバー起動エラー");
-
-                // 再起動タイマーを開始
-                StartServerRestartTimer();
+                Debug.WriteLine($"APIサーバー起動エラー: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// クライアントに設定情報を通知
+        /// 設定をリロードして適用
         /// </summary>
         private async Task RequestConfigAsync()
         {
@@ -154,16 +144,16 @@ namespace CocoroDock
                 // 設定読み込み状態をリセット
                 _appSettings.IsLoaded = false;
 
-                // サーバー側で管理している設定ファイルを読み込む
+                // 設定ファイルを読み込む
                 _appSettings.LoadAppSettings();
 
                 // 設定をUIに反映
                 ApplySettings();
 
-                // クライアントにも設定を通知
+                // CocoroShellに設定変更を通知
                 if (_communicationService != null && _communicationService.IsServerRunning)
                 {
-                    await _communicationService.UpdateConfigAsync(_appSettings.GetConfigSettings());
+                    await _communicationService.SendControlToShellAsync("reloadConfig");
                 }
             }
             catch (Exception ex)
@@ -224,19 +214,37 @@ namespace CocoroDock
         {
             try
             {
-                // WebSocketサーバーが起動している場合のみ送信
+                // APIサーバーが起動している場合のみ送信
                 if (_communicationService != null && _communicationService.IsServerRunning)
                 {
-                    await _communicationService.SendChatMessageAsync(message);
+                    // ユーザーメッセージとしてチャットウィンドウに表示（送信前に表示）
+                    ChatControlInstance.AddUserMessage(message);
+                    
+                    // CocoroCoreにメッセージを送信
+                    await _communicationService.SendChatToCoreAsync(message);
                 }
                 else
                 {
                     ChatControlInstance.AddSystemErrorMessage("サーバーが起動していません");
                 }
             }
+            catch (TimeoutException)
+            {
+                // タイムアウトエラー専用のメッセージ
+                ChatControlInstance.AddSystemErrorMessage("AI応答がタイムアウトしました。もう一度お試しください。");
+            }
+            catch (HttpRequestException ex)
+            {
+                // 接続エラー専用のメッセージ
+                ChatControlInstance.AddSystemErrorMessage("AI応答サーバーに接続できません。");
+                Debug.WriteLine($"HttpRequestException: {ex.Message}");
+                // アプリケーションは終了しない
+            }
             catch (Exception ex)
             {
-                ChatControlInstance.AddSystemErrorMessage($"エラー: {ex.Message}");
+                // その他のエラー
+                ChatControlInstance.AddSystemErrorMessage($"エラーが発生しました: {ex.Message}");
+                Debug.WriteLine($"Exception: {ex}");
             }
         }
 
@@ -245,11 +253,21 @@ namespace CocoroDock
         #region 通信サービスイベントハンドラ
 
         /// <summary>
-        /// チャットメッセージ受信時のハンドラ
+        /// チャットメッセージ受信時のハンドラ（CocoroDock APIから）
         /// </summary>
-        private void OnChatMessageReceived(object? sender, string message)
+        private void OnChatMessageReceived(object? sender, ChatRequest request)
         {
-            UIHelper.RunOnUIThread(() => ChatControlInstance.AddAiMessage(message));
+            UIHelper.RunOnUIThread(() =>
+            {
+                if (request.role == "user")
+                {
+                    ChatControlInstance.AddUserMessage(request.content);
+                }
+                else if (request.role == "assistant")
+                {
+                    ChatControlInstance.AddAiMessage(request.content);
+                }
+            });
         }
 
         /// <summary>
@@ -264,84 +282,53 @@ namespace CocoroDock
             });
         }
 
-        /// <summary>
-        /// 設定レスポンス受信時のハンドラ
-        /// </summary>
-        private void OnConfigResponseReceived(object? sender, ConfigResponsePayload response)
-        {
-            UIHelper.RunOnUIThread(() =>
-            {
-                ProcessConfigResponse(response);
-            });
-        }
 
         /// <summary>
-        /// 設定レスポンスを処理
+        /// 制御コマンド受信時のハンドラ（CocoroDock APIから）
         /// </summary>
-        private void ProcessConfigResponse(ConfigResponsePayload response)
+        private void OnControlCommandReceived(object? sender, ControlRequest request)
         {
-            // 応答ステータスをチェック
-            if (response.status != "ok")
+            UIHelper.RunOnUIThread(async () =>
             {
-                // エラーの場合はメッセージを表示
-                MessageBox.Show($"設定変更エラー: {response.message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            // 設定情報が含まれている場合は適用する
-            if (response.settings != null)
-            {
-                // アプリケーション設定を更新
-                _appSettings.UpdateSettings(response.settings);
-
-                // 設定を画面に反映
-                ApplySettings();
-            }
-        }
-
-        /// <summary>
-        /// 制御メッセージ受信時のハンドラ
-        /// </summary>
-        private void OnControlMessageReceived(object? sender, ControlMessagePayload controlMessage)
-        {
-            // 制御コマンドの種類を確認
-            if (controlMessage.command == "shutdownCocoroAI")
-            {
-                UIHelper.RunOnUIThread(() =>
+                switch (request.command)
                 {
-                    // シャットダウン理由をログに記録
-                    Debug.WriteLine($"シャットダウン要求を受信しました: {controlMessage.reason}");
+                    case "shutdown":
+                        // シャットダウン理由をログに記録
+                        Debug.WriteLine($"シャットダウン要求を受信しました: {request.reason}");
+                        Application.Current.Shutdown();
+                        break;
 
-                    // アプリケーションを正常に終了
-                    Application.Current.Shutdown();
-                });
-            }
-        }
+                    case "restart":
+                        // 再起動処理
+                        Debug.WriteLine($"再起動要求を受信しました: {request.reason}");
+                        // TODO: 再起動処理の実装
+                        break;
 
-        /// <summary>
-        /// エラー発生時のハンドラ
-        /// </summary>
+                    case "reloadConfig":
+                        // 設定の再読み込み
+                        Debug.WriteLine("設定再読み込み要求を受信しました");
+                        await RequestConfigAsync();
+                        break;
+
+                    default:
+                        Debug.WriteLine($"未知の制御コマンド: {request.command}");
+                        break;
+                }
+            });
+        }        /// <summary>
+                 /// エラー発生時のハンドラ
+                 /// </summary>
         private void OnErrorOccurred(object? sender, string error)
         {
             UIHelper.ShowError("エラー", error);
         }
 
         /// <summary>
-        /// サーバー起動成功時のハンドラ
+        /// ステータス更新要求時のハンドラ
         /// </summary>
-        private void OnConnected(object? sender, EventArgs e)
+        private void OnStatusUpdateRequested(object? sender, StatusUpdateEventArgs e)
         {
-            UpdateConnectionStatus(true);
-            StopServerRestartTimer(); // サーバー再起動タイマーを停止
-        }
-
-        /// <summary>
-        /// サーバー停止時のハンドラ
-        /// </summary>
-        private void OnDisconnected(object? sender, EventArgs e)
-        {
-            UpdateConnectionStatus(false);
-            StartServerRestartTimer(); // サーバー再起動タイマーを開始
+            UpdateConnectionStatus(e.IsConnected, e.Message);
         }
 
         #endregion
@@ -353,17 +340,10 @@ namespace CocoroDock
         {
             try
             {
-                // 通知APIサーバーを停止
-                if (_notificationApiServer != null)
-                {
-                    _notificationApiServer.StopAsync().Wait(TimeSpan.FromSeconds(5));
-                    _notificationApiServer.Dispose();
-                    _notificationApiServer = null;
-                }
-
                 // 接続中ならリソース解放
                 if (_communicationService != null)
                 {
+                    _communicationService.StopServerAsync().Wait(TimeSpan.FromSeconds(5));
                     _communicationService.Dispose();
                     _communicationService = null;
                 }
@@ -425,109 +405,6 @@ namespace CocoroDock
             }
         }
 
-        /// <summary>
-        /// 通知APIサーバーを起動（非同期タスク）
-        /// </summary>
-        private async Task StartNotificationApiServerAsync()
-        {
-            try
-            {
-                // 設定が有効な場合のみ起動
-                if (_appSettings.IsEnableNotificationApi && _communicationService != null)
-                {
-                    _notificationApiServer = new NotificationApiServer(_appSettings.NotificationApiPort, _communicationService);
-                    await _notificationApiServer.StartAsync();
-                    Debug.WriteLine($"通知APIサーバーを起動しました: ポート {_appSettings.NotificationApiPort}");
-                }
-            }
-            catch (InvalidOperationException ioEx)
-            {
-                Debug.WriteLine($"通知APIサーバー起動エラー: {ioEx.Message}");
-
-                // ユーザーフレンドリーなエラーメッセージを表示
-                string userMessage = ioEx.Message;
-                if (ioEx.InnerException is System.Net.Sockets.SocketException)
-                {
-                    userMessage = $"通知APIサーバーを起動できませんでした。\n\n{ioEx.Message}\n\n設定画面でポート番号を変更するか、競合するアプリケーションを終了してください。";
-                }
-
-                UIHelper.ShowError("通知APIサーバー起動エラー", userMessage);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"通知APIサーバー起動エラー: {ex.Message}");
-                Debug.WriteLine($"エラータイプ: {ex.GetType().FullName}");
-                Debug.WriteLine($"スタックトレース: {ex.StackTrace}");
-
-                UIHelper.ShowError("通知APIサーバー起動エラー",
-                    $"予期しないエラーが発生しました。\n\n{ex.Message}\n\n詳細はログを確認してください。");
-            }
-        }
-
-        /// <summary>
-        /// 通知APIサーバーの設定を更新（有効/無効を切り替え）
-        /// </summary>
-        /// <param name="isEnabled">有効にする場合はtrue</param>
-        public async Task UpdateNotificationApiServerAsync(bool isEnabled)
-        {
-            try
-            {
-                if (isEnabled)
-                {
-                    // 既に起動している場合は何もしない
-                    if (_notificationApiServer != null)
-                    {
-                        return;
-                    }
-
-                    // サーバーを起動
-                    await StartNotificationApiServerAsync();
-                }
-                else
-                {
-                    // サーバーを停止
-                    if (_notificationApiServer != null)
-                    {
-                        await _notificationApiServer.StopAsync();
-                        _notificationApiServer = null;
-                        Debug.WriteLine("通知APIサーバーを停止しました");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"通知APIサーバーの更新エラー: {ex.Message}");
-                UIHelper.ShowError("通知APIサーバー更新エラー",
-                    $"通知APIサーバーの状態変更中にエラーが発生しました。\n\n{ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// サーバー再起動タイマーを開始
-        /// </summary>
-        private void StartServerRestartTimer()
-        {
-            if (_reconnectTimer == null)
-            {
-                _reconnectTimer = new Timer(async _ =>
-                {
-                    // サーバーが停止している場合のみ再起動を試みる
-                    if (_communicationService != null && !_communicationService.IsServerRunning)
-                    {
-                        await StartWebSocketServerAsync();
-                    }
-                }, null, ReconnectIntervalMs, ReconnectIntervalMs);
-            }
-        }
-
-        /// <summary>
-        /// サーバー再起動タイマーを停止
-        /// </summary>
-        private void StopServerRestartTimer()
-        {
-            _reconnectTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-            _reconnectTimer = null;
-        }
 
         /// <summary>
         /// CocoroShell.exeを起動する（既に起動している場合は終了してから再起動）

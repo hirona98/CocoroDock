@@ -1,8 +1,7 @@
 using CocoroDock.Communication;
-using CocoroDock.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace CocoroDock.Services
@@ -12,51 +11,66 @@ namespace CocoroDock.Services
     /// </summary>
     public class CommunicationService : ICommunicationService
     {
-        private readonly WebSocketServer _webSocketServer;
-        private string _sessionId;
-
-        public event EventHandler<string>? ChatMessageReceived;
+        private readonly CocoroDockApiServer _apiServer;
+        private readonly CocoroShellClient _shellClient;
+        private readonly CocoroCoreClient _coreClient;
+        private readonly IAppSettings _appSettings;
+        private readonly NotificationApiServer? _notificationApiServer;
+        
+        // セッション管理用
+        private string? _currentSessionId;
+        private string? _currentContextId;
+        
+        public event EventHandler<ChatRequest>? ChatMessageReceived;
         public event EventHandler<ChatMessagePayload>? NotificationMessageReceived;
-        public event EventHandler<ConfigResponsePayload>? ConfigResponseReceived;
-        public event EventHandler<ControlMessagePayload>? ControlMessageReceived;
+        public event EventHandler<ControlRequest>? ControlCommandReceived;
         public event EventHandler<string>? ErrorOccurred;
-        public event EventHandler? Connected;
-        public event EventHandler? Disconnected;
+        public event EventHandler<StatusUpdateEventArgs>? StatusUpdateRequested;
 
-        public bool IsServerRunning => _webSocketServer.IsRunning;
+        public bool IsServerRunning => _apiServer.IsRunning;
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="port">サーバーポート（例: 55600）</param>
-        public CommunicationService(int port)
+        /// <param name="appSettings">アプリケーション設定</param>
+        public CommunicationService(IAppSettings appSettings)
         {
-            _webSocketServer = new WebSocketServer("127.0.0.1", port);
-            _sessionId = GenerateSessionId();
+            _appSettings = appSettings;
 
-            // WebSocketサーバーのイベントハンドラを設定
-            _webSocketServer.MessageReceived += OnMessageReceived;
-            _webSocketServer.ConnectionError += (sender, error) => ErrorOccurred?.Invoke(this, error);
-            _webSocketServer.ClientConnected += (sender, clientId) => Connected?.Invoke(this, EventArgs.Empty);
-            _webSocketServer.ClientDisconnected += (sender, clientId) => Disconnected?.Invoke(this, EventArgs.Empty);
+            // APIサーバーの初期化
+            _apiServer = new CocoroDockApiServer(_appSettings.CocoroDockPort, _appSettings);
+            _apiServer.ChatMessageReceived += (sender, request) => ChatMessageReceived?.Invoke(this, request);
+            _apiServer.ControlCommandReceived += (sender, request) => ControlCommandReceived?.Invoke(this, request);
+
+            // CocoroShellクライアントの初期化
+            _shellClient = new CocoroShellClient(_appSettings.CocoroShellPort);
+            
+            // CocoroCoreクライアントの初期化
+            _coreClient = new CocoroCoreClient(_appSettings.CocoroCorePort);
+
+            // 通知APIサーバーの初期化（有効な場合のみ）
+            if (_appSettings.IsEnableNotificationApi)
+            {
+                _notificationApiServer = new NotificationApiServer(_appSettings.NotificationApiPort, this);
+            }
         }
 
-        /// <summary>
-        /// 新しいセッションIDを生成
-        /// </summary>
-        private string GenerateSessionId()
-        {
-            return $"session_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
-        }
 
         /// <summary>
-        /// サーバーを開始
+        /// APIサーバーを開始
         /// </summary>
         public async Task StartServerAsync()
         {
             try
             {
-                await _webSocketServer.StartAsync();
+                // CocoroDock APIサーバーを起動
+                await _apiServer.StartAsync();
+
+                // 通知APIサーバーを起動（有効な場合）
+                if (_notificationApiServer != null)
+                {
+                    await _notificationApiServer.StartAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -67,178 +81,201 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// サーバーを停止
+        /// APIサーバーを停止
         /// </summary>
         public async Task StopServerAsync()
         {
-            await _webSocketServer.StopAsync();
+            try
+            {
+                // 通知APIサーバーを停止
+                if (_notificationApiServer != null)
+                {
+                    await _notificationApiServer.StopAsync();
+                }
+
+                // CocoroDock APIサーバーを停止
+                await _apiServer.StopAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CommunicationService: サーバー停止エラー: {ex.Message}");
+            }
         }
 
         /// <summary>
-        /// 設定情報を要求
+        /// 現在の設定を取得
         /// </summary>
-        public async Task RequestConfigAsync()
+        public ConfigSettings GetCurrentConfig()
         {
-            await _webSocketServer.SendRequestConfigAsync();
+            return _appSettings.GetConfigSettings();
         }
 
         /// <summary>
-        /// 設定情報を更新
+        /// 設定を更新して保存
         /// </summary>
         /// <param name="settings">更新する設定情報</param>
-        public async Task UpdateConfigAsync(ConfigSettings settings)
+        public void UpdateAndSaveConfig(ConfigSettings settings)
         {
-            await _webSocketServer.SendUpdateConfigAsync(settings);
+            _appSettings.UpdateSettings(settings);
+            _appSettings.SaveSettings();
         }
 
         /// <summary>
-        /// チャットメッセージを送信
+        /// 新しい会話セッションを開始
+        /// </summary>
+        public void StartNewConversation()
+        {
+            _currentSessionId = null;
+            _currentContextId = null;
+            Debug.WriteLine("新しい会話セッションを開始しました");
+        }
+
+        /// <summary>
+        /// CocoroCoreにチャットメッセージを送信
         /// </summary>
         /// <param name="message">送信メッセージ</param>
-        public async Task SendChatMessageAsync(string message)
+        /// <param name="characterName">キャラクター名（オプション）</param>
+        public async Task SendChatToCoreAsync(string message, string? characterName = null)
         {
-            var payload = new ChatMessagePayload
+            try
             {
-                sessionId = _sessionId,
-                message = message
-            };
+                // 現在のキャラクター設定を取得
+                var currentCharacter = GetCurrentCharacterSettings();
+                
+                // セッションIDを生成または既存のものを使用
+                if (string.IsNullOrEmpty(_currentSessionId))
+                {
+                    _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
+                }
+                
+                // AIAvatarKit仕様のリクエストを作成
+                var request = new CoreChatRequest
+                {
+                    type = "invoke",
+                    session_id = _currentSessionId,
+                    user_id = "user",
+                    context_id = _currentContextId, // 前回の会話からのコンテキストを使用
+                    text = message,
+                    audio_data = null, // テキストのみ
+                    files = null,
+                    system_prompt_params = null,
+                    metadata = new Dictionary<string, object>
+                    {
+                        { "source", "CocoroDock" },
+                        { "character_name", characterName ?? currentCharacter?.modelName ?? "default" }
+                    }
+                };
 
-            await _webSocketServer.SendMessageAsync(MessageType.chat, payload);
+                var response = await _coreClient.SendChatMessageAsync(request);
+                
+                // SSEレスポンスから新しいcontext_idを保存
+                if (!string.IsNullOrEmpty(response.context_id))
+                {
+                    _currentContextId = response.context_id;
+                    Debug.WriteLine($"新しいcontext_idを取得: {_currentContextId}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CocoroCoreへのチャット送信エラー: {ex.Message}");
+                // ステータスバーにエラー表示
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"CocoroCoreへの通信エラー: {ex.Message}"));
+            }
         }
 
         /// <summary>
-        /// 設定を変更
+        /// CocoroShellにアニメーションコマンドを送信
         /// </summary>
-        /// <param name="settingKey">設定キー</param>
-        /// <param name="value">設定値</param>
-        public async Task ChangeConfigAsync(string settingKey, string value)
+        /// <param name="animationName">アニメーション名</param>
+        public async Task SendAnimationToShellAsync(string animationName)
         {
-            var payload = new ConfigMessagePayload
+            try
             {
-                settingKey = settingKey,
-                value = value
-            };
+                var request = new AnimationRequest
+                {
+                    animationName = animationName
+                };
 
-            await _webSocketServer.SendMessageAsync(MessageType.config, payload);
+                await _shellClient.SendAnimationCommandAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"アニメーションコマンド送信エラー: {ex.Message}");
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"アニメーション制御エラー: {ex.Message}"));
+            }
         }
 
         /// <summary>
-        /// 制御コマンドを送信
+        /// CocoroShellに制御コマンドを送信
         /// </summary>
         /// <param name="command">コマンド名</param>
-        /// <param name="reason">理由</param>
-        public async Task SendControlCommandAsync(string command, string reason)
-        {
-            var payload = new ControlMessagePayload
-            {
-                command = command,
-                reason = reason
-            };
-
-            await _webSocketServer.SendMessageAsync(MessageType.control, payload);
-        }
-
-        /// <summary>
-        /// 新しいチャットセッションを開始
-        /// </summary>
-        public void StartNewSession()
-        {
-            _sessionId = GenerateSessionId();
-        }
-
-        /// <summary>
-        /// 受信したWebSocketメッセージを処理
-        /// </summary>
-        private void OnMessageReceived(object? sender, (string ClientId, string Json) args)
+        public async Task SendControlToShellAsync(string command)
         {
             try
             {
-                using JsonDocument document = JsonDocument.Parse(args.Json);
-                var message = document.RootElement;
-
-                if (message.TryGetProperty("type", out var typeElement) &&
-                    message.TryGetProperty("payload", out var payloadElement))
+                var request = new ShellControlRequest
                 {
-                    string type = typeElement.GetString() ?? string.Empty;
-                    ProcessMessageByType(type, payloadElement);
-                }
+                    command = command,
+                    @params = new System.Collections.Generic.Dictionary<string, object>()
+                };
+
+                await _shellClient.SendControlCommandAsync(request);
             }
             catch (Exception ex)
             {
-                ErrorOccurred?.Invoke(this, $"メッセージ処理エラー: {ex.Message}");
+                Debug.WriteLine($"制御コマンド送信エラー: {ex.Message}");
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"制御コマンドエラー: {ex.Message}"));
             }
         }
 
         /// <summary>
-        /// メッセージタイプに応じて処理を行う
+        /// 通知メッセージを処理（Notification API用）
         /// </summary>
-        /// <param name="type">メッセージタイプ</param>
-        /// <param name="payloadElement">ペイロード要素</param>
-        private void ProcessMessageByType(string type, JsonElement payloadElement)
+        /// <param name="notification">通知メッセージ</param>
+        public async Task ProcessNotificationAsync(ChatMessagePayload notification)
         {
             try
             {
-                string payloadJson = payloadElement.GetRawText();
+                // 通知イベントを発火
+                NotificationMessageReceived?.Invoke(this, notification);
 
-                switch (type)
+                // AIAvatarKit仕様のリクエストを作成してCocoroCoreに転送
+                var request = new CoreNotificationRequest
                 {
-                    case "chat":
-                        ProcessChatMessage(payloadJson);
-                        break;
+                    type = "invoke",
+                    session_id = $"notif_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}",
+                    user_id = notification.userId,
+                    context_id = null,
+                    text = $"[{notification.userId}] {notification.message}",
+                    metadata = new Dictionary<string, object>
+                    {
+                        { "source", "notification" },
+                        { "original_session_id", notification.sessionId },
+                        { "notification_from", notification.userId }
+                    }
+                };
 
-                    case "config":
-                        ProcessConfigMessage(payloadJson);
-                        break;
-
-                    case "control":
-                        ProcessControlMessage(payloadJson);
-                        break;
-
-                    default:
-                        Debug.WriteLine($"未知のメッセージタイプ: {type}");
-                        break;
-                }
+                await _coreClient.SendNotificationAsync(request);
             }
             catch (Exception ex)
             {
-                ErrorOccurred?.Invoke(this, $"メッセージタイプ処理エラー: {ex.Message}");
+                Debug.WriteLine($"通知処理エラー: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// チャットメッセージを処理
+        /// 現在のキャラクター設定を取得
         /// </summary>
-        private void ProcessChatMessage(string payloadJson)
+        private CharacterSettings? GetCurrentCharacterSettings()
         {
-            var chatResponse = MessageHelper.DeserializeFromJson<ChatResponsePayload>(payloadJson);
-            if (chatResponse != null)
+            var config = _appSettings.GetConfigSettings();
+            if (config.characterList != null &&
+                config.currentCharacterIndex >= 0 &&
+                config.currentCharacterIndex < config.characterList.Count)
             {
-                ChatMessageReceived?.Invoke(this, chatResponse.response);
+                return config.characterList[config.currentCharacterIndex];
             }
-        }
-
-        /// <summary>
-        /// 設定メッセージを処理
-        /// </summary>
-        private void ProcessConfigMessage(string payloadJson)
-        {
-            var configResponse = MessageHelper.DeserializeFromJson<ConfigResponsePayload>(payloadJson);
-            if (configResponse != null)
-            {
-                ConfigResponseReceived?.Invoke(this, configResponse);
-            }
-        }
-
-        /// <summary>
-        /// 制御メッセージを処理
-        /// </summary>
-        private void ProcessControlMessage(string payloadJson)
-        {
-            var controlMessage = MessageHelper.DeserializeFromJson<ControlMessagePayload>(payloadJson);
-            if (controlMessage != null)
-            {
-                ControlMessageReceived?.Invoke(this, controlMessage);
-            }
+            return null;
         }
 
         /// <summary>
@@ -251,21 +288,14 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// 指定されたタイプとペイロードのメッセージを送信
-        /// </summary>
-        /// <param name="type">メッセージタイプ</param>
-        /// <param name="payload">ペイロードデータ</param>
-        public async Task SendMessageAsync(MessageType type, object payload)
-        {
-            await _webSocketServer.SendMessageAsync(type, payload);
-        }
-
-        /// <summary>
         /// リソースの解放
         /// </summary>
         public void Dispose()
         {
-            _webSocketServer.Dispose();
+            _notificationApiServer?.Dispose();
+            _apiServer?.Dispose();
+            _shellClient?.Dispose();
+            _coreClient?.Dispose();
         }
     }
 }

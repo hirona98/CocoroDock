@@ -660,7 +660,7 @@ namespace CocoroDock.Controls
                     try
                     {
                         // CocoroShellにアニメーション再生指示を送信
-                        await _communicationService.SendControlCommandAsync("playAnimation", animation.animationName);
+                        await _communicationService.SendAnimationToShellAsync(animation.animationName);
                     }
                     catch (Exception ex)
                     {
@@ -861,7 +861,7 @@ namespace CocoroDock.Controls
                     bool.TryParse(_characterSettings[index]["IsEnableShadowOff"], out isEnableShadowOff);
                 }
                 EnableShadowOffCheckBox.IsChecked = isEnableShadowOff;
-                
+
                 string shadowOffMesh = "Face, U_Char_1"; // デフォルト値
                 if (_characterSettings[index].ContainsKey("ShadowOffMesh"))
                 {
@@ -1094,7 +1094,7 @@ namespace CocoroDock.Controls
                                      _characterSettings[_currentCharacterIndex]["STTWakeWord"] != sttWakeWord;
                 bool sttApiKeyChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("STTApiKey") ||
                                      _characterSettings[_currentCharacterIndex]["STTApiKey"] != sttApiKey;
-                
+
                 bool isEnableShadowOffChanged = false;
                 if (_characterSettings[_currentCharacterIndex].ContainsKey("IsEnableShadowOff"))
                 {
@@ -1106,10 +1106,10 @@ namespace CocoroDock.Controls
                 {
                     isEnableShadowOffChanged = !isEnableShadowOff; // デフォルトはtrueとして扱う
                 }
-                
+
                 bool shadowOffMeshChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("ShadowOffMesh") ||
                                          _characterSettings[_currentCharacterIndex]["ShadowOffMesh"] != shadowOffMesh;
-                
+
                 bool isConvertMToonChanged = false;
                 if (_characterSettings[_currentCharacterIndex].ContainsKey("IsConvertMToon"))
                 {
@@ -1384,7 +1384,7 @@ namespace CocoroDock.Controls
                 // 設定をファイルに保存
                 AppSettings.Instance.SaveAppSettings();
 
-                // WebSocketを通じて設定を更新（クライアントに通知）
+                // REST APIを通じて設定を更新（クライアントに通知）
                 bool configUpdateSuccessful = false;
                 string errorMessage = string.Empty;
 
@@ -1392,8 +1392,9 @@ namespace CocoroDock.Controls
                 {
                     try
                     {
-                        // 通信サービスによる設定更新を実行
-                        await _communicationService.UpdateConfigAsync(AppSettings.Instance.GetConfigSettings());
+                        // 設定を保存してCocoroShellに通知
+                        _communicationService.UpdateAndSaveConfig(AppSettings.Instance.GetConfigSettings());
+                        await _communicationService.SendControlToShellAsync("reloadConfig");
                         configUpdateSuccessful = true;
                     }
                     catch (Exception ex)
@@ -1414,11 +1415,10 @@ namespace CocoroDock.Controls
                 bool currentIsEnableNotificationApi = (bool)_displaySettings["IsEnableNotificationApi"];
                 if (lastIsEnableNotificationApi != currentIsEnableNotificationApi)
                 {
-                    // MainWindowに通知APIサーバーの状態変更を通知
-                    if (Owner is MainWindow mainWindow)
-                    {
-                        await mainWindow.UpdateNotificationApiServerAsync(currentIsEnableNotificationApi);
-                    }
+                    // 通知APIサーバーの動的な起動/停止は現在サポートされていません
+                    // アプリケーションの再起動が必要です
+                    MessageBox.Show("通知APIサーバーの有効/無効設定が変更されました。\n変更を反映するにはアプリケーションを再起動してください。",
+                        "情報", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (System.Exception ex)
