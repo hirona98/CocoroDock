@@ -64,7 +64,7 @@
                            Background="#F0F0F0">
                         <StatusBarItem>
                                 <TextBlock x:Name="ConnectionStatusText"
-                                           Text="接続状態: 切断中"/>
+                                           Text="状態: 切断"/>
                         </StatusBarItem>
                 </StatusBar>
         </Grid>

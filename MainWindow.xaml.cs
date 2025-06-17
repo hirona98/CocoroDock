@@ -181,12 +181,12 @@ namespace CocoroDock
             {
                 if (isConnected)
                 {
-                    ConnectionStatusText.Text = "接続状態: 動作中";
+                    ConnectionStatusText.Text = "状態: 正常動作中";
                 }
                 else
                 {
                     string statusText = customMessage ?? "停止中";
-                    ConnectionStatusText.Text = $"接続状態: {statusText}";
+                    ConnectionStatusText.Text = $"状態: {statusText}";
                 }
             });
         }
@@ -219,7 +219,7 @@ namespace CocoroDock
                 {
                     // ユーザーメッセージとしてチャットウィンドウに表示（送信前に表示）
                     ChatControlInstance.AddUserMessage(message);
-                    
+
                     // CocoroCoreにメッセージを送信
                     await _communicationService.SendChatToCoreAsync(message);
                 }
