@@ -18,6 +18,7 @@ namespace CocoroDock
     {
         private ICommunicationService? _communicationService;
         private readonly IAppSettings _appSettings;
+        private Timer? _statusMessageTimer;
 
         public MainWindow()
         {
@@ -179,9 +180,31 @@ namespace CocoroDock
             // UIスレッドで実行
             UIHelper.RunOnUIThread(() =>
             {
+                // 既存のタイマーをキャンセル
+                _statusMessageTimer?.Dispose();
+                _statusMessageTimer = null;
+                
                 if (isConnected)
                 {
-                    ConnectionStatusText.Text = "状態: 正常動作中";
+                    if (!string.IsNullOrEmpty(customMessage))
+                    {
+                        // カスタムメッセージがある場合は表示し、3秒後に通常状態に戻す
+                        ConnectionStatusText.Text = $"状態: {customMessage}";
+                        
+                        _statusMessageTimer = new Timer(_ =>
+                        {
+                            UIHelper.RunOnUIThread(() =>
+                            {
+                                ConnectionStatusText.Text = "状態: 正常動作中";
+                            });
+                            _statusMessageTimer?.Dispose();
+                            _statusMessageTimer = null;
+                        }, null, 3000, Timeout.Infinite);
+                    }
+                    else
+                    {
+                        ConnectionStatusText.Text = "状態: 正常動作中";
+                    }
                 }
                 else
                 {
@@ -340,6 +363,10 @@ namespace CocoroDock
         {
             try
             {
+                // タイマーのクリーンアップ
+                _statusMessageTimer?.Dispose();
+                _statusMessageTimer = null;
+                
                 // 接続中ならリソース解放
                 if (_communicationService != null)
                 {

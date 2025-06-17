@@ -16,11 +16,11 @@ namespace CocoroDock.Services
         private readonly CocoroCoreClient _coreClient;
         private readonly IAppSettings _appSettings;
         private readonly NotificationApiServer? _notificationApiServer;
-        
+
         // セッション管理用
         private string? _currentSessionId;
         private string? _currentContextId;
-        
+
         public event EventHandler<ChatRequest>? ChatMessageReceived;
         public event EventHandler<ChatMessagePayload>? NotificationMessageReceived;
         public event EventHandler<ControlRequest>? ControlCommandReceived;
@@ -44,7 +44,7 @@ namespace CocoroDock.Services
 
             // CocoroShellクライアントの初期化
             _shellClient = new CocoroShellClient(_appSettings.CocoroShellPort);
-            
+
             // CocoroCoreクライアントの初期化
             _coreClient = new CocoroCoreClient(_appSettings.CocoroCorePort);
 
@@ -141,13 +141,13 @@ namespace CocoroDock.Services
             {
                 // 現在のキャラクター設定を取得
                 var currentCharacter = GetCurrentCharacterSettings();
-                
+
                 // セッションIDを生成または既存のものを使用
                 if (string.IsNullOrEmpty(_currentSessionId))
                 {
                     _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
                 }
-                
+
                 // AIAvatarKit仕様のリクエストを作成
                 var request = new CoreChatRequest
                 {
@@ -167,13 +167,16 @@ namespace CocoroDock.Services
                 };
 
                 var response = await _coreClient.SendChatMessageAsync(request);
-                
+
                 // SSEレスポンスから新しいcontext_idを保存
                 if (!string.IsNullOrEmpty(response.context_id))
                 {
                     _currentContextId = response.context_id;
                     Debug.WriteLine($"新しいcontext_idを取得: {_currentContextId}");
                 }
+
+                // 成功時のステータス更新
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "メッセージを送信しました"));
             }
             catch (Exception ex)
             {
@@ -197,6 +200,9 @@ namespace CocoroDock.Services
                 };
 
                 await _shellClient.SendAnimationCommandAsync(request);
+
+                // 成功時のステータス更新
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, $"アニメーション '{animationName}' を実行しました"));
             }
             catch (Exception ex)
             {
@@ -220,6 +226,9 @@ namespace CocoroDock.Services
                 };
 
                 await _shellClient.SendControlCommandAsync(request);
+
+                // 成功時のステータス更新
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, $"コマンド '{command}' を実行しました"));
             }
             catch (Exception ex)
             {
@@ -256,6 +265,9 @@ namespace CocoroDock.Services
                 };
 
                 await _coreClient.SendNotificationAsync(request);
+
+                // 成功時のステータス更新
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "通知を処理しました"));
             }
             catch (Exception ex)
             {
