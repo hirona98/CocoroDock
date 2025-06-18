@@ -372,16 +372,16 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// 管理ボタンクリック時のイベントハンドラ
+        /// 設定ボタンクリック時のイベントハンドラ
         /// </summary>
         private void AdminButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // 管理画面を表示
+                // 設定画面を表示
                 var adminWindow = new AdminWindow(_communicationService);
                 adminWindow.Owner = this; // メインウィンドウを親に設定
-                adminWindow.ShowDialog(); // モーダルダイアログとして表示
+                adminWindow.Show(); // モードレスダイアログとして表示
             }
             catch (Exception ex)
             {
