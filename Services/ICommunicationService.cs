@@ -80,7 +80,8 @@ namespace CocoroDock.Services
         /// </summary>
         /// <param name="message">送信メッセージ</param>
         /// <param name="characterName">キャラクター名（オプション）</param>
-        Task SendChatToCoreAsync(string message, string? characterName = null);
+        /// <param name="imageDataUrl">画像データURL（オプション）</param>
+        Task SendChatToCoreAsync(string message, string? characterName = null, string? imageDataUrl = null);
 
         /// <summary>
         /// 新しい会話セッションを開始

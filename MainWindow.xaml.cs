@@ -209,11 +209,14 @@ namespace CocoroDock
                 // APIサーバーが起動している場合のみ送信
                 if (_communicationService != null && _communicationService.IsServerRunning)
                 {
+                    // 添付画像を取得（あれば）
+                    string? imageDataUrl = ChatControlInstance.GetAndClearAttachedImage();
+                    
                     // ユーザーメッセージとしてチャットウィンドウに表示（送信前に表示）
                     ChatControlInstance.AddUserMessage(message);
 
-                    // CocoroCoreにメッセージを送信
-                    await _communicationService.SendChatToCoreAsync(message);
+                    // CocoroCoreにメッセージを送信（画像付きの場合は画像データも送信）
+                    await _communicationService.SendChatToCoreAsync(message, null, imageDataUrl);
                 }
                 else
                 {
