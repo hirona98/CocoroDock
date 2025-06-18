@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -87,10 +88,13 @@ namespace CocoroDock.Controls
 
             var messageContent = new StackPanel();
 
+            // 表情タグを削除してからテキストを設定
+            var cleanMessage = RemoveFaceTags(message);
+
             var messageText = new TextBox
             {
                 Style = (Style)Resources["AiMessageTextStyle"],
-                Text = message
+                Text = cleanMessage
             };
 
             messageContent.Children.Add(messageText);
@@ -101,6 +105,17 @@ namespace CocoroDock.Controls
 
             // 自動スクロール
             ChatScrollViewer.ScrollToEnd();
+        }
+
+        /// <summary>
+        /// 表情タグを削除
+        /// </summary>
+        /// <param name="message">元のメッセージ</param>
+        /// <returns>表情タグを削除したメッセージ</returns>
+        private string RemoveFaceTags(string message)
+        {
+            // [face:XXX] 形式のタグを削除（XXXは任意の文字列）
+            return Regex.Replace(message, @"\[face:[^\]]+\]", "").Trim();
         }
 
         /// <summary>
