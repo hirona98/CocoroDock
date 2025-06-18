@@ -135,7 +135,8 @@ namespace CocoroDock.Services
         /// </summary>
         /// <param name="message">送信メッセージ</param>
         /// <param name="characterName">キャラクター名（オプション）</param>
-        public async Task SendChatToCoreAsync(string message, string? characterName = null)
+        /// <param name="imageDataUrl">画像データURL（オプション）</param>
+        public async Task SendChatToCoreAsync(string message, string? characterName = null, string? imageDataUrl = null)
         {
             try
             {
@@ -148,6 +149,20 @@ namespace CocoroDock.Services
                     _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
                 }
 
+                // 画像データがある場合はfilesリストを作成
+                List<object>? files = null;
+                if (!string.IsNullOrEmpty(imageDataUrl))
+                {
+                    files = new List<object>
+                    {
+                        new Dictionary<string, string>
+                        {
+                            { "type", "image" },
+                            { "url", imageDataUrl }
+                        }
+                    };
+                }
+
                 // AIAvatarKit仕様のリクエストを作成
                 var request = new CoreChatRequest
                 {
@@ -157,7 +172,7 @@ namespace CocoroDock.Services
                     context_id = _currentContextId, // 前回の会話からのコンテキストを使用
                     text = message,
                     audio_data = null, // テキストのみ
-                    files = null,
+                    files = files,
                     system_prompt_params = null,
                     metadata = new Dictionary<string, object>
                     {

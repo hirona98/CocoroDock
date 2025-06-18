@@ -3,6 +3,11 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.IO;
+using System.Linq;
+using System.Collections.Specialized;
 
 namespace CocoroDock.Controls
 {
@@ -12,10 +17,17 @@ namespace CocoroDock.Controls
     public partial class ChatControl : UserControl
     {
         public event EventHandler<string>? MessageSent;
+        
+        // 添付画像データ（Base64形式のdata URL）
+        private string? _attachedImageDataUrl;
+        private BitmapSource? _attachedImageSource;
 
         public ChatControl()
         {
             InitializeComponent();
+            
+            // ペーストイベントハンドラを追加
+            DataObject.AddPastingHandler(MessageTextBox, OnPaste);
         }
 
         /// <summary>
@@ -32,7 +44,7 @@ namespace CocoroDock.Controls
         private void SendMessage()
         {
             string message = MessageTextBox.Text.Trim();
-            if (string.IsNullOrEmpty(message))
+            if (string.IsNullOrEmpty(message) && _attachedImageSource == null)
                 return;
 
             // メッセージ送信イベント発火（UIへの追加はMainWindowで行う）
@@ -46,7 +58,8 @@ namespace CocoroDock.Controls
         /// ユーザーメッセージをUIに追加
         /// </summary>
         /// <param name="message">メッセージ</param>
-        public void AddUserMessage(string message)
+        /// <param name="imageSource">画像（オプション）</param>
+        public void AddUserMessage(string message, BitmapSource? imageSource = null)
         {
             var messageContainer = new StackPanel();
 
@@ -57,13 +70,49 @@ namespace CocoroDock.Controls
 
             var messageContent = new StackPanel();
 
-            var messageText = new TextBox
+            // 画像がある場合は先に表示
+            if (imageSource != null)
             {
-                Style = (Style)Resources["UserMessageTextStyle"],
-                Text = message
-            };
+                var imageBorder = new Border
+                {
+                    BorderBrush = new SolidColorBrush(Colors.White),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(0),  // 角を丸くしない
+                    Margin = new Thickness(0, 0, 0, 5),
+                    Cursor = System.Windows.Input.Cursors.Hand
+                };
 
-            messageContent.Children.Add(messageText);
+                var image = new Image
+                {
+                    Source = imageSource,
+                    MaxHeight = 150,
+                    MaxWidth = 200,
+                    Stretch = Stretch.Uniform
+                };
+
+                imageBorder.Child = image;
+                
+                // クリックイベントで拡大表示
+                imageBorder.MouseLeftButtonUp += (s, e) =>
+                {
+                    var previewWindow = new Windows.ImagePreviewWindow(imageSource);
+                    previewWindow.Show();
+                };
+
+                messageContent.Children.Add(imageBorder);
+            }
+
+            // テキストメッセージ（空でない場合のみ）
+            if (!string.IsNullOrEmpty(message))
+            {
+                var messageText = new TextBox
+                {
+                    Style = (Style)Resources["UserMessageTextStyle"],
+                    Text = message
+                };
+                messageContent.Children.Add(messageText);
+            }
+
             bubble.Child = messageContent;
             messageContainer.Children.Add(bubble);
 
@@ -238,6 +287,32 @@ namespace CocoroDock.Controls
                     SendMessage();
                 }
             }
+            // Ctrl+Vの場合は画像ペーストを処理
+            else if (e.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            {
+                if (Clipboard.ContainsImage())
+                {
+                    var image = Clipboard.GetImage();
+                    if (image != null)
+                    {
+                        LoadImageFromBitmapSource(image);
+                        e.Handled = true;
+                    }
+                }
+                else if (Clipboard.ContainsFileDropList())
+                {
+                    var files = Clipboard.GetFileDropList();
+                    if (files.Count > 0)
+                    {
+                        string filePath = files[0];
+                        if (filePath != null)
+                        {
+                            LoadImageFromFile(filePath);
+                            e.Handled = true;
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -281,6 +356,232 @@ namespace CocoroDock.Controls
                 // 最大高さを超えないように制限
                 textBox.Height = Math.Min(newHeight, textBox.MaxHeight);
             }
+        }
+
+        /// <summary>
+        /// グリッド全体のドラッグエンターイベントハンドラ
+        /// </summary>
+        private void Grid_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent(DataFormats.Bitmap))
+            {
+                e.Effects = DragDropEffects.Copy;
+                e.Handled = true;
+            }
+            else
+            {
+                e.Effects = DragDropEffects.None;
+            }
+        }
+
+        /// <summary>
+        /// グリッド全体のドラッグオーバーイベントハンドラ
+        /// </summary>
+        private void Grid_DragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent(DataFormats.Bitmap))
+            {
+                e.Effects = DragDropEffects.Copy;
+                e.Handled = true;
+            }
+            else
+            {
+                e.Effects = DragDropEffects.None;
+            }
+        }
+
+        /// <summary>
+        /// グリッド全体のドラッグリーブイベントハンドラ
+        /// </summary>
+        private void Grid_DragLeave(object sender, DragEventArgs e)
+        {
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// グリッド全体のドロップイベントハンドラ
+        /// </summary>
+        private void Grid_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                if (files.Length > 0)
+                {
+                    string filePath = files[0];
+                    LoadImageFromFile(filePath);
+                }
+            }
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// TextBoxのPreviewDragEnterイベントハンドラ
+        /// </summary>
+        private void TextBox_PreviewDragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent(DataFormats.Bitmap))
+            {
+                e.Effects = DragDropEffects.Copy;
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// TextBoxのPreviewDragOverイベントハンドラ
+        /// </summary>
+        private void TextBox_PreviewDragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent(DataFormats.Bitmap))
+            {
+                e.Effects = DragDropEffects.Copy;
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// TextBoxのPreviewDropイベントハンドラ
+        /// </summary>
+        private void TextBox_PreviewDrop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                if (files.Length > 0)
+                {
+                    string filePath = files[0];
+                    LoadImageFromFile(filePath);
+                }
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// ペーストイベントハンドラ
+        /// </summary>
+        private void OnPaste(object sender, DataObjectPastingEventArgs e)
+        {
+            if (e.DataObject.GetDataPresent(DataFormats.Bitmap))
+            {
+                var image = e.DataObject.GetData(DataFormats.Bitmap) as BitmapSource;
+                if (image != null)
+                {
+                    LoadImageFromBitmapSource(image);
+                    e.CancelCommand();
+                }
+            }
+            else if (e.DataObject.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] files = (string[])e.DataObject.GetData(DataFormats.FileDrop);
+                if (files.Length > 0)
+                {
+                    string filePath = files[0];
+                    LoadImageFromFile(filePath);
+                    e.CancelCommand();
+                }
+            }
+        }
+
+        /// <summary>
+        /// ファイルから画像を読み込み
+        /// </summary>
+        private void LoadImageFromFile(string filePath)
+        {
+            try
+            {
+                // サポートされる画像形式を確認
+                string[] supportedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+                string extension = Path.GetExtension(filePath).ToLower();
+                
+                if (!supportedExtensions.Contains(extension))
+                {
+                    MessageBox.Show("サポートされていない画像形式です。", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var bitmap = new BitmapImage(new Uri(filePath));
+                LoadImageFromBitmapSource(bitmap);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"画像の読み込みに失敗しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// BitmapSourceから画像を読み込み
+        /// </summary>
+        private void LoadImageFromBitmapSource(BitmapSource bitmapSource)
+        {
+            try
+            {
+                // 画像をBase64エンコード
+                _attachedImageDataUrl = ConvertToDataUrl(bitmapSource);
+                _attachedImageSource = bitmapSource;
+                
+                // プレビューに表示
+                PreviewImage.Source = bitmapSource;
+                PreviewImage.Visibility = Visibility.Visible;
+                ImagePlaceholderText.Visibility = Visibility.Collapsed;
+                RemoveImageButton.Visibility = Visibility.Visible;
+                ImagePreviewBorder.Visibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"画像の処理に失敗しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// BitmapSourceをBase64形式のdata URLに変換
+        /// </summary>
+        private string ConvertToDataUrl(BitmapSource bitmapSource)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+                encoder.Save(memoryStream);
+                
+                byte[] imageBytes = memoryStream.ToArray();
+                string base64String = Convert.ToBase64String(imageBytes);
+                return $"data:image/png;base64,{base64String}";
+            }
+        }
+
+        /// <summary>
+        /// 画像削除ボタンクリックハンドラ
+        /// </summary>
+        private void RemoveImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            _attachedImageDataUrl = null;
+            _attachedImageSource = null;
+            PreviewImage.Source = null;
+            PreviewImage.Visibility = Visibility.Collapsed;
+            ImagePlaceholderText.Visibility = Visibility.Visible;
+            RemoveImageButton.Visibility = Visibility.Collapsed;
+            ImagePreviewBorder.Visibility = Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// 添付画像を取得してクリア
+        /// </summary>
+        public string? GetAndClearAttachedImage()
+        {
+            string? imageDataUrl = _attachedImageDataUrl;
+            if (_attachedImageDataUrl != null)
+            {
+                RemoveImageButton_Click(null!, null!);
+            }
+            return imageDataUrl;
+        }
+
+        /// <summary>
+        /// 添付画像のBitmapSourceを取得
+        /// </summary>
+        public BitmapSource? GetAttachedImageSource()
+        {
+            return _attachedImageSource;
         }
     }
 }
