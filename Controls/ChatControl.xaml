@@ -209,23 +209,42 @@
                                         BorderBrush="#CCCCCC"
                                         BorderThickness="1"
                                         CornerRadius="5">
-                                        <TextBox x:Name="MessageTextBox"
-                                                 Height="55"
-                                                 MinHeight="55"
-                                                 MaxHeight="180"
-                                                 Padding="5"
-                                                 FontSize="14"
-                                                 BorderThickness="0"
-                                                 Background="Transparent"
-                                                 VerticalContentAlignment="Top"
-                                                 PreviewKeyDown="MessageTextBox_KeyDown"
-                                                 TextWrapping="Wrap"
-                                                 MaxLength="1000"
-                                                 AcceptsReturn="True"
-                                                 AllowDrop="True"
-                                                 PreviewDragEnter="TextBox_PreviewDragEnter"
-                                                 PreviewDragOver="TextBox_PreviewDragOver"
-                                                 PreviewDrop="TextBox_PreviewDrop"/>
+                                        <Grid>
+                                                <TextBox x:Name="MessageTextBox"
+                                                         Height="55"
+                                                         MinHeight="55"
+                                                         MaxHeight="180"
+                                                         Padding="5"
+                                                         FontSize="14"
+                                                         BorderThickness="0"
+                                                         Background="Transparent"
+                                                         VerticalContentAlignment="Top"
+                                                         PreviewKeyDown="MessageTextBox_KeyDown"
+                                                         TextWrapping="Wrap"
+                                                         MaxLength="1000"
+                                                         AcceptsReturn="True"
+                                                         AllowDrop="True"
+                                                         PreviewDragEnter="TextBox_PreviewDragEnter"
+                                                         PreviewDragOver="TextBox_PreviewDragOver"
+                                                         PreviewDrop="TextBox_PreviewDrop"/>
+                                                <TextBlock x:Name="PlaceholderText"
+                                                           Text="テキストと画像の入力が可能です"
+                                                           FontSize="14"
+                                                           Foreground="#999999"
+                                                           Margin="5,5,0,0"
+                                                           IsHitTestVisible="False">
+                                                        <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding Text, ElementName=MessageTextBox}" Value="">
+                                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                                </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                </Style>
+                                                        </TextBlock.Style>
+                                                </TextBlock>
+                                        </Grid>
                                 </Border>
 
                                 <Button x:Name="SendButton"
