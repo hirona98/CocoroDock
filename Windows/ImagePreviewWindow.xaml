@@ -1,0 +1,79 @@
+<Window x:Class="CocoroDock.Windows.ImagePreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="画像プレビュー" 
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize"
+        MinHeight="300" MinWidth="400"
+        Height="600" Width="800">
+    
+    <Grid Background="#2B2B2B">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- 画像表示エリア -->
+        <ScrollViewer Grid.Row="0" 
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Auto"
+                      Background="#2B2B2B">
+            <Image x:Name="PreviewImage" 
+                   Stretch="None"
+                   Margin="10"/>
+        </ScrollViewer>
+        
+        <!-- コントロールバー -->
+        <Border Grid.Row="1" 
+                Background="#1E1E1E" 
+                BorderBrush="#444444" 
+                BorderThickness="0,1,0,0">
+            <Grid Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- ズームコントロール -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <TextBlock Text="ズーム: " 
+                               VerticalAlignment="Center" 
+                               Foreground="White"
+                               Margin="0,0,10,0"/>
+                    <Button x:Name="ZoomOutButton" 
+                            Content="-" 
+                            Width="30" Height="30"
+                            Click="ZoomOutButton_Click"
+                            Margin="0,0,5,0"/>
+                    <TextBlock x:Name="ZoomPercentageText" 
+                               Text="100%" 
+                               VerticalAlignment="Center" 
+                               Foreground="White"
+                               Width="50"
+                               TextAlignment="Center"
+                               Margin="0,0,5,0"/>
+                    <Button x:Name="ZoomInButton" 
+                            Content="+" 
+                            Width="30" Height="30"
+                            Click="ZoomInButton_Click"
+                            Margin="0,0,10,0"/>
+                    <Button x:Name="FitToWindowButton" 
+                            Content="ウィンドウに合わせる" 
+                            Height="30"
+                            Click="FitToWindowButton_Click"
+                            Padding="10,0"/>
+                </StackPanel>
+                
+                <!-- 閉じるボタン -->
+                <Button Grid.Column="2" 
+                        Content="閉じる" 
+                        Width="80" Height="30"
+                        Click="CloseButton_Click"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

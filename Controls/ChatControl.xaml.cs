@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.IO;
 using System.Linq;
+using System.Collections.Specialized;
 
 namespace CocoroDock.Controls
 {
@@ -19,6 +20,7 @@ namespace CocoroDock.Controls
         
         // 添付画像データ（Base64形式のdata URL）
         private string? _attachedImageDataUrl;
+        private BitmapSource? _attachedImageSource;
 
         public ChatControl()
         {
@@ -42,7 +44,7 @@ namespace CocoroDock.Controls
         private void SendMessage()
         {
             string message = MessageTextBox.Text.Trim();
-            if (string.IsNullOrEmpty(message))
+            if (string.IsNullOrEmpty(message) && _attachedImageSource == null)
                 return;
 
             // メッセージ送信イベント発火（UIへの追加はMainWindowで行う）
@@ -56,7 +58,8 @@ namespace CocoroDock.Controls
         /// ユーザーメッセージをUIに追加
         /// </summary>
         /// <param name="message">メッセージ</param>
-        public void AddUserMessage(string message)
+        /// <param name="imageSource">画像（オプション）</param>
+        public void AddUserMessage(string message, BitmapSource? imageSource = null)
         {
             var messageContainer = new StackPanel();
 
@@ -67,13 +70,49 @@ namespace CocoroDock.Controls
 
             var messageContent = new StackPanel();
 
-            var messageText = new TextBox
+            // 画像がある場合は先に表示
+            if (imageSource != null)
             {
-                Style = (Style)Resources["UserMessageTextStyle"],
-                Text = message
-            };
+                var imageBorder = new Border
+                {
+                    BorderBrush = new SolidColorBrush(Colors.White),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(0),  // 角を丸くしない
+                    Margin = new Thickness(0, 0, 0, 5),
+                    Cursor = System.Windows.Input.Cursors.Hand
+                };
 
-            messageContent.Children.Add(messageText);
+                var image = new Image
+                {
+                    Source = imageSource,
+                    MaxHeight = 150,
+                    MaxWidth = 200,
+                    Stretch = Stretch.Uniform
+                };
+
+                imageBorder.Child = image;
+                
+                // クリックイベントで拡大表示
+                imageBorder.MouseLeftButtonUp += (s, e) =>
+                {
+                    var previewWindow = new Windows.ImagePreviewWindow(imageSource);
+                    previewWindow.Show();
+                };
+
+                messageContent.Children.Add(imageBorder);
+            }
+
+            // テキストメッセージ（空でない場合のみ）
+            if (!string.IsNullOrEmpty(message))
+            {
+                var messageText = new TextBox
+                {
+                    Style = (Style)Resources["UserMessageTextStyle"],
+                    Text = message
+                };
+                messageContent.Children.Add(messageText);
+            }
+
             bubble.Child = messageContent;
             messageContainer.Children.Add(bubble);
 
@@ -246,6 +285,32 @@ namespace CocoroDock.Controls
                 {
                     e.Handled = true;
                     SendMessage();
+                }
+            }
+            // Ctrl+Vの場合は画像ペーストを処理
+            else if (e.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            {
+                if (Clipboard.ContainsImage())
+                {
+                    var image = Clipboard.GetImage();
+                    if (image != null)
+                    {
+                        LoadImageFromBitmapSource(image);
+                        e.Handled = true;
+                    }
+                }
+                else if (Clipboard.ContainsFileDropList())
+                {
+                    var files = Clipboard.GetFileDropList();
+                    if (files.Count > 0)
+                    {
+                        string filePath = files[0];
+                        if (filePath != null)
+                        {
+                            LoadImageFromFile(filePath);
+                            e.Handled = true;
+                        }
+                    }
                 }
             }
         }
@@ -452,6 +517,7 @@ namespace CocoroDock.Controls
             {
                 // 画像をBase64エンコード
                 _attachedImageDataUrl = ConvertToDataUrl(bitmapSource);
+                _attachedImageSource = bitmapSource;
                 
                 // プレビューに表示
                 PreviewImage.Source = bitmapSource;
@@ -489,6 +555,7 @@ namespace CocoroDock.Controls
         private void RemoveImageButton_Click(object sender, RoutedEventArgs e)
         {
             _attachedImageDataUrl = null;
+            _attachedImageSource = null;
             PreviewImage.Source = null;
             PreviewImage.Visibility = Visibility.Collapsed;
             ImagePlaceholderText.Visibility = Visibility.Visible;
@@ -507,6 +574,14 @@ namespace CocoroDock.Controls
                 RemoveImageButton_Click(null!, null!);
             }
             return imageDataUrl;
+        }
+
+        /// <summary>
+        /// 添付画像のBitmapSourceを取得
+        /// </summary>
+        public BitmapSource? GetAttachedImageSource()
+        {
+            return _attachedImageSource;
         }
     }
 }
