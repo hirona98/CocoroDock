@@ -123,43 +123,12 @@ namespace CocoroDock
 
                     // UI更新
                     UpdateConnectionStatus(true);
-
-                    // 設定をリロード
-                    await RequestConfigAsync();
                 }
             }
             catch (Exception ex)
             {
                 UpdateConnectionStatus(false, "サーバー起動エラー");
                 Debug.WriteLine($"APIサーバー起動エラー: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 設定をリロードして適用
-        /// </summary>
-        private async Task RequestConfigAsync()
-        {
-            try
-            {
-                // 設定読み込み状態をリセット
-                _appSettings.IsLoaded = false;
-
-                // 設定ファイルを読み込む
-                _appSettings.LoadAppSettings();
-
-                // 設定をUIに反映
-                ApplySettings();
-
-                // CocoroShellに設定変更を通知
-                if (_communicationService != null && _communicationService.IsServerRunning)
-                {
-                    await _communicationService.SendControlToShellAsync("reloadConfig");
-                }
-            }
-            catch (Exception ex)
-            {
-                UIHelper.ShowError("設定取得エラー", ex.Message);
             }
         }
 
@@ -183,14 +152,14 @@ namespace CocoroDock
                 // 既存のタイマーをキャンセル
                 _statusMessageTimer?.Dispose();
                 _statusMessageTimer = null;
-                
+
                 if (isConnected)
                 {
                     if (!string.IsNullOrEmpty(customMessage))
                     {
                         // カスタムメッセージがある場合は表示し、3秒後に通常状態に戻す
                         ConnectionStatusText.Text = $"状態: {customMessage}";
-                        
+
                         _statusMessageTimer = new Timer(_ =>
                         {
                             UIHelper.RunOnUIThread(() =>
@@ -321,18 +290,6 @@ namespace CocoroDock
                         Application.Current.Shutdown();
                         break;
 
-                    case "restart":
-                        // 再起動処理
-                        Debug.WriteLine($"再起動要求を受信しました: {request.reason}");
-                        // TODO: 再起動処理の実装
-                        break;
-
-                    case "reloadConfig":
-                        // 設定の再読み込み
-                        Debug.WriteLine("設定再読み込み要求を受信しました");
-                        await RequestConfigAsync();
-                        break;
-
                     default:
                         Debug.WriteLine($"未知の制御コマンド: {request.command}");
                         break;
@@ -366,7 +323,7 @@ namespace CocoroDock
                 // タイマーのクリーンアップ
                 _statusMessageTimer?.Dispose();
                 _statusMessageTimer = null;
-                
+
                 // 接続中ならリソース解放
                 if (_communicationService != null)
                 {
