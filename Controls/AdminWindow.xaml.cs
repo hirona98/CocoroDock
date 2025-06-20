@@ -1339,7 +1339,6 @@ namespace CocoroDock.Controls
             }
 
             // ウィンドウを閉じる
-            DialogResult = true;
             Close();
         }
 
@@ -1364,7 +1363,6 @@ namespace CocoroDock.Controls
             RestoreOriginalSettings();
 
             // ウィンドウを閉じる
-            DialogResult = false;
             Close();
         }
 
