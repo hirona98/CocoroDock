@@ -35,8 +35,10 @@ namespace CocoroDock.Communication
         public string embeddedApiKey { get; set; } = string.Empty; // 埋め込みモデル用APIキー
         public string embeddedModel { get; set; } = "openai/text-embedding-3-small"; // 埋め込みモデル名
         public bool isUseSTT { get; set; } = false; // STT（音声認識）機能の有効/無効
+        public string sttEngine { get; set; } = "amivoice"; // STTエンジン ("amivoice" | "openai")
         public string sttWakeWord { get; set; } = string.Empty; // STT起動ワード
         public string sttApiKey { get; set; } = string.Empty; // STT用APIキー
+        public string sttLanguage { get; set; } = "ja"; // STT言語設定
         public bool isConvertMToon { get; set; } = false; // UnlitをMToonに変換するかどうか
         public bool isEnableShadowOff { get; set; } = true; // 影オフ機能の有効/無効（デフォルト: true）
         public string shadowOffMesh { get; set; } = "Face, U_Char_1"; // 影を落とさないメッシュ名

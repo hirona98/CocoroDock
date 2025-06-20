@@ -390,7 +390,8 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0"
                                                    Text="メッシュ名:"
-                                                   VerticalAlignment="Center" Margin="20,0,0,0"/>
+                                                   VerticalAlignment="Center"
+                                                   Margin="20,0,0,0"/>
                                         <TextBox Grid.Column="1"
                                                  x:Name="ShadowOffMeshTextBox"
                                                  Margin="0,5"
@@ -404,7 +405,7 @@
                                     </TextBlock>
                                 </StackPanel>
                             </GroupBox>
-                            
+
                             <!-- LLMパラメータ -->
                             <GroupBox Header="LLM"
                                       Margin="0,0,20,20"
@@ -634,9 +635,29 @@
                                 <StackPanel>
                                     <Grid Margin="0,5">
                                         <CheckBox x:Name="IsUseSTTCheckBox"
-                                                  Content="STTを使用する (OpenAI Only)"
+                                                  Content="STTを使用する"
                                                   Foreground="#FF4873CF"
                                                   ToolTip="Use STT"/>
+                                    </Grid>
+
+                                    <!-- STTエンジンの設定 -->
+                                    <Grid Margin="0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="エンジン:"
+                                                   VerticalAlignment="Center"/>
+                                        <ComboBox Grid.Column="1"
+                                                  x:Name="STTEngineComboBox"
+                                                  Margin="0,5"
+                                                  Foreground="#FF4873CF">
+                                            <ComboBoxItem Content="AmiVoice"
+                                                          Tag="amivoice"/>
+                                            <ComboBoxItem Content="Whisper(OpenAI)"
+                                                          Tag="openai"/>
+                                        </ComboBox>
                                     </Grid>
 
                                     <!-- STT起動ワードの設定 -->
@@ -702,7 +723,7 @@
                                         <ColumnDefinition Width="80"/>
                                         <ColumnDefinition Width="80"/>
                                     </Grid.ColumnDefinitions>
-                                    
+
                                     <ComboBox Grid.Column="0"
                                               x:Name="AnimationSetComboBox"
                                               Margin="0,5,10,5"
@@ -710,7 +731,7 @@
                                               IsEditable="True"
                                               DisplayMemberPath="animeSetName"
                                               SelectedValuePath="animeSetName"/>
-                                    
+
                                     <Button Grid.Column="1"
                                             x:Name="AddAnimationSetButton"
                                             Content="追加"
@@ -718,7 +739,7 @@
                                             Padding="10,5"
                                             Foreground="#FF4873CF"
                                             Click="AddAnimationSetButton_Click"/>
-                                            
+
                                     <Button Grid.Column="2"
                                             x:Name="DeleteAnimationSetButton"
                                             Content="削除"
@@ -740,12 +761,12 @@
                                             <ColumnDefinition Width="150"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        
+
                                         <TextBlock Grid.Column="0"
                                                    Text="立ち姿勢:"
                                                    VerticalAlignment="Center"
                                                    Margin="0,0,10,0"/>
-                                                   
+
                                         <TextBox Grid.Column="1"
                                                  x:Name="PostureChangeLoopCountStandingTextBox"
                                                  VerticalAlignment="Center"
@@ -753,18 +774,18 @@
                                                  TextChanged="PostureChangeLoopCountStandingTextBox_TextChanged"
                                                  ToolTip="立ち姿勢の変更ループ回数を設定します"/>
                                     </Grid>
-                                    
+
                                     <Grid Margin="0,5">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="150"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        
+
                                         <TextBlock Grid.Column="0"
                                                    Text="座り姿勢:"
                                                    VerticalAlignment="Center"
                                                    Margin="0,0,10,0"/>
-                                                   
+
                                         <TextBox Grid.Column="1"
                                                  x:Name="PostureChangeLoopCountSittingFloorTextBox"
                                                  VerticalAlignment="Center"
@@ -809,12 +830,12 @@
                                               ToolTip="Enable notification API"/>
                                     <!-- API説明 -->
                                     <TextBox x:Name="ApiDescriptionTextBox"
-                                                IsReadOnly="True"
-                                                BorderThickness="0"
-                                                VerticalScrollBarVisibility="Auto"
-                                                Foreground="#FF4873CF"
-                                                TextWrapping="Wrap"
-                                                AcceptsReturn="True" />
+                                             IsReadOnly="True"
+                                             BorderThickness="0"
+                                             VerticalScrollBarVisibility="Auto"
+                                             Foreground="#FF4873CF"
+                                             TextWrapping="Wrap"
+                                             AcceptsReturn="True"/>
                                 </StackPanel>
                             </GroupBox>
                         </StackPanel>

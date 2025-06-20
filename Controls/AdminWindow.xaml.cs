@@ -386,8 +386,10 @@ namespace CocoroDock.Controls
                     { "EmbeddedApiKey", character.embeddedApiKey ?? "" },
                     { "EmbeddedModel", character.embeddedModel ?? "" },
                     { "IsUseSTT", character.isUseSTT.ToString() },
+                    { "STTEngine", character.sttEngine ?? "amivoice" },
                     { "STTWakeWord", character.sttWakeWord ?? "" },
                     { "STTApiKey", character.sttApiKey ?? "" },
+                    { "STTLanguage", character.sttLanguage ?? "ja" },
                     { "IsEnableShadowOff", character.isEnableShadowOff.ToString() },
                     { "ShadowOffMesh", character.shadowOffMesh ?? "Face, U_Char_1" },
                     { "IsConvertMToon", character.isConvertMToon.ToString() }
@@ -818,6 +820,22 @@ namespace CocoroDock.Controls
                 STTWakeWordTextBox.Text = _characterSettings[index].ContainsKey("STTWakeWord") ? _characterSettings[index]["STTWakeWord"] : "";
                 STTApiKeyPasswordBox.Password = _characterSettings[index].ContainsKey("STTApiKey") ? _characterSettings[index]["STTApiKey"] : "";
 
+                // STTエンジンの設定を更新
+                string sttEngine = "amivoice"; // デフォルト
+                if (_characterSettings[index].ContainsKey("STTEngine"))
+                {
+                    sttEngine = _characterSettings[index]["STTEngine"];
+                }
+                // ComboBoxの選択を更新
+                foreach (ComboBoxItem item in STTEngineComboBox.Items)
+                {
+                    if ((string)item.Tag == sttEngine)
+                    {
+                        STTEngineComboBox.SelectedItem = item;
+                        break;
+                    }
+                }
+
                 // IsUseLLMチェックボックスの状態を更新
                 bool isUseLLM = false;
                 if (_characterSettings[index].ContainsKey("IsUseLLM"))
@@ -939,6 +957,7 @@ namespace CocoroDock.Controls
                 { "EmbeddedApiKey", "" },
                 { "EmbeddedModel", "" },
                 { "IsUseSTT", "false" },
+                { "STTEngine", "amivoice" },
                 { "STTWakeWord", "" },
                 { "STTApiKey", "" },
                 { "IsEnableShadowOff", "true" },
@@ -1006,6 +1025,7 @@ namespace CocoroDock.Controls
                 var embeddedApiKey = EmbeddedApiKeyPasswordBox.Password;
                 var embeddedModel = EmbeddedModelTextBox.Text;
                 var isUseSTT = IsUseSTTCheckBox.IsChecked ?? false;
+                var sttEngine = (STTEngineComboBox.SelectedItem as ComboBoxItem)?.Tag as string ?? "amivoice";
                 var sttWakeWord = STTWakeWordTextBox.Text;
                 var sttApiKey = STTApiKeyPasswordBox.Password;
                 var isEnableShadowOff = EnableShadowOffCheckBox.IsChecked ?? true;
@@ -1090,6 +1110,8 @@ namespace CocoroDock.Controls
                 {
                     isUseSTTChanged = isUseSTT; // デフォルトはfalseとして扱う
                 }
+                bool sttEngineChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("STTEngine") ||
+                                     _characterSettings[_currentCharacterIndex]["STTEngine"] != sttEngine;
                 bool sttWakeWordChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("STTWakeWord") ||
                                      _characterSettings[_currentCharacterIndex]["STTWakeWord"] != sttWakeWord;
                 bool sttApiKeyChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("STTApiKey") ||
@@ -1127,7 +1149,7 @@ namespace CocoroDock.Controls
                     _characterSettings[_currentCharacterIndex]["SystemPrompt"] != systemPrompt ||
                     isUseLLMChanged || isUseTTSChanged || vrmFilePathChanged || apiKeyChanged || llmModelChanged ||
                     ttsEndpointURLChanged || ttsSperkerIDChanged || userIdChanged || isEnableMemoryChanged ||
-                    embeddedApiKeyChanged || embeddedModelChanged || isUseSTTChanged || sttWakeWordChanged || sttApiKeyChanged ||
+                    embeddedApiKeyChanged || embeddedModelChanged || isUseSTTChanged || sttEngineChanged || sttWakeWordChanged || sttApiKeyChanged ||
                     isEnableShadowOffChanged || shadowOffMeshChanged || isConvertMToonChanged)
                 {
                     _characterSettings[_currentCharacterIndex]["Name"] = name;
@@ -1144,6 +1166,7 @@ namespace CocoroDock.Controls
                     _characterSettings[_currentCharacterIndex]["EmbeddedApiKey"] = embeddedApiKey;
                     _characterSettings[_currentCharacterIndex]["EmbeddedModel"] = embeddedModel;
                     _characterSettings[_currentCharacterIndex]["IsUseSTT"] = isUseSTT.ToString();
+                    _characterSettings[_currentCharacterIndex]["STTEngine"] = sttEngine;
                     _characterSettings[_currentCharacterIndex]["STTWakeWord"] = sttWakeWord;
                     _characterSettings[_currentCharacterIndex]["STTApiKey"] = sttApiKey;
                     _characterSettings[_currentCharacterIndex]["IsEnableShadowOff"] = isEnableShadowOff.ToString();
@@ -1667,6 +1690,16 @@ namespace CocoroDock.Controls
                 }
                 newCharacter.isUseSTT = isUseSTT;
 
+                // STTEngineの設定を更新
+                if (character.ContainsKey("STTEngine"))
+                {
+                    newCharacter.sttEngine = character["STTEngine"];
+                }
+                else
+                {
+                    newCharacter.sttEngine = "amivoice"; // デフォルト値
+                }
+
                 // STTWakeWordの設定を更新
                 if (character.ContainsKey("STTWakeWord"))
                 {
@@ -1677,6 +1710,20 @@ namespace CocoroDock.Controls
                 if (character.ContainsKey("STTApiKey"))
                 {
                     newCharacter.sttApiKey = character["STTApiKey"];
+                }
+
+                // STTLanguageの設定を更新（GUIでは設定しないが、保存時は既存の値を保持）
+                if (character.ContainsKey("STTLanguage"))
+                {
+                    newCharacter.sttLanguage = character["STTLanguage"];
+                }
+                else if (existingCharacter != null)
+                {
+                    newCharacter.sttLanguage = existingCharacter.sttLanguage;
+                }
+                else
+                {
+                    newCharacter.sttLanguage = "ja"; // デフォルト値
                 }
 
                 // Shadow設定を更新

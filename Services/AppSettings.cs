@@ -181,8 +181,10 @@ namespace CocoroDock.Services
                     embeddedApiKey = "",
                     embeddedModel = "openai/text-embedding-3-small",
                     isUseSTT = false,
+                    sttEngine = "amivoice",
                     sttWakeWord = "",
                     sttApiKey = "",
+                    sttLanguage = "ja",
                     isConvertMToon = false,
                     isEnableShadowOff = true,
                     shadowOffMesh = "Face, U_Char_1"
@@ -528,8 +530,10 @@ namespace CocoroDock.Services
                         embeddedApiKey = "",
                         embeddedModel = "",
                         isUseSTT = false,
+                        sttEngine = "amivoice",
                         sttWakeWord = "",
                         sttApiKey = "",
+                        sttLanguage = "ja",
                         isConvertMToon = false,
                         isEnableShadowOff = true,
                         shadowOffMesh = "Face, U_Char_1"

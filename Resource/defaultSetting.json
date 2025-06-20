@@ -36,8 +36,10 @@
       "embeddedApiKey": "",
       "embeddedModel": "ollama/nomic-embed-text",
       "isUseSTT": false,
+      "sttEngine": "amivoice",
       "sttWakeWord": "つくよみちゃん",
       "sttApiKey": "",
+      "sttLanguage": "ja",
       "isConvertMToon": false,
       "isEnableShadowOff": true,
       "shadowOffMesh": "Face, U_Char_1"
@@ -58,8 +60,10 @@
       "embeddedApiKey": "",
       "embeddedModel": "openai/text-embedding-3-small",
       "isUseSTT": false,
+      "sttEngine": "amivoice",
       "sttWakeWord": "こんにちは",
       "sttApiKey": "",
+      "sttLanguage": "ja",
       "isConvertMToon": false,
       "isEnableShadowOff": true,
       "shadowOffMesh": "Face, U_Char_1"
