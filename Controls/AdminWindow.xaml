@@ -407,7 +407,7 @@
                             </GroupBox>
 
                             <!-- LLMパラメータ -->
-                            <GroupBox Header="LLM"
+                            <GroupBox Header="言語生成AI"
                                       Margin="0,0,20,20"
                                       Padding="10">
                                 <StackPanel Margin="1,0,0,0">
@@ -491,7 +491,7 @@
                             </GroupBox>
 
                             <!-- 記憶機能 -->
-                            <GroupBox Header="Memory"
+                            <GroupBox Header="長期記憶"
                                       Margin="0,0,20,20"
                                       Padding="10">
                                 <StackPanel Margin="1,0,0,0">
@@ -578,7 +578,7 @@
                             </GroupBox>
 
                             <!-- TTSパラメータ -->
-                            <GroupBox Header="TTS (VOICEVOX/SHAREVOX/AivisSpeech)"
+                            <GroupBox Header="音声合成 (VOICEVOX/SHAREVOX/AivisSpeech)"
                                       Margin="0,0,20,20"
                                       Padding="10">
                                 <StackPanel>
@@ -631,7 +631,7 @@
                             </GroupBox>
 
                             <!-- STTパラメータ -->
-                            <GroupBox Header="STT (Speech-to-Text)"
+                            <GroupBox Header="音声認識 (AmiVoice/Whisper)"
                                       Margin="0,0,20,20"
                                       Padding="10">
                                 <StackPanel>
