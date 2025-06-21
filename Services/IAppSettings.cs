@@ -109,6 +109,11 @@ namespace CocoroDock.Services
         int CurrentCharacterIndex { get; set; }
 
         /// <summary>
+        /// スクリーンショット設定
+        /// </summary>
+        ScreenshotSettings ScreenshotSettings { get; set; }
+
+        /// <summary>
         /// キャラクターリスト
         /// </summary>
         List<CharacterSettings> CharacterList { get; set; }

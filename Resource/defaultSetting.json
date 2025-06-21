@@ -642,5 +642,11 @@
         }
       ]
     }
-  ]
+  ],
+  "screenshotSettings": {
+    "enabled": false,
+    "intervalMinutes": 10,
+    "captureActiveWindowOnly": true,
+    "includeContextAnalysis": true
+  }
 }

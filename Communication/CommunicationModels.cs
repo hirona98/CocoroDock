@@ -45,6 +45,17 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
+    /// スクリーンショット設定クラス
+    /// </summary>
+    public class ScreenshotSettings
+    {
+        public bool enabled { get; set; } = false;
+        public int intervalMinutes { get; set; } = 10;
+        public bool captureActiveWindowOnly { get; set; } = true;
+        public bool includeContextAnalysis { get; set; } = true;
+    }
+
+    /// <summary>
     /// アプリケーション設定クラス
     /// </summary>
     public class ConfigSettings
@@ -71,6 +82,7 @@ namespace CocoroDock.Communication
         public int currentAnimationSettingIndex { get; set; } = 0;
         public List<CharacterSettings> characterList { get; set; } = new List<CharacterSettings>();
         public List<AnimationSetting> animationSettings { get; set; } = new List<AnimationSetting>();
+        public ScreenshotSettings screenshotSettings { get; set; } = new ScreenshotSettings();
     }
 
 

@@ -284,6 +284,12 @@ namespace CocoroDock.Controls
             AutoMoveCheckBox.IsChecked = appSettings.IsAutoMove;
             AmbientOcclusionCheckBox.IsChecked = appSettings.IsEnableAmbientOcclusion;
             IsEnableNotificationApiCheckBox.IsChecked = appSettings.IsEnableNotificationApi;
+            
+            // スクリーンショット設定の初期化
+            ScreenshotEnabledCheckBox.IsChecked = appSettings.ScreenshotSettings.enabled;
+            ScreenshotIntervalTextBox.Text = appSettings.ScreenshotSettings.intervalMinutes.ToString();
+            CaptureActiveWindowOnlyCheckBox.IsChecked = appSettings.ScreenshotSettings.captureActiveWindowOnly;
+            IncludeContextAnalysisCheckBox.IsChecked = appSettings.ScreenshotSettings.includeContextAnalysis;
             foreach (ComboBoxItem item in MSAAComboBox.Items)
             {
                 if (item.Tag != null &&
@@ -351,7 +357,11 @@ namespace CocoroDock.Controls
                 { "BackgroundShadow", appSettings.BackgroundShadow },
                 { "BackgroundShadowResolution", appSettings.BackgroundShadowResolution },
                 { "WindowSize", appSettings.WindowSize },
-                { "IsEnableNotificationApi", appSettings.IsEnableNotificationApi }
+                { "IsEnableNotificationApi", appSettings.IsEnableNotificationApi },
+                { "ScreenshotEnabled", appSettings.ScreenshotSettings.enabled },
+                { "ScreenshotInterval", appSettings.ScreenshotSettings.intervalMinutes },
+                { "CaptureActiveWindowOnly", appSettings.ScreenshotSettings.captureActiveWindowOnly },
+                { "IncludeContextAnalysis", appSettings.ScreenshotSettings.includeContextAnalysis }
             };
         }
 
@@ -1562,6 +1572,12 @@ namespace CocoroDock.Controls
 
             _displaySettings["WindowSize"] = WindowSizeSlider.Value;
             _displaySettings["IsEnableNotificationApi"] = IsEnableNotificationApiCheckBox.IsChecked ?? false;
+            
+            // スクリーンショット設定を保存
+            _displaySettings["ScreenshotEnabled"] = ScreenshotEnabledCheckBox.IsChecked ?? false;
+            _displaySettings["ScreenshotInterval"] = int.TryParse(ScreenshotIntervalTextBox.Text, out int interval) ? interval : 10;
+            _displaySettings["CaptureActiveWindowOnly"] = CaptureActiveWindowOnlyCheckBox.IsChecked ?? true;
+            _displaySettings["IncludeContextAnalysis"] = IncludeContextAnalysisCheckBox.IsChecked ?? true;
         }
 
         /// <summary>
@@ -1585,6 +1601,12 @@ namespace CocoroDock.Controls
             appSettings.BackgroundShadowResolution = (int)_displaySettings["BackgroundShadowResolution"];
             appSettings.WindowSize = (double)_displaySettings["WindowSize"] > 0 ? (int)(double)_displaySettings["WindowSize"] : 650;
             appSettings.IsEnableNotificationApi = (bool)_displaySettings["IsEnableNotificationApi"];
+            
+            // スクリーンショット設定の更新
+            appSettings.ScreenshotSettings.enabled = (bool)_displaySettings["ScreenshotEnabled"];
+            appSettings.ScreenshotSettings.intervalMinutes = (int)_displaySettings["ScreenshotInterval"];
+            appSettings.ScreenshotSettings.captureActiveWindowOnly = (bool)_displaySettings["CaptureActiveWindowOnly"];
+            appSettings.ScreenshotSettings.includeContextAnalysis = (bool)_displaySettings["IncludeContextAnalysis"];
 
             // キャラクター設定の更新
             appSettings.CurrentCharacterIndex = _currentCharacterIndex;
