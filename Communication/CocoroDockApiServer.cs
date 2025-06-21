@@ -24,6 +24,7 @@ namespace CocoroDock.Communication
         // イベント
         public event EventHandler<ChatRequest>? ChatMessageReceived;
         public event EventHandler<ControlRequest>? ControlCommandReceived;
+        public event EventHandler<StatusUpdateRequest>? StatusUpdateReceived;
 
         public bool IsRunning => _host != null;
 
@@ -312,6 +313,65 @@ namespace CocoroDock.Communication
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"制御コマンド処理エラー: {ex.Message}");
+                    context.Response.StatusCode = 500;
+                    await context.Response.WriteAsJsonAsync(new ErrorResponse
+                    {
+                        message = "Internal server error",
+                        errorCode = "INTERNAL_ERROR"
+                    });
+                }
+            });
+
+            // POST /api/status - ステータス更新
+            app.MapPost("/api/status", async (HttpContext context) =>
+            {
+                try
+                {
+                    var request = await context.Request.ReadFromJsonAsync<StatusUpdateRequest>();
+                    if (request == null)
+                    {
+                        context.Response.StatusCode = 400;
+                        await context.Response.WriteAsJsonAsync(new ErrorResponse
+                        {
+                            message = "Request body is required",
+                            errorCode = "INVALID_REQUEST"
+                        });
+                        return;
+                    }
+
+                    // ステータスメッセージの検証
+                    if (string.IsNullOrWhiteSpace(request.message))
+                    {
+                        context.Response.StatusCode = 400;
+                        await context.Response.WriteAsJsonAsync(new ErrorResponse
+                        {
+                            message = "Field 'message' is required and cannot be empty",
+                            errorCode = "VALIDATION_ERROR"
+                        });
+                        return;
+                    }
+
+                    // イベント発火
+                    StatusUpdateReceived?.Invoke(this, request);
+
+                    await context.Response.WriteAsJsonAsync(new StandardResponse
+                    {
+                        status = "success",
+                        message = "Status updated"
+                    });
+                }
+                catch (System.Text.Json.JsonException)
+                {
+                    context.Response.StatusCode = 400;
+                    await context.Response.WriteAsJsonAsync(new ErrorResponse
+                    {
+                        message = "Invalid JSON format",
+                        errorCode = "JSON_ERROR"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"ステータス更新処理エラー: {ex.Message}");
                     context.Response.StatusCode = 500;
                     await context.Response.WriteAsJsonAsync(new ErrorResponse
                     {

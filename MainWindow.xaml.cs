@@ -3,7 +3,9 @@ using CocoroDock.Controls;
 using CocoroDock.Services;
 using CocoroDock.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,6 +21,20 @@ namespace CocoroDock
         private ICommunicationService? _communicationService;
         private readonly IAppSettings _appSettings;
         private Timer? _statusMessageTimer;
+        private readonly List<StatusMessage> _statusMessages = new List<StatusMessage>();
+        private readonly object _statusLock = new object();
+        private const int MaxStatusMessages = 5; // 最大表示メッセージ数
+
+        private class StatusMessage
+        {
+            public string Message { get; set; }
+            public Timer Timer { get; set; }
+
+            public StatusMessage(string message)
+            {
+                Message = message;
+            }
+        }
 
         public MainWindow()
         {
@@ -149,38 +165,126 @@ namespace CocoroDock
             // UIスレッドで実行
             UIHelper.RunOnUIThread(() =>
             {
-                // 既存のタイマーをキャンセル
-                _statusMessageTimer?.Dispose();
-                _statusMessageTimer = null;
-
-                if (isConnected)
+                if (!string.IsNullOrEmpty(customMessage))
                 {
-                    if (!string.IsNullOrEmpty(customMessage))
+                    // カスタムメッセージがある場合は履歴に追加
+                    AddStatusMessage(customMessage);
+                }
+                else if (isConnected)
+                {
+                    // 接続状態で特定のメッセージがない場合
+                    lock (_statusLock)
                     {
-                        // カスタムメッセージがある場合は表示し、3秒後に通常状態に戻す
-                        ConnectionStatusText.Text = $"状態: {customMessage}";
-
-                        _statusMessageTimer = new Timer(_ =>
+                        // すべてのタイマーを破棄
+                        foreach (var msg in _statusMessages)
                         {
-                            UIHelper.RunOnUIThread(() =>
-                            {
-                                ConnectionStatusText.Text = "状態: 正常動作中";
-                            });
-                            _statusMessageTimer?.Dispose();
-                            _statusMessageTimer = null;
-                        }, null, 3000, Timeout.Infinite);
-                    }
-                    else
-                    {
+                            msg.Timer?.Dispose();
+                        }
+                        _statusMessages.Clear();
                         ConnectionStatusText.Text = "状態: 正常動作中";
                     }
                 }
                 else
                 {
-                    string statusText = customMessage ?? "停止中";
-                    ConnectionStatusText.Text = $"状態: {statusText}";
+                    // 切断状態
+                    string statusText = "停止中";
+                    lock (_statusLock)
+                    {
+                        // すべてのタイマーを破棄
+                        foreach (var msg in _statusMessages)
+                        {
+                            msg.Timer?.Dispose();
+                        }
+                        _statusMessages.Clear();
+                        ConnectionStatusText.Text = $"状態: {statusText}";
+                    }
                 }
             });
+        }
+
+        /// <summary>
+        /// ステータスメッセージを履歴に追加して表示
+        /// </summary>
+        private void AddStatusMessage(string message)
+        {
+            lock (_statusLock)
+            {
+                // 既存の同じメッセージを探す
+                var existingMessage = _statusMessages.FirstOrDefault(m => m.Message == message);
+
+                if (existingMessage != null)
+                {
+                    // 既存のメッセージがある場合はタイマーをリセット
+                    existingMessage.Timer?.Dispose();
+                    existingMessage.Timer = CreateMessageTimer(message);
+                }
+                else
+                {
+                    // 新しいメッセージを追加
+                    var newMessage = new StatusMessage(message);
+                    newMessage.Timer = CreateMessageTimer(message);
+                    _statusMessages.Add(newMessage);
+
+                    // 最大数を超えたら古いメッセージを削除
+                    while (_statusMessages.Count > MaxStatusMessages)
+                    {
+                        var oldestMessage = _statusMessages[0];
+                        oldestMessage.Timer?.Dispose();
+                        _statusMessages.RemoveAt(0);
+                    }
+                }
+
+                // 表示を更新
+                UpdateStatusDisplay();
+            }
+        }
+
+        /// <summary>
+        /// メッセージ用のタイマーを作成
+        /// </summary>
+        private Timer CreateMessageTimer(string message)
+        {
+            return new Timer(_ =>
+            {
+                UIHelper.RunOnUIThread(() =>
+                {
+                    RemoveStatusMessage(message);
+                });
+            }, null, 3000, Timeout.Infinite); // 3秒後に削除
+        }
+
+        /// <summary>
+        /// 特定のステータスメッセージを削除
+        /// </summary>
+        private void RemoveStatusMessage(string message)
+        {
+            lock (_statusLock)
+            {
+                var messageToRemove = _statusMessages.FirstOrDefault(m => m.Message == message);
+                if (messageToRemove != null)
+                {
+                    messageToRemove.Timer?.Dispose();
+                    _statusMessages.Remove(messageToRemove);
+                    UpdateStatusDisplay();
+                }
+            }
+        }
+
+        /// <summary>
+        /// ステータス表示を更新
+        /// </summary>
+        private void UpdateStatusDisplay()
+        {
+            if (_statusMessages.Count == 0)
+            {
+                ConnectionStatusText.Text = "状態: 正常動作中";
+            }
+            else
+            {
+                // 最新のメッセージを左に、古いメッセージを右に表示
+                var messages = _statusMessages.Select(m => m.Message).Reverse().ToArray();
+                ConnectionStatusText.Text = $"状態: {string.Join(" | ", messages)}";
+            }
         }
 
         /// <summary>
@@ -212,7 +316,7 @@ namespace CocoroDock
                     // 添付画像を取得（あれば）
                     var imageSource = ChatControlInstance.GetAttachedImageSource();
                     string? imageDataUrl = ChatControlInstance.GetAndClearAttachedImage();
-                    
+
                     // ユーザーメッセージとしてチャットウィンドウに表示（送信前に表示）
                     ChatControlInstance.AddUserMessage(message, imageSource);
 
@@ -327,6 +431,16 @@ namespace CocoroDock
                 // タイマーのクリーンアップ
                 _statusMessageTimer?.Dispose();
                 _statusMessageTimer = null;
+
+                // すべてのステータスメッセージタイマーを破棄
+                lock (_statusLock)
+                {
+                    foreach (var msg in _statusMessages)
+                    {
+                        msg.Timer?.Dispose();
+                    }
+                    _statusMessages.Clear();
+                }
 
                 // 接続中ならリソース解放
                 if (_communicationService != null)

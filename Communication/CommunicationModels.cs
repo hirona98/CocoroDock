@@ -207,5 +207,15 @@ namespace CocoroDock.Communication
         public Dictionary<string, object>? metadata { get; set; } // メタデータ
     }
 
+    /// <summary>
+    /// CocoroDock API: ステータス更新リクエスト
+    /// </summary>
+    public class StatusUpdateRequest
+    {
+        public string message { get; set; } = string.Empty; // ステータスメッセージ
+        public string? type { get; set; } // ステータスタイプ（"api_start", "api_end"など）
+        public DateTime timestamp { get; set; } = DateTime.UtcNow;
+    }
+
     #endregion
 }

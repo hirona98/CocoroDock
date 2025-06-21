@@ -41,6 +41,11 @@ namespace CocoroDock.Services
             _apiServer = new CocoroDockApiServer(_appSettings.CocoroDockPort, _appSettings);
             _apiServer.ChatMessageReceived += (sender, request) => ChatMessageReceived?.Invoke(this, request);
             _apiServer.ControlCommandReceived += (sender, request) => ControlCommandReceived?.Invoke(this, request);
+            _apiServer.StatusUpdateReceived += (sender, request) => 
+            {
+                // ステータス更新イベントを発火
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, request.message));
+            };
 
             // CocoroShellクライアントの初期化
             _shellClient = new CocoroShellClient(_appSettings.CocoroShellPort);
