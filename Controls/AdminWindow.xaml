@@ -811,7 +811,7 @@
             <TabItem Header="System"
                      Style="{StaticResource AdminTabItemStyle}"
                      ToolTip="System setting">
-                <Grid Margin="20,20,20,20">
+                <Grid Margin="20,20,0,20">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
@@ -821,13 +821,13 @@
                         <StackPanel>
                             <!-- 通知API設定 -->
                             <GroupBox Header="通知API"
-                                      Margin="0,0,0,20"
+                                      Margin="0,0,20,20"
                                       Padding="10">
                                 <StackPanel>
                                     <!-- 通知要求を受けるチェックボックス -->
                                     <CheckBox x:Name="IsEnableNotificationApiCheckBox"
                                               Content="通知要求を受ける"
-                                              Margin="0,5,0,10"
+                                              Margin="0,5,0,5"
                                               Foreground="#FF4873CF"
                                               ToolTip="Enable notification API"/>
                                     <!-- API説明 -->
@@ -848,7 +848,7 @@
 
                             <!-- デスクトップウォッチ設定 -->
                             <GroupBox Header="デスクトップウォッチ"
-                                      Margin="0,0,0,20"
+                                      Margin="0,0,20,20"
                                       Padding="10">
                                 <StackPanel>
                                     <!-- ウォッチ機能の有効/無効設定 -->
@@ -861,7 +861,7 @@
                                     <!-- ウォッチ間隔設定 -->
                                     <Grid Margin="0,5">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="70"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="28"/>
                                         </Grid.ColumnDefinitions>
@@ -898,7 +898,7 @@
                                     <!-- 正規表現設定 -->
                                     <Grid Margin="20,5,0,5">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="65"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0"
