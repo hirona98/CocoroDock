@@ -105,5 +105,11 @@ namespace CocoroDock.Services
         /// </summary>
         /// <param name="notification">通知メッセージ</param>
         Task ProcessNotificationAsync(ChatMessagePayload notification);
+
+        /// <summary>
+        /// デスクトップモニタリング画像をCocoroCoreに送信
+        /// </summary>
+        /// <param name="imageBase64">Base64エンコードされた画像データ</param>
+        Task SendDesktopMonitoringToCoreAsync(string imageBase64);
     }
 }

@@ -284,6 +284,13 @@ namespace CocoroDock.Controls
             AutoMoveCheckBox.IsChecked = appSettings.IsAutoMove;
             AmbientOcclusionCheckBox.IsChecked = appSettings.IsEnableAmbientOcclusion;
             IsEnableNotificationApiCheckBox.IsChecked = appSettings.IsEnableNotificationApi;
+
+            // スクリーンショット設定の初期化
+            ScreenshotEnabledCheckBox.IsChecked = appSettings.ScreenshotSettings.enabled;
+            ScreenshotIntervalTextBox.Text = appSettings.ScreenshotSettings.intervalMinutes.ToString();
+            CaptureActiveWindowOnlyCheckBox.IsChecked = appSettings.ScreenshotSettings.captureActiveWindowOnly;
+            RegularExpressionFilteringCheckBox.IsChecked = appSettings.ScreenshotSettings.enableRegexFiltering;
+            RegularExpressionString.Text = appSettings.ScreenshotSettings.regexPattern;
             foreach (ComboBoxItem item in MSAAComboBox.Items)
             {
                 if (item.Tag != null &&
@@ -351,7 +358,12 @@ namespace CocoroDock.Controls
                 { "BackgroundShadow", appSettings.BackgroundShadow },
                 { "BackgroundShadowResolution", appSettings.BackgroundShadowResolution },
                 { "WindowSize", appSettings.WindowSize },
-                { "IsEnableNotificationApi", appSettings.IsEnableNotificationApi }
+                { "IsEnableNotificationApi", appSettings.IsEnableNotificationApi },
+                { "ScreenshotEnabled", appSettings.ScreenshotSettings.enabled },
+                { "ScreenshotInterval", appSettings.ScreenshotSettings.intervalMinutes },
+                { "CaptureActiveWindowOnly", appSettings.ScreenshotSettings.captureActiveWindowOnly },
+                { "EnableRegexFiltering", appSettings.ScreenshotSettings.enableRegexFiltering },
+                { "RegexPattern", appSettings.ScreenshotSettings.regexPattern }
             };
         }
 
@@ -1441,6 +1453,9 @@ namespace CocoroDock.Controls
                     MessageBox.Show("通知APIサーバーの有効/無効設定が変更されました。\n変更を反映するにはアプリケーションを再起動してください。",
                         "情報", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
+
+                // デスクトップウォッチの設定変更を反映
+                UpdateDesktopWatchSettings();
             }
             catch (System.Exception ex)
             {
@@ -1562,6 +1577,13 @@ namespace CocoroDock.Controls
 
             _displaySettings["WindowSize"] = WindowSizeSlider.Value;
             _displaySettings["IsEnableNotificationApi"] = IsEnableNotificationApiCheckBox.IsChecked ?? false;
+
+            // スクリーンショット設定を保存
+            _displaySettings["ScreenshotEnabled"] = ScreenshotEnabledCheckBox.IsChecked ?? false;
+            _displaySettings["ScreenshotInterval"] = int.TryParse(ScreenshotIntervalTextBox.Text, out int interval) ? interval : 10;
+            _displaySettings["CaptureActiveWindowOnly"] = CaptureActiveWindowOnlyCheckBox.IsChecked ?? true;
+            _displaySettings["EnableRegexFiltering"] = RegularExpressionFilteringCheckBox.IsChecked ?? false;
+            _displaySettings["RegexPattern"] = RegularExpressionString.Text ?? string.Empty;
         }
 
         /// <summary>
@@ -1585,6 +1607,13 @@ namespace CocoroDock.Controls
             appSettings.BackgroundShadowResolution = (int)_displaySettings["BackgroundShadowResolution"];
             appSettings.WindowSize = (double)_displaySettings["WindowSize"] > 0 ? (int)(double)_displaySettings["WindowSize"] : 650;
             appSettings.IsEnableNotificationApi = (bool)_displaySettings["IsEnableNotificationApi"];
+
+            // スクリーンショット設定の更新
+            appSettings.ScreenshotSettings.enabled = (bool)_displaySettings["ScreenshotEnabled"];
+            appSettings.ScreenshotSettings.intervalMinutes = (int)_displaySettings["ScreenshotInterval"];
+            appSettings.ScreenshotSettings.captureActiveWindowOnly = (bool)_displaySettings["CaptureActiveWindowOnly"];
+            appSettings.ScreenshotSettings.enableRegexFiltering = (bool)_displaySettings["EnableRegexFiltering"];
+            appSettings.ScreenshotSettings.regexPattern = (string)_displaySettings["RegexPattern"];
 
             // キャラクター設定の更新
             appSettings.CurrentCharacterIndex = _currentCharacterIndex;
@@ -2023,6 +2052,34 @@ namespace CocoroDock.Controls
                 }
             }
             return true;
+        }
+
+        /// <summary>
+        /// デスクトップウォッチ設定の変更を適用
+        /// </summary>
+        private void UpdateDesktopWatchSettings()
+        {
+            try
+            {
+                // MainWindowのインスタンスを取得
+                var mainWindow = Application.Current.MainWindow as MainWindow;
+                if (mainWindow != null)
+                {
+                    // MainWindowのUpdateScreenshotServiceメソッドを呼び出す
+                    var updateMethod = mainWindow.GetType().GetMethod("UpdateScreenshotService",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+                    if (updateMethod != null)
+                    {
+                        updateMethod.Invoke(mainWindow, null);
+                        Debug.WriteLine("デスクトップウォッチ設定を更新しました");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"デスクトップウォッチ設定の更新中にエラーが発生しました: {ex.Message}");
+            }
         }
 
         /// <summary>

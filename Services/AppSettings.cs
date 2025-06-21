@@ -144,6 +144,9 @@ namespace CocoroDock.Services
         public int CurrentAnimationSettingIndex { get; set; } = 0;
         public List<AnimationSetting> AnimationSettings { get; set; } = new List<AnimationSetting>();
 
+        // スクリーンショット設定
+        public ScreenshotSettings ScreenshotSettings { get; set; } = new ScreenshotSettings();
+
         public bool IsLoaded { get; set; } = false;
 
         // コンストラクタはprivate（シングルトンパターン）
@@ -243,6 +246,12 @@ namespace CocoroDock.Services
                 AnimationSettings = new List<AnimationSetting>(config.animationSettings);
             }
 
+            // スクリーンショット設定を更新
+            if (config.screenshotSettings != null)
+            {
+                ScreenshotSettings = config.screenshotSettings;
+            }
+
             // 設定読み込み完了フラグを設定
             IsLoaded = true;
         }
@@ -276,7 +285,8 @@ namespace CocoroDock.Services
                 currentCharacterIndex = CurrentCharacterIndex,
                 characterList = new List<CharacterSettings>(CharacterList),
                 currentAnimationSettingIndex = CurrentAnimationSettingIndex,
-                animationSettings = new List<AnimationSetting>(AnimationSettings)
+                animationSettings = new List<AnimationSetting>(AnimationSettings),
+                screenshotSettings = ScreenshotSettings
             };
         }
 
@@ -629,6 +639,12 @@ namespace CocoroDock.Services
             {
                 // アニメーション設定もユーザー設定で完全に置き換える
                 defaultSettings.animationSettings = new List<AnimationSetting>(userSettings.animationSettings);
+            }
+
+            // スクリーンショット設定
+            if (userSettings.screenshotSettings != null)
+            {
+                defaultSettings.screenshotSettings = userSettings.screenshotSettings;
             }
         }
 

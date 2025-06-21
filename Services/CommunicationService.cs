@@ -320,6 +320,77 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
+        /// デスクトップモニタリング画像をCocoroCoreに送信
+        /// </summary>
+        /// <param name="imageBase64">Base64エンコードされた画像データ</param>
+        public async Task SendDesktopMonitoringToCoreAsync(string imageBase64)
+        {
+            try
+            {
+                // 現在のキャラクター設定を取得
+                var currentCharacter = GetCurrentCharacterSettings();
+
+                // LLMが有効でない場合は処理しない
+                if (currentCharacter == null || !currentCharacter.isUseLLM)
+                {
+                    Debug.WriteLine("デスクトップモニタリング: LLMが無効のためスキップ");
+                    return;
+                }
+
+                // セッションIDを生成または既存のものを使用
+                if (string.IsNullOrEmpty(_currentSessionId))
+                {
+                    _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
+                }
+
+                // 仕様に従ったfilesリストを作成
+                var files = new List<object>
+                {
+                    new Dictionary<string, string>
+                    {
+                        { "url", $"data:image/png;base64,{imageBase64}" }
+                    }
+                };
+
+                // AIAvatarKit仕様のリクエストを作成
+                var request = new CoreChatRequest
+                {
+                    type = "text",  // デスクトップモニタリング用
+                    session_id = _currentSessionId,
+                    user_id = "user",
+                    context_id = _currentContextId,
+                    text = "<cocoro-desktop-monitoring>",  // 特別なタグ
+                    audio_data = null,
+                    files = files,
+                    system_prompt_params = null,
+                    metadata = new Dictionary<string, object>
+                    {
+                        { "source", "CocoroDock" },
+                        { "character_name", currentCharacter.modelName ?? "default" },
+                        { "monitoring_type", "desktop" }
+                    }
+                };
+
+                var response = await _coreClient.SendChatMessageAsync(request);
+
+                // SSEレスポンスから新しいcontext_idを保存
+                if (!string.IsNullOrEmpty(response.context_id))
+                {
+                    _currentContextId = response.context_id;
+                    Debug.WriteLine($"デスクトップモニタリング: 新しいcontext_idを取得: {_currentContextId}");
+                }
+
+                // 成功時のステータス更新
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "デスクトップ画面を送信しました"));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"デスクトップモニタリング送信エラー: {ex.Message}");
+                // エラーは静かに処理（モニタリング機能なのでユーザーに通知しない）
+            }
+        }
+
+        /// <summary>
         /// リソースの解放
         /// </summary>
         public void Dispose()

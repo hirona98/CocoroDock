@@ -2,6 +2,7 @@ using CocoroDock.Communication;
 using CocoroDock.Controls;
 using CocoroDock.Services;
 using CocoroDock.Utilities;
+using CocoroAI.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,6 +25,7 @@ namespace CocoroDock
         private readonly List<StatusMessage> _statusMessages = new List<StatusMessage>();
         private readonly object _statusLock = new object();
         private const int MaxStatusMessages = 5; // 最大表示メッセージ数
+        private ScreenshotService? _screenshotService;
 
         private class StatusMessage
         {
@@ -81,6 +83,9 @@ namespace CocoroDock
                 // 通信サービスを初期化
                 InitializeCommunicationService();
 
+                // スクリーンショットサービスを初期化
+                InitializeScreenshotService();
+
                 // UIコントロールのイベントハンドラを登録
                 RegisterEventHandlers();
 
@@ -120,6 +125,133 @@ namespace CocoroDock
             _communicationService.ControlCommandReceived += OnControlCommandReceived;
             _communicationService.ErrorOccurred += OnErrorOccurred;
             _communicationService.StatusUpdateRequested += OnStatusUpdateRequested;
+        }
+
+        /// <summary>
+        /// スクリーンショットサービスを初期化
+        /// </summary>
+        private void InitializeScreenshotService()
+        {
+            // スクリーンショット設定を確認
+            var screenshotSettings = _appSettings.ScreenshotSettings;
+            if (screenshotSettings != null && screenshotSettings.enabled)
+            {
+                // スクリーンショットサービスを初期化
+                _screenshotService = new ScreenshotService(
+                    screenshotSettings.intervalMinutes,
+                    async (screenshotData) => await OnScreenshotCaptured(screenshotData)
+                );
+
+                _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
+                _screenshotService.EnableRegexFiltering = screenshotSettings.enableRegexFiltering;
+                _screenshotService.RegexPattern = screenshotSettings.regexPattern;
+                
+                // フィルタリングイベントをハンドリング
+                _screenshotService.Filtered += OnScreenshotFiltered;
+
+                // サービスを開始
+                _screenshotService.Start();
+
+                Debug.WriteLine($"スクリーンショットサービスを開始しました（間隔: {screenshotSettings.intervalMinutes}分）");
+            }
+        }
+
+        /// <summary>
+        /// スクリーンショットが撮影された時の処理
+        /// </summary>
+        private async Task OnScreenshotCaptured(ScreenshotData screenshotData)
+        {
+            try
+            {
+                // 画像を表示（フィルタリングされた場合も含む）
+                UIHelper.RunOnUIThread(() =>
+                {
+                    ChatControlInstance.AddDesktopMonitoringImage(screenshotData.ImageBase64, 
+                        screenshotData.IsFiltered ? screenshotData.FilterReason : null);
+                });
+
+                // フィルタリングされていない場合のみCocoroCoreに送信
+                if (!screenshotData.IsFiltered)
+                {
+                    // CommunicationServiceを使用してデスクトップモニタリングを送信
+                    if (_communicationService != null && _communicationService.IsServerRunning)
+                    {
+                        // デスクトップモニタリング用の送信処理
+                        await _communicationService.SendDesktopMonitoringToCoreAsync(screenshotData.ImageBase64);
+
+                        Debug.WriteLine($"デスクトップモニタリング送信完了 - ウィンドウ: {screenshotData.WindowTitle}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"デスクトップモニタリング処理エラー: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// スクリーンショットがフィルタリングされた時の処理
+        /// </summary>
+        private void OnScreenshotFiltered(object? sender, string message)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                // ステータスバーにフィルタリング通知を表示
+                AddStatusMessage(message);
+            });
+        }
+
+        /// <summary>
+        /// スクリーンショットサービスの設定を更新
+        /// </summary>
+        private void UpdateScreenshotService()
+        {
+            var screenshotSettings = _appSettings.ScreenshotSettings;
+
+            // 現在のサービスが存在し、設定が無効になった場合は停止
+            if (_screenshotService != null && (screenshotSettings == null || !screenshotSettings.enabled))
+            {
+                _screenshotService.Filtered -= OnScreenshotFiltered;
+                _screenshotService.Stop();
+                _screenshotService.Dispose();
+                _screenshotService = null;
+                Debug.WriteLine("スクリーンショットサービスを停止しました");
+            }
+            // 設定が有効でサービスが存在しない場合は開始
+            else if (screenshotSettings != null && screenshotSettings.enabled && _screenshotService == null)
+            {
+                InitializeScreenshotService();
+            }
+            // サービスが存在し、設定が変更された場合は更新または再起動
+            else if (_screenshotService != null && screenshotSettings != null && screenshotSettings.enabled)
+            {
+                // 設定の変更を検出
+                bool needsRestart = false;
+                
+                // 間隔が変更された場合は再起動が必要
+                if (_screenshotService.IntervalMinutes != screenshotSettings.intervalMinutes)
+                {
+                    needsRestart = true;
+                }
+                
+                // その他の設定は動的に更新
+                _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
+                _screenshotService.EnableRegexFiltering = screenshotSettings.enableRegexFiltering;
+                _screenshotService.RegexPattern = screenshotSettings.regexPattern;
+                
+                if (needsRestart)
+                {
+                    _screenshotService.Filtered -= OnScreenshotFiltered;
+                    _screenshotService.Stop();
+                    _screenshotService.Dispose();
+                    InitializeScreenshotService();
+                    Debug.WriteLine("スクリーンショットサービスを再起動しました");
+                }
+                else
+                {
+                    Debug.WriteLine("スクリーンショットサービスの設定を更新しました");
+                }
+            }
         }
 
         /// <summary>
@@ -294,6 +426,8 @@ namespace CocoroDock
         {
             UIHelper.RunOnUIThread(() =>
             {
+                // スクリーンショットサービスの設定を更新
+                UpdateScreenshotService();
                 // 最前面表示の設定を適用
                 Topmost = _appSettings.IsTopmost;
 
@@ -574,6 +708,12 @@ namespace CocoroDock
             }
             else
             {
+                // アプリケーション終了時のクリーンアップ
+                if (_screenshotService != null)
+                {
+                    _screenshotService.Filtered -= OnScreenshotFiltered;
+                    _screenshotService.Dispose();
+                }
                 base.OnClosing(e);
             }
         }
