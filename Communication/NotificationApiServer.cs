@@ -139,7 +139,7 @@ namespace CocoroDock.Communication
                                 communicationService.RaiseNotificationMessageReceived(chatPayload);
                             }
 
-                            // 通知を処理（CocoroShellへの転送を含む）
+                            // 通知を処理（CocoroCoreへの転送）
                             await _communicationService.ProcessNotificationAsync(chatPayload);
                         }
                         catch (InvalidOperationException ioEx)

@@ -265,26 +265,52 @@ namespace CocoroDock.Services
         {
             try
             {
-                // 通知イベントを発火
-                NotificationMessageReceived?.Invoke(this, notification);
+                // 現在のキャラクター設定を取得
+                var currentCharacter = GetCurrentCharacterSettings();
+
+                // LLMが有効でない場合は処理しない
+                if (currentCharacter == null || !currentCharacter.isUseLLM)
+                {
+                    Debug.WriteLine("通知処理: LLMが無効のためスキップ");
+                    return;
+                }
+
+                // セッションIDを生成または既存のものを使用
+                if (string.IsNullOrEmpty(_currentSessionId))
+                {
+                    _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
+                }
+
+                // 通知メッセージを特別なタグで囲む
+                var notificationText = $"<cocoro-notification>\nFrom: {notification.userId}\nMessage: {notification.message}\n</cocoro-notification>";
 
                 // AIAvatarKit仕様のリクエストを作成してCocoroCoreに転送
-                var request = new CoreNotificationRequest
+                var request = new CoreChatRequest
                 {
-                    type = "invoke",
-                    session_id = $"notif_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}",
-                    user_id = notification.userId,
-                    context_id = null,
-                    text = $"[{notification.userId}] {notification.message}",
+                    type = "text",
+                    session_id = _currentSessionId,
+                    user_id = "user",
+                    context_id = _currentContextId,
+                    text = notificationText,
+                    audio_data = null,
+                    files = null,
+                    system_prompt_params = null,
                     metadata = new Dictionary<string, object>
                     {
                         { "source", "notification" },
-                        { "original_session_id", notification.sessionId },
-                        { "notification_from", notification.userId }
+                        { "notification_from", notification.userId },
+                        { "character_name", currentCharacter.modelName ?? "default" }
                     }
                 };
 
-                await _coreClient.SendNotificationAsync(request);
+                var response = await _coreClient.SendChatMessageAsync(request);
+
+                // SSEレスポンスから新しいcontext_idを保存
+                if (!string.IsNullOrEmpty(response.context_id))
+                {
+                    _currentContextId = response.context_id;
+                    Debug.WriteLine($"通知処理: 新しいcontext_idを取得: {_currentContextId}");
+                }
 
                 // 成功時のステータス更新
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "通知を処理しました"));
