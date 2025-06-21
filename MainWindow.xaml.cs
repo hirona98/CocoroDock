@@ -145,6 +145,9 @@ namespace CocoroDock
                 _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
                 _screenshotService.EnableRegexFiltering = screenshotSettings.enableRegexFiltering;
                 _screenshotService.RegexPattern = screenshotSettings.regexPattern;
+                
+                // フィルタリングイベントをハンドリング
+                _screenshotService.Filtered += OnScreenshotFiltered;
 
                 // サービスを開始
                 _screenshotService.Start();
@@ -160,25 +163,42 @@ namespace CocoroDock
         {
             try
             {
-                // チャット画面に画像を表示
+                // 画像を表示（フィルタリングされた場合も含む）
                 UIHelper.RunOnUIThread(() =>
                 {
-                    ChatControlInstance.AddDesktopMonitoringImage(screenshotData.ImageBase64);
+                    ChatControlInstance.AddDesktopMonitoringImage(screenshotData.ImageBase64, 
+                        screenshotData.IsFiltered ? screenshotData.FilterReason : null);
                 });
 
-                // CommunicationServiceを使用してデスクトップモニタリングを送信
-                if (_communicationService != null && _communicationService.IsServerRunning)
+                // フィルタリングされていない場合のみCocoroCoreに送信
+                if (!screenshotData.IsFiltered)
                 {
-                    // デスクトップモニタリング用の送信処理
-                    await _communicationService.SendDesktopMonitoringToCoreAsync(screenshotData.ImageBase64);
+                    // CommunicationServiceを使用してデスクトップモニタリングを送信
+                    if (_communicationService != null && _communicationService.IsServerRunning)
+                    {
+                        // デスクトップモニタリング用の送信処理
+                        await _communicationService.SendDesktopMonitoringToCoreAsync(screenshotData.ImageBase64);
 
-                    Debug.WriteLine($"デスクトップモニタリング送信完了 - ウィンドウ: {screenshotData.WindowTitle}");
+                        Debug.WriteLine($"デスクトップモニタリング送信完了 - ウィンドウ: {screenshotData.WindowTitle}");
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"デスクトップモニタリング処理エラー: {ex.Message}");
             }
+        }
+        
+        /// <summary>
+        /// スクリーンショットがフィルタリングされた時の処理
+        /// </summary>
+        private void OnScreenshotFiltered(object? sender, string message)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                // ステータスバーにフィルタリング通知を表示
+                AddStatusMessage(message);
+            });
         }
 
         /// <summary>
@@ -191,6 +211,7 @@ namespace CocoroDock
             // 現在のサービスが存在し、設定が無効になった場合は停止
             if (_screenshotService != null && (screenshotSettings == null || !screenshotSettings.enabled))
             {
+                _screenshotService.Filtered -= OnScreenshotFiltered;
                 _screenshotService.Stop();
                 _screenshotService.Dispose();
                 _screenshotService = null;
@@ -220,6 +241,7 @@ namespace CocoroDock
                 
                 if (needsRestart)
                 {
+                    _screenshotService.Filtered -= OnScreenshotFiltered;
                     _screenshotService.Stop();
                     _screenshotService.Dispose();
                     InitializeScreenshotService();
@@ -687,7 +709,11 @@ namespace CocoroDock
             else
             {
                 // アプリケーション終了時のクリーンアップ
-                _screenshotService?.Dispose();
+                if (_screenshotService != null)
+                {
+                    _screenshotService.Filtered -= OnScreenshotFiltered;
+                    _screenshotService.Dispose();
+                }
                 base.OnClosing(e);
             }
         }

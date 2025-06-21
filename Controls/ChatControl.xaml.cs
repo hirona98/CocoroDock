@@ -236,7 +236,8 @@ namespace CocoroDock.Controls
         /// デスクトップモニタリング画像を表示
         /// </summary>
         /// <param name="imageBase64">Base64エンコードされた画像データ</param>
-        public void AddDesktopMonitoringImage(string imageBase64)
+        /// <param name="filterReason">フィルタリング理由（オプション）</param>
+        public void AddDesktopMonitoringImage(string imageBase64, string? filterReason = null)
         {
             try
             {
@@ -253,7 +254,7 @@ namespace CocoroDock.Controls
                 var titleText = new TextBox
                 {
                     Style = (Style)Resources["SystemMessageTextStyle"],
-                    Text = "[デスクトップウォッチ送信画像]",
+                    Text = "[デスクトップウォッチ画像]",
                     Margin = new Thickness(0, 0, 0, 5)
                 };
                 messageContent.Children.Add(titleText);
@@ -275,7 +276,7 @@ namespace CocoroDock.Controls
                         MaxHeight = 200,
                         MaxWidth = 400,
                         Stretch = Stretch.Uniform,
-                        Margin = new Thickness(0, 5, 0, 5),
+                        Margin = new Thickness(0, 0, 0, 0),
                         Cursor = Cursors.Hand
                     };
 
@@ -287,6 +288,18 @@ namespace CocoroDock.Controls
                     };
 
                     messageContent.Children.Add(image);
+                }
+
+                // フィルタリング理由がある場合は表示
+                if (!string.IsNullOrEmpty(filterReason))
+                {
+                    var reasonText = new TextBox
+                    {
+                        Style = (Style)Resources["SystemMessageTextStyle"],
+                        Text = $"※ {filterReason}",
+                        Margin = new Thickness(0, 0, 0, 0)
+                    };
+                    messageContent.Children.Add(reasonText);
                 }
 
                 bubble.Child = messageContent;
@@ -302,6 +315,7 @@ namespace CocoroDock.Controls
                 Debug.WriteLine($"デスクトップモニタリング画像の表示エラー: {ex.Message}");
             }
         }
+
 
         /// <summary>
         /// チャット履歴をクリア

@@ -58,6 +58,9 @@ https://raw.githubusercontent.com/sta/websocket-sharp/master/LICENSE.txt
 Copyright (c) 2021 hecomi
 https://github.com/hecomi/uLipSync/blob/main/LICENSE.md
 
+◆ Tesseract OCR ◆
+https://github.com/tesseract-ocr/tesseract/blob/main/LICENSE
+
 ◆ このソフトウェアについて ◆
 Copyright (c) ヒロナ
 https://alice-encoder.booth.pm/
