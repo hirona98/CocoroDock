@@ -28,7 +28,14 @@ CocoroDockはREST APIベースの通信を採用しています：
 - **Notification API Server** (ポート: 55604) - 外部アプリケーションからの通知受信
 - **CocoroShell Client** - CocoroShell (ポート: 55605) へのメッセージ送信
 
-詳細なAPI仕様は [統一API仕様書](../API_SPECIFICATION_UNIFIED.md) を参照してください。
+## 主な機能
+
+### デスクトップウォッチ機能
+定期的にデスクトップのスクリーンショットを取得し、AIに送信して作業内容に応じた会話を行います。
+
+- **定期スクリーンショット取得**: 設定した間隔でデスクトップ画像を自動キャプチャ
+- **OCRフィルタリング**: Tesseract OCRで画像内のテキストを認識し、正規表現でセキュリティ対策
+- **自動設定**: 初回起動時に必要な言語データを自動ダウンロード
 
 ## 使用方法
 
@@ -42,4 +49,3 @@ CocoroDockはREST APIベースの通信を採用しています：
 
 ### ドキュメント
 - [CLAUDE.md](CLAUDE.md) - Claude Code (claude.ai/code) 向けのガイダンス
-- [REST_API_IMPLEMENTATION_PLAN.md](REST_API_IMPLEMENTATION_PLAN.md) - REST API実装計画書
