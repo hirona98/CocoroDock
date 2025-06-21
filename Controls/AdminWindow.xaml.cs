@@ -1453,6 +1453,9 @@ namespace CocoroDock.Controls
                     MessageBox.Show("通知APIサーバーの有効/無効設定が変更されました。\n変更を反映するにはアプリケーションを再起動してください。",
                         "情報", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
+
+                // デスクトップウォッチの設定変更を反映
+                UpdateDesktopWatchSettings();
             }
             catch (System.Exception ex)
             {
@@ -2049,6 +2052,34 @@ namespace CocoroDock.Controls
                 }
             }
             return true;
+        }
+
+        /// <summary>
+        /// デスクトップウォッチ設定の変更を適用
+        /// </summary>
+        private void UpdateDesktopWatchSettings()
+        {
+            try
+            {
+                // MainWindowのインスタンスを取得
+                var mainWindow = Application.Current.MainWindow as MainWindow;
+                if (mainWindow != null)
+                {
+                    // MainWindowのUpdateScreenshotServiceメソッドを呼び出す
+                    var updateMethod = mainWindow.GetType().GetMethod("UpdateScreenshotService", 
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    
+                    if (updateMethod != null)
+                    {
+                        updateMethod.Invoke(mainWindow, null);
+                        Debug.WriteLine("デスクトップウォッチ設定を更新しました");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"デスクトップウォッチ設定の更新中にエラーが発生しました: {ex.Message}");
+            }
         }
 
         /// <summary>

@@ -143,6 +143,8 @@ namespace CocoroDock
                 );
 
                 _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
+                _screenshotService.EnableRegexFiltering = screenshotSettings.enableRegexFiltering;
+                _screenshotService.RegexPattern = screenshotSettings.regexPattern;
 
                 // サービスを開始
                 _screenshotService.Start();
@@ -199,12 +201,34 @@ namespace CocoroDock
             {
                 InitializeScreenshotService();
             }
-            // サービスが存在し、設定が変更された場合は再起動
+            // サービスが存在し、設定が変更された場合は更新または再起動
             else if (_screenshotService != null && screenshotSettings != null && screenshotSettings.enabled)
             {
-                _screenshotService.Stop();
-                _screenshotService.Dispose();
-                InitializeScreenshotService();
+                // 設定の変更を検出
+                bool needsRestart = false;
+                
+                // 間隔が変更された場合は再起動が必要
+                if (_screenshotService.IntervalMinutes != screenshotSettings.intervalMinutes)
+                {
+                    needsRestart = true;
+                }
+                
+                // その他の設定は動的に更新
+                _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
+                _screenshotService.EnableRegexFiltering = screenshotSettings.enableRegexFiltering;
+                _screenshotService.RegexPattern = screenshotSettings.regexPattern;
+                
+                if (needsRestart)
+                {
+                    _screenshotService.Stop();
+                    _screenshotService.Dispose();
+                    InitializeScreenshotService();
+                    Debug.WriteLine("スクリーンショットサービスを再起動しました");
+                }
+                else
+                {
+                    Debug.WriteLine("スクリーンショットサービスの設定を更新しました");
+                }
             }
         }
 
