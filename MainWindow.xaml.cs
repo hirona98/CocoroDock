@@ -158,6 +158,12 @@ namespace CocoroDock
         {
             try
             {
+                // チャット画面に画像を表示
+                UIHelper.RunOnUIThread(() =>
+                {
+                    ChatControlInstance.AddDesktopMonitoringImage(screenshotData.ImageBase64);
+                });
+
                 // CommunicationServiceを使用してデスクトップモニタリングを送信
                 if (_communicationService != null && _communicationService.IsServerRunning)
                 {

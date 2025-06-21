@@ -52,7 +52,8 @@ namespace CocoroDock.Communication
         public bool enabled { get; set; } = false;
         public int intervalMinutes { get; set; } = 10;
         public bool captureActiveWindowOnly { get; set; } = true;
-        public bool includeContextAnalysis { get; set; } = true;
+        public bool enableRegexFiltering { get; set; } = false;
+        public string regexPattern { get; set; } = string.Empty;
     }
 
     /// <summary>

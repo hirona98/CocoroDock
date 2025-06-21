@@ -8,6 +8,8 @@ using System.Windows.Media.Imaging;
 using System.IO;
 using System.Linq;
 using System.Collections.Specialized;
+using System.Diagnostics;
+using CocoroDock.Windows;
 
 namespace CocoroDock.Controls
 {
@@ -17,7 +19,7 @@ namespace CocoroDock.Controls
     public partial class ChatControl : UserControl
     {
         public event EventHandler<string>? MessageSent;
-        
+
         // 添付画像データ（Base64形式のdata URL）
         private string? _attachedImageDataUrl;
         private BitmapSource? _attachedImageSource;
@@ -25,7 +27,7 @@ namespace CocoroDock.Controls
         public ChatControl()
         {
             InitializeComponent();
-            
+
             // ペーストイベントハンドラを追加
             DataObject.AddPastingHandler(MessageTextBox, OnPaste);
         }
@@ -91,7 +93,7 @@ namespace CocoroDock.Controls
                 };
 
                 imageBorder.Child = image;
-                
+
                 // クリックイベントで拡大表示
                 imageBorder.MouseLeftButtonUp += (s, e) =>
                 {
@@ -228,6 +230,77 @@ namespace CocoroDock.Controls
 
             // 自動スクロール
             ChatScrollViewer.ScrollToEnd();
+        }
+
+        /// <summary>
+        /// デスクトップモニタリング画像を表示
+        /// </summary>
+        /// <param name="imageBase64">Base64エンコードされた画像データ</param>
+        public void AddDesktopMonitoringImage(string imageBase64)
+        {
+            try
+            {
+                var messageContainer = new StackPanel();
+
+                var bubble = new Border
+                {
+                    Style = (Style)Resources["SystemMessageBubbleStyle"]
+                };
+
+                var messageContent = new StackPanel();
+
+                // タイトルテキスト
+                var titleText = new TextBox
+                {
+                    Style = (Style)Resources["SystemMessageTextStyle"],
+                    Text = "[デスクトップウォッチ送信画像]",
+                    Margin = new Thickness(0, 0, 0, 5)
+                };
+                messageContent.Children.Add(titleText);
+
+                // 画像を表示
+                var imageBytes = Convert.FromBase64String(imageBase64);
+                using (var stream = new System.IO.MemoryStream(imageBytes))
+                {
+                    var bitmapImage = new BitmapImage();
+                    bitmapImage.BeginInit();
+                    bitmapImage.StreamSource = stream;
+                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmapImage.EndInit();
+                    bitmapImage.Freeze();
+
+                    var image = new Image
+                    {
+                        Source = bitmapImage,
+                        MaxHeight = 200,
+                        MaxWidth = 400,
+                        Stretch = Stretch.Uniform,
+                        Margin = new Thickness(0, 5, 0, 5),
+                        Cursor = Cursors.Hand
+                    };
+
+                    // クリックで拡大表示
+                    image.MouseLeftButtonUp += (s, e) =>
+                    {
+                        var previewWindow = new ImagePreviewWindow(bitmapImage);
+                        previewWindow.ShowDialog();
+                    };
+
+                    messageContent.Children.Add(image);
+                }
+
+                bubble.Child = messageContent;
+                messageContainer.Children.Add(bubble);
+
+                ChatMessagesPanel.Children.Add(messageContainer);
+
+                // 自動スクロール
+                ChatScrollViewer.ScrollToEnd();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"デスクトップモニタリング画像の表示エラー: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -492,7 +565,7 @@ namespace CocoroDock.Controls
                 // サポートされる画像形式を確認
                 string[] supportedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
                 string extension = Path.GetExtension(filePath).ToLower();
-                
+
                 if (!supportedExtensions.Contains(extension))
                 {
                     MessageBox.Show("サポートされていない画像形式です。", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -518,7 +591,7 @@ namespace CocoroDock.Controls
                 // 画像をBase64エンコード
                 _attachedImageDataUrl = ConvertToDataUrl(bitmapSource);
                 _attachedImageSource = bitmapSource;
-                
+
                 // プレビューに表示
                 PreviewImage.Source = bitmapSource;
                 PreviewImage.Visibility = Visibility.Visible;
@@ -542,7 +615,7 @@ namespace CocoroDock.Controls
                 var encoder = new PngBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
                 encoder.Save(memoryStream);
-                
+
                 byte[] imageBytes = memoryStream.ToArray();
                 string base64String = Convert.ToBase64String(imageBytes);
                 return $"data:image/png;base64,{base64String}";

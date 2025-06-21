@@ -289,7 +289,8 @@ namespace CocoroDock.Controls
             ScreenshotEnabledCheckBox.IsChecked = appSettings.ScreenshotSettings.enabled;
             ScreenshotIntervalTextBox.Text = appSettings.ScreenshotSettings.intervalMinutes.ToString();
             CaptureActiveWindowOnlyCheckBox.IsChecked = appSettings.ScreenshotSettings.captureActiveWindowOnly;
-            IncludeContextAnalysisCheckBox.IsChecked = appSettings.ScreenshotSettings.includeContextAnalysis;
+            RegularExpressionFilteringCheckBox.IsChecked = appSettings.ScreenshotSettings.enableRegexFiltering;
+            RegularExpressionString.Text = appSettings.ScreenshotSettings.regexPattern;
             foreach (ComboBoxItem item in MSAAComboBox.Items)
             {
                 if (item.Tag != null &&
@@ -361,7 +362,8 @@ namespace CocoroDock.Controls
                 { "ScreenshotEnabled", appSettings.ScreenshotSettings.enabled },
                 { "ScreenshotInterval", appSettings.ScreenshotSettings.intervalMinutes },
                 { "CaptureActiveWindowOnly", appSettings.ScreenshotSettings.captureActiveWindowOnly },
-                { "IncludeContextAnalysis", appSettings.ScreenshotSettings.includeContextAnalysis }
+                { "EnableRegexFiltering", appSettings.ScreenshotSettings.enableRegexFiltering },
+                { "RegexPattern", appSettings.ScreenshotSettings.regexPattern }
             };
         }
 
@@ -1577,7 +1579,8 @@ namespace CocoroDock.Controls
             _displaySettings["ScreenshotEnabled"] = ScreenshotEnabledCheckBox.IsChecked ?? false;
             _displaySettings["ScreenshotInterval"] = int.TryParse(ScreenshotIntervalTextBox.Text, out int interval) ? interval : 10;
             _displaySettings["CaptureActiveWindowOnly"] = CaptureActiveWindowOnlyCheckBox.IsChecked ?? true;
-            _displaySettings["IncludeContextAnalysis"] = IncludeContextAnalysisCheckBox.IsChecked ?? true;
+            _displaySettings["EnableRegexFiltering"] = RegularExpressionFilteringCheckBox.IsChecked ?? false;
+            _displaySettings["RegexPattern"] = RegularExpressionString.Text ?? string.Empty;
         }
 
         /// <summary>
@@ -1606,7 +1609,8 @@ namespace CocoroDock.Controls
             appSettings.ScreenshotSettings.enabled = (bool)_displaySettings["ScreenshotEnabled"];
             appSettings.ScreenshotSettings.intervalMinutes = (int)_displaySettings["ScreenshotInterval"];
             appSettings.ScreenshotSettings.captureActiveWindowOnly = (bool)_displaySettings["CaptureActiveWindowOnly"];
-            appSettings.ScreenshotSettings.includeContextAnalysis = (bool)_displaySettings["IncludeContextAnalysis"];
+            appSettings.ScreenshotSettings.enableRegexFiltering = (bool)_displaySettings["EnableRegexFiltering"];
+            appSettings.ScreenshotSettings.regexPattern = (string)_displaySettings["RegexPattern"];
 
             // キャラクター設定の更新
             appSettings.CurrentCharacterIndex = _currentCharacterIndex;
