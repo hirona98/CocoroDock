@@ -154,59 +154,8 @@ namespace CocoroDock.Services
         // コンストラクタはprivate（シングルトンパターン）
         private AppSettings()
         {
-            // デフォルト設定を初期化
-            InitializeDefaultSettings();
-
             // 設定ファイルから読み込み
             LoadSettings();
-        }
-
-        /// <summary>
-        /// デフォルト設定を初期化
-        /// </summary>
-        private void InitializeDefaultSettings()
-        {
-            // デフォルトのキャラクター設定を初期化
-            CharacterList = new List<CharacterSettings>
-            {
-                new CharacterSettings
-                {
-                    isReadOnly = false,
-                    modelName = "model_name",
-                    vrmFilePath = "vrm_file_path",
-                    isUseLLM = false,
-                    apiKey = "",
-                    llmModel = "openai/gpt-4o-mini",
-                    systemPrompt = "あなたは親切なアシスタントです。",
-                    isUseTTS = false,
-                    ttsEndpointURL = "http://localhost:50021",
-                    ttsSperkerID = "1",
-                    isEnableMemory = true,
-                    userId = "",
-                    embeddedApiKey = "",
-                    embeddedModel = "openai/text-embedding-3-small",
-                    isUseSTT = false,
-                    sttEngine = "amivoice",
-                    sttWakeWord = "",
-                    sttApiKey = "",
-                    sttLanguage = "ja",
-                    isConvertMToon = false,
-                    isEnableShadowOff = true,
-                    shadowOffMesh = "Face, U_Char_1"
-                }
-            };
-
-            // デフォルトのアニメーション設定を初期化
-            AnimationSettings = new List<AnimationSetting>
-            {
-                new AnimationSetting
-                {
-                    animeSetName = "デフォルト",
-                    postureChangeLoopCountStanding = 30,
-                    postureChangeLoopCountSittingFloor = 30,
-                    animations = new List<AnimationConfig>()
-                }
-            };
         }
 
         /// <summary>
@@ -367,60 +316,78 @@ namespace CocoroDock.Services
         /// </summary>
         private void LoadExistingSettingsFile(ConfigSettings defaultSettings)
         {
-            string json = File.ReadAllText(AppSettingsFilePath);
-            bool isOldFormat = json.Contains("\"IsTopmost\"") || json.Contains("\"CharacterList\"");
-
-            if (isOldFormat)
-            {
-                ProcessOldFormatSettings(defaultSettings);
-            }
-            else
-            {
-                ProcessCurrentFormatSettings(json, defaultSettings);
-            }
-        }
-
-        /// <summary>
-        /// 古いフォーマットの設定ファイルを処理する
-        /// </summary>
-        private void ProcessOldFormatSettings(ConfigSettings defaultSettings)
-        {
-            // 古いバージョンの設定を読み込んで変換
-            var oldSettings = LoadOldSettings();
-            if (oldSettings != null)
-            {
-                // デフォルト設定をベースに古い設定で上書き
-                MergeSettings(defaultSettings, oldSettings);
-
-                // 設定を適用
-                UpdateSettings(defaultSettings);
-
-                // 新しい形式で保存
-                SaveAppSettings();
-
-                Debug.WriteLine("古い設定ファイルを新しい形式に変換しました");
-            }
+            string configJson = File.ReadAllText(AppSettingsFilePath);
+            ProcessCurrentFormatSettings(configJson, defaultSettings);
         }
 
         /// <summary>
         /// 現在のフォーマットの設定ファイルを処理する
         /// </summary>
-        private void ProcessCurrentFormatSettings(string json, ConfigSettings defaultSettings)
+        private void ProcessCurrentFormatSettings(string configJson, ConfigSettings defaultSettings)
         {
-            var options = new JsonSerializerOptions
+            var userSettings = MessageHelper.DeserializeFromJson<ConfigSettings>(configJson);
+            if (userSettings != null)
             {
-                PropertyNameCaseInsensitive = true,
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-            };
-            var settings = MessageHelper.DeserializeFromJson<ConfigSettings>(json);
-
-            if (settings != null)
-            {
-                // デフォルト設定をベースに、setting.jsonの値で上書き
-                MergeCurrentSettings(defaultSettings, settings);
-                UpdateLlmModelFormat(defaultSettings);
+                // setting.jsonの値でdefaultSettingsを上書き
+                MergeSettings(defaultSettings, userSettings);
                 UpdateSettings(defaultSettings);
                 SaveAppSettings();
+            }
+        }
+
+        /// <summary>
+        /// 設定をマージする（sourceの値でtargetを上書き）
+        /// </summary>
+        private void MergeSettings(ConfigSettings target, ConfigSettings source)
+        {
+            // ポート設定
+            if (source.cocoroDockPort > 0) target.cocoroDockPort = source.cocoroDockPort;
+            if (source.cocoroCorePort > 0) target.cocoroCorePort = source.cocoroCorePort;
+            if (source.cocoroMemoryPort > 0) target.cocoroMemoryPort = source.cocoroMemoryPort;
+            if (source.cocoroMemoryDBPort > 0) target.cocoroMemoryDBPort = source.cocoroMemoryDBPort;
+            if (source.notificationApiPort > 0) target.notificationApiPort = source.notificationApiPort;
+
+            // bool値は明示的に設定されているかを判断できないため、常に上書き
+            target.isEnableNotificationApi = source.isEnableNotificationApi;
+            target.isTopmost = source.isTopmost;
+            target.isEscapeCursor = source.isEscapeCursor;
+            target.isInputVirtualKey = source.isInputVirtualKey;
+            target.isAutoMove = source.isAutoMove;
+            target.isEnableAmbientOcclusion = source.isEnableAmbientOcclusion;
+
+            // 文字列設定
+            if (!string.IsNullOrEmpty(source.virtualKeyString)) target.virtualKeyString = source.virtualKeyString;
+
+            // 数値設定
+            if (source.msaaLevel >= 0) target.msaaLevel = source.msaaLevel;
+            if (source.characterShadow >= 0) target.characterShadow = source.characterShadow;
+            if (source.characterShadowResolution > 0) target.characterShadowResolution = source.characterShadowResolution;
+            if (source.backgroundShadow >= 0) target.backgroundShadow = source.backgroundShadow;
+            if (source.backgroundShadowResolution > 0) target.backgroundShadowResolution = source.backgroundShadowResolution;
+            if (source.windowSize > 0) target.windowSize = source.windowSize;
+
+            // float値（0も有効な値として扱う）
+            target.windowPositionX = source.windowPositionX;
+            target.windowPositionY = source.windowPositionY;
+
+            // インデックス
+            if (source.currentCharacterIndex >= 0) target.currentCharacterIndex = source.currentCharacterIndex;
+            if (source.currentAnimationSettingIndex >= 0) target.currentAnimationSettingIndex = source.currentAnimationSettingIndex;
+
+            // リスト設定
+            if (source.characterList != null && source.characterList.Count > 0)
+            {
+                target.characterList = new List<CharacterSettings>(source.characterList);
+            }
+            if (source.animationSettings != null && source.animationSettings.Count > 0)
+            {
+                target.animationSettings = new List<AnimationSetting>(source.animationSettings);
+            }
+
+            // スクリーンショット設定
+            if (source.screenshotSettings != null)
+            {
+                target.screenshotSettings = source.screenshotSettings;
             }
         }
 
@@ -454,110 +421,6 @@ namespace CocoroDock.Services
 
             // 読み込みに失敗した場合は空の設定を返す
             return new ConfigSettings();
-        }
-
-        /// <summary>
-        /// 古いバージョンの設定ファイルを読み込む
-        /// </summary>
-        private OldConfigSettings? LoadOldSettings()
-        {
-            try
-            {
-                string json = File.ReadAllText(AppSettingsFilePath);
-
-                // 古いバージョンの設定ファイルかどうかを判断（大文字始まりのプロパティ名を持つ）
-                if (json.Contains("\"IsTopmost\"") || json.Contains("\"CharacterList\""))
-                {
-                    var options = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = false, // 大文字小文字を区別
-                        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                    };
-                    return JsonSerializer.Deserialize<OldConfigSettings>(json, options);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"古い設定ファイル読み込みエラー: {ex.Message}");
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// 古い設定をデフォルト設定にマージする
-        /// </summary>
-        private void MergeSettings(ConfigSettings defaultSettings, OldConfigSettings oldSettings)
-        {
-            try
-            {
-                // 基本設定をマージ
-                defaultSettings.isTopmost = oldSettings.IsTopmost;
-                defaultSettings.isEscapeCursor = oldSettings.IsEscapeCursor;
-                defaultSettings.isInputVirtualKey = oldSettings.IsInputVirtualKey;
-                defaultSettings.virtualKeyString = oldSettings.VirtualKeyString;
-                defaultSettings.isAutoMove = oldSettings.IsAutoMove;
-                defaultSettings.isEnableAmbientOcclusion = oldSettings.IsEnableAmbientOcclusion;
-                defaultSettings.msaaLevel = oldSettings.MSAALevel;
-                defaultSettings.characterShadow = oldSettings.CharacterShadow;
-                defaultSettings.characterShadowResolution = oldSettings.CharacterShadowResolution;
-                defaultSettings.backgroundShadow = oldSettings.BackgroundShadow;
-                defaultSettings.backgroundShadowResolution = oldSettings.BackgroundShadowResolution;
-                defaultSettings.windowSize = oldSettings.WindowSize;
-                defaultSettings.currentCharacterIndex = oldSettings.CurrentCharacterIndex;
-
-                // キャラクターリストの処理
-                ConvertCharacterList(defaultSettings, oldSettings);
-
-                // LLMモデル形式の更新
-                UpdateLlmModelFormat(defaultSettings);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"設定マージエラー: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 古いキャラクターリストを新しい形式に変換
-        /// </summary>
-        private void ConvertCharacterList(ConfigSettings defaultSettings, OldConfigSettings oldSettings)
-        {
-            if (oldSettings.CharacterList != null && oldSettings.CharacterList.Count > 0)
-            {
-                defaultSettings.characterList.Clear();
-
-                foreach (var oldChar in oldSettings.CharacterList)
-                {
-                    var newChar = new CharacterSettings
-                    {
-                        isReadOnly = oldChar.IsReadOnly,
-                        modelName = oldChar.ModelName,
-                        vrmFilePath = oldChar.VRMFilePath,
-                        isUseLLM = oldChar.IsUseLLM,
-                        apiKey = oldChar.ApiKey,
-                        llmModel = oldChar.LLMModel,
-                        systemPrompt = oldChar.SystemPrompt,
-                        isUseTTS = oldChar.IsUseTTS,
-                        ttsEndpointURL = oldChar.TTSEndpointURL,
-                        ttsSperkerID = oldChar.TTSSperkerID,
-                        isEnableMemory = true,
-                        userId = "",
-                        embeddedApiKey = "",
-                        embeddedModel = "",
-                        isUseSTT = false,
-                        sttEngine = "amivoice",
-                        sttWakeWord = "",
-                        sttApiKey = "",
-                        sttLanguage = "ja",
-                        isConvertMToon = false,
-                        isEnableShadowOff = true,
-                        shadowOffMesh = "Face, U_Char_1"
-                    };
-
-                    defaultSettings.characterList.Add(newChar);
-                }
-            }
         }
 
         /// <summary>
@@ -596,89 +459,6 @@ namespace CocoroDock.Services
         public void SaveSettings()
         {
             SaveAppSettings();
-        }
-
-        /// <summary>
-        /// 現在の形式の設定をマージする
-        /// </summary>
-        /// <param name="defaultSettings">デフォルト設定（マージ先）</param>
-        /// <param name="userSettings">ユーザー設定（マージ元）</param>
-        private void MergeCurrentSettings(ConfigSettings defaultSettings, ConfigSettings userSettings)
-        {
-            // ポート設定
-            if (userSettings.cocoroDockPort > 0) defaultSettings.cocoroDockPort = userSettings.cocoroDockPort;
-            if (userSettings.cocoroCorePort > 0) defaultSettings.cocoroCorePort = userSettings.cocoroCorePort;
-            if (userSettings.cocoroMemoryPort > 0) defaultSettings.cocoroMemoryPort = userSettings.cocoroMemoryPort;
-            if (userSettings.cocoroMemoryDBPort > 0) defaultSettings.cocoroMemoryDBPort = userSettings.cocoroMemoryDBPort;
-            if (userSettings.notificationApiPort > 0) defaultSettings.notificationApiPort = userSettings.notificationApiPort;
-
-            // 通知API設定
-            defaultSettings.isEnableNotificationApi = userSettings.isEnableNotificationApi;
-            // UI設定
-            defaultSettings.isTopmost = userSettings.isTopmost;
-            defaultSettings.isEscapeCursor = userSettings.isEscapeCursor;
-            defaultSettings.isInputVirtualKey = userSettings.isInputVirtualKey;
-            if (!string.IsNullOrEmpty(userSettings.virtualKeyString))
-                defaultSettings.virtualKeyString = userSettings.virtualKeyString;
-            defaultSettings.isAutoMove = userSettings.isAutoMove;
-            defaultSettings.isEnableAmbientOcclusion = userSettings.isEnableAmbientOcclusion;
-
-            // グラフィックス設定
-            if (userSettings.msaaLevel >= 0) defaultSettings.msaaLevel = userSettings.msaaLevel;
-            if (userSettings.characterShadow >= 0) defaultSettings.characterShadow = userSettings.characterShadow;
-            if (userSettings.characterShadowResolution >= 0) defaultSettings.characterShadowResolution = userSettings.characterShadowResolution;
-            if (userSettings.backgroundShadow >= 0) defaultSettings.backgroundShadow = userSettings.backgroundShadow;
-            if (userSettings.backgroundShadowResolution >= 0) defaultSettings.backgroundShadowResolution = userSettings.backgroundShadowResolution;
-            if (userSettings.windowSize > 0) defaultSettings.windowSize = userSettings.windowSize;
-
-            // キャラクター設定
-            if (userSettings.currentCharacterIndex >= 0) defaultSettings.currentCharacterIndex = userSettings.currentCharacterIndex;
-            if (userSettings.characterList != null && userSettings.characterList.Count > 0)
-            {
-                // キャラクターリストはユーザー設定で完全に置き換える
-                defaultSettings.characterList = new List<CharacterSettings>(userSettings.characterList);
-            }
-
-            // アニメーション設定
-            if (userSettings.currentAnimationSettingIndex >= 0) defaultSettings.currentAnimationSettingIndex = userSettings.currentAnimationSettingIndex;
-            if (userSettings.animationSettings != null && userSettings.animationSettings.Count > 0)
-            {
-                // アニメーション設定もユーザー設定で完全に置き換える
-                defaultSettings.animationSettings = new List<AnimationSetting>(userSettings.animationSettings);
-            }
-
-            // スクリーンショット設定
-            if (userSettings.screenshotSettings != null)
-            {
-                defaultSettings.screenshotSettings = userSettings.screenshotSettings;
-            }
-        }
-
-        /// <summary>
-        /// LLMモデル形式を更新する
-        /// </summary>
-        /// <param name="settings">更新する設定</param>
-        private void UpdateLlmModelFormat(ConfigSettings settings)
-        {
-            if (settings.characterList == null || settings.characterList.Count == 0)
-            {
-                return;
-            }
-
-            foreach (var character in settings.characterList)
-            {
-                if (!string.IsNullOrEmpty(character.llmModel))
-                {
-                    if (character.llmModel.StartsWith("gpt-") && !character.llmModel.Contains("/"))
-                    {
-                        character.llmModel = "openai/" + character.llmModel;
-                    }
-                    else if (character.llmModel.StartsWith("gemini-") && !character.llmModel.Contains("/"))
-                    {
-                        character.llmModel = "gemini/" + character.llmModel;
-                    }
-                }
-            }
         }
     }
 }
