@@ -145,7 +145,7 @@ namespace CocoroDock
                 _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
                 _screenshotService.EnableRegexFiltering = screenshotSettings.enableRegexFiltering;
                 _screenshotService.RegexPattern = screenshotSettings.regexPattern;
-                
+
                 // フィルタリングイベントをハンドリング
                 _screenshotService.Filtered += OnScreenshotFiltered;
 
@@ -166,7 +166,7 @@ namespace CocoroDock
                 // 画像を表示（フィルタリングされた場合も含む）
                 UIHelper.RunOnUIThread(() =>
                 {
-                    ChatControlInstance.AddDesktopMonitoringImage(screenshotData.ImageBase64, 
+                    ChatControlInstance.AddDesktopMonitoringImage(screenshotData.ImageBase64,
                         screenshotData.IsFiltered ? screenshotData.FilterReason : null);
                 });
 
@@ -188,7 +188,7 @@ namespace CocoroDock
                 Debug.WriteLine($"デスクトップモニタリング処理エラー: {ex.Message}");
             }
         }
-        
+
         /// <summary>
         /// スクリーンショットがフィルタリングされた時の処理
         /// </summary>
@@ -227,18 +227,18 @@ namespace CocoroDock
             {
                 // 設定の変更を検出
                 bool needsRestart = false;
-                
+
                 // 間隔が変更された場合は再起動が必要
                 if (_screenshotService.IntervalMinutes != screenshotSettings.intervalMinutes)
                 {
                     needsRestart = true;
                 }
-                
+
                 // その他の設定は動的に更新
                 _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
                 _screenshotService.EnableRegexFiltering = screenshotSettings.enableRegexFiltering;
                 _screenshotService.RegexPattern = screenshotSettings.regexPattern;
-                
+
                 if (needsRestart)
                 {
                     _screenshotService.Filtered -= OnScreenshotFiltered;
@@ -472,7 +472,6 @@ namespace CocoroDock
                 // 接続エラー専用のメッセージ
                 ChatControlInstance.AddSystemErrorMessage("AI応答サーバーに接続できません。");
                 Debug.WriteLine($"HttpRequestException: {ex.Message}");
-                // アプリケーションは終了しない
             }
             catch (Exception ex)
             {
@@ -579,14 +578,11 @@ namespace CocoroDock
                 // 接続中ならリソース解放
                 if (_communicationService != null)
                 {
-                    _communicationService.StopServerAsync().Wait(TimeSpan.FromSeconds(5));
                     _communicationService.Dispose();
                     _communicationService = null;
                 }
-#if !DEBUG
-                // CocoroCore と CocoroShell を終了
+                // 関連アプリを終了
                 TerminateExternalApplications();
-#endif
             }
             catch (Exception)
             {
@@ -601,7 +597,7 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// 外部アプリケーション（CocoroCore と CocoroShell）を終了する
+        /// 外部アプリケーション（CocoroCore, CocoroShell, CocoroMemory）を終了する
         /// </summary>
         private void TerminateExternalApplications()
         {
@@ -648,7 +644,7 @@ namespace CocoroDock
         /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
         private void LaunchCocoroShell(ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
-            ProcessHelper.LaunchExternalApplication("CocoroShell", "CocoroShell.exe", "CocoroShell", operation);
+            ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", operation);
         }
 
         /// <summary>
@@ -657,16 +653,16 @@ namespace CocoroDock
         /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
         private void LaunchCocoroCore(ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
-#if !DEBUG
-            if(_appSettings.CharacterList.Count > 0 && 
-               _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count && 
+#if DEBUG
+            if (_appSettings.CharacterList.Count > 0 &&
+               _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count &&
                _appSettings.CharacterList[_appSettings.CurrentCharacterIndex].isUseLLM)
             {
-                ProcessHelper.LaunchExternalApplication("CocoroCore", "CocoroCore.exe","CocoroCore", operation);
+                ProcessHelper.LaunchExternalApplication("CocoroCore.exe", "CocoroCore", operation);
             }
             else
             {
-                ProcessHelper.LaunchExternalApplication("CocoroCore", "CocoroCore.exe", "CocoroCore", ProcessOperation.Terminate);
+                ProcessHelper.LaunchExternalApplication("CocoroCore.exe", "CocoroCore", ProcessOperation.Terminate);
             }
 #endif
         }
@@ -677,18 +673,18 @@ namespace CocoroDock
         /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
         private void LaunchCocoroMemory(ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
-#if !DEBUG
+#if DEBUG
             // 現在のキャラクターが有効で、記憶機能が有効な場合のみ起動
-            if(_appSettings.CharacterList.Count > 0 && 
-               _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count && 
+            if (_appSettings.CharacterList.Count > 0 &&
+               _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count &&
                _appSettings.CharacterList[_appSettings.CurrentCharacterIndex].isEnableMemory)
             {
-                ProcessHelper.LaunchExternalApplication("CocoroMemory", "CocoroMemory.exe", "CocoroMemory", operation);
+                ProcessHelper.LaunchExternalApplication("CocoroMemory.exe", "CocoroMemory", operation);
             }
             else
             {
                 // 記憶機能が無効な場合は終了
-                ProcessHelper.LaunchExternalApplication("CocoroMemory", "CocoroMemory.exe", "CocoroMemory", ProcessOperation.Terminate);
+                ProcessHelper.LaunchExternalApplication("CocoroMemory.exe", "CocoroMemory", ProcessOperation.Terminate);
             }
 #endif
         }

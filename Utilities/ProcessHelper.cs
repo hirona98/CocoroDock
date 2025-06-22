@@ -1,6 +1,11 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using CocoroDock.Services;
 
 namespace CocoroDock.Utilities
 {
@@ -22,71 +27,47 @@ namespace CocoroDock.Utilities
     /// </summary>
     public static class ProcessHelper
     {
+        private static readonly HttpClient httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
         /// <summary>
         /// 指定した名前のプロセスに対して操作を行います
         /// </summary>
         /// <param name="processName">プロセス名（拡張子なし）</param>
         /// <param name="operation">実行する操作</param>
         /// <returns>プロセスが存在する場合はtrue、存在しない場合はfalse</returns>
-        public static bool ProcessUtility(string processName, ProcessOperation operation)
+        public static bool ExitProcess(string processName, ProcessOperation operation)
         {
+            // まずはREST APIによる通常終了を試みる
+            // Task.Run を使用してデッドロックを回避
+            bool gracefullyTerminated = Task.Run(async () => await TryGracefulTerminationAsync(processName)).GetAwaiter().GetResult();
+            if (gracefullyTerminated)
+            {
+                return true;
+            }
+
+            // 正常に終了しない場合は強制終了
             try
             {
                 Process[] processes = Process.GetProcessesByName(processName);
-                bool exists = processes.Length > 0;
-
-                // 操作に応じたプロセス処理
-                if (operation == ProcessOperation.Terminate || operation == ProcessOperation.RestartIfRunning)
+                foreach (Process process in processes)
                 {
-                    foreach (Process process in processes)
+                    try
                     {
-                        try
-                        {
-                            if (!process.HasExited)
-                            {
-                                // より丁寧な停止方法
-                                try
-                                {
-                                    // taskkillでSIGTERMを送信（/Fなし）
-                                    Process taskkillProcess = Process.Start(new ProcessStartInfo
-                                    {
-                                        FileName = "taskkill",
-                                        Arguments = $"/PID {process.Id}",
-                                        CreateNoWindow = true,
-                                        UseShellExecute = false
-                                    });
-                                    taskkillProcess?.WaitForExit();
+                        if (process.HasExited) continue;
 
-                                    if (!process.WaitForExit(2000))
-                                    {
-                                        // それでも終了しない場合は強制終了
-                                        process.Kill();
-                                        process.WaitForExit(2000);
-                                    }
-                                }
-                                catch
-                                {
-                                    // エラーが発生した場合は従来の方法
-                                    process.CloseMainWindow();
-                                    process.WaitForExit(5000);
-                                    if (!process.HasExited)
-                                    {
-                                        process.Kill();
-                                        process.WaitForExit(2000);
-                                    }
-                                }
-                                Debug.WriteLine($"{processName} プロセスを終了しました。");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"{processName} プロセス終了エラー: {ex.Message}");
-                            // プロセス終了のエラーはログに記録するだけで続行
-                        }
+                        process.Kill();
+                        process.WaitForExit(2000);
+                        Debug.WriteLine($"{processName} プロセスを強制終了しました。");
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        Debug.WriteLine($"{processName} は既に終了していました。");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"{processName} プロセス終了エラー: {ex.Message}");
                     }
                 }
-
-                return exists;
+                return true;
             }
             catch (Exception ex)
             {
@@ -96,13 +77,73 @@ namespace CocoroDock.Utilities
         }
 
         /// <summary>
+        /// REST APIを使用してプロセスに協調的終了を要求します
+        /// </summary>
+        /// <param name="processName">プロセス名</param>
+        /// <returns>終了シグナルの送信に成功した場合はtrue</returns>
+        private static async Task<bool> TryGracefulTerminationAsync(string processName)
+        {
+            try
+            {
+                // 設定から各プロセスのポート番号を取得
+                var settings = AppSettings.Instance;
+                int? port = processName.ToLower() switch
+                {
+                    "cocorocore" => settings.CocoroCorePort,
+                    "cocoromemory" => settings.CocoroMemoryPort,
+                    "cocoroshell" => settings.CocoroShellPort,
+                    _ => null
+                };
+
+                if (port == null)
+                {
+                    Debug.WriteLine($"{processName} はREST API経由の終了をサポートしていません。");
+                    return false;
+                }
+
+                // shutdownコマンドをJSONで作成
+                var json = "{\"command\":\"shutdown\",\"params\":{}}";
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                // /api/control エンドポイントにPOSTリクエストを送信
+                // ConfigureAwait(false)を使用してデッドロックを回避
+                var response = await httpClient.PostAsync($"http://localhost:{port}/api/control", content).ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Debug.WriteLine($"{processName} にREST API経由で終了シグナルを送信しました。");
+                    return true;
+                }
+                else
+                {
+                    Debug.WriteLine($"{processName} への終了シグナル送信に失敗しました。ステータス: {response.StatusCode}");
+                    return false;
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                Debug.WriteLine($"{processName} への接続に失敗しました: {ex.Message}");
+                return false;
+            }
+            catch (TaskCanceledException)
+            {
+                Debug.WriteLine($"{processName} への終了シグナル送信がタイムアウトしました。");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"REST API経由の協調的終了中にエラーが発生しました: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// 外部アプリケーションを起動します
         /// </summary>
-        /// <param name="appName">アプリケーション名</param>
-        /// <param name="exePath">実行ファイルのパス（絶対パスまたは相対パス）</param>
-        /// <param name="relativeDir">相対ディレクトリ（nullの場合は直接exePathを使用）</param>
+        /// <param name="exeName">アプリケーションexe名</param>
+        /// <param name="relativeDir">相対ディレクトリ</param>
         /// <param name="operation">プロセス操作の種類（終了のみか再起動か）</param>
-        public static void LaunchExternalApplication(string appName, string exePath, string? relativeDir = null, ProcessOperation operation = ProcessOperation.RestartIfRunning)
+        public static void LaunchExternalApplication(string exeName, string? relativeDir = null, ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
             try
             {
@@ -110,27 +151,27 @@ namespace CocoroDock.Utilities
                 string fullPath;
                 if (relativeDir != null)
                 {
-                    fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, relativeDir, exePath);
+                    fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, relativeDir, exeName);
                 }
                 else
                 {
-                    fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, exePath);
+                    fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, exeName);
+                }
+
+                // 同名の実行中プロセスをチェックして終了または再起動
+                string processName = Path.GetFileNameWithoutExtension(exeName);
+                bool wasRunning = ExitProcess(processName, operation);
+
+                // 終了のみの場合は起動しない
+                if (operation == ProcessOperation.Terminate)
+                {
+                    return;
                 }
 
                 // ファイルの存在確認
                 if (!File.Exists(fullPath))
                 {
-                    UIHelper.ShowError("起動エラー", $"{appName}が見つかりません。パス: {fullPath}");
-                    return;
-                }
-
-                // 同名の実行中プロセスをチェックして終了または再起動
-                string processName = Path.GetFileNameWithoutExtension(exePath);
-                bool wasRunning = ProcessUtility(processName, operation);
-
-                // 終了のみの場合は起動しない
-                if (operation == ProcessOperation.Terminate)
-                {
+                    UIHelper.ShowError("起動エラー", $"{exeName}が見つかないため正常動作しません。パス: {fullPath}");
                     return;
                 }
 
@@ -153,7 +194,7 @@ namespace CocoroDock.Utilities
             }
             catch (Exception ex)
             {
-                UIHelper.ShowError($"{appName}起動エラー", ex.Message);
+                UIHelper.ShowError($"{exeName}起動エラー", ex.Message);
             }
         }
     }
