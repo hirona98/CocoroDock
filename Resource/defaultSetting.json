@@ -18,6 +18,8 @@
   "backgroundShadow": 2,
   "backgroundShadowResolution": 2,
   "windowSize": 1200,
+  "windowPositionX": 0.0,
+  "windowPositionY": 0.0,
   "screenshotSettings": {
     "enabled": false,
     "intervalMinutes": 10,

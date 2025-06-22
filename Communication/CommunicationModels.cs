@@ -79,6 +79,8 @@ namespace CocoroDock.Communication
         public int backgroundShadow { get; set; }
         public int backgroundShadowResolution { get; set; }
         public float windowSize { get; set; }
+        public float windowPositionX { get; set; } = 0.0f;
+        public float windowPositionY { get; set; } = 0.0f;
         public int currentCharacterIndex { get; set; }
         public int currentAnimationSettingIndex { get; set; } = 0;
         public List<CharacterSettings> characterList { get; set; } = new List<CharacterSettings>();

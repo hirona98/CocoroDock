@@ -135,6 +135,8 @@ namespace CocoroDock.Services
         public int BackgroundShadow { get; set; } = 0;
         public int BackgroundShadowResolution { get; set; } = 0;
         public int WindowSize { get; set; } = 650;
+        public float WindowPositionX { get; set; } = 0.0f;
+        public float WindowPositionY { get; set; } = 0.0f;
 
         // キャラクター設定
         public int CurrentCharacterIndex { get; set; } = 0;
@@ -231,6 +233,8 @@ namespace CocoroDock.Services
             BackgroundShadow = config.backgroundShadow;
             BackgroundShadowResolution = config.backgroundShadowResolution;
             WindowSize = config.windowSize > 0 ? (int)config.windowSize : 650;
+            WindowPositionX = config.windowPositionX;
+            WindowPositionY = config.windowPositionY;
             CurrentCharacterIndex = config.currentCharacterIndex;
 
             // キャラクターリストを更新（もし受信したリストが空でなければ）
@@ -282,6 +286,8 @@ namespace CocoroDock.Services
                 backgroundShadow = BackgroundShadow,
                 backgroundShadowResolution = BackgroundShadowResolution,
                 windowSize = WindowSize,
+                windowPositionX = WindowPositionX,
+                windowPositionY = WindowPositionY,
                 currentCharacterIndex = CurrentCharacterIndex,
                 characterList = new List<CharacterSettings>(CharacterList),
                 currentAnimationSettingIndex = CurrentAnimationSettingIndex,

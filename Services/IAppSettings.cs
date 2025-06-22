@@ -104,6 +104,16 @@ namespace CocoroDock.Services
         int WindowSize { get; set; }
 
         /// <summary>
+        /// ウィンドウX座標
+        /// </summary>
+        float WindowPositionX { get; set; }
+
+        /// <summary>
+        /// ウィンドウY座標
+        /// </summary>
+        float WindowPositionY { get; set; }
+
+        /// <summary>
         /// 現在のキャラクターインデックス
         /// </summary>
         int CurrentCharacterIndex { get; set; }
