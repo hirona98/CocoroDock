@@ -54,6 +54,7 @@ namespace CocoroDock.Communication
         public bool captureActiveWindowOnly { get; set; } = true;
         public bool enableRegexFiltering { get; set; } = true;
         public string regexPattern { get; set; } = "パスワード|password|クレジット|credit|disite|dlsite|dmmcojp|dmm\\.co\\.jp|アダルト|成人向け";
+        public int idleTimeoutMinutes { get; set; } = 10;
     }
 
     /// <summary>

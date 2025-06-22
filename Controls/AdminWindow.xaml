@@ -826,10 +826,11 @@
                                 <StackPanel>
                                     <!-- 説明テキスト -->
                                     <TextBlock TextWrapping="Wrap"
-                                               Foreground="#666666" Margin="0,0,0,10">
+                                               Foreground="#666666"
+                                               Margin="0,0,0,10">
                                         REST APIで受信した通知をキャラクターが教えてくれます
                                     </TextBlock>
-                                    
+
                                     <!-- 通知要求を受けるチェックボックス -->
                                     <CheckBox x:Name="IsEnableNotificationApiCheckBox"
                                               Content="通知要求を受ける"
@@ -854,10 +855,11 @@
                                 <StackPanel>
                                     <!-- 説明テキスト -->
                                     <TextBlock TextWrapping="Wrap"
-                                               Foreground="#666666" Margin="0,0,0,10">
+                                               Foreground="#666666"
+                                               Margin="0,0,0,10">
                                         デスクトップの画面を定期的に取得し、内容に応じたコメントをします。マルチモーダルモデルが必要です。
                                     </TextBlock>
-                                    
+
                                     <!-- ウォッチ機能の有効/無効設定 -->
                                     <CheckBox x:Name="ScreenshotEnabledCheckBox"
                                               Content="デスクトップウォッチを有効にする（LLMに画像を送信します）"
@@ -865,8 +867,15 @@
                                               Foreground="#FF4873CF"
                                               ToolTip="Enable desktop monitoring"/>
 
+                                    <!-- アクティブウィンドウのみ設定 -->
+                                    <CheckBox x:Name="CaptureActiveWindowOnlyCheckBox"
+                                              Content="アクティブウィンドウだけを対象にする"
+                                              Margin="0,10,0,5"
+                                              Foreground="#FF4873CF"
+                                              ToolTip="Capture active window only"/>
+
                                     <!-- ウォッチ間隔設定 -->
-                                    <Grid Margin="0,5">
+                                    <Grid Margin="0,5,0,5">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="70"/>
                                             <ColumnDefinition Width="Auto"/>
@@ -888,13 +897,6 @@
                                                    VerticalAlignment="Center"
                                                    HorizontalAlignment="Left"/>
                                     </Grid>
-
-                                    <!-- アクティブウィンドウのみ設定 -->
-                                    <CheckBox x:Name="CaptureActiveWindowOnlyCheckBox"
-                                              Content="アクティブウィンドウだけを対象にする"
-                                              Margin="0,10,0,5"
-                                              Foreground="#FF4873CF"
-                                              ToolTip="Capture active window only"/>
 
                                     <!-- 文字列フィルタリング設定 -->
                                     <CheckBox x:Name="RegularExpressionFilteringCheckBox"
@@ -924,13 +926,44 @@
                                     <!-- フィルタリング説明テキスト -->
                                     <TextBlock TextWrapping="Wrap"
                                                Margin="20,0,0,10">
-                                        <TextBlock TextWrapping="Wrap">
+                                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
                                             <TextBlock.Inlines>
                                                 <Run Text="セキュリティやBAN対策で実装しましたが、精度が低いので気休め程度に考えてください。"/>
                                                 <LineBreak/>
                                                 <Run Text="正しく認識できない事があるため、似た文字も対象にしてください。"/>
                                             </TextBlock.Inlines>
                                         </TextBlock>
+                                    </TextBlock>
+
+
+                                    <!-- アイドルタイムアウト設定 -->
+                                    <Grid Margin="0,0,0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="28"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="アイドルタイムアウト:"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBox Grid.Column="1"
+                                                 x:Name="IdleTimeoutTextBox"
+                                                 Foreground="#FF0078D7"
+                                                 VerticalAlignment="Center"
+                                                 Width="50"
+                                                 HorizontalAlignment="Left"
+                                                 Margin="10,0,10,0"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="分"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Left"/>
+                                    </Grid>
+
+                                    <!-- アイドルタイムアウト説明テキスト -->
+                                    <TextBlock TextWrapping="Wrap"
+                                               Margin="0,0,0,10"
+                                               Foreground="#FF4873CF">
+                                        ※マウスやキーボードの操作がない時間が設定値を超えると、デスクトップウォッチを一時停止します。
                                     </TextBlock>
                                 </StackPanel>
                             </GroupBox>

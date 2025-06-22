@@ -288,6 +288,7 @@ namespace CocoroDock.Controls
             // スクリーンショット設定の初期化
             ScreenshotEnabledCheckBox.IsChecked = appSettings.ScreenshotSettings.enabled;
             ScreenshotIntervalTextBox.Text = appSettings.ScreenshotSettings.intervalMinutes.ToString();
+            IdleTimeoutTextBox.Text = appSettings.ScreenshotSettings.idleTimeoutMinutes.ToString();
             CaptureActiveWindowOnlyCheckBox.IsChecked = appSettings.ScreenshotSettings.captureActiveWindowOnly;
             RegularExpressionFilteringCheckBox.IsChecked = appSettings.ScreenshotSettings.enableRegexFiltering;
             RegularExpressionString.Text = appSettings.ScreenshotSettings.regexPattern;
@@ -361,6 +362,7 @@ namespace CocoroDock.Controls
                 { "IsEnableNotificationApi", appSettings.IsEnableNotificationApi },
                 { "ScreenshotEnabled", appSettings.ScreenshotSettings.enabled },
                 { "ScreenshotInterval", appSettings.ScreenshotSettings.intervalMinutes },
+                { "IdleTimeout", appSettings.ScreenshotSettings.idleTimeoutMinutes },
                 { "CaptureActiveWindowOnly", appSettings.ScreenshotSettings.captureActiveWindowOnly },
                 { "EnableRegexFiltering", appSettings.ScreenshotSettings.enableRegexFiltering },
                 { "RegexPattern", appSettings.ScreenshotSettings.regexPattern }
@@ -1581,6 +1583,7 @@ namespace CocoroDock.Controls
             // スクリーンショット設定を保存
             _displaySettings["ScreenshotEnabled"] = ScreenshotEnabledCheckBox.IsChecked ?? false;
             _displaySettings["ScreenshotInterval"] = int.TryParse(ScreenshotIntervalTextBox.Text, out int interval) ? interval : 10;
+            _displaySettings["IdleTimeout"] = int.TryParse(IdleTimeoutTextBox.Text, out int idleTimeout) ? idleTimeout : 0;
             _displaySettings["CaptureActiveWindowOnly"] = CaptureActiveWindowOnlyCheckBox.IsChecked ?? true;
             _displaySettings["EnableRegexFiltering"] = RegularExpressionFilteringCheckBox.IsChecked ?? false;
             _displaySettings["RegexPattern"] = RegularExpressionString.Text ?? string.Empty;
@@ -1611,6 +1614,7 @@ namespace CocoroDock.Controls
             // スクリーンショット設定の更新
             appSettings.ScreenshotSettings.enabled = (bool)_displaySettings["ScreenshotEnabled"];
             appSettings.ScreenshotSettings.intervalMinutes = (int)_displaySettings["ScreenshotInterval"];
+            appSettings.ScreenshotSettings.idleTimeoutMinutes = (int)_displaySettings["IdleTimeout"];
             appSettings.ScreenshotSettings.captureActiveWindowOnly = (bool)_displaySettings["CaptureActiveWindowOnly"];
             appSettings.ScreenshotSettings.enableRegexFiltering = (bool)_displaySettings["EnableRegexFiltering"];
             appSettings.ScreenshotSettings.regexPattern = (string)_displaySettings["RegexPattern"];

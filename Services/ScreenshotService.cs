@@ -29,6 +29,16 @@ namespace CocoroAI.Services
         [DllImport("user32.dll")]
         private static extern int GetWindowTextLength(IntPtr hWnd);
 
+        [DllImport("user32.dll")]
+        private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct LASTINPUTINFO
+        {
+            public uint cbSize;
+            public uint dwTime;
+        }
+
         [StructLayout(LayoutKind.Sequential)]
         private struct RECT
         {
@@ -47,6 +57,7 @@ namespace CocoroAI.Services
         private bool _isDisposed;
         private TesseractEngine? _ocrEngine;
         private readonly object _ocrLock = new object();
+        private int _idleTimeoutMinutes = 5; // デフォルト5分
 
         /// <summary>
         /// フィルタリングされたときに発生するイベント
@@ -58,6 +69,11 @@ namespace CocoroAI.Services
         public bool EnableRegexFiltering { get; set; }
         public string? RegexPattern { get; set; }
         public int IntervalMinutes => _intervalMilliseconds / 60000;
+        public int IdleTimeoutMinutes
+        {
+            get => _idleTimeoutMinutes;
+            set => _idleTimeoutMinutes = value > 0 ? value : 5;
+        }
 
         public ScreenshotService(int intervalMinutes = 10, Func<ScreenshotData, Task>? onCaptured = null)
         {
@@ -195,6 +211,13 @@ namespace CocoroAI.Services
         {
             try
             {
+                // アイドル時間をチェック
+                if (IsUserIdle())
+                {
+                    Debug.WriteLine($"ユーザーがアイドル状態（{_idleTimeoutMinutes}分以上操作なし）のため、スクリーンショットをスキップします");
+                    return;
+                }
+
                 var screenshot = CaptureActiveWindowOnly
                     ? await CaptureActiveWindowAsync()
                     : await CaptureFullScreenAsync();
@@ -388,6 +411,36 @@ namespace CocoroAI.Services
 
                 return new FilterResult { ShouldFilter = false };
             });
+        }
+
+        /// <summary>
+        /// ユーザーがアイドル状態かどうかを判定
+        /// </summary>
+        private bool IsUserIdle()
+        {
+            try
+            {
+                var lastInputInfo = new LASTINPUTINFO();
+                lastInputInfo.cbSize = (uint)Marshal.SizeOf(lastInputInfo);
+
+                if (GetLastInputInfo(ref lastInputInfo))
+                {
+                    // 最終入力からの経過時間を計算（ミリ秒）
+                    var idleTime = Environment.TickCount - lastInputInfo.dwTime;
+
+                    // アイドルタイムアウト時間（ミリ秒）と比較
+                    var idleTimeoutMs = _idleTimeoutMinutes * 60 * 1000;
+
+                    return idleTime > idleTimeoutMs;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"アイドル時間の取得エラー: {ex.Message}");
+            }
+
+            // エラーが発生した場合はアイドルとみなす
+            return true;
         }
 
         public void Dispose()

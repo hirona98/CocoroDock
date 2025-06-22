@@ -145,6 +145,7 @@ namespace CocoroDock
                 _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
                 _screenshotService.EnableRegexFiltering = screenshotSettings.enableRegexFiltering;
                 _screenshotService.RegexPattern = screenshotSettings.regexPattern;
+                _screenshotService.IdleTimeoutMinutes = screenshotSettings.idleTimeoutMinutes;
 
                 // フィルタリングイベントをハンドリング
                 _screenshotService.Filtered += OnScreenshotFiltered;
@@ -238,6 +239,7 @@ namespace CocoroDock
                 _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
                 _screenshotService.EnableRegexFiltering = screenshotSettings.enableRegexFiltering;
                 _screenshotService.RegexPattern = screenshotSettings.regexPattern;
+                _screenshotService.IdleTimeoutMinutes = screenshotSettings.idleTimeoutMinutes;
 
                 if (needsRestart)
                 {
