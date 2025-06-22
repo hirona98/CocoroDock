@@ -653,7 +653,7 @@ namespace CocoroDock
         /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
         private void LaunchCocoroCore(ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
-#if DEBUG
+#if !DEBUG
             if (_appSettings.CharacterList.Count > 0 &&
                _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count &&
                _appSettings.CharacterList[_appSettings.CurrentCharacterIndex].isUseLLM)
@@ -673,7 +673,7 @@ namespace CocoroDock
         /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
         private void LaunchCocoroMemory(ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
-#if DEBUG
+#if !DEBUG
             // 現在のキャラクターが有効で、記憶機能が有効な場合のみ起動
             if (_appSettings.CharacterList.Count > 0 &&
                _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count &&
