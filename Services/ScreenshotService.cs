@@ -270,11 +270,15 @@ namespace CocoroAI.Services
                     if (Directory.Exists(tessdataPath))
                     {
                         // 日本語と英語の両方を使用
-                        _ocrEngine = new TesseractEngine(tessdataPath, "jpn+eng", EngineMode.Default);
+                        // OEM 1: Neural nets LSTM engine only (より高精度)
+                        _ocrEngine = new TesseractEngine(tessdataPath, "jpn+eng", EngineMode.LstmOnly);
 
                         // Tesseractの内部ログを抑制（オプション）
                         // これらの警告は通常のOCR処理では問題ありません
                         _ocrEngine.SetVariable("debug_file", "/dev/null");
+
+                        // より良い二値化手法を使用（Sauvola法）
+                        _ocrEngine.SetVariable("thresholding_method", "2");
 
                         Debug.WriteLine("OCRエンジンを初期化しました");
                     }
