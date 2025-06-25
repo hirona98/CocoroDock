@@ -1,9 +1,9 @@
 {
   "cocoroDockPort": 55600,
   "cocoroCorePort": 55601,
-  "cocoroShellPort": 55605,
   "cocoroMemoryPort": 55602,
   "cocoroMemoryDBPort": 55603,
+  "cocoroShellPort": 55605,
   "notificationApiPort": 55604,
   "isEnableNotificationApi": false,
   "isTopmost": true,

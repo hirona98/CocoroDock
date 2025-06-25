@@ -66,6 +66,7 @@ namespace CocoroDock.Communication
         public int cocoroCorePort { get; set; } = 55601;
         public int cocoroMemoryPort { get; set; } = 55602;
         public int cocoroMemoryDBPort { get; set; } = 55603;
+        public int cocoroShellPort { get; set; } = 55605;
         public int notificationApiPort { get; set; } = 55604;
         public bool isEnableNotificationApi { get; set; } = false;
         public bool isTopmost { get; set; }

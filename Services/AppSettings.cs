@@ -168,6 +168,7 @@ namespace CocoroDock.Services
             CocoroCorePort = config.cocoroCorePort;
             CocoroMemoryPort = config.cocoroMemoryPort;
             CocoroMemoryDBPort = config.cocoroMemoryDBPort;
+            CocoroShellPort = config.cocoroShellPort;
             NotificationApiPort = config.notificationApiPort;
             IsEnableNotificationApi = config.isEnableNotificationApi;
             IsTopmost = config.isTopmost;
@@ -221,6 +222,7 @@ namespace CocoroDock.Services
                 cocoroCorePort = CocoroCorePort,
                 cocoroMemoryPort = CocoroMemoryPort,
                 cocoroMemoryDBPort = CocoroMemoryDBPort,
+                cocoroShellPort = CocoroShellPort,
                 notificationApiPort = NotificationApiPort,
                 isEnableNotificationApi = IsEnableNotificationApi,
                 isTopmost = IsTopmost,
@@ -345,6 +347,7 @@ namespace CocoroDock.Services
             if (source.cocoroCorePort > 0) target.cocoroCorePort = source.cocoroCorePort;
             if (source.cocoroMemoryPort > 0) target.cocoroMemoryPort = source.cocoroMemoryPort;
             if (source.cocoroMemoryDBPort > 0) target.cocoroMemoryDBPort = source.cocoroMemoryDBPort;
+            if (source.cocoroShellPort > 0) target.cocoroShellPort = source.cocoroShellPort;
             if (source.notificationApiPort > 0) target.notificationApiPort = source.notificationApiPort;
 
             // bool値は明示的に設定されているかを判断できないため、常に上書き
