@@ -457,7 +457,7 @@
                                         <TextBlock.Inlines>
                                             <Run Text="LiteLLM の書式で記載してください"/>
                                             <LineBreak/>
-                                            <Run Text="ex) openai/gpt-4o-mini, gemini/gemini-2.0-flash, ollama/mistral"/>
+                                            <Run Text="ex) openai/gpt-4o-mini, gemini/gemini-2.0-flash, ollama_chat/gemma3:12b"/>
                                             <LineBreak/>
                                             <Run Text="詳細は "/>
                                             <Hyperlink NavigateUri="https://docs.litellm.ai/docs/providers"
@@ -926,7 +926,8 @@
                                     <!-- フィルタリング説明テキスト -->
                                     <TextBlock TextWrapping="Wrap"
                                                Margin="20,0,0,10">
-                                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,5">
+                                        <TextBlock TextWrapping="Wrap"
+                                                   Margin="0,0,0,5">
                                             <TextBlock.Inlines>
                                                 <Run Text="セキュリティやBAN対策で実装しましたが、精度が低いので気休め程度に考えてください。"/>
                                                 <LineBreak/>
