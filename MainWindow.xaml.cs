@@ -617,14 +617,16 @@ namespace CocoroDock
         {
             try
             {
-                // CocoroCore プロセスを終了
-                LaunchCocoroCore(ProcessOperation.Terminate);
+                // 3つのプロセスを並行して終了させる
+                var tasks = new[]
+                {
+                    Task.Run(() => LaunchCocoroCore(ProcessOperation.Terminate)),
+                    Task.Run(() => LaunchCocoroShell(ProcessOperation.Terminate)),
+                    Task.Run(() => LaunchCocoroMemory(ProcessOperation.Terminate))
+                };
 
-                // CocoroShell プロセスを終了
-                LaunchCocoroShell(ProcessOperation.Terminate);
-
-                // CocoroMemory プロセスを終了
-                LaunchCocoroMemory(ProcessOperation.Terminate);
+                // すべてのプロセスが終了するまで待機
+                Task.WaitAll(tasks);
             }
             catch (Exception ex)
             {
