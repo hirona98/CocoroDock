@@ -43,37 +43,7 @@ namespace CocoroDock.Utilities
             {
                 return true;
             }
-
-            // 正常に終了しない場合は強制終了
-            try
-            {
-                Process[] processes = Process.GetProcessesByName(processName);
-                foreach (Process process in processes)
-                {
-                    try
-                    {
-                        if (process.HasExited) continue;
-
-                        process.Kill();
-                        process.WaitForExit(2000);
-                        Debug.WriteLine($"{processName} プロセスを強制終了しました。");
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        Debug.WriteLine($"{processName} は既に終了していました。");
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"{processName} プロセス終了エラー: {ex.Message}");
-                    }
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"{processName} プロセス操作エラー: {ex.Message}");
-                return false;
-            }
+            return false;
         }
 
         /// <summary>
