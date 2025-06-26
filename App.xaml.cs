@@ -30,6 +30,7 @@ namespace CocoroDock
 {
     /// <summary>
     /// App.xaml の相互作用ロジック
+    /// Mutexによる同時起動防止とNamedPipeによるプロセス間通信を実装
     /// </summary>
     public partial class App : Application
     {
@@ -37,33 +38,49 @@ namespace CocoroDock
         private static readonly string PipeName = GetPipeNameFromExecutable();
         private Thread? _pipeServerThread;
         private CancellationTokenSource? _pipeServerCancellationTokenSource;
+        private static Mutex? _mutex;
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            // 二重起動チェック - パイプクライアントを使用
-            if (IsProgramAlreadyRunning())
+            // Mutexによる二重起動チェック
+            string mutexName = $"Global\\{GetPipeNameFromExecutable()}";
+            bool createdNew;
+            
+            try
             {
-                // 既存のプロセスにメッセージを送信して表示
-                try
+                _mutex = new Mutex(true, mutexName, out createdNew);
+                
+                if (!createdNew)
                 {
-                    using (var pipeClient = new NamedPipeClientStream(".", PipeName, PipeDirection.Out))
+                    // 既に起動している場合、既存のプロセスにメッセージを送信
+                    try
                     {
-                        pipeClient.Connect(1000); // 1秒でタイムアウト
-                        using (var writer = new StreamWriter(pipeClient))
+                        using (var pipeClient = new NamedPipeClientStream(".", PipeName, PipeDirection.Out))
                         {
-                            writer.WriteLine("SHOW_WINDOW");
-                            writer.Flush();
+                            pipeClient.Connect(1000); // 1秒でタイムアウト
+                            using (var writer = new StreamWriter(pipeClient))
+                            {
+                                writer.WriteLine("SHOW_WINDOW");
+                                writer.Flush();
+                            }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"既存プロセスへの接続に失敗しました: {ex.Message}",
-                        "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"既存プロセスへの接続に失敗しました: {ex.Message}",
+                            "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
 
-                // 自プロセスを終了
-                Environment.Exit(0);
+                    // 自プロセスを終了
+                    Environment.Exit(0);
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Mutex作成エラー: {ex.Message}",
+                    "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                Environment.Exit(1);
                 return;
             }
 
@@ -71,7 +88,9 @@ namespace CocoroDock
             StartPipeServer();
 
             // システムトレイアイコンの初期化
-            InitializeNotifyIcon();            // 未処理の例外ハンドラを登録
+            InitializeNotifyIcon();
+            
+            // 未処理の例外ハンドラを登録
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Application.Current.DispatcherUnhandledException += Application_DispatcherUnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
@@ -138,22 +157,6 @@ namespace CocoroDock
             }
         }
 
-        // プログラムが既に実行中かチェック
-        private bool IsProgramAlreadyRunning()
-        {
-            try
-            {
-                using (var pipeClient = new NamedPipeClientStream(".", PipeName, PipeDirection.Out))
-                {
-                    pipeClient.Connect(10); // ほぼ即時接続を試みる
-                    return true; // 接続成功 = 既に実行中
-                }
-            }
-            catch
-            {
-                return false; // 接続失敗 = 実行中ではない
-            }
-        }
 
         protected override void OnExit(ExitEventArgs e)
         {
@@ -163,6 +166,10 @@ namespace CocoroDock
 
             // システムトレイアイコンの解放
             _notifyIcon?.Dispose();
+            
+            // Mutexを解放
+            _mutex?.ReleaseMutex();
+            _mutex?.Dispose();
 
             // アプリケーション終了時の処理
             try
