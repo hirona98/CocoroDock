@@ -660,7 +660,17 @@ namespace CocoroDock
         /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
         private void LaunchCocoroShell(ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
-            ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", operation);
+#if !DEBUG
+            if (_appSettings.CharacterList.Count > 0 &&
+               _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count)
+            {
+                ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", operation);
+            }
+            else
+            {
+                ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", ProcessOperation.Terminate);
+            }
+#endif
         }
 
         /// <summary>
