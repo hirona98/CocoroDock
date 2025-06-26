@@ -444,43 +444,55 @@ namespace CocoroDock
         /// </summary>
         private async void OnChatMessageSent(object? sender, string message)
         {
-            try
+            // APIサーバーが起動している場合のみ送信
+            if (_communicationService == null || !_communicationService.IsServerRunning)
             {
-                // APIサーバーが起動している場合のみ送信
-                if (_communicationService != null && _communicationService.IsServerRunning)
+                ChatControlInstance.AddSystemErrorMessage("サーバーが起動していません");
+                return;
+            }
+
+            // 添付画像を取得（あれば）
+            var imageSource = ChatControlInstance.GetAttachedImageSource();
+            string? imageDataUrl = ChatControlInstance.GetAndClearAttachedImage();
+
+            // ユーザーメッセージとしてチャットウィンドウに表示（送信前に表示）
+            ChatControlInstance.AddUserMessage(message, imageSource);
+
+            // 非同期でCocoroCoreにメッセージを送信（UIをブロックしない）
+            _ = Task.Run(async () =>
+            {
+                try
                 {
-                    // 添付画像を取得（あれば）
-                    var imageSource = ChatControlInstance.GetAttachedImageSource();
-                    string? imageDataUrl = ChatControlInstance.GetAndClearAttachedImage();
-
-                    // ユーザーメッセージとしてチャットウィンドウに表示（送信前に表示）
-                    ChatControlInstance.AddUserMessage(message, imageSource);
-
                     // CocoroCoreにメッセージを送信（画像付きの場合は画像データも送信）
                     await _communicationService.SendChatToCoreAsync(message, null, imageDataUrl);
                 }
-                else
+                catch (TimeoutException)
                 {
-                    ChatControlInstance.AddSystemErrorMessage("サーバーが起動していません");
+                    // UIスレッドでエラーメッセージを表示
+                    UIHelper.RunOnUIThread(() =>
+                    {
+                        ChatControlInstance.AddSystemErrorMessage("AI応答がタイムアウトしました。もう一度お試しください。");
+                    });
                 }
-            }
-            catch (TimeoutException)
-            {
-                // タイムアウトエラー専用のメッセージ
-                ChatControlInstance.AddSystemErrorMessage("AI応答がタイムアウトしました。もう一度お試しください。");
-            }
-            catch (HttpRequestException ex)
-            {
-                // 接続エラー専用のメッセージ
-                ChatControlInstance.AddSystemErrorMessage("AI応答サーバーに接続できません。");
-                Debug.WriteLine($"HttpRequestException: {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                // その他のエラー
-                ChatControlInstance.AddSystemErrorMessage($"エラーが発生しました: {ex.Message}");
-                Debug.WriteLine($"Exception: {ex}");
-            }
+                catch (HttpRequestException ex)
+                {
+                    // UIスレッドでエラーメッセージを表示
+                    UIHelper.RunOnUIThread(() =>
+                    {
+                        ChatControlInstance.AddSystemErrorMessage("AI応答サーバーに接続できません。");
+                    });
+                    Debug.WriteLine($"HttpRequestException: {ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    // UIスレッドでエラーメッセージを表示
+                    UIHelper.RunOnUIThread(() =>
+                    {
+                        ChatControlInstance.AddSystemErrorMessage($"エラーが発生しました: {ex.Message}");
+                    });
+                    Debug.WriteLine($"Exception: {ex}");
+                }
+            });
         }
 
         #endregion
