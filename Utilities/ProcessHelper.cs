@@ -77,7 +77,7 @@ namespace CocoroDock.Utilities
 
                 // /api/control エンドポイントにPOSTリクエストを送信
                 // ConfigureAwait(false)を使用してデッドロックを回避
-                var response = await httpClient.PostAsync($"http://localhost:{port}/api/control", content).ConfigureAwait(false);
+                var response = await httpClient.PostAsync($"http://127.0.0.1:{port}/api/control", content).ConfigureAwait(false);
 
                 if (response.IsSuccessStatusCode)
                 {

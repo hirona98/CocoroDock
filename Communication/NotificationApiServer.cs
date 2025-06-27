@@ -194,7 +194,7 @@ namespace CocoroDock.Communication
                     }
                 });
 
-                Debug.WriteLine($"通知APIサーバーを起動しました: http://localhost:{_port}");
+                Debug.WriteLine($"通知APIサーバーを起動しました: http://127.0.0.1:{_port}");
             }
             catch (System.Net.Sockets.SocketException sockEx)
             {
