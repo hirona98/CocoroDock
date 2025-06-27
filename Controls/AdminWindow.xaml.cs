@@ -1863,7 +1863,7 @@ namespace CocoroDock.Controls
         {
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("エンドポイント:");
-            sb.AppendLine("POST http://localhost:55604/api/v1/notification");
+            sb.AppendLine("POST http://127.0.0.1:55604/api/v1/notification");
             sb.AppendLine();
             sb.AppendLine("リクエストボディ (JSON):");
             sb.AppendLine("{");
@@ -1875,13 +1875,13 @@ namespace CocoroDock.Controls
             sb.AppendLine("HTTP/1.1 204 No Content");
             sb.AppendLine();
             sb.AppendLine("使用例 (cURL):");
-            sb.AppendLine("curl -X POST http://localhost:55604/api/v1/notification \\");
+            sb.AppendLine("curl -X POST http://127.0.0.1:55604/api/v1/notification \\");
             sb.AppendLine("  -H \"Content-Type: application/json\" \\");
             sb.AppendLine("  -d '{\"from\":\"MyApp\",\"message\":\"処理完了\"}'");
             sb.AppendLine();
             sb.AppendLine("使用例 (PowerShell):");
             sb.AppendLine("Invoke-RestMethod -Method Post `");
-            sb.AppendLine("  -Uri \"http://localhost:55604/api/v1/notification\" `");
+            sb.AppendLine("  -Uri \"http://127.0.0.1:55604/api/v1/notification\" `");
             sb.AppendLine("  -ContentType \"application/json\" `");
             sb.AppendLine("  -Body '{\"from\":\"MyApp\",\"message\":\"処理完了\"}'");
             ApiDescriptionTextBox.Text = sb.ToString();
