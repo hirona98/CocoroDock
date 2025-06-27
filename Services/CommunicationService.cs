@@ -41,7 +41,7 @@ namespace CocoroDock.Services
             _apiServer = new CocoroDockApiServer(_appSettings.CocoroDockPort, _appSettings);
             _apiServer.ChatMessageReceived += (sender, request) => ChatMessageReceived?.Invoke(this, request);
             _apiServer.ControlCommandReceived += (sender, request) => ControlCommandReceived?.Invoke(this, request);
-            _apiServer.StatusUpdateReceived += (sender, request) => 
+            _apiServer.StatusUpdateReceived += (sender, request) =>
             {
                 // ステータス更新イベントを発火
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, request.message));
@@ -186,6 +186,7 @@ namespace CocoroDock.Services
                     }
                 };
 
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "チャットメッセージ送信"));
                 var response = await _coreClient.SendChatMessageAsync(request);
 
                 // SSEレスポンスから新しいcontext_idを保存
@@ -196,7 +197,7 @@ namespace CocoroDock.Services
                 }
 
                 // 成功時のステータス更新
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "メッセージを送信しました"));
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "チャットメッセージ応答受信"));
             }
             catch (Exception ex)
             {
