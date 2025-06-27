@@ -304,20 +304,6 @@ namespace CocoroDock
                     // カスタムメッセージがある場合は履歴に追加
                     AddStatusMessage(customMessage);
                 }
-                else if (isConnected)
-                {
-                    // 接続状態で特定のメッセージがない場合
-                    lock (_statusLock)
-                    {
-                        // すべてのタイマーを破棄
-                        foreach (var msg in _statusMessages)
-                        {
-                            msg.Timer?.Dispose();
-                        }
-                        _statusMessages.Clear();
-                        ConnectionStatusText.Text = "状態: 正常動作中";
-                    }
-                }
                 else
                 {
                     // 切断状態
