@@ -16,7 +16,6 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Resource\defaultSetting.json" />
-    <None Remove="Resource\License.txt" />
     <None Remove="Resource\logo.png" />
   </ItemGroup>
   <ItemGroup>
@@ -24,10 +23,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>UserData\defaultSetting.json</Link>
     </Content>
-    <Content Include="Resource\License.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>License.txt</Link>
-    </Content>
+    <EmbeddedResource Include="Resource\License.txt" />
   </ItemGroup>
 
   <ItemGroup>

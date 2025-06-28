@@ -1838,28 +1838,31 @@ namespace CocoroDock.Controls
         {
             try
             {
-                // License.txtファイルのパスを取得
-                string licenseFilePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "License.txt");
+                // 埋め込みリソースからライセンステキストを読み込む
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                var resourceName = "CocoroDock.Resource.License.txt";
 
-                // ファイルが存在するか確認
-                if (System.IO.File.Exists(licenseFilePath))
+                using (var stream = assembly.GetManifestResourceStream(resourceName))
                 {
-                    // ファイルの内容を読み込む
-                    string licenseText = System.IO.File.ReadAllText(licenseFilePath);
-
-                    // LicenseTextBoxに表示
-                    LicenseTextBox.Text = licenseText;
-                }
-                else
-                {
-                    // ファイルが見つからない場合
-                    LicenseTextBox.Text = "ライセンスファイルが見つかりませんでした。";
+                    if (stream != null)
+                    {
+                        using (var reader = new System.IO.StreamReader(stream))
+                        {
+                            string licenseText = reader.ReadToEnd();
+                            LicenseTextBox.Text = licenseText;
+                        }
+                    }
+                    else
+                    {
+                        // リソースが見つからない場合
+                        LicenseTextBox.Text = "ライセンスリソースが見つかりませんでした。";
+                    }
                 }
             }
             catch (Exception ex)
             {
                 // エラーが発生した場合
-                LicenseTextBox.Text = $"ライセンスファイルの読み込み中にエラーが発生しました: {ex.Message}";
+                LicenseTextBox.Text = $"ライセンスリソースの読み込み中にエラーが発生しました: {ex.Message}";
             }
         }
 
