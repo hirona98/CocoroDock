@@ -40,25 +40,10 @@
                                                    FontWeight="SemiBold"/>
                                 </StackPanel>
 
-                                <StackPanel Grid.Column="1" 
+                                <StackPanel Grid.Column="1"
                                             Orientation="Horizontal"
                                             Margin="0,0,20,0"
                                             VerticalAlignment="Center">
-                                        <Button x:Name="PauseScreenshotButton"
-                                                ToolTip="画像送信を一時停止"
-                                                Margin="0,0,10,0"
-                                                Padding="8"
-                                                Background="#4873CF"
-                                                BorderThickness="0"
-                                                Click="PauseScreenshotButton_Click"
-                                                Width="40"
-                                                Height="40">
-                                                <svgc:SvgViewbox x:Name="ScreenshotButtonImage"
-                                                                 Source="pack://application:,,,/Resource/icon/ScreenShotON.svg"
-                                                                 Width="24"
-                                                                 Height="24"/>
-                                        </Button>
-                                        
                                         <Button x:Name="MicButton"
                                                 ToolTip="マイク"
                                                 Margin="0,0,10,0"
@@ -73,7 +58,7 @@
                                                                  Width="24"
                                                                  Height="24"/>
                                         </Button>
-                                        
+
                                         <Button x:Name="MuteButton"
                                                 ToolTip="TTS"
                                                 Margin="0,0,10,0"
@@ -88,7 +73,22 @@
                                                                  Width="24"
                                                                  Height="24"/>
                                         </Button>
-                                                
+
+                                        <Button x:Name="PauseScreenshotButton"
+                                                ToolTip="画像送信を一時停止"
+                                                Margin="0,0,10,0"
+                                                Padding="8"
+                                                Background="#4873CF"
+                                                BorderThickness="0"
+                                                Click="PauseScreenshotButton_Click"
+                                                Width="40"
+                                                Height="40">
+                                                <svgc:SvgViewbox x:Name="ScreenshotButtonImage"
+                                                                 Source="pack://application:,,,/Resource/icon/ScreenShotON.svg"
+                                                                 Width="24"
+                                                                 Height="24"/>
+                                        </Button>
+
                                         <Button x:Name="AdminButton"
                                                 ToolTip="設定"
                                                 Padding="8"
