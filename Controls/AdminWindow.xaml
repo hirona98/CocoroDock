@@ -116,6 +116,11 @@
                                       Margin="0,5,0,10"
                                       ToolTip="Auto move (unstable)"
                                       Foreground="#FF4873CF"/>
+                            <CheckBox x:Name="ShowMessageWindowCheckBox"
+                                      Content="発話時メッセージウィンドウを表示する"
+                                      Margin="0,5,0,10"
+                                      ToolTip="Show message window on speech"
+                                      Foreground="#FF4873CF"/>
                             <CheckBox x:Name="AmbientOcclusionCheckBox"
                                       Content="Ambient Occlusion"
                                       Margin="0,5,0,10"

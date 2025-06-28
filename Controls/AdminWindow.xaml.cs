@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -282,6 +283,7 @@ namespace CocoroDock.Controls
             InputVirtualKeyCheckBox.IsChecked = appSettings.IsInputVirtualKey;
             VirtualKeyStringTextBox.Text = appSettings.VirtualKeyString;
             AutoMoveCheckBox.IsChecked = appSettings.IsAutoMove;
+            ShowMessageWindowCheckBox.IsChecked = appSettings.ShowMessageWindow;
             AmbientOcclusionCheckBox.IsChecked = appSettings.IsEnableAmbientOcclusion;
             IsEnableNotificationApiCheckBox.IsChecked = appSettings.IsEnableNotificationApi;
 
@@ -1209,7 +1211,7 @@ namespace CocoroDock.Controls
         /// <summary>
         /// OKボタンのクリックイベントハンドラ
         /// </summary>
-        private void OkButton_Click(object sender, RoutedEventArgs e)
+        private async void OkButton_Click(object sender, RoutedEventArgs e)
         {
             // 現在のキャラクター設定を一時保存
             SaveCurrentCharacterSettings();
@@ -1375,6 +1377,9 @@ namespace CocoroDock.Controls
                 }
             }
 
+            // CocoroShellにメッセージウィンドウ表示設定を送信
+            await SendMessageWindowControlToCocoroShell();
+
             // ウィンドウを閉じる
             Close();
         }
@@ -1535,6 +1540,7 @@ namespace CocoroDock.Controls
             _displaySettings["InputVirtualKey"] = InputVirtualKeyCheckBox.IsChecked ?? false;
             _displaySettings["VirtualKeyString"] = VirtualKeyStringTextBox.Text;
             _displaySettings["AutoMove"] = AutoMoveCheckBox.IsChecked ?? false;
+            _displaySettings["ShowMessageWindow"] = ShowMessageWindowCheckBox.IsChecked ?? false;
             _displaySettings["IsEnableAmbientOcclusion"] = AmbientOcclusionCheckBox.IsChecked ?? false;
             // MSAAレベルの設定を保存
             int msaaLevel = 0;
@@ -1602,6 +1608,7 @@ namespace CocoroDock.Controls
             appSettings.IsInputVirtualKey = (bool)_displaySettings["InputVirtualKey"];
             appSettings.VirtualKeyString = (string)_displaySettings["VirtualKeyString"];
             appSettings.IsAutoMove = (bool)_displaySettings["AutoMove"];
+            appSettings.ShowMessageWindow = (bool)_displaySettings["ShowMessageWindow"];
             appSettings.IsEnableAmbientOcclusion = (bool)_displaySettings["IsEnableAmbientOcclusion"];
             appSettings.MsaaLevel = (int)_displaySettings["MsaaLevel"];
             appSettings.CharacterShadow = (int)_displaySettings["CharacterShadow"];
@@ -2234,6 +2241,34 @@ namespace CocoroDock.Controls
             if (ShadowOffMeshTextBox != null)
             {
                 ShadowOffMeshTextBox.IsEnabled = false;
+            }
+        }
+
+        /// <summary>
+        /// CocoroShellにメッセージウィンドウ表示制御コマンドを送信
+        /// </summary>
+        private async Task SendMessageWindowControlToCocoroShell()
+        {
+            try
+            {
+                var appSettings = AppSettings.Instance;
+                using var cocoroShellClient = new CocoroShellClient(appSettings.CocoroShellPort);
+
+                var controlRequest = new ShellControlRequest
+                {
+                    command = "messageWindowControl",
+                    @params = new Dictionary<string, object>
+                    {
+                        { "enabled", ShowMessageWindowCheckBox.IsChecked ?? true }
+                    }
+                };
+
+                await cocoroShellClient.SendControlCommandAsync(controlRequest);
+            }
+            catch (Exception ex)
+            {
+                // エラーはログに出力するが、UI操作は継続する
+                Debug.WriteLine($"CocoroShellへのメッセージウィンドウ制御送信でエラーが発生: {ex.Message}");
             }
         }
     }

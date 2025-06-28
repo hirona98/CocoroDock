@@ -74,6 +74,7 @@ namespace CocoroDock.Communication
         public bool isInputVirtualKey { get; set; }
         public string virtualKeyString { get; set; } = string.Empty;
         public bool isAutoMove { get; set; }
+        public bool showMessageWindow { get; set; } = true;
         public bool isEnableAmbientOcclusion { get; set; }
         public int msaaLevel { get; set; }
         public int characterShadow { get; set; }

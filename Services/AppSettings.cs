@@ -67,6 +67,9 @@ namespace CocoroDock.Services
         [JsonPropertyName("IsAutoMove")]
         public bool IsAutoMove { get; set; }
 
+        [JsonPropertyName("showMessageWindow")]
+        public bool ShowMessageWindow { get; set; }
+
         [JsonPropertyName("IsEnableAmbientOcclusion")]
         public bool IsEnableAmbientOcclusion { get; set; }
 
@@ -128,6 +131,7 @@ namespace CocoroDock.Services
         public bool IsInputVirtualKey { get; set; } = false;
         public string VirtualKeyString { get; set; } = string.Empty;
         public bool IsAutoMove { get; set; } = false;
+        public bool ShowMessageWindow { get; set; } = true;
         public bool IsEnableAmbientOcclusion { get; set; } = false;
         public int MsaaLevel { get; set; } = 0;
         public int CharacterShadow { get; set; } = 0;
@@ -176,6 +180,7 @@ namespace CocoroDock.Services
             IsInputVirtualKey = config.isInputVirtualKey;
             VirtualKeyString = config.virtualKeyString;
             IsAutoMove = config.isAutoMove;
+            ShowMessageWindow = config.showMessageWindow;
             IsEnableAmbientOcclusion = config.isEnableAmbientOcclusion;
             MsaaLevel = config.msaaLevel;
             CharacterShadow = config.characterShadow;
@@ -230,6 +235,7 @@ namespace CocoroDock.Services
                 isInputVirtualKey = IsInputVirtualKey,
                 virtualKeyString = VirtualKeyString,
                 isAutoMove = IsAutoMove,
+                showMessageWindow = ShowMessageWindow,
                 isEnableAmbientOcclusion = IsEnableAmbientOcclusion,
                 msaaLevel = MsaaLevel,
                 characterShadow = CharacterShadow,
@@ -356,6 +362,7 @@ namespace CocoroDock.Services
             target.isEscapeCursor = source.isEscapeCursor;
             target.isInputVirtualKey = source.isInputVirtualKey;
             target.isAutoMove = source.isAutoMove;
+            target.showMessageWindow = source.showMessageWindow;
             target.isEnableAmbientOcclusion = source.isEnableAmbientOcclusion;
 
             // 文字列設定

@@ -11,6 +11,7 @@
   "isInputVirtualKey": false,
   "virtualKeyString": "Win\u002BTab",
   "isAutoMove": false,
+  "showMessageWindow": true,
   "isEnableAmbientOcclusion": false,
   "msaaLevel": 4,
   "characterShadow": 1,

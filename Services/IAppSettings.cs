@@ -69,6 +69,11 @@ namespace CocoroDock.Services
         bool IsAutoMove { get; set; }
 
         /// <summary>
+        /// 発話時メッセージウィンドウ表示
+        /// </summary>
+        bool ShowMessageWindow { get; set; }
+
+        /// <summary>
         /// アンビエントオクルージョン有効
         /// </summary>
         bool IsEnableAmbientOcclusion { get; set; }
