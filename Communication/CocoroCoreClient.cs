@@ -178,6 +178,45 @@ namespace CocoroDock.Communication
             }
         }
 
+        /// <summary>
+        /// CocoroCoreに制御コマンドを送信
+        /// </summary>
+        /// <param name="request">制御コマンドリクエスト</param>
+        public async Task<StandardResponse> SendControlCommandAsync(CoreControlRequest request)
+        {
+            try
+            {
+                var json = MessageHelper.SerializeToJson(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                using var response = await _httpClient.PostAsync($"{_baseUrl}/api/control", content);
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = MessageHelper.DeserializeFromJson<ErrorResponse>(responseBody);
+                    throw new HttpRequestException($"CocoroCoreエラー: {error?.message ?? responseBody}");
+                }
+
+                return MessageHelper.DeserializeFromJson<StandardResponse>(responseBody) 
+                       ?? new StandardResponse { status = "success", message = "Command sent successfully" };
+            }
+            catch (TaskCanceledException)
+            {
+                throw new TimeoutException("CocoroCoreへのリクエストがタイムアウトしました");
+            }
+            catch (HttpRequestException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CocoroCoreへの制御コマンド送信エラー: {ex.Message}");
+                throw new InvalidOperationException($"CocoroCoreとの通信に失敗しました: {ex.Message}", ex);
+            }
+        }
+
         public void Dispose()
         {
             _httpClient?.Dispose();

@@ -418,6 +418,64 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
+        /// CocoroShellにTTS状態を送信
+        /// </summary>
+        /// <param name="isUseTTS">TTS使用状態</param>
+        public async Task SendTTSStateToShellAsync(bool isUseTTS)
+        {
+            try
+            {
+                var request = new ShellControlRequest
+                {
+                    command = "ttsControl",
+                    @params = new Dictionary<string, object>
+                    {
+                        { "enabled", isUseTTS }
+                    }
+                };
+
+                await _shellClient.SendControlCommandAsync(request);
+
+                // 成功時のステータス更新
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, isUseTTS ? "TTSを有効にしました" : "TTSを無効にしました"));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"TTS状態送信エラー: {ex.Message}");
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"TTS設定通知エラー"));
+            }
+        }
+
+        /// <summary>
+        /// CocoroCoreにSTT状態を送信
+        /// </summary>
+        /// <param name="isUseSTT">STT使用状態</param>
+        public async Task SendSTTStateToCoreAsync(bool isUseSTT)
+        {
+            try
+            {
+                var request = new CoreControlRequest
+                {
+                    command = "sttControl",
+                    @params = new Dictionary<string, object>
+                    {
+                        { "enabled", isUseSTT }
+                    }
+                };
+
+                await _coreClient.SendControlCommandAsync(request);
+
+                // 成功時のステータス更新
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, isUseSTT ? "STTを有効にしました" : "STTを無効にしました"));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"STT状態送信エラー: {ex.Message}");
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"STT設定通知エラー"));
+            }
+        }
+
+        /// <summary>
         /// リソースの解放
         /// </summary>
         public void Dispose()

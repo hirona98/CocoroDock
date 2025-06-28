@@ -225,6 +225,15 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
+    /// CocoroCore API: 制御コマンドリクエスト
+    /// </summary>
+    public class CoreControlRequest
+    {
+        public string command { get; set; } = string.Empty;
+        public Dictionary<string, object>? @params { get; set; }
+    }
+
+    /// <summary>
     /// CocoroDock API: ステータス更新リクエスト
     /// </summary>
     public class StatusUpdateRequest

@@ -33,6 +33,20 @@
   <ItemGroup>
     <Resource Include="Resource/logo.ico" />
     <Resource Include="Resource\logo.png" />
+    <Resource Include="Resource\icon\Config.png" />
+    <Resource Include="Resource\icon\MicOFF.png" />
+    <Resource Include="Resource\icon\MicON.png" />
+    <Resource Include="Resource\icon\ScreenShotOFF.png" />
+    <Resource Include="Resource\icon\ScreenShotON.png" />
+    <Resource Include="Resource\icon\SpeakerOFF.png" />
+    <Resource Include="Resource\icon\SpeakerON.png" />
+    <Resource Include="Resource\icon\Config.svg" />
+    <Resource Include="Resource\icon\MicOFF.svg" />
+    <Resource Include="Resource\icon\MicON.svg" />
+    <Resource Include="Resource\icon\ScreenShotOFF.svg" />
+    <Resource Include="Resource\icon\ScreenShotON.svg" />
+    <Resource Include="Resource\icon\SpeakerOFF.svg" />
+    <Resource Include="Resource\icon\SpeakerON.svg" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Communication\" />
@@ -56,6 +70,7 @@
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     <PackageReference Include="Tesseract" Version="5.2.0" />
     <PackageReference Include="Tesseract.Drawing" Version="5.2.0" />
+    <PackageReference Include="SharpVectors" Version="1.8.4" />
   </ItemGroup>
 
 </Project>

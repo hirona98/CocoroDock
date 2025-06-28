@@ -111,5 +111,17 @@ namespace CocoroDock.Services
         /// </summary>
         /// <param name="imageBase64">Base64エンコードされた画像データ</param>
         Task SendDesktopMonitoringToCoreAsync(string imageBase64);
+
+        /// <summary>
+        /// CocoroShellにTTS状態を送信
+        /// </summary>
+        /// <param name="isUseTTS">TTS使用状態</param>
+        Task SendTTSStateToShellAsync(bool isUseTTS);
+
+        /// <summary>
+        /// CocoroCoreにSTT状態を送信
+        /// </summary>
+        /// <param name="isUseSTT">STT使用状態</param>
+        Task SendSTTStateToCoreAsync(bool isUseSTT);
     }
 }

@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CocoroDock"
         xmlns:controls="clr-namespace:CocoroDock.Controls"
+        xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
         mc:Ignorable="d"
         Title="CocoroAI Ver. 3.0.1 Beta"
         Height="600"
@@ -39,16 +40,68 @@
                                                    FontWeight="SemiBold"/>
                                 </StackPanel>
 
-                                <Button x:Name="AdminButton"
-                                        Grid.Column="1"
-                                        Content="Setting"
-                                        Margin="0,0,20,0"
-                                        Padding="15,5"
-                                        Background="#4873CF"
-                                        Foreground="WhiteSmoke"
-                                        BorderThickness="0"
-                                        Click="AdminButton_Click"
-                                        FontSize="14"/>
+                                <StackPanel Grid.Column="1" 
+                                            Orientation="Horizontal"
+                                            Margin="0,0,20,0"
+                                            VerticalAlignment="Center">
+                                        <Button x:Name="PauseScreenshotButton"
+                                                ToolTip="画像送信を一時停止"
+                                                Margin="0,0,10,0"
+                                                Padding="8"
+                                                Background="#4873CF"
+                                                BorderThickness="0"
+                                                Click="PauseScreenshotButton_Click"
+                                                Width="40"
+                                                Height="40">
+                                                <svgc:SvgViewbox x:Name="ScreenshotButtonImage"
+                                                                 Source="pack://application:,,,/Resource/icon/ScreenShotON.svg"
+                                                                 Width="24"
+                                                                 Height="24"/>
+                                        </Button>
+                                        
+                                        <Button x:Name="MicButton"
+                                                ToolTip="マイク"
+                                                Margin="0,0,10,0"
+                                                Padding="8"
+                                                Background="#4873CF"
+                                                BorderThickness="0"
+                                                Click="MicButton_Click"
+                                                Width="40"
+                                                Height="40">
+                                                <svgc:SvgViewbox x:Name="MicButtonImage"
+                                                                 Source="pack://application:,,,/Resource/icon/MicON.svg"
+                                                                 Width="24"
+                                                                 Height="24"/>
+                                        </Button>
+                                        
+                                        <Button x:Name="MuteButton"
+                                                ToolTip="TTS"
+                                                Margin="0,0,10,0"
+                                                Padding="8"
+                                                Background="#4873CF"
+                                                BorderThickness="0"
+                                                Click="TTSButton_Click"
+                                                Width="40"
+                                                Height="40">
+                                                <svgc:SvgViewbox x:Name="MuteButtonImage"
+                                                                 Source="pack://application:,,,/Resource/icon/SpeakerON.svg"
+                                                                 Width="24"
+                                                                 Height="24"/>
+                                        </Button>
+                                                
+                                        <Button x:Name="AdminButton"
+                                                ToolTip="設定"
+                                                Padding="8"
+                                                Background="#4873CF"
+                                                BorderThickness="0"
+                                                Click="AdminButton_Click"
+                                                Width="40"
+                                                Height="40">
+                                                <svgc:SvgViewbox Source="pack://application:,,,/Resource/icon/Config.svg"
+                                                                 Width="24"
+                                                                 Height="24"/>
+                                        </Button>
+                                </StackPanel>
                         </Grid>
                 </Grid>
 

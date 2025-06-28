@@ -26,6 +26,7 @@ namespace CocoroDock
         private readonly object _statusLock = new object();
         private const int MaxStatusMessages = 5; // 最大表示メッセージ数
         private ScreenshotService? _screenshotService;
+        private bool _isScreenshotPaused = false;
 
         private class StatusMessage
         {
@@ -89,12 +90,73 @@ namespace CocoroDock
                 // UIコントロールのイベントハンドラを登録
                 RegisterEventHandlers();
 
+                // ボタンの初期状態を設定
+                InitializeButtonStates();
+
                 // APIサーバーの起動を開始
                 _ = StartApiServerAsync();
             }
             catch (Exception ex)
             {
                 UIHelper.ShowError("初期化エラー", ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// ボタンの初期状態を設定
+        /// </summary>
+        private void InitializeButtonStates()
+        {
+            // デスクトップウォッチの状態を反映
+            var screenshotSettings = _appSettings.ScreenshotSettings;
+            if (screenshotSettings != null)
+            {
+                _isScreenshotPaused = !screenshotSettings.enabled;
+                if (ScreenshotButtonImage != null)
+                {
+                    ScreenshotButtonImage.Source = new Uri(_isScreenshotPaused ? 
+                        "pack://application:,,,/Resource/icon/ScreenShotOFF.svg" : 
+                        "pack://application:,,,/Resource/icon/ScreenShotON.svg", 
+                        UriKind.Absolute);
+                }
+                if (PauseScreenshotButton != null)
+                {
+                    PauseScreenshotButton.ToolTip = _isScreenshotPaused ? "デスクトップウォッチを有効にする" : "デスクトップウォッチを無効にする";
+                    PauseScreenshotButton.Opacity = _isScreenshotPaused ? 0.6 : 1.0;
+                }
+            }
+
+            // 現在のキャラクターの設定を反映
+            var currentCharacter = GetCurrentCharacterSettings();
+            if (currentCharacter != null)
+            {
+                // STTの状態を反映
+                if (MicButtonImage != null)
+                {
+                    MicButtonImage.Source = new Uri(currentCharacter.isUseSTT ? 
+                        "pack://application:,,,/Resource/icon/MicON.svg" : 
+                        "pack://application:,,,/Resource/icon/MicOFF.svg", 
+                        UriKind.Absolute);
+                }
+                if (MicButton != null)
+                {
+                    MicButton.ToolTip = currentCharacter.isUseSTT ? "STTを無効にする" : "STTを有効にする";
+                    MicButton.Opacity = currentCharacter.isUseSTT ? 1.0 : 0.6;
+                }
+
+                // TTSの状態を反映
+                if (MuteButtonImage != null)
+                {
+                    MuteButtonImage.Source = new Uri(currentCharacter.isUseTTS ? 
+                        "pack://application:,,,/Resource/icon/SpeakerON.svg" : 
+                        "pack://application:,,,/Resource/icon/SpeakerOFF.svg", 
+                        UriKind.Absolute);
+                }
+                if (MuteButton != null)
+                {
+                    MuteButton.ToolTip = currentCharacter.isUseTTS ? "TTSを無効にする" : "TTSを有効にする";
+                    MuteButton.Opacity = currentCharacter.isUseTTS ? 1.0 : 0.6;
+                }
             }
         }
 
@@ -636,6 +698,173 @@ namespace CocoroDock
             catch (Exception ex)
             {
                 UIHelper.ShowError("設定取得エラー", ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 画像送信一時停止ボタンクリック時のイベントハンドラ
+        /// </summary>
+        private void PauseScreenshotButton_Click(object sender, RoutedEventArgs e)
+        {
+            // デスクトップウォッチ設定をトグル
+            var screenshotSettings = _appSettings.ScreenshotSettings;
+            if (screenshotSettings != null)
+            {
+                screenshotSettings.enabled = !screenshotSettings.enabled;
+                _isScreenshotPaused = !screenshotSettings.enabled;
+
+                // 設定を保存
+                _appSettings.SaveSettings();
+
+                // ボタンの画像を更新
+                if (ScreenshotButtonImage != null)
+                {
+                    ScreenshotButtonImage.Source = new Uri(_isScreenshotPaused ? 
+                        "pack://application:,,,/Resource/icon/ScreenShotOFF.svg" : 
+                        "pack://application:,,,/Resource/icon/ScreenShotON.svg", 
+                        UriKind.Absolute);
+                }
+
+                // ツールチップを更新
+                if (PauseScreenshotButton != null)
+                {
+                    PauseScreenshotButton.ToolTip = _isScreenshotPaused ? "デスクトップウォッチを有効にする" : "デスクトップウォッチを無効にする";
+                    
+                    // 無効状態の場合は半透明にする
+                    PauseScreenshotButton.Opacity = _isScreenshotPaused ? 0.6 : 1.0;
+                }
+
+                // スクリーンショットサービスの状態を更新
+                UpdateScreenshotService();
+
+                AddStatusMessage(_isScreenshotPaused ? "デスクトップウォッチを無効にしました" : "デスクトップウォッチを有効にしました");
+            }
+        }
+
+        /// <summary>
+        /// マイクボタンクリック時のイベントハンドラ
+        /// </summary>
+        private void MicButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 現在のキャラクターのSTT設定をトグル
+            var currentCharacter = GetCurrentCharacterSettings();
+            if (currentCharacter != null)
+            {
+                currentCharacter.isUseSTT = !currentCharacter.isUseSTT;
+
+                // 設定を保存
+                _appSettings.SaveSettings();
+
+                // ボタンの画像を更新
+                if (MicButtonImage != null)
+                {
+                    MicButtonImage.Source = new Uri(currentCharacter.isUseSTT ? 
+                        "pack://application:,,,/Resource/icon/MicON.svg" : 
+                        "pack://application:,,,/Resource/icon/MicOFF.svg", 
+                        UriKind.Absolute);
+                }
+
+                // ツールチップを更新
+                if (MicButton != null)
+                {
+                    MicButton.ToolTip = currentCharacter.isUseSTT ? "STTを無効にする" : "STTを有効にする";
+                    
+                    // 無効状態の場合は半透明にする
+                    MicButton.Opacity = currentCharacter.isUseSTT ? 1.0 : 0.6;
+                }
+
+                // CocoroCoreにSTT状態を送信
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        if (_communicationService != null)
+                        {
+                            // STT設定をCocoroCoreに送信
+                            await _communicationService.SendSTTStateToCoreAsync(currentCharacter.isUseSTT);
+                            
+                            UIHelper.RunOnUIThread(() =>
+                            {
+                                AddStatusMessage(currentCharacter.isUseSTT ? "STTを有効にしました" : "STTを無効にしました");
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"STT状態の送信エラー: {ex.Message}");
+                    }
+                });
+            }
+        }
+
+        /// <summary>
+        /// 現在のキャラクター設定を取得
+        /// </summary>
+        private CharacterSettings? GetCurrentCharacterSettings()
+        {
+            var config = _appSettings.GetConfigSettings();
+            if (config.characterList != null &&
+                config.currentCharacterIndex >= 0 &&
+                config.currentCharacterIndex < config.characterList.Count)
+            {
+                return config.characterList[config.currentCharacterIndex];
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// TTSボタンクリック時のイベントハンドラ
+        /// </summary>
+        private void TTSButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 現在のキャラクターのTTS設定をトグル
+            var currentCharacter = GetCurrentCharacterSettings();
+            if (currentCharacter != null)
+            {
+                currentCharacter.isUseTTS = !currentCharacter.isUseTTS;
+
+                // 設定を保存
+                _appSettings.SaveSettings();
+
+                // ボタンの画像を更新
+                if (MuteButtonImage != null)
+                {
+                    MuteButtonImage.Source = new Uri(currentCharacter.isUseTTS ? 
+                        "pack://application:,,,/Resource/icon/SpeakerON.svg" : 
+                        "pack://application:,,,/Resource/icon/SpeakerOFF.svg", 
+                        UriKind.Absolute);
+                }
+
+                // ツールチップを更新
+                if (MuteButton != null)
+                {
+                    MuteButton.ToolTip = currentCharacter.isUseTTS ? "TTSを無効にする" : "TTSを有効にする";
+                    
+                    // 無効状態の場合は半透明にする
+                    MuteButton.Opacity = currentCharacter.isUseTTS ? 1.0 : 0.6;
+                }
+
+                // CocoroShellにTTS状態を送信
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        if (_communicationService != null)
+                        {
+                            // TTS設定をCocoroShellに送信
+                            await _communicationService.SendTTSStateToShellAsync(currentCharacter.isUseTTS);
+                            
+                            UIHelper.RunOnUIThread(() =>
+                            {
+                                AddStatusMessage(currentCharacter.isUseTTS ? "TTSを有効にしました" : "TTSを無効にしました");
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"TTS状態の送信エラー: {ex.Message}");
+                    }
+                });
             }
         }
 
