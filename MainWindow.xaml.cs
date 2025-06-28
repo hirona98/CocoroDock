@@ -693,12 +693,28 @@ namespace CocoroDock
                 // 設定画面を表示
                 var adminWindow = new AdminWindow(_communicationService);
                 adminWindow.Owner = this; // メインウィンドウを親に設定
+                
+                // ウィンドウが閉じられた時にボタンの状態を更新
+                adminWindow.Closed += AdminWindow_Closed;
+                
                 adminWindow.Show(); // モードレスダイアログとして表示
             }
             catch (Exception ex)
             {
                 UIHelper.ShowError("設定取得エラー", ex.Message);
             }
+        }
+
+        /// <summary>
+        /// 設定画面が閉じられた時のイベントハンドラ
+        /// </summary>
+        private void AdminWindow_Closed(object? sender, EventArgs e)
+        {
+            // ボタンの状態を最新の設定に更新
+            InitializeButtonStates();
+            
+            // 設定変更に応じてサービスを更新
+            ApplySettings();
         }
 
         /// <summary>
