@@ -567,9 +567,9 @@
                                         <TextBlock.Inlines>
                                             <Run Text="長期記憶をベクトル化するための埋め込みモデルを設定します。LiteLLM の書式で記載してください。"/>
                                             <LineBreak/>
-                                            <Run Text="※1536次元のモデルを前提としています。それ以外だと十分な性能が発揮されません。"/>
+                                            <Run Text="ex) openai/text-embedding-3-large（推奨）, openai/text-embedding-3-small, gemini/text-embedding-004"/>
                                             <LineBreak/>
-                                            <Run Text="ex) openai/text-embedding-3-small（推奨）, gemini/text-embedding-004, ollama/nomic-embed-text"/>
+                                            <Run Text="※1536次元のモデルに最適化されています"/>
                                             <LineBreak/>
                                             <Run Text="詳細は "/>
                                             <Hyperlink NavigateUri="https://docs.litellm.ai/docs/embedding/supported_embedding"
