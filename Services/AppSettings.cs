@@ -336,70 +336,12 @@ namespace CocoroDock.Services
             var userSettings = MessageHelper.DeserializeFromJson<ConfigSettings>(configJson);
             if (userSettings != null)
             {
-                // setting.jsonの値でdefaultSettingsを上書き
-                MergeSettings(defaultSettings, userSettings);
-                UpdateSettings(defaultSettings);
+                // デシリアライズされた設定をそのまま使用（デフォルト値は自動適用済み）
+                UpdateSettings(userSettings);
                 SaveAppSettings();
             }
         }
 
-        /// <summary>
-        /// 設定をマージする（sourceの値でtargetを上書き）
-        /// </summary>
-        private void MergeSettings(ConfigSettings target, ConfigSettings source)
-        {
-            // ポート設定
-            if (source.cocoroDockPort > 0) target.cocoroDockPort = source.cocoroDockPort;
-            if (source.cocoroCorePort > 0) target.cocoroCorePort = source.cocoroCorePort;
-            if (source.cocoroMemoryPort > 0) target.cocoroMemoryPort = source.cocoroMemoryPort;
-            if (source.cocoroMemoryDBPort > 0) target.cocoroMemoryDBPort = source.cocoroMemoryDBPort;
-            if (source.cocoroShellPort > 0) target.cocoroShellPort = source.cocoroShellPort;
-            if (source.notificationApiPort > 0) target.notificationApiPort = source.notificationApiPort;
-
-            // bool値は明示的に設定されているかを判断できないため、常に上書き
-            target.isEnableNotificationApi = source.isEnableNotificationApi;
-            target.isTopmost = source.isTopmost;
-            target.isEscapeCursor = source.isEscapeCursor;
-            target.isInputVirtualKey = source.isInputVirtualKey;
-            target.isAutoMove = source.isAutoMove;
-            target.showMessageWindow = source.showMessageWindow;
-            target.isEnableAmbientOcclusion = source.isEnableAmbientOcclusion;
-
-            // 文字列設定
-            if (!string.IsNullOrEmpty(source.virtualKeyString)) target.virtualKeyString = source.virtualKeyString;
-
-            // 数値設定
-            if (source.msaaLevel >= 0) target.msaaLevel = source.msaaLevel;
-            if (source.characterShadow >= 0) target.characterShadow = source.characterShadow;
-            if (source.characterShadowResolution > 0) target.characterShadowResolution = source.characterShadowResolution;
-            if (source.backgroundShadow >= 0) target.backgroundShadow = source.backgroundShadow;
-            if (source.backgroundShadowResolution > 0) target.backgroundShadowResolution = source.backgroundShadowResolution;
-            if (source.windowSize > 0) target.windowSize = source.windowSize;
-
-            // float値（0も有効な値として扱う）
-            target.windowPositionX = source.windowPositionX;
-            target.windowPositionY = source.windowPositionY;
-
-            // インデックス
-            if (source.currentCharacterIndex >= 0) target.currentCharacterIndex = source.currentCharacterIndex;
-            if (source.currentAnimationSettingIndex >= 0) target.currentAnimationSettingIndex = source.currentAnimationSettingIndex;
-
-            // リスト設定
-            if (source.characterList != null && source.characterList.Count > 0)
-            {
-                target.characterList = new List<CharacterSettings>(source.characterList);
-            }
-            if (source.animationSettings != null && source.animationSettings.Count > 0)
-            {
-                target.animationSettings = new List<AnimationSetting>(source.animationSettings);
-            }
-
-            // スクリーンショット設定
-            if (source.screenshotSettings != null)
-            {
-                target.screenshotSettings = source.screenshotSettings;
-            }
-        }
 
         /// <summary>
         /// デフォルト設定ファイルを読み込む
