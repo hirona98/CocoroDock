@@ -298,6 +298,7 @@ namespace CocoroDock.Controls
             // マイク設定の初期化
             MicAutoAdjustmentCheckBox.IsChecked = appSettings.MicrophoneSettings.autoAdjustment;
             MicThresholdSlider.Value = appSettings.MicrophoneSettings.inputThreshold;
+
             foreach (ComboBoxItem item in MSAAComboBox.Items)
             {
                 if (item.Tag != null &&
@@ -371,7 +372,9 @@ namespace CocoroDock.Controls
                 { "IdleTimeout", appSettings.ScreenshotSettings.idleTimeoutMinutes },
                 { "CaptureActiveWindowOnly", appSettings.ScreenshotSettings.captureActiveWindowOnly },
                 { "EnableRegexFiltering", appSettings.ScreenshotSettings.enableRegexFiltering },
-                { "RegexPattern", appSettings.ScreenshotSettings.regexPattern }
+                { "RegexPattern", appSettings.ScreenshotSettings.regexPattern },
+                { "MicAutoAdjustment", appSettings.MicrophoneSettings.autoAdjustment},
+                { "MicInputThreshold", appSettings.MicrophoneSettings.inputThreshold}
             };
         }
 

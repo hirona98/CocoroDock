@@ -129,6 +129,11 @@ namespace CocoroDock.Services
         ScreenshotSettings ScreenshotSettings { get; set; }
 
         /// <summary>
+        /// マイク設定
+        /// </summary>
+        MicrophoneSettings MicrophoneSettings { get; set; }
+
+        /// <summary>
         /// キャラクターリスト
         /// </summary>
         List<CharacterSettings> CharacterList { get; set; }
