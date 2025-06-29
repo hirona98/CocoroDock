@@ -58,6 +58,15 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
+    /// マイク設定クラス
+    /// </summary>
+    public class MicrophoneSettings
+    {
+        public int inputThreshold { get; set; } = -45;
+        public bool autoAdjustment { get; set; } = true;
+    }
+
+    /// <summary>
     /// アプリケーション設定クラス
     /// </summary>
     public class ConfigSettings
@@ -89,6 +98,7 @@ namespace CocoroDock.Communication
         public List<CharacterSettings> characterList { get; set; } = new List<CharacterSettings>();
         public List<AnimationSetting> animationSettings { get; set; } = new List<AnimationSetting>();
         public ScreenshotSettings screenshotSettings { get; set; } = new ScreenshotSettings();
+        public MicrophoneSettings microphoneSettings { get; set; } = new MicrophoneSettings();
     }
 
 

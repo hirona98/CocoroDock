@@ -973,6 +973,58 @@
                                     </TextBlock>
                                 </StackPanel>
                             </GroupBox>
+
+                            <!-- マイク設定 -->
+                            <GroupBox Header="マイク設定"
+                                      Margin="0,0,20,20"
+                                      Padding="10">
+                                <StackPanel>
+                                    <!-- 説明テキスト -->
+                                    <TextBlock TextWrapping="Wrap"
+                                               Foreground="#666666"
+                                               Margin="0,0,0,10">
+                                        音声認識時のマイク入力感度を調整します。STTが有効なキャラクターに適用されます。
+                                    </TextBlock>
+
+                                    <!-- 自動調節設定 -->
+                                    <CheckBox x:Name="MicAutoAdjustmentCheckBox"
+                                              Content="マイクしきい値の自動調節を有効にする"
+                                              Margin="0,5,0,15"
+                                              Foreground="#FF4873CF"
+                                              ToolTip="Enable microphone threshold auto adjustment"/>
+
+                                    <!-- 手動しきい値設定 -->
+                                    <Grid Margin="0,5,0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="150"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="入力しきい値:"
+                                                   VerticalAlignment="Center"/>
+                                        <Slider Grid.Column="1"
+                                                x:Name="MicThresholdSlider"
+                                                Minimum="-50"
+                                                Maximum="0"
+                                                Value="-45"
+                                                TickFrequency="10"
+                                                TickPlacement="BottomRight"
+                                                Margin="10,0,10,0"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding ElementName=MicThresholdSlider, Path=Value, StringFormat='{}{0:0} dB'}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"/>
+                                    </Grid>
+
+                                    <!-- しきい値説明テキスト -->
+                                    <TextBlock TextWrapping="Wrap"
+                                               Margin="0,0,0,10"
+                                               Foreground="#FF4873CF">
+                                        ※値が低いほど（-50dBに近いほど）音声を拾いやすくなりますが、環境音も拾いやすくなります。自動調節時は無効です。
+                                    </TextBlock>
+                                </StackPanel>
+                            </GroupBox>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>

@@ -294,6 +294,10 @@ namespace CocoroDock.Controls
             CaptureActiveWindowOnlyCheckBox.IsChecked = appSettings.ScreenshotSettings.captureActiveWindowOnly;
             RegularExpressionFilteringCheckBox.IsChecked = appSettings.ScreenshotSettings.enableRegexFiltering;
             RegularExpressionString.Text = appSettings.ScreenshotSettings.regexPattern;
+
+            // マイク設定の初期化
+            MicAutoAdjustmentCheckBox.IsChecked = appSettings.MicrophoneSettings.autoAdjustment;
+            MicThresholdSlider.Value = appSettings.MicrophoneSettings.inputThreshold;
             foreach (ComboBoxItem item in MSAAComboBox.Items)
             {
                 if (item.Tag != null &&
@@ -1463,11 +1467,36 @@ namespace CocoroDock.Controls
 
                 // デスクトップウォッチの設定変更を反映
                 UpdateDesktopWatchSettings();
+
+                // マイク設定をCocoroCoreに送信
+                await SendMicrophoneSettingsToCore();
             }
             catch (System.Exception ex)
             {
                 MessageBox.Show($"設定の保存中にエラーが発生しました: {ex.Message}",
                     "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// マイク設定をCocoroCoreに送信
+        /// </summary>
+        private async Task SendMicrophoneSettingsToCore()
+        {
+            try
+            {
+                if (_communicationService != null && _communicationService.IsServerRunning)
+                {
+                    bool autoAdjustment = (bool)_displaySettings["MicAutoAdjustment"];
+                    float inputThreshold = (float)(int)_displaySettings["MicInputThreshold"];
+
+                    await _communicationService.SendMicrophoneSettingsToCoreAsync(autoAdjustment, inputThreshold);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"マイク設定送信エラー: {ex.Message}");
+                // エラーは表示せず、ログのみに残す（CocoroCoreが起動していない場合もあるため）
             }
         }
 
@@ -1593,6 +1622,10 @@ namespace CocoroDock.Controls
             _displaySettings["CaptureActiveWindowOnly"] = CaptureActiveWindowOnlyCheckBox.IsChecked ?? true;
             _displaySettings["EnableRegexFiltering"] = RegularExpressionFilteringCheckBox.IsChecked ?? false;
             _displaySettings["RegexPattern"] = RegularExpressionString.Text ?? string.Empty;
+
+            // マイク設定を保存
+            _displaySettings["MicAutoAdjustment"] = MicAutoAdjustmentCheckBox.IsChecked ?? true;
+            _displaySettings["MicInputThreshold"] = (int)MicThresholdSlider.Value;
         }
 
         /// <summary>
@@ -1625,6 +1658,10 @@ namespace CocoroDock.Controls
             appSettings.ScreenshotSettings.captureActiveWindowOnly = (bool)_displaySettings["CaptureActiveWindowOnly"];
             appSettings.ScreenshotSettings.enableRegexFiltering = (bool)_displaySettings["EnableRegexFiltering"];
             appSettings.ScreenshotSettings.regexPattern = (string)_displaySettings["RegexPattern"];
+
+            // マイク設定の更新
+            appSettings.MicrophoneSettings.autoAdjustment = (bool)_displaySettings["MicAutoAdjustment"];
+            appSettings.MicrophoneSettings.inputThreshold = (int)_displaySettings["MicInputThreshold"];
 
             // キャラクター設定の更新
             appSettings.CurrentCharacterIndex = _currentCharacterIndex;

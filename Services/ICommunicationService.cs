@@ -123,5 +123,12 @@ namespace CocoroDock.Services
         /// </summary>
         /// <param name="isUseSTT">STT使用状態</param>
         Task SendSTTStateToCoreAsync(bool isUseSTT);
+
+        /// <summary>
+        /// CocoroCoreにマイク設定を送信
+        /// </summary>
+        /// <param name="autoAdjustment">自動調節ON/OFF</param>
+        /// <param name="inputThreshold">入力しきい値</param>
+        Task SendMicrophoneSettingsToCoreAsync(bool autoAdjustment, float inputThreshold);
     }
 }

@@ -476,6 +476,37 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
+        /// CocoroCoreにマイク設定を送信
+        /// </summary>
+        /// <param name="autoAdjustment">自動調節ON/OFF</param>
+        /// <param name="inputThreshold">入力しきい値</param>
+        public async Task SendMicrophoneSettingsToCoreAsync(bool autoAdjustment, float inputThreshold)
+        {
+            try
+            {
+                var request = new CoreControlRequest
+                {
+                    command = "microphoneControl",
+                    @params = new Dictionary<string, object>
+                    {
+                        { "autoAdjustment", autoAdjustment },
+                        { "inputThreshold", inputThreshold }
+                    }
+                };
+
+                await _coreClient.SendControlCommandAsync(request);
+
+                // 成功時のステータス更新
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "マイク設定を更新しました"));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"マイク設定送信エラー: {ex.Message}");
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"マイク設定通知エラー"));
+            }
+        }
+
+        /// <summary>
         /// リソースの解放
         /// </summary>
         public void Dispose()

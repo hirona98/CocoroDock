@@ -153,6 +153,9 @@ namespace CocoroDock.Services
         // スクリーンショット設定
         public ScreenshotSettings ScreenshotSettings { get; set; } = new ScreenshotSettings();
 
+        // マイク設定
+        public MicrophoneSettings MicrophoneSettings { get; set; } = new MicrophoneSettings();
+
         public bool IsLoaded { get; set; } = false;
 
         // コンストラクタはprivate（シングルトンパターン）
@@ -211,6 +214,12 @@ namespace CocoroDock.Services
                 ScreenshotSettings = config.screenshotSettings;
             }
 
+            // マイク設定を更新
+            if (config.microphoneSettings != null)
+            {
+                MicrophoneSettings = config.microphoneSettings;
+            }
+
             // 設定読み込み完了フラグを設定
             IsLoaded = true;
         }
@@ -249,7 +258,8 @@ namespace CocoroDock.Services
                 characterList = new List<CharacterSettings>(CharacterList),
                 currentAnimationSettingIndex = CurrentAnimationSettingIndex,
                 animationSettings = new List<AnimationSetting>(AnimationSettings),
-                screenshotSettings = ScreenshotSettings
+                screenshotSettings = ScreenshotSettings,
+                microphoneSettings = MicrophoneSettings
             };
         }
 
