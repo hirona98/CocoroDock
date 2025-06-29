@@ -1383,10 +1383,6 @@ namespace CocoroDock.Controls
                     }
                 }
             }
-
-            // CocoroShellにメッセージウィンドウ表示設定を送信
-            await SendMessageWindowControlToCocoroShell();
-
             // ウィンドウを閉じる
             Close();
         }
@@ -2284,34 +2280,6 @@ namespace CocoroDock.Controls
             if (ShadowOffMeshTextBox != null)
             {
                 ShadowOffMeshTextBox.IsEnabled = false;
-            }
-        }
-
-        /// <summary>
-        /// CocoroShellにメッセージウィンドウ表示制御コマンドを送信
-        /// </summary>
-        private async Task SendMessageWindowControlToCocoroShell()
-        {
-            try
-            {
-                var appSettings = AppSettings.Instance;
-                using var cocoroShellClient = new CocoroShellClient(appSettings.CocoroShellPort);
-
-                var controlRequest = new ShellControlRequest
-                {
-                    command = "messageWindowControl",
-                    @params = new Dictionary<string, object>
-                    {
-                        { "enabled", ShowMessageWindowCheckBox.IsChecked ?? true }
-                    }
-                };
-
-                await cocoroShellClient.SendControlCommandAsync(controlRequest);
-            }
-            catch (Exception ex)
-            {
-                // エラーはログに出力するが、UI操作は継続する
-                Debug.WriteLine($"CocoroShellへのメッセージウィンドウ制御送信でエラーが発生: {ex.Message}");
             }
         }
     }
