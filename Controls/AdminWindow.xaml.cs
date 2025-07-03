@@ -1392,7 +1392,7 @@ namespace CocoroDock.Controls
         /// <summary>
         /// キャラクター位置リセットボタンのクリックイベントハンドラ
         /// </summary>
-        private async void ResetCharacterPositionButton_Click(object sender, RoutedEventArgs e)
+        private void ResetCharacterPositionButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -1401,15 +1401,14 @@ namespace CocoroDock.Controls
                 // ウィンドウ位置を0.0にリセット
                 appSettings.WindowPositionX = 0.0f;
                 appSettings.WindowPositionY = 0.0f;
-
-                // 設定を保存
+                appSettings.IsRestoreWindowPosition = false;
+                RestoreWindowPositionCheckBox.IsChecked = false;
                 appSettings.SaveAppSettings();
 
                 // CocoroShellを再起動
-                if (_communicationService != null)
-                {
-                    await _communicationService.SendControlToShellAsync("reloadConfig");
-                }
+#if !DEBUG
+                ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", ProcessOperation.RestartIfRunning);
+#endif
             }
             catch (Exception ex)
             {
