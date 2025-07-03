@@ -1390,6 +1390,35 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
+        /// キャラクター位置リセットボタンのクリックイベントハンドラ
+        /// </summary>
+        private async void ResetCharacterPositionButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var appSettings = AppSettings.Instance;
+
+                // ウィンドウ位置を0.0にリセット
+                appSettings.WindowPositionX = 0.0f;
+                appSettings.WindowPositionY = 0.0f;
+
+                // 設定を保存
+                appSettings.SaveAppSettings();
+
+                // CocoroShellを再起動
+                if (_communicationService != null)
+                {
+                    await _communicationService.SendControlToShellAsync("reloadConfig");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"キャラクター位置のリセット中にエラーが発生しました: {ex.Message}",
+                    "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
         /// キャンセルボタンのクリックイベントハンドラ
         /// </summary>
         private void CancelButton_Click(object sender, RoutedEventArgs e)

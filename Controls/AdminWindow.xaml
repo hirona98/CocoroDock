@@ -69,11 +69,28 @@
                     <ScrollViewer Grid.Row="0"
                                   VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <CheckBox x:Name="RestoreWindowPositionCheckBox"
-                                      Content="起動時にキャラクター位置を復元する"
-                                      Margin="0,5,0,10"
-                                      Foreground="#FF4873CF"
-                                      ToolTip="Restore window position on startup"/>
+                            <Grid Margin="0,5,0,10"
+                                  HorizontalAlignment="Left">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <CheckBox x:Name="RestoreWindowPositionCheckBox"
+                                          Grid.Column="0"
+                                          Content="起動時にキャラクター位置を復元する"
+                                          Foreground="#FF4873CF"
+                                          ToolTip="Restore window position on startup"
+                                          VerticalAlignment="Center"/>
+                                <Button x:Name="ResetCharacterPositionButton"
+                                        Grid.Column="1"
+                                        Content="位置リセット"
+                                        Margin="10,0,0,0"
+                                        Padding="8,2"
+                                        Foreground="#FF4873CF"
+                                        ToolTip="キャラクターの位置を初期位置にリセットします"
+                                        VerticalAlignment="Center"
+                                        Click="ResetCharacterPositionButton_Click"/>
+                            </Grid>
                             <CheckBox x:Name="TopMostCheckBox"
                                       Content="最前面に表示"
                                       Margin="0,5,0,10"
@@ -1006,7 +1023,7 @@
                                             <ColumnDefinition Width="60"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0"
-                                                   Text="入力しきい値:"
+                                                   Text="入力しきい値（手動）:"
                                                    VerticalAlignment="Center"/>
                                         <Slider Grid.Column="1"
                                                 x:Name="MicThresholdSlider"
