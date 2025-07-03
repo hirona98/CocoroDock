@@ -278,6 +278,7 @@ namespace CocoroDock.Controls
             var appSettings = AppSettings.Instance;
 
             // UIに反映
+            RestoreWindowPositionCheckBox.IsChecked = appSettings.IsRestoreWindowPosition;
             TopMostCheckBox.IsChecked = appSettings.IsTopmost;
             EscapeCursorCheckBox.IsChecked = appSettings.IsEscapeCursor;
             InputVirtualKeyCheckBox.IsChecked = appSettings.IsInputVirtualKey;
@@ -354,6 +355,7 @@ namespace CocoroDock.Controls
             // 設定を辞書に保存
             _displaySettings = new Dictionary<string, object>
             {
+                { "RestoreWindowPosition", appSettings.IsRestoreWindowPosition },
                 { "TopMost", appSettings.IsTopmost },
                 { "EscapeCursor", appSettings.IsEscapeCursor },
                 { "InputVirtualKey", appSettings.IsInputVirtualKey },
@@ -1563,6 +1565,7 @@ namespace CocoroDock.Controls
         /// </summary>
         private void SaveDisplaySettings()
         {
+            _displaySettings["RestoreWindowPosition"] = RestoreWindowPositionCheckBox.IsChecked ?? false;
             _displaySettings["TopMost"] = TopMostCheckBox.IsChecked ?? false;
             _displaySettings["EscapeCursor"] = EscapeCursorCheckBox.IsChecked ?? false;
             _displaySettings["InputVirtualKey"] = InputVirtualKeyCheckBox.IsChecked ?? false;
@@ -1635,6 +1638,7 @@ namespace CocoroDock.Controls
             var appSettings = AppSettings.Instance;
 
             // 表示設定の更新
+            appSettings.IsRestoreWindowPosition = (bool)_displaySettings["RestoreWindowPosition"];
             appSettings.IsTopmost = (bool)_displaySettings["TopMost"];
             appSettings.IsEscapeCursor = (bool)_displaySettings["EscapeCursor"];
             appSettings.IsInputVirtualKey = (bool)_displaySettings["InputVirtualKey"];

@@ -6,6 +6,7 @@
   "cocoroShellPort": 55605,
   "notificationApiPort": 55604,
   "isEnableNotificationApi": false,
+  "isRestoreWindowPosition": false,
   "isTopmost": true,
   "isEscapeCursor": false,
   "isInputVirtualKey": false,

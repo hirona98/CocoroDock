@@ -78,6 +78,7 @@ namespace CocoroDock.Communication
         public int cocoroShellPort { get; set; } = 55605;
         public int notificationApiPort { get; set; } = 55604;
         public bool isEnableNotificationApi { get; set; } = false;
+        public bool isRestoreWindowPosition { get; set; } = false;
         public bool isTopmost { get; set; }
         public bool isEscapeCursor { get; set; }
         public bool isInputVirtualKey { get; set; }

@@ -44,6 +44,11 @@ namespace CocoroDock.Services
         int NotificationApiPort { get; set; }
 
         /// <summary>
+        /// キャラクター位置復元
+        /// </summary>
+        bool IsRestoreWindowPosition { get; set; }
+
+        /// <summary>
         /// 最前面表示
         /// </summary>
         bool IsTopmost { get; set; }
