@@ -74,7 +74,7 @@
       "isEnableMemory": false,
       "userId": "",
       "embeddedApiKey": "",
-      "embeddedModel": "openai/text-embedding-3-small",
+      "embeddedModel": "openai/text-embedding-3-large",
       "isUseSTT": false,
       "sttEngine": "amivoice",
       "sttWakeWord": "こんにちは",
