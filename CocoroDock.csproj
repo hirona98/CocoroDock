@@ -16,12 +16,17 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Resource\defaultSetting.json" />
+    <None Remove="Resource\sample_cocoroAiMcp.json" />
     <None Remove="Resource\logo.png" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Resource\defaultSetting.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>UserData\defaultSetting.json</Link>
+    </Content>
+    <Content Include="Resource\sample_cocoroAiMcp.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>UserData\sample_cocoroAiMcp.json</Link>
     </Content>
     <EmbeddedResource Include="Resource\License.txt" />
   </ItemGroup>
