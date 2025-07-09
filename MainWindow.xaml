@@ -7,7 +7,7 @@
         xmlns:controls="clr-namespace:CocoroDock.Controls"
         xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
         mc:Ignorable="d"
-        Title="CocoroAI Ver. 3.1.1 Beta"
+        Title="CocoroAI Ver. 3.2.0 Beta"
         Height="600"
         Width="500"
         ShowInTaskbar="True"
