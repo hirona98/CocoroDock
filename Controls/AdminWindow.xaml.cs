@@ -1977,7 +1977,7 @@ namespace CocoroDock.Controls
             sb.AppendLine("使用例 (PowerShell):");
             sb.AppendLine("Invoke-RestMethod -Method Post `");
             sb.AppendLine("  -Uri \"http://127.0.0.1:55604/api/v1/notification\" `");
-            sb.AppendLine("  -ContentType \"application/json\" `");
+            sb.AppendLine("  -ContentType \"application/json; charset=utf-8\" `");
             sb.AppendLine("  -Body '{\"from\":\"MyApp\",\"message\":\"処理完了\"}'");
             ApiDescriptionTextBox.Text = sb.ToString();
         }
