@@ -6,8 +6,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Tesseract;
-using System.Text.RegularExpressions;
 using System.Diagnostics;
 
 namespace CocoroAI.Services
@@ -55,8 +53,6 @@ namespace CocoroAI.Services
         private readonly int _intervalMilliseconds;
         private readonly Func<ScreenshotData, Task>? _onCaptured;
         private bool _isDisposed;
-        private TesseractEngine? _ocrEngine;
-        private readonly object _ocrLock = new object();
         private int _idleTimeoutMinutes = 5; // デフォルト5分
 
         /// <summary>
@@ -66,8 +62,6 @@ namespace CocoroAI.Services
 
         public bool IsRunning { get; private set; }
         public bool CaptureActiveWindowOnly { get; set; }
-        public bool EnableRegexFiltering { get; set; }
-        public string? RegexPattern { get; set; }
         public int IntervalMinutes => _intervalMilliseconds / 60000;
         public int IdleTimeoutMinutes
         {
@@ -80,10 +74,6 @@ namespace CocoroAI.Services
             _intervalMilliseconds = intervalMinutes * 60 * 1000;
             _onCaptured = onCaptured;
             CaptureActiveWindowOnly = true;
-            EnableRegexFiltering = true;
-
-            // OCRエンジンの初期化
-            InitializeOcrEngine();
         }
 
         /// <summary>
@@ -222,25 +212,7 @@ namespace CocoroAI.Services
                     ? await CaptureActiveWindowAsync()
                     : await CaptureFullScreenAsync();
 
-                // 正規表現フィルタリングが有効な場合
-                if (EnableRegexFiltering && !string.IsNullOrEmpty(RegexPattern))
-                {
-                    var filterResult = await ShouldFilterByOcr(screenshot.ImageBase64);
-                    if (filterResult.ShouldFilter)
-                    {
-                        Debug.WriteLine($"正規表現フィルタリングにより画像送信をスキップしました: {screenshot.WindowTitle}");
-
-                        // フィルタリングイベントを発火
-                        var message = $"デスクトップ画像をフィルタリング: 「{filterResult.MatchedText}」を検出";
-                        Filtered?.Invoke(this, message);
-
-                        // フィルタリングされたことをマーク
-                        screenshot.IsFiltered = true;
-                        screenshot.FilterReason = "正規表現マッチのためスキップ";
-                    }
-                }
-
-                // フィルタリングされた場合でも画像を表示するため、常にコールバックを実行
+                // コールバックを実行
                 if (_onCaptured != null)
                 {
                     await _onCaptured(screenshot);
@@ -253,169 +225,7 @@ namespace CocoroAI.Services
             }
         }
 
-        /// <summary>
-        /// OCRエンジンを初期化
-        /// </summary>
-        private void InitializeOcrEngine()
-        {
-            // 初期化を非同期で実行
-            Task.Run(async () =>
-            {
-                try
-                {
-                    // 言語データを確認・ダウンロード
-                    await TessdataDownloader.EnsureLanguageDataAsync();
 
-                    var tessdataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tessdata");
-                    if (Directory.Exists(tessdataPath))
-                    {
-                        // 日本語と英語の両方を使用
-                        // OEM 1: Neural nets LSTM engine only (より高精度)
-                        _ocrEngine = new TesseractEngine(tessdataPath, "jpn+eng", EngineMode.LstmOnly);
-
-                        // Tesseractの内部ログを抑制（オプション）
-                        // これらの警告は通常のOCR処理では問題ありません
-                        _ocrEngine.SetVariable("debug_file", "/dev/null");
-
-                        // より良い二値化手法を使用（Sauvola法）
-                        _ocrEngine.SetVariable("thresholding_method", "2");
-
-                        Debug.WriteLine("OCRエンジンを初期化しました");
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"tessdataディレクトリが見つかりません: {tessdataPath}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"OCRエンジンの初期化エラー: {ex.Message}");
-                    _ocrEngine = null;
-                }
-            });
-        }
-
-        /// <summary>
-        /// OCRフィルタリング結果
-        /// </summary>
-        private class FilterResult
-        {
-            public bool ShouldFilter { get; set; }
-            public string MatchedText { get; set; } = string.Empty;
-        }
-
-        /// <summary>
-        /// OCRで文字認識して正規表現でフィルタリングすべきか判定
-        /// </summary>
-        private async Task<FilterResult> ShouldFilterByOcr(string imageBase64)
-        {
-            if (_ocrEngine == null || string.IsNullOrEmpty(RegexPattern))
-                return new FilterResult { ShouldFilter = false };
-
-            return await Task.Run(() =>
-            {
-                try
-                {
-                    // Base64から画像データに変換
-                    var imageBytes = Convert.FromBase64String(imageBase64);
-
-                    lock (_ocrLock)
-                    {
-                        using (var ms = new MemoryStream(imageBytes))
-                        using (var bitmap = new Bitmap(ms))
-                        using (var pix = Tesseract.PixConverter.ToPix(bitmap))
-                        {
-                            // Tesseractのログレベルを一時的に変更して警告を抑制
-                            using (var page = _ocrEngine.Process(pix, PageSegMode.Auto))
-                            {
-                                var text = page.GetText();
-
-                                bool DebugMode = false;
-                                if (DebugMode)
-                                {
-                                    Debug.WriteLine($"OCR認識結果: {text.Length}文字");
-
-                                    // デバッグ用：認識されたテキストを表示（最大2000文字）
-                                    if (!string.IsNullOrWhiteSpace(text))
-                                    {
-                                        const int maxDebugLength = 5000;
-                                        var debugText = text.Length > maxDebugLength
-                                            ? text.Substring(0, maxDebugLength) + $"... (全{text.Length}文字)"
-                                            : text;
-                                        Debug.WriteLine("=== OCR認識テキスト（デバッグ） ===");
-                                        Debug.WriteLine(debugText);
-                                        Debug.WriteLine("=================================");
-                                    }
-                                }
-                                {
-                                    // 正規表現マッチング前にすべての空白を削除
-                                    var textForMatching = Regex.Replace(text, @"\s+", "");
-
-                                    if (DebugMode && !string.IsNullOrWhiteSpace(textForMatching))
-                                    {
-                                        Debug.WriteLine($"空白削除後の文字数: {textForMatching.Length}文字");
-
-                                        // 空白削除後のテキストも表示（最大2000文字）
-                                        const int maxDebugLength = 2000;
-                                        var debugTextNoSpace = textForMatching.Length > maxDebugLength
-                                            ? textForMatching.Substring(0, maxDebugLength) + $"... (全{textForMatching.Length}文字)"
-                                            : textForMatching;
-                                        Debug.WriteLine("=== 空白削除後のテキスト（デバッグ） ===");
-                                        Debug.WriteLine(debugTextNoSpace);
-                                        Debug.WriteLine("=====================================");
-                                    }
-
-                                    // 正規表現でマッチング
-                                    var regex = new Regex(RegexPattern, RegexOptions.IgnoreCase | RegexOptions.Multiline);
-                                    var match = regex.Match(textForMatching);
-
-                                    if (DebugMode)
-                                    {
-                                        Debug.WriteLine($"正規表現パターン: {RegexPattern}");
-                                    }
-
-                                    if (match.Success)
-                                    {
-                                        if (DebugMode)
-                                        {
-                                            Debug.WriteLine($"正規表現にマッチしました！");
-                                            Debug.WriteLine($"マッチ位置（空白削除後）: {match.Index}");
-                                            Debug.WriteLine($"マッチした文字列（空白削除後）: {match.Value}");
-                                        }
-
-                                        // マッチしたテキストを短く切り詰める（最大30文字）
-                                        var matchedText = match.Value;
-                                        if (matchedText.Length > 30)
-                                        {
-                                            matchedText = matchedText.Substring(0, 27) + "...";
-                                        }
-
-                                        return new FilterResult
-                                        {
-                                            ShouldFilter = true,
-                                            MatchedText = matchedText
-                                        };
-                                    }
-                                    else
-                                    {
-                                        if (DebugMode)
-                                        {
-                                            Debug.WriteLine("正規表現にマッチしませんでした");
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"OCR処理エラー: {ex.Message}");
-                }
-
-                return new FilterResult { ShouldFilter = false };
-            });
-        }
 
         /// <summary>
         /// ユーザーがアイドル状態かどうかを判定
@@ -453,11 +263,6 @@ namespace CocoroAI.Services
 
             Stop();
 
-            lock (_ocrLock)
-            {
-                _ocrEngine?.Dispose();
-                _ocrEngine = null;
-            }
 
             _isDisposed = true;
         }
@@ -474,7 +279,5 @@ namespace CocoroAI.Services
         public bool IsActiveWindow { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
-        public bool IsFiltered { get; set; } = false;
-        public string FilterReason { get; set; } = string.Empty;
     }
 }

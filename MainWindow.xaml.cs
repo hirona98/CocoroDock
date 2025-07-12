@@ -205,8 +205,6 @@ namespace CocoroDock
                 );
 
                 _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
-                _screenshotService.EnableRegexFiltering = screenshotSettings.enableRegexFiltering;
-                _screenshotService.RegexPattern = screenshotSettings.regexPattern;
                 _screenshotService.IdleTimeoutMinutes = screenshotSettings.idleTimeoutMinutes;
 
                 // フィルタリングイベントをハンドリング
@@ -229,21 +227,16 @@ namespace CocoroDock
                 // 画像を表示（フィルタリングされた場合も含む）
                 UIHelper.RunOnUIThread(() =>
                 {
-                    ChatControlInstance.AddDesktopMonitoringImage(screenshotData.ImageBase64,
-                        screenshotData.IsFiltered ? screenshotData.FilterReason : null);
+                    ChatControlInstance.AddDesktopMonitoringImage(screenshotData.ImageBase64, null);
                 });
 
-                // フィルタリングされていない場合のみCocoroCoreに送信
-                if (!screenshotData.IsFiltered)
+                // CommunicationServiceを使用してデスクトップモニタリングを送信
+                if (_communicationService != null && _communicationService.IsServerRunning)
                 {
-                    // CommunicationServiceを使用してデスクトップモニタリングを送信
-                    if (_communicationService != null && _communicationService.IsServerRunning)
-                    {
-                        // デスクトップモニタリング用の送信処理
-                        await _communicationService.SendDesktopMonitoringToCoreAsync(screenshotData.ImageBase64);
+                    // デスクトップモニタリング用の送信処理
+                    await _communicationService.SendDesktopMonitoringToCoreAsync(screenshotData.ImageBase64);
 
-                        Debug.WriteLine($"デスクトップモニタリング送信完了 - ウィンドウ: {screenshotData.WindowTitle}");
-                    }
+                    Debug.WriteLine($"デスクトップモニタリング送信完了 - ウィンドウ: {screenshotData.WindowTitle}");
                 }
             }
             catch (Exception ex)
@@ -299,8 +292,6 @@ namespace CocoroDock
 
                 // その他の設定は動的に更新
                 _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
-                _screenshotService.EnableRegexFiltering = screenshotSettings.enableRegexFiltering;
-                _screenshotService.RegexPattern = screenshotSettings.regexPattern;
                 _screenshotService.IdleTimeoutMinutes = screenshotSettings.idleTimeoutMinutes;
 
                 if (needsRestart)

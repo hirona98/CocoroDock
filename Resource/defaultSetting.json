@@ -27,8 +27,6 @@
     "enabled": false,
     "intervalMinutes": 10,
     "captureActiveWindowOnly": true,
-    "enableRegexFiltering": true,
-    "regexPattern": "パスワード|password|クレジット|credit|disite|dlsite|dmmcojp|dmm\\.co\\.jp|アダルト|成人向け",
     "idleTimeoutMinutes": 10
   },
   "microphoneSettings": {
