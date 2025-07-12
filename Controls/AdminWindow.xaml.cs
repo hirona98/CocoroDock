@@ -1230,52 +1230,61 @@ namespace CocoroDock.Controls
         /// </summary>
         private async void OkButton_Click(object sender, RoutedEventArgs e)
         {
-            // 現在のキャラクター設定を一時保存
-            SaveCurrentCharacterSettings();
+            // ボタンを無効化（処理中の重複実行防止）
+            OkButton.IsEnabled = false;
+            CancelButton.IsEnabled = false;
 
-            // バリデーション（警告のみ）
-            if (!ValidateCharacterSettings())
+            try
             {
-                return;
-            }
+                // 現在のキャラクター設定を一時保存
+                SaveCurrentCharacterSettings();
 
-            // 設定変更前の値を保存
-            int lastSelectedIndex = AppSettings.Instance.CurrentCharacterIndex;
-            string lastVRMFilePath = string.Empty;
-            bool lastIsUseLLM = false;
-            bool lastIsEnableMemory = true;
-            bool lastIsEnableNotificationApi = false;
-            if (_originalDisplaySettings.ContainsKey("IsEnableNotificationApi"))
-            {
-                lastIsEnableNotificationApi = (bool)_originalDisplaySettings["IsEnableNotificationApi"];
-            }
-            if (lastSelectedIndex >= 0 && lastSelectedIndex < AppSettings.Instance.CharacterList.Count)
-            {
-                lastVRMFilePath = AppSettings.Instance.CharacterList[lastSelectedIndex].vrmFilePath ?? string.Empty;
-                lastIsUseLLM = AppSettings.Instance.CharacterList[lastSelectedIndex].isUseLLM;
-                lastIsEnableMemory = AppSettings.Instance.CharacterList[lastSelectedIndex].isEnableMemory;
-            }
+                // バリデーション（警告のみ）
+                if (!ValidateCharacterSettings())
+                {
+                    // バリデーション失敗時はボタンを再有効化
+                    OkButton.IsEnabled = true;
+                    CancelButton.IsEnabled = true;
+                    return;
+                }
 
-            // MCP設定の変更をチェックして適用
-            if (_mcpTabViewModel != null)
-            {
-                await _mcpTabViewModel.ApplyMcpSettingsAsync();
-            }
+                // 設定変更前の値を保存
+                int lastSelectedIndex = AppSettings.Instance.CurrentCharacterIndex;
+                string lastVRMFilePath = string.Empty;
+                bool lastIsUseLLM = false;
+                bool lastIsEnableMemory = true;
+                bool lastIsEnableNotificationApi = false;
+                if (_originalDisplaySettings.ContainsKey("IsEnableNotificationApi"))
+                {
+                    lastIsEnableNotificationApi = (bool)_originalDisplaySettings["IsEnableNotificationApi"];
+                }
+                if (lastSelectedIndex >= 0 && lastSelectedIndex < AppSettings.Instance.CharacterList.Count)
+                {
+                    lastVRMFilePath = AppSettings.Instance.CharacterList[lastSelectedIndex].vrmFilePath ?? string.Empty;
+                    lastIsUseLLM = AppSettings.Instance.CharacterList[lastSelectedIndex].isUseLLM;
+                    lastIsEnableMemory = AppSettings.Instance.CharacterList[lastSelectedIndex].isEnableMemory;
+                }
 
-            // すべてのタブの設定を保存
-            SaveAllSettings(lastIsEnableNotificationApi);
+                // MCP設定の変更をチェックして適用
+                if (_mcpTabViewModel != null)
+                {
+                    await _mcpTabViewModel.ApplyMcpSettingsAsync();
+                }
 
-            // VRMFilePathかSelectedIndexが変更されたかチェック
-            bool isNeedsRestart = false;
-            int currentSelectedIndex = AppSettings.Instance.CurrentCharacterIndex;
-            // SelectedIndexが変更された場合
-            if (lastSelectedIndex != currentSelectedIndex)
-            {
-                isNeedsRestart = true;
-            }
+                // すべてのタブの設定を保存
+                SaveAllSettings(lastIsEnableNotificationApi);
 
-            // キャラクター設定の変更を検出（元の設定と比較）（同じキャラクターの場合のみチェック）
-            if (lastSelectedIndex == currentSelectedIndex && _originalCharacterSettings != null)
+                // VRMFilePathかSelectedIndexが変更されたかチェック
+                bool isNeedsRestart = false;
+                int currentSelectedIndex = AppSettings.Instance.CurrentCharacterIndex;
+                // SelectedIndexが変更された場合
+                if (lastSelectedIndex != currentSelectedIndex)
+                {
+                    isNeedsRestart = true;
+                }
+
+                // キャラクター設定の変更を検出（元の設定と比較）（同じキャラクターの場合のみチェック）
+                if (lastSelectedIndex == currentSelectedIndex && _originalCharacterSettings != null)
             {
                 // すべてのキャラクターの設定を比較
                 for (int i = 0; i < _characterSettings.Count && i < _originalCharacterSettings.Count; i++)
@@ -1316,8 +1325,8 @@ namespace CocoroDock.Controls
                 }
             }
 
-            // アニメーション設定が変更されたかチェック
-            if (!isNeedsRestart)
+                // アニメーション設定が変更されたかチェック
+                if (!isNeedsRestart)
             {
                 // アニメーション設定数が変更された場合
                 if (_animationSettings.Count != _originalAnimationSettings.Count)
@@ -1378,29 +1387,37 @@ namespace CocoroDock.Controls
                 }
             }
 
-            // 設定が変更された場合、メッセージボックスを表示して CocoroCore と CocoroShell を再起動
-            if (isNeedsRestart)
-            {
-                if (Owner is MainWindow mainWindow)
+                // 設定が変更された場合、メッセージボックスを表示して CocoroCore と CocoroShell を再起動
+                if (isNeedsRestart)
                 {
-                    // チャット履歴をクリア
-                    mainWindow.ChatControlInstance.ClearChat();
-
-                    var launchCocoroCore = typeof(MainWindow).GetMethod("LaunchCocoroCore", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    var launchCocoroShell = typeof(MainWindow).GetMethod("LaunchCocoroShell", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    var launchCocoroMemory = typeof(MainWindow).GetMethod("LaunchCocoroMemory", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    if (launchCocoroCore != null && launchCocoroShell != null && launchCocoroMemory != null)
+                    if (Owner is MainWindow mainWindow)
                     {
-                        // ProcessOperation.RestartIfRunning (デフォルト値) を引数として渡す
-                        object[] parameters = new object[] { 0 }; // ProcessOperation.RestartIfRunning = 0
-                        launchCocoroCore.Invoke(mainWindow, parameters);
-                        launchCocoroShell.Invoke(mainWindow, parameters);
-                        launchCocoroMemory.Invoke(mainWindow, parameters);
+                        // チャット履歴をクリア
+                        mainWindow.ChatControlInstance.ClearChat();
+
+                        var launchCocoroCore = typeof(MainWindow).GetMethod("LaunchCocoroCore", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                        var launchCocoroShell = typeof(MainWindow).GetMethod("LaunchCocoroShell", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                        var launchCocoroMemory = typeof(MainWindow).GetMethod("LaunchCocoroMemory", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                        if (launchCocoroCore != null && launchCocoroShell != null && launchCocoroMemory != null)
+                        {
+                            // ProcessOperation.RestartIfRunning (デフォルト値) を引数として渡す
+                            object[] parameters = new object[] { 0 }; // ProcessOperation.RestartIfRunning = 0
+                            launchCocoroCore.Invoke(mainWindow, parameters);
+                            launchCocoroShell.Invoke(mainWindow, parameters);
+                            launchCocoroMemory.Invoke(mainWindow, parameters);
+                        }
                     }
                 }
+                // ウィンドウを閉じる
+                Close();
             }
-            // ウィンドウを閉じる
-            Close();
+            catch (Exception ex)
+            {
+                // エラー時はボタンを再有効化
+                OkButton.IsEnabled = true;
+                CancelButton.IsEnabled = true;
+                MessageBox.Show($"設定の保存中にエラーが発生しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         /// <summary>
