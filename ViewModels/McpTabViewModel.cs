@@ -50,7 +50,7 @@ namespace CocoroDock.ViewModels
             _statusUpdateTimer.Tick += async (s, e) => await RetryUpdateIfDataMissing();
 
             // コマンドの初期化
-            SaveConfigCommand = new RelayCommand(async () => await SaveMcpConfigAsync(), () => !_statusUpdateTimer.IsEnabled);
+            SaveConfigCommand = new RelayCommand(async () => await SaveMcpConfigAsync(), () => !IsLoading && !_statusUpdateTimer.IsEnabled);
 
             // 初期化
             LoadMcpConfig();
@@ -163,6 +163,7 @@ namespace CocoroDock.ViewModels
                 {
                     _isLoading = value;
                     OnPropertyChanged();
+                    CommandManager.InvalidateRequerySuggested();
                 }
             }
         }
@@ -236,8 +237,12 @@ namespace CocoroDock.ViewModels
                 var currentSettings = _appSettings.GetConfigSettings();
                 currentSettings.isEnableMcp = IsMcpEnabled;
                 _appSettings.UpdateSettings(currentSettings);
+                _appSettings.SaveAppSettings(); // ファイルに保存
 
                 StatusMessage = "設定を保存しました";
+
+                // 元の値を更新（設定保存後の基準値として）
+                _originalMcpEnabled = IsMcpEnabled;
 
                 // CocoroCore再起動の通知
                 await RestartCocoroCoreAsync();
