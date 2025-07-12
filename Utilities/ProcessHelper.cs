@@ -149,7 +149,8 @@ namespace CocoroDock.Utilities
                 ProcessStartInfo startInfo = new ProcessStartInfo
                 {
                     FileName = fullPath,
-                    UseShellExecute = true
+                    UseShellExecute = false, // 環境により起動しなくなる問題の対策（この操作はユーザーによって取り消されました）
+                    WorkingDirectory = Path.GetDirectoryName(fullPath) // 環境により起動しなくなる問題の対策（この操作はユーザーによって取り消されました）
                 };
 
                 // CocoroMemoryの場合はウィンドウを非表示にする
