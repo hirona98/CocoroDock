@@ -55,10 +55,6 @@ namespace CocoroAI.Services
         private bool _isDisposed;
         private int _idleTimeoutMinutes = 5; // デフォルト5分
 
-        /// <summary>
-        /// フィルタリングされたときに発生するイベント
-        /// </summary>
-        public event EventHandler<string>? Filtered;
 
         public bool IsRunning { get; private set; }
         public bool CaptureActiveWindowOnly { get; set; }

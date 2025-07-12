@@ -114,9 +114,9 @@ namespace CocoroDock
                 _isScreenshotPaused = !screenshotSettings.enabled;
                 if (ScreenshotButtonImage != null)
                 {
-                    ScreenshotButtonImage.Source = new Uri(_isScreenshotPaused ? 
-                        "pack://application:,,,/Resource/icon/ScreenShotOFF.svg" : 
-                        "pack://application:,,,/Resource/icon/ScreenShotON.svg", 
+                    ScreenshotButtonImage.Source = new Uri(_isScreenshotPaused ?
+                        "pack://application:,,,/Resource/icon/ScreenShotOFF.svg" :
+                        "pack://application:,,,/Resource/icon/ScreenShotON.svg",
                         UriKind.Absolute);
                 }
                 if (PauseScreenshotButton != null)
@@ -133,9 +133,9 @@ namespace CocoroDock
                 // STTの状態を反映
                 if (MicButtonImage != null)
                 {
-                    MicButtonImage.Source = new Uri(currentCharacter.isUseSTT ? 
-                        "pack://application:,,,/Resource/icon/MicON.svg" : 
-                        "pack://application:,,,/Resource/icon/MicOFF.svg", 
+                    MicButtonImage.Source = new Uri(currentCharacter.isUseSTT ?
+                        "pack://application:,,,/Resource/icon/MicON.svg" :
+                        "pack://application:,,,/Resource/icon/MicOFF.svg",
                         UriKind.Absolute);
                 }
                 if (MicButton != null)
@@ -147,9 +147,9 @@ namespace CocoroDock
                 // TTSの状態を反映
                 if (MuteButtonImage != null)
                 {
-                    MuteButtonImage.Source = new Uri(currentCharacter.isUseTTS ? 
-                        "pack://application:,,,/Resource/icon/SpeakerON.svg" : 
-                        "pack://application:,,,/Resource/icon/SpeakerOFF.svg", 
+                    MuteButtonImage.Source = new Uri(currentCharacter.isUseTTS ?
+                        "pack://application:,,,/Resource/icon/SpeakerON.svg" :
+                        "pack://application:,,,/Resource/icon/SpeakerOFF.svg",
                         UriKind.Absolute);
                 }
                 if (MuteButton != null)
@@ -207,8 +207,6 @@ namespace CocoroDock
                 _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
                 _screenshotService.IdleTimeoutMinutes = screenshotSettings.idleTimeoutMinutes;
 
-                // フィルタリングイベントをハンドリング
-                _screenshotService.Filtered += OnScreenshotFiltered;
 
                 // サービスを開始
                 _screenshotService.Start();
@@ -224,10 +222,10 @@ namespace CocoroDock
         {
             try
             {
-                // 画像を表示（フィルタリングされた場合も含む）
+                // 画像を表示
                 UIHelper.RunOnUIThread(() =>
                 {
-                    ChatControlInstance.AddDesktopMonitoringImage(screenshotData.ImageBase64, null);
+                    ChatControlInstance.AddDesktopMonitoringImage(screenshotData.ImageBase64);
                 });
 
                 // CommunicationServiceを使用してデスクトップモニタリングを送信
@@ -245,17 +243,6 @@ namespace CocoroDock
             }
         }
 
-        /// <summary>
-        /// スクリーンショットがフィルタリングされた時の処理
-        /// </summary>
-        private void OnScreenshotFiltered(object? sender, string message)
-        {
-            UIHelper.RunOnUIThread(() =>
-            {
-                // ステータスバーにフィルタリング通知を表示
-                AddStatusMessage(message);
-            });
-        }
 
         /// <summary>
         /// スクリーンショットサービスの設定を更新
@@ -267,7 +254,6 @@ namespace CocoroDock
             // 現在のサービスが存在し、設定が無効になった場合は停止
             if (_screenshotService != null && (screenshotSettings == null || !screenshotSettings.enabled))
             {
-                _screenshotService.Filtered -= OnScreenshotFiltered;
                 _screenshotService.Stop();
                 _screenshotService.Dispose();
                 _screenshotService = null;
@@ -296,7 +282,6 @@ namespace CocoroDock
 
                 if (needsRestart)
                 {
-                    _screenshotService.Filtered -= OnScreenshotFiltered;
                     _screenshotService.Stop();
                     _screenshotService.Dispose();
                     InitializeScreenshotService();
@@ -684,10 +669,10 @@ namespace CocoroDock
                 // 設定画面を表示
                 var adminWindow = new AdminWindow(_communicationService);
                 adminWindow.Owner = this; // メインウィンドウを親に設定
-                
+
                 // ウィンドウが閉じられた時にボタンの状態を更新
                 adminWindow.Closed += AdminWindow_Closed;
-                
+
                 adminWindow.Show(); // モードレスダイアログとして表示
             }
             catch (Exception ex)
@@ -703,7 +688,7 @@ namespace CocoroDock
         {
             // ボタンの状態を最新の設定に更新
             InitializeButtonStates();
-            
+
             // 設定変更に応じてサービスを更新
             ApplySettings();
         }
@@ -726,9 +711,9 @@ namespace CocoroDock
                 // ボタンの画像を更新
                 if (ScreenshotButtonImage != null)
                 {
-                    ScreenshotButtonImage.Source = new Uri(_isScreenshotPaused ? 
-                        "pack://application:,,,/Resource/icon/ScreenShotOFF.svg" : 
-                        "pack://application:,,,/Resource/icon/ScreenShotON.svg", 
+                    ScreenshotButtonImage.Source = new Uri(_isScreenshotPaused ?
+                        "pack://application:,,,/Resource/icon/ScreenShotOFF.svg" :
+                        "pack://application:,,,/Resource/icon/ScreenShotON.svg",
                         UriKind.Absolute);
                 }
 
@@ -736,7 +721,7 @@ namespace CocoroDock
                 if (PauseScreenshotButton != null)
                 {
                     PauseScreenshotButton.ToolTip = _isScreenshotPaused ? "デスクトップウォッチを有効にする" : "デスクトップウォッチを無効にする";
-                    
+
                     // 無効状態の場合は半透明にする
                     PauseScreenshotButton.Opacity = _isScreenshotPaused ? 0.6 : 1.0;
                 }
@@ -765,9 +750,9 @@ namespace CocoroDock
                 // ボタンの画像を更新
                 if (MicButtonImage != null)
                 {
-                    MicButtonImage.Source = new Uri(currentCharacter.isUseSTT ? 
-                        "pack://application:,,,/Resource/icon/MicON.svg" : 
-                        "pack://application:,,,/Resource/icon/MicOFF.svg", 
+                    MicButtonImage.Source = new Uri(currentCharacter.isUseSTT ?
+                        "pack://application:,,,/Resource/icon/MicON.svg" :
+                        "pack://application:,,,/Resource/icon/MicOFF.svg",
                         UriKind.Absolute);
                 }
 
@@ -775,7 +760,7 @@ namespace CocoroDock
                 if (MicButton != null)
                 {
                     MicButton.ToolTip = currentCharacter.isUseSTT ? "STTを無効にする" : "STTを有効にする";
-                    
+
                     // 無効状態の場合は半透明にする
                     MicButton.Opacity = currentCharacter.isUseSTT ? 1.0 : 0.6;
                 }
@@ -789,7 +774,7 @@ namespace CocoroDock
                         {
                             // STT設定をCocoroCoreに送信
                             await _communicationService.SendSTTStateToCoreAsync(currentCharacter.isUseSTT);
-                            
+
                             UIHelper.RunOnUIThread(() =>
                             {
                                 AddStatusMessage(currentCharacter.isUseSTT ? "STTを有効にしました" : "STTを無効にしました");
@@ -836,9 +821,9 @@ namespace CocoroDock
                 // ボタンの画像を更新
                 if (MuteButtonImage != null)
                 {
-                    MuteButtonImage.Source = new Uri(currentCharacter.isUseTTS ? 
-                        "pack://application:,,,/Resource/icon/SpeakerON.svg" : 
-                        "pack://application:,,,/Resource/icon/SpeakerOFF.svg", 
+                    MuteButtonImage.Source = new Uri(currentCharacter.isUseTTS ?
+                        "pack://application:,,,/Resource/icon/SpeakerON.svg" :
+                        "pack://application:,,,/Resource/icon/SpeakerOFF.svg",
                         UriKind.Absolute);
                 }
 
@@ -846,7 +831,7 @@ namespace CocoroDock
                 if (MuteButton != null)
                 {
                     MuteButton.ToolTip = currentCharacter.isUseTTS ? "TTSを無効にする" : "TTSを有効にする";
-                    
+
                     // 無効状態の場合は半透明にする
                     MuteButton.Opacity = currentCharacter.isUseTTS ? 1.0 : 0.6;
                 }
@@ -860,7 +845,7 @@ namespace CocoroDock
                         {
                             // TTS設定をCocoroShellに送信
                             await _communicationService.SendTTSStateToShellAsync(currentCharacter.isUseTTS);
-                            
+
                             UIHelper.RunOnUIThread(() =>
                             {
                                 AddStatusMessage(currentCharacter.isUseTTS ? "TTSを有効にしました" : "TTSを無効にしました");
@@ -955,7 +940,6 @@ namespace CocoroDock
                 // アプリケーション終了時のクリーンアップ
                 if (_screenshotService != null)
                 {
-                    _screenshotService.Filtered -= OnScreenshotFiltered;
                     _screenshotService.Dispose();
                 }
                 base.OnClosing(e);

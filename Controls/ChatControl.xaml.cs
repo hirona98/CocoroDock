@@ -236,8 +236,7 @@ namespace CocoroDock.Controls
         /// デスクトップモニタリング画像を表示
         /// </summary>
         /// <param name="imageBase64">Base64エンコードされた画像データ</param>
-        /// <param name="filterReason">フィルタリング理由（オプション）</param>
-        public void AddDesktopMonitoringImage(string imageBase64, string? filterReason = null)
+        public void AddDesktopMonitoringImage(string imageBase64)
         {
             try
             {
@@ -288,18 +287,6 @@ namespace CocoroDock.Controls
                     };
 
                     messageContent.Children.Add(image);
-                }
-
-                // フィルタリング理由がある場合は表示
-                if (!string.IsNullOrEmpty(filterReason))
-                {
-                    var reasonText = new TextBox
-                    {
-                        Style = (Style)Resources["SystemMessageTextStyle"],
-                        Text = $"※ {filterReason}",
-                        Margin = new Thickness(0, 0, 0, 0)
-                    };
-                    messageContent.Children.Add(reasonText);
                 }
 
                 bubble.Child = messageContent;
