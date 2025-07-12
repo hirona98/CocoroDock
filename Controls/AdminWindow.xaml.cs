@@ -1602,6 +1602,9 @@ namespace CocoroDock.Controls
         /// </summary>
         protected override void OnClosed(EventArgs e)
         {
+            // MCPタブのViewModelを破棄
+            _mcpTabViewModel?.Dispose();
+
             // フックを解除
             if (_source != null)
             {

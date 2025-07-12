@@ -17,7 +17,7 @@ namespace CocoroDock.ViewModels
     /// <summary>
     /// MCPタブのViewModel
     /// </summary>
-    public class McpTabViewModel : INotifyPropertyChanged
+    public class McpTabViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly IAppSettings _appSettings;
         private readonly CocoroCoreClient _cocoroCoreClient;
@@ -425,6 +425,36 @@ namespace CocoroDock.ViewModels
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        #endregion
+
+        #region IDisposable
+
+        private bool _disposed = false;
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    // タイマーを停止して破棄
+                    if (_statusUpdateTimer != null)
+                    {
+                        _statusUpdateTimer.Stop();
+                        _statusUpdateTimer.Tick -= async (s, e) => await RetryUpdateIfDataMissing();
+                    }
+                    Debug.WriteLine("MCPタブのタイマーを停止しました");
+                }
+                _disposed = true;
+            }
         }
 
         #endregion
