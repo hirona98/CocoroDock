@@ -1256,6 +1256,12 @@ namespace CocoroDock.Controls
                 lastIsEnableMemory = AppSettings.Instance.CharacterList[lastSelectedIndex].isEnableMemory;
             }
 
+            // MCP設定の変更をチェックして適用
+            if (_mcpTabViewModel != null)
+            {
+                await _mcpTabViewModel.ApplyMcpSettingsAsync();
+            }
+
             // すべてのタブの設定を保存
             SaveAllSettings(lastIsEnableNotificationApi);
 

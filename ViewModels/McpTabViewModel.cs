@@ -25,6 +25,7 @@ namespace CocoroDock.ViewModels
         private readonly string _mcpConfigPath;
 
         private bool _isMcpEnabled;
+        private bool _originalMcpEnabled;
         private string _mcpConfigJson = string.Empty;
         private McpStatus? _mcpStatus;
         private string _statusMessage = string.Empty;
@@ -54,6 +55,7 @@ namespace CocoroDock.ViewModels
             // 初期化
             LoadMcpConfig();
             IsMcpEnabled = _appSettings.IsEnableMcp;
+            _originalMcpEnabled = _appSettings.IsEnableMcp;
 
             // 初期表示を設定
             DiagnosticDetails = "設定確認中...";
@@ -73,13 +75,6 @@ namespace CocoroDock.ViewModels
                 {
                     _isMcpEnabled = value;
                     OnPropertyChanged();
-
-                    // 設定を保存
-                    _appSettings.IsEnableMcp = value;
-                    _appSettings.SaveAppSettings();
-
-                    // チェックボックスの状態に関係なく表示内容は変更しない
-                    // 設定の保存のみ行う
                 }
             }
         }
@@ -178,6 +173,11 @@ namespace CocoroDock.ViewModels
         #region Commands
 
         public ICommand SaveConfigCommand { get; }
+
+        /// <summary>
+        /// MCP設定が変更されているかどうかを確認
+        /// </summary>
+        public bool HasMcpSettingsChanged => _isMcpEnabled != _originalMcpEnabled;
 
         #endregion
 
@@ -387,6 +387,25 @@ namespace CocoroDock.ViewModels
             }
         }
 
+
+        /// <summary>
+        /// MCP設定を適用し、必要に応じてCocoroCoreを再起動
+        /// </summary>
+        public async Task ApplyMcpSettingsAsync()
+        {
+            if (HasMcpSettingsChanged)
+            {
+                // 設定を保存
+                _appSettings.IsEnableMcp = _isMcpEnabled;
+                _appSettings.SaveAppSettings();
+                
+                // 元の値を更新
+                _originalMcpEnabled = _isMcpEnabled;
+                
+                // CocoroCoreを再起動
+                await RestartCocoroCoreAsync();
+            }
+        }
 
         #endregion
 
