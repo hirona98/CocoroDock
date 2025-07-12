@@ -229,8 +229,14 @@ namespace CocoroDock.ViewModels
                     return;
                 }
 
-                // ファイルに保存
+                // MCPファイルに保存
                 await File.WriteAllTextAsync(_mcpConfigPath, McpConfigJson);
+                
+                // MCP有効無効の設定のみを保存（他の設定は変更しない）
+                var currentSettings = _appSettings.GetConfigSettings();
+                currentSettings.isEnableMcp = IsMcpEnabled;
+                _appSettings.UpdateSettings(currentSettings);
+                
                 StatusMessage = "設定を保存しました";
 
                 // CocoroCore再起動の通知
@@ -321,16 +327,21 @@ namespace CocoroDock.ViewModels
                         if (logResponse.logs != null && logResponse.logs.Count > 0)
                         {
                             DiagnosticDetails = string.Join("\n", logResponse.logs);
+                            // ログが正常に取得できた場合はポーリングを停止
+                            _statusUpdateTimer.Stop();
                         }
                         else
                         {
                             DiagnosticDetails = "ツール登録ログがありません";
+                            // ログがない場合もポーリングを停止（正常な状態として扱う）
+                            _statusUpdateTimer.Stop();
                         }
                     }
                     catch (Exception logEx)
                     {
                         Debug.WriteLine($"ツール登録ログ取得エラー: {logEx.Message}");
                         DiagnosticDetails = "ツール登録ログの取得に失敗しました";
+                        // エラーの場合はポーリングを継続
                     }
                 }
             }
