@@ -125,6 +125,8 @@ namespace CocoroDock.Services
         public int NotificationApiPort { get; set; } = 55604;
         // 通知API設定
         public bool IsEnableNotificationApi { get; set; } = true;
+        // MCP設定
+        public bool IsEnableMcp { get; set; } = false;
         // UI設定
         public bool IsRestoreWindowPosition { get; set; } = false;
         public bool IsTopmost { get; set; } = false;
@@ -179,6 +181,7 @@ namespace CocoroDock.Services
             CocoroShellPort = config.cocoroShellPort;
             NotificationApiPort = config.notificationApiPort;
             IsEnableNotificationApi = config.isEnableNotificationApi;
+            IsEnableMcp = config.isEnableMcp;
             IsRestoreWindowPosition = config.isRestoreWindowPosition;
             IsTopmost = config.isTopmost;
             IsEscapeCursor = config.isEscapeCursor;
@@ -241,6 +244,7 @@ namespace CocoroDock.Services
                 cocoroShellPort = CocoroShellPort,
                 notificationApiPort = NotificationApiPort,
                 isEnableNotificationApi = IsEnableNotificationApi,
+                isEnableMcp = IsEnableMcp,
                 isRestoreWindowPosition = IsRestoreWindowPosition,
                 isTopmost = IsTopmost,
                 isEscapeCursor = IsEscapeCursor,

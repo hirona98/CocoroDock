@@ -1,6 +1,7 @@
 using CocoroDock.Communication;
 using CocoroDock.Services;
 using CocoroDock.Utilities;
+using CocoroDock.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -35,6 +36,9 @@ namespace CocoroDock.Controls
 
         // 通信サービス
         private ICommunicationService? _communicationService;
+
+        // MCPタブ用ViewModel
+        private McpTabViewModel? _mcpTabViewModel;
 
         // アニメーション設定を保存するためのリスト
         private List<AnimationSetting> _animationSettings = new List<AnimationSetting>();
@@ -105,6 +109,9 @@ namespace CocoroDock.Controls
 
             // ボタンイベントの登録
             RegisterButtonEvents();
+
+            // MCPタブの初期化
+            InitializeMcpTab();
 
             // 元の設定のバックアップを作成
             BackupSettings();
@@ -369,6 +376,7 @@ namespace CocoroDock.Controls
                 { "BackgroundShadowResolution", appSettings.BackgroundShadowResolution },
                 { "WindowSize", appSettings.WindowSize },
                 { "IsEnableNotificationApi", appSettings.IsEnableNotificationApi },
+                { "IsEnableMcp", appSettings.IsEnableMcp },
                 { "ScreenshotEnabled", appSettings.ScreenshotSettings.enabled },
                 { "ScreenshotInterval", appSettings.ScreenshotSettings.intervalMinutes },
                 { "IdleTimeout", appSettings.ScreenshotSettings.idleTimeoutMinutes },
@@ -1644,6 +1652,8 @@ namespace CocoroDock.Controls
 
             _displaySettings["WindowSize"] = WindowSizeSlider.Value;
             _displaySettings["IsEnableNotificationApi"] = IsEnableNotificationApiCheckBox.IsChecked ?? false;
+            // MCPタブの設定を取得（ViewModelから）
+            _displaySettings["IsEnableMcp"] = _mcpTabViewModel?.IsMcpEnabled ?? false;
 
             // スクリーンショット設定を保存
             _displaySettings["ScreenshotEnabled"] = ScreenshotEnabledCheckBox.IsChecked ?? false;
@@ -1681,6 +1691,13 @@ namespace CocoroDock.Controls
             appSettings.BackgroundShadowResolution = (int)_displaySettings["BackgroundShadowResolution"];
             appSettings.WindowSize = (double)_displaySettings["WindowSize"] > 0 ? (int)(double)_displaySettings["WindowSize"] : 650;
             appSettings.IsEnableNotificationApi = (bool)_displaySettings["IsEnableNotificationApi"];
+            appSettings.IsEnableMcp = (bool)_displaySettings["IsEnableMcp"];
+
+            // MCPタブのViewModelにも反映
+            if (_mcpTabViewModel != null)
+            {
+                _mcpTabViewModel.IsMcpEnabled = (bool)_displaySettings["IsEnableMcp"];
+            }
 
             // スクリーンショット設定の更新
             appSettings.ScreenshotSettings.enabled = (bool)_displaySettings["ScreenshotEnabled"];
@@ -2314,5 +2331,74 @@ namespace CocoroDock.Controls
                 ShadowOffMeshTextBox.IsEnabled = false;
             }
         }
+
+        /// <summary>
+        /// MCPタブの初期化
+        /// </summary>
+        private void InitializeMcpTab()
+        {
+            try
+            {
+                var appSettings = AppSettings.Instance;
+                _mcpTabViewModel = new McpTabViewModel(appSettings);
+
+                // UIエレメントとViewModelのバインディング
+                McpEnabledCheckBox.IsChecked = _mcpTabViewModel.IsMcpEnabled;
+                McpConfigTextBox.Text = _mcpTabViewModel.McpConfigJson;
+                McpServersList.ItemsSource = _mcpTabViewModel.McpServers;
+                McpStatusMessage.Text = _mcpTabViewModel.StatusMessage;
+
+                // イベントハンドラーの登録
+                McpEnabledCheckBox.Checked += (s, e) =>
+                {
+                    _mcpTabViewModel.IsMcpEnabled = true;
+                };
+                McpEnabledCheckBox.Unchecked += (s, e) =>
+                {
+                    _mcpTabViewModel.IsMcpEnabled = false;
+                };
+
+                McpConfigTextBox.TextChanged += (s, e) =>
+                {
+                    _mcpTabViewModel.McpConfigJson = McpConfigTextBox.Text;
+                };
+
+                SaveMcpConfigButton.Click += (s, e) =>
+                {
+                    _mcpTabViewModel.SaveConfigCommand.Execute(null);
+                };
+
+                // ViewModelプロパティ変更イベントの監視
+                _mcpTabViewModel.PropertyChanged += (s, e) =>
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        switch (e.PropertyName)
+                        {
+                            case nameof(McpTabViewModel.McpServers):
+                                McpServersList.ItemsSource = _mcpTabViewModel.McpServers;
+                                break;
+                            case nameof(McpTabViewModel.StatusMessage):
+                                McpStatusMessage.Text = _mcpTabViewModel.StatusMessage;
+                                break;
+                            case nameof(McpTabViewModel.DiagnosticDetails):
+                                DiagnosticDetailsTextBox.Text = _mcpTabViewModel.DiagnosticDetails;
+                                break;
+                            case nameof(McpTabViewModel.IsLoading):
+                                // ローディング表示は削除されたため、何もしない
+                                break;
+                        }
+                    });
+                };
+
+                // 初期化完了（監視は自動的に開始される）
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"MCPタブ初期化エラー: {ex.Message}");
+                McpStatusMessage.Text = $"初期化エラー: {ex.Message}";
+            }
+        }
+
     }
 }

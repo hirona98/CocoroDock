@@ -1,5 +1,6 @@
 using CocoroDock.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -213,6 +214,77 @@ namespace CocoroDock.Communication
             catch (Exception ex)
             {
                 Debug.WriteLine($"CocoroCoreへの制御コマンド送信エラー: {ex.Message}");
+                throw new InvalidOperationException($"CocoroCoreとの通信に失敗しました: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// CocoroCoreのヘルスチェックを実行（MCP状態を含む）
+        /// </summary>
+        public async Task<HealthCheckResponse> GetHealthAsync()
+        {
+            try
+            {
+                using var response = await _httpClient.GetAsync($"{_baseUrl}/health");
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = MessageHelper.DeserializeFromJson<ErrorResponse>(responseBody);
+                    throw new HttpRequestException($"CocoroCoreエラー: {error?.message ?? responseBody}");
+                }
+
+                return MessageHelper.DeserializeFromJson<HealthCheckResponse>(responseBody) 
+                       ?? throw new InvalidOperationException("ヘルスチェックレスポンスのパースに失敗しました");
+            }
+            catch (TaskCanceledException)
+            {
+                throw new TimeoutException("CocoroCoreへのリクエストがタイムアウトしました");
+            }
+            catch (HttpRequestException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CocoroCoreのヘルスチェックエラー: {ex.Message}");
+                throw new InvalidOperationException($"CocoroCoreとの通信に失敗しました: {ex.Message}", ex);
+            }
+        }
+
+
+        /// <summary>
+        /// MCPツール登録ログを取得
+        /// </summary>
+        public async Task<McpToolRegistrationResponse> GetMcpToolRegistrationLogAsync()
+        {
+            try
+            {
+                using var response = await _httpClient.GetAsync($"{_baseUrl}/api/mcp/tool-registration-log");
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = MessageHelper.DeserializeFromJson<ErrorResponse>(responseBody);
+                    throw new HttpRequestException($"CocoroCoreエラー: {error?.message ?? responseBody}");
+                }
+
+                return MessageHelper.DeserializeFromJson<McpToolRegistrationResponse>(responseBody) 
+                       ?? new McpToolRegistrationResponse { status = "success", message = "ログ取得完了", logs = new List<string>() };
+            }
+            catch (TaskCanceledException)
+            {
+                throw new TimeoutException("CocoroCoreへのリクエストがタイムアウトしました");
+            }
+            catch (HttpRequestException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"MCPツール登録ログ取得エラー: {ex.Message}");
                 throw new InvalidOperationException($"CocoroCoreとの通信に失敗しました: {ex.Message}", ex);
             }
         }

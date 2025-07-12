@@ -78,6 +78,7 @@ namespace CocoroDock.Communication
         public int cocoroShellPort { get; set; } = 55605;
         public int notificationApiPort { get; set; } = 55604;
         public bool isEnableNotificationApi { get; set; } = false;
+        public bool isEnableMcp { get; set; } = false;
         public bool isRestoreWindowPosition { get; set; } = false;
         public bool isTopmost { get; set; }
         public bool isEscapeCursor { get; set; }
@@ -253,6 +254,81 @@ namespace CocoroDock.Communication
         public string message { get; set; } = string.Empty; // ステータスメッセージ
         public string? type { get; set; } // ステータスタイプ（"api_start", "api_end"など）
         public DateTime timestamp { get; set; } = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// CocoroCore: ヘルスチェックレスポンス
+    /// </summary>
+    public class HealthCheckResponse
+    {
+        public string status { get; set; } = string.Empty;
+        public string version { get; set; } = string.Empty;
+        public string character { get; set; } = string.Empty;
+        public bool memory_enabled { get; set; }
+        public string llm_model { get; set; } = string.Empty;
+        public int active_sessions { get; set; }
+        public McpStatus? mcp_status { get; set; }
+    }
+
+    /// <summary>
+    /// MCPステータス情報
+    /// </summary>
+    public class McpStatus
+    {
+        public int total_servers { get; set; }
+        public int connected_servers { get; set; }
+        public int total_tools { get; set; }
+        public Dictionary<string, McpServerInfo>? servers { get; set; }
+        public string? error { get; set; }
+    }
+
+    /// <summary>
+    /// MCPサーバー情報
+    /// </summary>
+    public class McpServerInfo
+    {
+        public bool connected { get; set; }
+        public int tool_count { get; set; }
+        public string connection_type { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// MCP診断結果
+    /// </summary>
+    public class McpDiagnosticResult
+    {
+        public List<McpServerDiagnostic>? servers { get; set; }
+        public string summary { get; set; } = string.Empty;
+        public string? error { get; set; }
+    }
+
+    /// <summary>
+    /// MCPサーバー診断詳細
+    /// </summary>
+    public class McpServerDiagnostic
+    {
+        public string name { get; set; } = string.Empty;
+        public string command { get; set; } = string.Empty;
+        public List<string>? args { get; set; }
+        public Dictionary<string, object>? env { get; set; }
+        public List<string>? issues { get; set; }
+        public List<string>? checks { get; set; }
+    }
+
+    /// <summary>
+    /// MCP診断レスポンス
+    /// </summary>
+    public class McpDiagnosticResponse : StandardResponse
+    {
+        public McpDiagnosticResult? diagnostic_result { get; set; }
+    }
+
+    /// <summary>
+    /// MCPツール登録ログレスポンス
+    /// </summary>
+    public class McpToolRegistrationResponse : StandardResponse
+    {
+        public List<string>? logs { get; set; }
     }
 
     #endregion

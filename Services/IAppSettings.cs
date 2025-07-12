@@ -39,6 +39,11 @@ namespace CocoroDock.Services
         bool IsEnableNotificationApi { get; set; }
 
         /// <summary>
+        /// MCP有効/無効
+        /// </summary>
+        bool IsEnableMcp { get; set; }
+
+        /// <summary>
         /// 通知APIポート
         /// </summary>
         int NotificationApiPort { get; set; }

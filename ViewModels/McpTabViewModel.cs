@@ -1,0 +1,431 @@
+using CocoroDock.Communication;
+using CocoroDock.Services;
+using CocoroDock.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using System.Windows.Input;
+using System.Windows.Threading;
+
+namespace CocoroDock.ViewModels
+{
+    /// <summary>
+    /// MCPタブのViewModel
+    /// </summary>
+    public class McpTabViewModel : INotifyPropertyChanged
+    {
+        private readonly IAppSettings _appSettings;
+        private readonly CocoroCoreClient _cocoroCoreClient;
+        private readonly DispatcherTimer _statusUpdateTimer;
+        private readonly string _mcpConfigPath;
+
+        private bool _isMcpEnabled;
+        private string _mcpConfigJson = string.Empty;
+        private McpStatus? _mcpStatus;
+        private string _statusMessage = string.Empty;
+        private string _diagnosticDetails = string.Empty;
+        private bool _isLoading;
+
+        public McpTabViewModel(IAppSettings appSettings)
+        {
+            _appSettings = appSettings;
+            _cocoroCoreClient = new CocoroCoreClient(_appSettings.CocoroCorePort);
+
+            // MCPファイルのパス設定（設定ファイルと同じディレクトリのUserDataフォルダ）
+            var execDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "";
+            var userDataDir = Path.Combine(execDir, "UserData");
+            _mcpConfigPath = Path.Combine(userDataDir, "cocoroAiMcp.json");
+
+            // タイマーの初期化（データがない時のみ再取得用）
+            _statusUpdateTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(1)
+            };
+            _statusUpdateTimer.Tick += async (s, e) => await RetryUpdateIfDataMissing();
+
+            // コマンドの初期化
+            SaveConfigCommand = new RelayCommand(async () => await SaveMcpConfigAsync());
+
+            // 初期化
+            LoadMcpConfig();
+            IsMcpEnabled = _appSettings.IsEnableMcp;
+
+            // 初期表示を設定
+            DiagnosticDetails = "設定確認中...";
+
+            // 設定ダイアログ開始時にデータ取得
+            _ = InitialMcpStatusUpdateAsync();
+        }
+
+        #region Properties
+
+        public bool IsMcpEnabled
+        {
+            get => _isMcpEnabled;
+            set
+            {
+                if (_isMcpEnabled != value)
+                {
+                    _isMcpEnabled = value;
+                    OnPropertyChanged();
+
+                    // 設定を保存
+                    _appSettings.IsEnableMcp = value;
+                    _appSettings.SaveAppSettings();
+
+                    // チェックボックスの状態に関係なく表示内容は変更しない
+                    // 設定の保存のみ行う
+                }
+            }
+        }
+
+        public string McpConfigJson
+        {
+            get => _mcpConfigJson;
+            set
+            {
+                if (_mcpConfigJson != value)
+                {
+                    _mcpConfigJson = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public McpStatus? McpStatus
+        {
+            get => _mcpStatus;
+            set
+            {
+                if (_mcpStatus != value)
+                {
+                    _mcpStatus = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(McpServers));
+                }
+            }
+        }
+
+        public ObservableCollection<McpServerViewModel> McpServers
+        {
+            get
+            {
+                var servers = new ObservableCollection<McpServerViewModel>();
+                if (_mcpStatus?.servers != null)
+                {
+                    foreach (var server in _mcpStatus.servers)
+                    {
+                        servers.Add(new McpServerViewModel
+                        {
+                            Name = server.Key,
+                            IsConnected = server.Value.connected,
+                            ToolCount = server.Value.tool_count,
+                            ConnectionType = server.Value.connection_type
+                        });
+                    }
+                }
+                return servers;
+            }
+        }
+
+        public string StatusMessage
+        {
+            get => _statusMessage;
+            set
+            {
+                if (_statusMessage != value)
+                {
+                    _statusMessage = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public string DiagnosticDetails
+        {
+            get => _diagnosticDetails;
+            set
+            {
+                if (_diagnosticDetails != value)
+                {
+                    _diagnosticDetails = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set
+            {
+                if (_isLoading != value)
+                {
+                    _isLoading = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        #endregion
+
+        #region Commands
+
+        public ICommand SaveConfigCommand { get; }
+
+        #endregion
+
+        #region Methods
+
+        private void LoadMcpConfig()
+        {
+            try
+            {
+                if (File.Exists(_mcpConfigPath))
+                {
+                    McpConfigJson = File.ReadAllText(_mcpConfigPath);
+                }
+                else
+                {
+                    // サンプルファイルから読み込み（setting.jsonと同じUserDataディレクトリ）
+                    var userDataDir = Path.GetDirectoryName(_mcpConfigPath) ?? "";
+                    var samplePath = Path.Combine(userDataDir, "sample_cocoroAiMcp.json");
+                    if (File.Exists(samplePath))
+                    {
+                        McpConfigJson = File.ReadAllText(samplePath);
+                    }
+                    else
+                    {
+                        // サンプルファイルがない場合は空の値
+                        McpConfigJson = "";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"MCPファイル読み込みエラー: {ex.Message}");
+                StatusMessage = $"設定ファイルの読み込みに失敗しました: {ex.Message}";
+            }
+        }
+
+        private async Task SaveMcpConfigAsync()
+        {
+            IsLoading = true;
+            try
+            {
+                // JSONの妥当性チェック
+                try
+                {
+                    var jsonObj = System.Text.Json.JsonSerializer.Deserialize<object>(McpConfigJson);
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"JSON形式が無効です: {ex.Message}";
+                    return;
+                }
+
+                // ファイルに保存
+                await File.WriteAllTextAsync(_mcpConfigPath, McpConfigJson);
+                StatusMessage = "設定を保存しました";
+
+                // CocoroCore再起動の通知
+                await RestartCocoroCoreAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"MCP設定保存エラー: {ex.Message}");
+                StatusMessage = $"設定の保存に失敗しました: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task InitialMcpStatusUpdateAsync()
+        {
+            try
+            {
+                await UpdateMcpStatusAsync();
+
+                // MCPステータスが正常に取得できた場合はタイマーを停止
+                if (McpStatus != null)
+                {
+                    _statusUpdateTimer.Stop();
+                }
+                else
+                {
+                    // データが不足している場合はタイマーを開始して再取得
+                    _statusUpdateTimer.Start();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"初期MCPステータス更新エラー: {ex.Message}");
+                // 初回接続エラー時にもメッセージを表示
+                StatusMessage = "CocoroCoreの起動を待っています";
+                DiagnosticDetails = "";
+                // 失敗した場合もタイマーを開始して再試行
+                _statusUpdateTimer.Start();
+            }
+        }
+
+        private async Task RetryUpdateIfDataMissing()
+        {
+            // 常にポーリングを実行（接続できるまで継続）
+            try
+            {
+                await UpdateMcpStatusAsync();
+
+                // MCPステータスが正常に取得できた場合はタイマーを停止
+                if (McpStatus != null)
+                {
+                    _statusUpdateTimer.Stop();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"MCP再取得エラー: {ex.Message}");
+                // 接続エラー時にもメッセージを表示
+                StatusMessage = "CocoroCoreの起動を待っています";
+                DiagnosticDetails = "";
+            }
+        }
+
+        private async Task UpdateMcpStatusAsync()
+        {
+            try
+            {
+                // ヘルスチェックでMCPステータスを取得
+                var health = await _cocoroCoreClient.GetHealthAsync();
+                McpStatus = health.mcp_status;
+
+                if (McpStatus?.error != null)
+                {
+                    StatusMessage = $"MCPエラー: {McpStatus.error}";
+                    DiagnosticDetails = "";
+                }
+                else
+                {
+                    StatusMessage = $"接続済み: {McpStatus?.connected_servers ?? 0}/{McpStatus?.total_servers ?? 0} サーバー, {McpStatus?.total_tools ?? 0}個のツール";
+
+                    // 専用APIからツール登録ログを取得
+                    try
+                    {
+                        var logResponse = await _cocoroCoreClient.GetMcpToolRegistrationLogAsync();
+                        if (logResponse.logs != null && logResponse.logs.Count > 0)
+                        {
+                            DiagnosticDetails = string.Join("\n", logResponse.logs);
+                        }
+                        else
+                        {
+                            DiagnosticDetails = "ツール登録ログがありません";
+                        }
+                    }
+                    catch (Exception logEx)
+                    {
+                        Debug.WriteLine($"ツール登録ログ取得エラー: {logEx.Message}");
+                        DiagnosticDetails = "ツール登録ログの取得に失敗しました";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"MCPステータス更新エラー: {ex.Message}");
+                StatusMessage = "CocoroCoreの起動を待っています";
+                McpStatus = null;
+                DiagnosticDetails = "";
+            }
+        }
+
+
+        private async Task RestartCocoroCoreAsync()
+        {
+            try
+            {
+                StatusMessage = "CocoroCoreを再起動しています...";
+
+                // ProcessHelperを使用してCocoroCoreを再起動
+                await Task.Run(() =>
+                {
+                    ProcessHelper.LaunchExternalApplication("CocoroCore.exe", "CocoroCore", ProcessOperation.RestartIfRunning);
+                });
+
+                // 起動を待つ
+                await Task.Delay(5000);
+
+                // ポーリングを再開
+                DiagnosticDetails = "設定確認中...";
+                _statusUpdateTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CocoroCore再起動エラー: {ex.Message}");
+                StatusMessage = "再起動に失敗しました";
+            }
+        }
+
+
+        #endregion
+
+        #region INotifyPropertyChanged
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// MCPサーバー表示用ViewModel
+    /// </summary>
+    public class McpServerViewModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public bool IsConnected { get; set; }
+        public int ToolCount { get; set; }
+        public string ConnectionType { get; set; } = string.Empty;
+
+        public string Status => IsConnected ? $"接続済み ({ToolCount} ツール)" : "未接続";
+    }
+
+    /// <summary>
+    /// シンプルなRelayCommand実装
+    /// </summary>
+    public class RelayCommand : ICommand
+    {
+        private readonly Func<Task> _executeAsync;
+        private readonly Func<bool>? _canExecute;
+
+        public RelayCommand(Func<Task> executeAsync, Func<bool>? canExecute = null)
+        {
+            _executeAsync = executeAsync;
+            _canExecute = canExecute;
+        }
+
+        public event EventHandler? CanExecuteChanged
+        {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
+
+        public bool CanExecute(object? parameter)
+        {
+            return _canExecute?.Invoke() ?? true;
+        }
+
+        public async void Execute(object? parameter)
+        {
+            await _executeAsync();
+        }
+    }
+}
