@@ -20,14 +20,18 @@
     <None Remove="Resource\logo.png" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Resource\defaultSetting.json">
+    <None Include="Resource\defaultSetting.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>UserData\defaultSetting.json</Link>
-    </Content>
-    <Content Include="Resource\sample_cocoroAiMcp.json">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <PublishItemType>None</PublishItemType>
+      <TargetPath>UserData\defaultSetting.json</TargetPath>
+    </None>
+    <None Include="Resource\sample_cocoroAiMcp.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>UserData\sample_cocoroAiMcp.json</Link>
-    </Content>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <PublishItemType>None</PublishItemType>
+      <TargetPath>UserData\sample_cocoroAiMcp.json</TargetPath>
+    </None>
     <EmbeddedResource Include="Resource\License.txt" />
   </ItemGroup>
 
@@ -73,5 +77,15 @@
     <PackageReference Include="Tesseract.Drawing" Version="5.2.0" />
     <PackageReference Include="SharpVectors" Version="1.8.4" />
   </ItemGroup>
+
+  <!-- Publish時にUserDataフォルダに設定ファイルをコピー -->
+  <Target Name="CopyUserDataFiles" AfterTargets="Publish">
+    <MakeDir Directories="$(PublishDir)UserData" Condition="!Exists('$(PublishDir)UserData')" />
+    <Copy SourceFiles="$(PublishDir)defaultSetting.json" DestinationFiles="$(PublishDir)UserData\defaultSetting.json" Condition="Exists('$(PublishDir)defaultSetting.json')" />
+    <Copy SourceFiles="$(PublishDir)sample_cocoroAiMcp.json" DestinationFiles="$(PublishDir)UserData\sample_cocoroAiMcp.json" Condition="Exists('$(PublishDir)sample_cocoroAiMcp.json')" />
+    <!-- 元のファイルを削除（UserDataフォルダにのみ存在させるため） -->
+    <Delete Files="$(PublishDir)defaultSetting.json" Condition="Exists('$(PublishDir)defaultSetting.json')" />
+    <Delete Files="$(PublishDir)sample_cocoroAiMcp.json" Condition="Exists('$(PublishDir)sample_cocoroAiMcp.json')" />
+  </Target>
 
 </Project>
