@@ -49,7 +49,7 @@ namespace CocoroDock.ViewModels
             _statusUpdateTimer.Tick += async (s, e) => await RetryUpdateIfDataMissing();
 
             // コマンドの初期化
-            SaveConfigCommand = new RelayCommand(async () => await SaveMcpConfigAsync());
+            SaveConfigCommand = new RelayCommand(async () => await SaveMcpConfigAsync(), () => !IsLoading);
 
             // 初期化
             LoadMcpConfig();
@@ -168,6 +168,7 @@ namespace CocoroDock.ViewModels
                 {
                     _isLoading = value;
                     OnPropertyChanged();
+                    CommandManager.InvalidateRequerySuggested();
                 }
             }
         }
@@ -231,12 +232,12 @@ namespace CocoroDock.ViewModels
 
                 // MCPファイルに保存
                 await File.WriteAllTextAsync(_mcpConfigPath, McpConfigJson);
-                
+
                 // MCP有効無効の設定のみを保存（他の設定は変更しない）
                 var currentSettings = _appSettings.GetConfigSettings();
                 currentSettings.isEnableMcp = IsMcpEnabled;
                 _appSettings.UpdateSettings(currentSettings);
-                
+
                 StatusMessage = "設定を保存しました";
 
                 // CocoroCore再起動の通知
@@ -255,6 +256,7 @@ namespace CocoroDock.ViewModels
 
         private async Task InitialMcpStatusUpdateAsync()
         {
+            IsLoading = true;
             try
             {
                 await UpdateMcpStatusAsync();
@@ -263,6 +265,7 @@ namespace CocoroDock.ViewModels
                 if (McpStatus != null)
                 {
                     _statusUpdateTimer.Stop();
+                    IsLoading = false;
                 }
                 else
                 {
@@ -292,6 +295,7 @@ namespace CocoroDock.ViewModels
                 if (McpStatus != null)
                 {
                     _statusUpdateTimer.Stop();
+                    IsLoading = false;
                 }
             }
             catch (Exception ex)
@@ -360,6 +364,8 @@ namespace CocoroDock.ViewModels
             try
             {
                 StatusMessage = "CocoroCoreを再起動しています...";
+                DiagnosticDetails = "設定確認中...";
+                IsLoading = true;
 
                 // ProcessHelperを使用してCocoroCoreを再起動
                 await Task.Run(() =>
@@ -371,13 +377,13 @@ namespace CocoroDock.ViewModels
                 await Task.Delay(5000);
 
                 // ポーリングを再開
-                DiagnosticDetails = "設定確認中...";
                 _statusUpdateTimer.Start();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"CocoroCore再起動エラー: {ex.Message}");
                 StatusMessage = "再起動に失敗しました";
+                IsLoading = false;
             }
         }
 

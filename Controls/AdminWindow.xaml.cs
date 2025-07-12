@@ -2342,6 +2342,9 @@ namespace CocoroDock.Controls
                 var appSettings = AppSettings.Instance;
                 _mcpTabViewModel = new McpTabViewModel(appSettings);
 
+                // MCPタブのDataContextを設定
+                ((TabItem)AdminTabControl.Items[4]).DataContext = _mcpTabViewModel; // MCPタブは5番目（0ベース）
+                
                 // UIエレメントとViewModelのバインディング
                 McpEnabledCheckBox.IsChecked = _mcpTabViewModel.IsMcpEnabled;
                 McpConfigTextBox.Text = _mcpTabViewModel.McpConfigJson;
@@ -2363,10 +2366,6 @@ namespace CocoroDock.Controls
                     _mcpTabViewModel.McpConfigJson = McpConfigTextBox.Text;
                 };
 
-                SaveMcpConfigButton.Click += (s, e) =>
-                {
-                    _mcpTabViewModel.SaveConfigCommand.Execute(null);
-                };
 
                 // ViewModelプロパティ変更イベントの監視
                 _mcpTabViewModel.PropertyChanged += (s, e) =>

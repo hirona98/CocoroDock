@@ -42,6 +42,40 @@
             </Style.Triggers>
         </Style>
 
+        <!-- ボタンスタイル（無効状態対応） -->
+        <Style x:Key="DisabledButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#4873CF"/>
+            <Setter Property="Foreground" Value="WhiteSmoke"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Content="{TemplateBinding Content}"
+                                            TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#CCCCCC"/>
+                                <Setter Property="Foreground" Value="#888888"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#5A84D9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#3A62B8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- 変換器 -->
         <converters:PercentageConverter x:Key="PercentageConverter"/>
         <converters:AnimationTypeConverter x:Key="AnimationTypeConverter"/>
@@ -1174,8 +1208,8 @@
                                         Content="設定を保存して再読み込み"
                                         Width="180"
                                         Height="30"
-                                        Background="#4873CF"
-                                        Foreground="WhiteSmoke"/>
+                                        Style="{StaticResource DisabledButtonStyle}"
+                                        Command="{Binding SaveConfigCommand}"/>
                             </StackPanel>
 
                         </StackPanel>
