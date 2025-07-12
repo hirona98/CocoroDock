@@ -50,7 +50,7 @@ namespace CocoroDock.ViewModels
             _statusUpdateTimer.Tick += async (s, e) => await RetryUpdateIfDataMissing();
 
             // コマンドの初期化
-            SaveConfigCommand = new RelayCommand(async () => await SaveMcpConfigAsync(), () => !IsLoading);
+            SaveConfigCommand = new RelayCommand(async () => await SaveMcpConfigAsync(), () => !_statusUpdateTimer.IsEnabled);
 
             // 初期化
             LoadMcpConfig();
@@ -163,7 +163,6 @@ namespace CocoroDock.ViewModels
                 {
                     _isLoading = value;
                     OnPropertyChanged();
-                    CommandManager.InvalidateRequerySuggested();
                 }
             }
         }
@@ -256,7 +255,6 @@ namespace CocoroDock.ViewModels
 
         private async Task InitialMcpStatusUpdateAsync()
         {
-            IsLoading = true;
             try
             {
                 await UpdateMcpStatusAsync();
@@ -265,12 +263,14 @@ namespace CocoroDock.ViewModels
                 if (McpStatus != null)
                 {
                     _statusUpdateTimer.Stop();
+                    CommandManager.InvalidateRequerySuggested();
                     IsLoading = false;
                 }
                 else
                 {
                     // データが不足している場合はタイマーを開始して再取得
                     _statusUpdateTimer.Start();
+                    CommandManager.InvalidateRequerySuggested();
                 }
             }
             catch (Exception ex)
@@ -281,6 +281,7 @@ namespace CocoroDock.ViewModels
                 DiagnosticDetails = "";
                 // 失敗した場合もタイマーを開始して再試行
                 _statusUpdateTimer.Start();
+                CommandManager.InvalidateRequerySuggested();
             }
         }
 
@@ -295,6 +296,7 @@ namespace CocoroDock.ViewModels
                 if (McpStatus != null)
                 {
                     _statusUpdateTimer.Stop();
+                    CommandManager.InvalidateRequerySuggested();
                     IsLoading = false;
                 }
             }
@@ -333,12 +335,14 @@ namespace CocoroDock.ViewModels
                             DiagnosticDetails = string.Join("\n", logResponse.logs);
                             // ログが正常に取得できた場合はポーリングを停止
                             _statusUpdateTimer.Stop();
+                            CommandManager.InvalidateRequerySuggested();
                         }
                         else
                         {
                             DiagnosticDetails = "ツール登録ログがありません";
                             // ログがない場合もポーリングを停止（正常な状態として扱う）
                             _statusUpdateTimer.Stop();
+                            CommandManager.InvalidateRequerySuggested();
                         }
                     }
                     catch (Exception logEx)
@@ -365,7 +369,6 @@ namespace CocoroDock.ViewModels
             {
                 StatusMessage = "CocoroCoreを再起動しています...";
                 DiagnosticDetails = "設定確認中...";
-                IsLoading = true;
 
                 // ProcessHelperを使用してCocoroCoreを再起動
                 await Task.Run(() =>
@@ -378,6 +381,7 @@ namespace CocoroDock.ViewModels
 
                 // ポーリングを再開
                 _statusUpdateTimer.Start();
+                CommandManager.InvalidateRequerySuggested();
             }
             catch (Exception ex)
             {
