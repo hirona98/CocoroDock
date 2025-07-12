@@ -139,8 +139,22 @@ namespace CocoroDock.Communication
                                 communicationService.RaiseNotificationMessageReceived(chatPayload);
                             }
 
-                            // 通知を処理（CocoroCoreへの転送）
-                            await _communicationService.ProcessNotificationAsync(chatPayload);
+                            // 即座にレスポンスを返す
+                            context.Response.StatusCode = 204;
+                            await context.Response.CompleteAsync();
+
+                            // 通知を処理（CocoroCoreへの転送）をバックグラウンドで実行
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    await _communicationService.ProcessNotificationAsync(chatPayload);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine($"バックグラウンド通知処理エラー: {ex.Message}");
+                                }
+                            });
                         }
                         catch (InvalidOperationException ioEx)
                         {
@@ -149,10 +163,6 @@ namespace CocoroDock.Communication
                             await context.Response.WriteAsJsonAsync(new { error = "Service temporarily unavailable" });
                             return;
                         }
-
-                        // 204 No Content を返す
-                        context.Response.StatusCode = 204;
-                        await context.Response.CompleteAsync();
                     }
                     catch (TaskCanceledException)
                     {
