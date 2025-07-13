@@ -31,7 +31,7 @@ namespace CocoroDock
         private class StatusMessage
         {
             public string Message { get; set; }
-            public Timer Timer { get; set; }
+            public Timer Timer { get; set; } = null!;
 
             public StatusMessage(string message)
             {
@@ -466,7 +466,7 @@ namespace CocoroDock
         /// <summary>
         /// チャットメッセージ送信時のハンドラ
         /// </summary>
-        private async void OnChatMessageSent(object? sender, string message)
+        private void OnChatMessageSent(object? sender, string message)
         {
             // APIサーバーが起動している場合のみ送信
             if (_communicationService == null || !_communicationService.IsServerRunning)
@@ -559,7 +559,7 @@ namespace CocoroDock
         /// </summary>
         private void OnControlCommandReceived(object? sender, ControlRequest request)
         {
-            UIHelper.RunOnUIThread(async () =>
+            UIHelper.RunOnUIThread(() =>
             {
                 switch (request.command)
                 {

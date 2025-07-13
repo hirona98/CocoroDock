@@ -378,7 +378,7 @@ namespace CocoroDock.Controls
                     var files = Clipboard.GetFileDropList();
                     if (files.Count > 0)
                     {
-                        string filePath = files[0];
+                        string? filePath = files[0];
                         if (filePath != null)
                         {
                             LoadImageFromFile(filePath);
