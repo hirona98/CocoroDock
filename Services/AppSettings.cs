@@ -109,12 +109,12 @@ namespace CocoroDock.Services
 
         // アプリケーション設定ファイルのパス
         private string AppSettingsFilePath => Path.Combine(
-            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "",
+            AppContext.BaseDirectory,
             "UserData", "setting.json");
 
         // デフォルト設定ファイルのパス
         private string DefaultSettingsFilePath => Path.Combine(
-            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "",
+            AppContext.BaseDirectory,
             "UserData", "defaultSetting.json");
 
         public int CocoroDockPort { get; set; } = 55600;
@@ -327,7 +327,7 @@ namespace CocoroDock.Services
         private void EnsureUserDataDirectoryExists()
         {
             string userDataDir = Path.Combine(
-                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "",
+                AppContext.BaseDirectory,
                 "UserData");
 
             if (!Directory.Exists(userDataDir))

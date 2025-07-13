@@ -194,7 +194,7 @@ namespace CocoroDock
             {
                 _notifyIcon = new NotifyIcon
                 {
-                    Icon = System.Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                    Icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!),
                     Visible = true,
                     Text = "CocoroAI"
                 };
@@ -237,7 +237,7 @@ namespace CocoroDock
             try
             {
                 // 実行ファイルのフルパスを取得
-                string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                string exePath = Environment.ProcessPath!;
 
                 // ファイル名（拡張子なし）を取得
                 string exeName = Path.GetFileNameWithoutExtension(exePath);

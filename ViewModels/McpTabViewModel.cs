@@ -38,7 +38,7 @@ namespace CocoroDock.ViewModels
             _cocoroCoreClient = new CocoroCoreClient(_appSettings.CocoroCorePort);
 
             // MCPファイルのパス設定（設定ファイルと同じディレクトリのUserDataフォルダ）
-            var execDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "";
+            var execDir = AppContext.BaseDirectory;
             var userDataDir = Path.Combine(execDir, "UserData");
             _mcpConfigPath = Path.Combine(userDataDir, "cocoroAiMcp.json");
 
