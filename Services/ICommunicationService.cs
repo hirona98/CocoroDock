@@ -1,5 +1,6 @@
 using CocoroDock.Communication;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CocoroDock.Services
@@ -32,7 +33,7 @@ namespace CocoroDock.Services
         /// <summary>
         /// 通知メッセージ受信イベント（Notification APIから）
         /// </summary>
-        event EventHandler<ChatMessagePayload>? NotificationMessageReceived;
+        event Action<ChatMessagePayload, List<System.Windows.Media.Imaging.BitmapSource>?>? NotificationMessageReceived;
 
         /// <summary>
         /// 制御コマンド受信イベント（CocoroDock APIから）
@@ -104,7 +105,8 @@ namespace CocoroDock.Services
         /// 通知メッセージを処理（Notification API用）
         /// </summary>
         /// <param name="notification">通知メッセージ</param>
-        Task ProcessNotificationAsync(ChatMessagePayload notification);
+        /// <param name="imageDataUrls">画像データURL配列（オプション）</param>
+        Task ProcessNotificationAsync(ChatMessagePayload notification, string[]? imageDataUrls = null);
 
         /// <summary>
         /// デスクトップモニタリング画像をCocoroCoreに送信

@@ -1281,94 +1281,27 @@ namespace CocoroDock.Controls
 
                 // キャラクター設定の変更を検出（元の設定と比較）（同じキャラクターの場合のみチェック）
                 if (lastSelectedIndex == currentSelectedIndex && _originalCharacterSettings != null)
-            {
-                // すべてのキャラクターの設定を比較
-                for (int i = 0; i < _characterSettings.Count && i < _originalCharacterSettings.Count; i++)
                 {
-                    var current = _characterSettings[i];
-                    var original = _originalCharacterSettings[i];
-
-                    // 各項目を比較
-                    foreach (var key in current.Keys)
+                    // すべてのキャラクターの設定を比較
+                    for (int i = 0; i < _characterSettings.Count && i < _originalCharacterSettings.Count; i++)
                     {
-                        if (!original.ContainsKey(key) || current[key] != original[key])
+                        var current = _characterSettings[i];
+                        var original = _originalCharacterSettings[i];
+
+                        // 各項目を比較
+                        foreach (var key in current.Keys)
                         {
-                            isNeedsRestart = true;
-                            break;
-                        }
-                    }
-
-                    // originalにあってcurrentにない項目もチェック
-                    foreach (var key in original.Keys)
-                    {
-                        if (!current.ContainsKey(key))
-                        {
-                            isNeedsRestart = true;
-                            break;
-                        }
-                    }
-
-                    if (isNeedsRestart)
-                    {
-                        break;
-                    }
-                }
-
-                // キャラクター数が変更された場合
-                if (_characterSettings.Count != _originalCharacterSettings.Count)
-                {
-                    isNeedsRestart = true;
-                }
-            }
-
-                // アニメーション設定が変更されたかチェック
-                if (!isNeedsRestart)
-            {
-                // アニメーション設定数が変更された場合
-                if (_animationSettings.Count != _originalAnimationSettings.Count)
-                {
-                    isNeedsRestart = true;
-                }
-                else
-                {
-                    // 各アニメーション設定を比較
-                    for (int i = 0; i < _animationSettings.Count; i++)
-                    {
-                        var current = _animationSettings[i];
-                        var original = _originalAnimationSettings[i];
-
-                        // セット名が変更された場合
-                        if (current.animeSetName != original.animeSetName)
-                        {
-                            isNeedsRestart = true;
-                            break;
+                            if (!original.ContainsKey(key) || current[key] != original[key])
+                            {
+                                isNeedsRestart = true;
+                                break;
+                            }
                         }
 
-                        // 姿勢変更ループ回数が変更された場合
-                        if (current.postureChangeLoopCountStanding != original.postureChangeLoopCountStanding ||
-                            current.postureChangeLoopCountSittingFloor != original.postureChangeLoopCountSittingFloor)
+                        // originalにあってcurrentにない項目もチェック
+                        foreach (var key in original.Keys)
                         {
-                            isNeedsRestart = true;
-                            break;
-                        }
-
-                        // アニメーション数が変更された場合
-                        if (current.animations.Count != original.animations.Count)
-                        {
-                            isNeedsRestart = true;
-                            break;
-                        }
-
-                        // 各アニメーションの設定を比較
-                        for (int j = 0; j < current.animations.Count; j++)
-                        {
-                            var currentAnim = current.animations[j];
-                            var originalAnim = original.animations[j];
-
-                            if (currentAnim.displayName != originalAnim.displayName ||
-                                currentAnim.animationType != originalAnim.animationType ||
-                                currentAnim.animationName != originalAnim.animationName ||
-                                currentAnim.isEnabled != originalAnim.isEnabled)
+                            if (!current.ContainsKey(key))
                             {
                                 isNeedsRestart = true;
                                 break;
@@ -1380,8 +1313,75 @@ namespace CocoroDock.Controls
                             break;
                         }
                     }
+
+                    // キャラクター数が変更された場合
+                    if (_characterSettings.Count != _originalCharacterSettings.Count)
+                    {
+                        isNeedsRestart = true;
+                    }
                 }
-            }
+
+                // アニメーション設定が変更されたかチェック
+                if (!isNeedsRestart)
+                {
+                    // アニメーション設定数が変更された場合
+                    if (_animationSettings.Count != _originalAnimationSettings.Count)
+                    {
+                        isNeedsRestart = true;
+                    }
+                    else
+                    {
+                        // 各アニメーション設定を比較
+                        for (int i = 0; i < _animationSettings.Count; i++)
+                        {
+                            var current = _animationSettings[i];
+                            var original = _originalAnimationSettings[i];
+
+                            // セット名が変更された場合
+                            if (current.animeSetName != original.animeSetName)
+                            {
+                                isNeedsRestart = true;
+                                break;
+                            }
+
+                            // 姿勢変更ループ回数が変更された場合
+                            if (current.postureChangeLoopCountStanding != original.postureChangeLoopCountStanding ||
+                                current.postureChangeLoopCountSittingFloor != original.postureChangeLoopCountSittingFloor)
+                            {
+                                isNeedsRestart = true;
+                                break;
+                            }
+
+                            // アニメーション数が変更された場合
+                            if (current.animations.Count != original.animations.Count)
+                            {
+                                isNeedsRestart = true;
+                                break;
+                            }
+
+                            // 各アニメーションの設定を比較
+                            for (int j = 0; j < current.animations.Count; j++)
+                            {
+                                var currentAnim = current.animations[j];
+                                var originalAnim = original.animations[j];
+
+                                if (currentAnim.displayName != originalAnim.displayName ||
+                                    currentAnim.animationType != originalAnim.animationType ||
+                                    currentAnim.animationName != originalAnim.animationName ||
+                                    currentAnim.isEnabled != originalAnim.isEnabled)
+                                {
+                                    isNeedsRestart = true;
+                                    break;
+                                }
+                            }
+
+                            if (isNeedsRestart)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
 
                 // 設定が変更された場合、メッセージボックスを表示して CocoroCore と CocoroShell を再起動
                 if (isNeedsRestart)
@@ -1981,22 +1981,33 @@ namespace CocoroDock.Controls
             sb.AppendLine("リクエストボディ (JSON):");
             sb.AppendLine("{");
             sb.AppendLine("  \"from\": \"アプリ名\",");
-            sb.AppendLine("  \"message\": \"通知メッセージ\"");
+            sb.AppendLine("  \"message\": \"通知メッセージ\",");
+            sb.AppendLine("  \"images\": [  // オプション（最大5枚）");
+            sb.AppendLine("    \"data:image/jpeg;base64,/9j/4AAQ...\",  // 1枚目");
+            sb.AppendLine("    \"data:image/png;base64,iVBORw0KGgo...\"  // 2枚目");
+            sb.AppendLine("  ]");
             sb.AppendLine("}");
             sb.AppendLine();
             sb.AppendLine("レスポンス:");
             sb.AppendLine("HTTP/1.1 204 No Content");
             sb.AppendLine();
             sb.AppendLine("使用例 (cURL):");
+            sb.AppendLine("# 1枚の画像を送る場合");
             sb.AppendLine("curl -X POST http://127.0.0.1:55604/api/v1/notification \\");
             sb.AppendLine("  -H \"Content-Type: application/json\" \\");
-            sb.AppendLine("  -d '{\"from\":\"MyApp\",\"message\":\"処理完了\"}'");
+            sb.AppendLine("  -d '{\"from\":\"MyApp\",\"message\":\"処理完了\",\"images\":[\"data:image/jpeg;base64,...\"]}'");
+            sb.AppendLine();
+            sb.AppendLine("# 複数枚の画像を送る場合");
+            sb.AppendLine("curl -X POST http://127.0.0.1:55604/api/v1/notification \\");
+            sb.AppendLine("  -H \"Content-Type: application/json\" \\");
+            sb.AppendLine("  -d '{\"from\":\"MyApp\",\"message\":\"結果\",\"images\":[\"data:image/jpeg;base64,...\",\"data:image/png;base64,...\"]}'");
             sb.AppendLine();
             sb.AppendLine("使用例 (PowerShell):");
+            sb.AppendLine("# 複数枚の画像を送る場合");
             sb.AppendLine("Invoke-RestMethod -Method Post `");
             sb.AppendLine("  -Uri \"http://127.0.0.1:55604/api/v1/notification\" `");
             sb.AppendLine("  -ContentType \"application/json; charset=utf-8\" `");
-            sb.AppendLine("  -Body '{\"from\":\"MyApp\",\"message\":\"処理完了\"}'");
+            sb.AppendLine("  -Body '{\"from\":\"MyApp\",\"message\":\"結果\",\"images\":[\"data:image/jpeg;base64,...\",\"data:image/png;base64,...\"]}'");
             ApiDescriptionTextBox.Text = sb.ToString();
         }
 
@@ -2362,7 +2373,7 @@ namespace CocoroDock.Controls
 
                 // MCPタブのDataContextを設定
                 ((TabItem)AdminTabControl.Items[4]).DataContext = _mcpTabViewModel; // MCPタブは5番目（0ベース）
-                
+
                 // UIエレメントとViewModelのバインディング
                 McpEnabledCheckBox.IsChecked = _mcpTabViewModel.IsMcpEnabled;
                 McpConfigTextBox.Text = _mcpTabViewModel.McpConfigJson;

@@ -147,6 +147,16 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
+    /// 通知リクエスト
+    /// </summary>
+    public class NotificationRequest
+    {
+        public string from { get; set; } = string.Empty;
+        public string message { get; set; } = string.Empty;
+        public string[]? images { get; set; } // Base64エンコードされた画像データ配列（data URL形式、最大5枚）
+    }
+
+    /// <summary>
     /// 標準レスポンス
     /// </summary>
     public class StandardResponse

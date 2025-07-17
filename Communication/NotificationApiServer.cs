@@ -7,9 +7,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+using System.Windows.Media.Imaging;
 
 namespace CocoroDock.Communication
 {
@@ -122,6 +127,65 @@ namespace CocoroDock.Communication
                             return;
                         }
 
+                        // 複数画像データの検証
+                        List<BitmapSource> imageSources = new List<BitmapSource>();
+                        if (request.images != null && request.images.Length > 0)
+                        {
+                            // 最大枚数制限
+                            const int maxImageCount = 5;
+                            if (request.images.Length > maxImageCount)
+                            {
+                                context.Response.StatusCode = 400;
+                                await context.Response.WriteAsJsonAsync(new { error = $"Too many images. Maximum {maxImageCount} images allowed" });
+                                return;
+                            }
+
+                            // 各画像を検証・デコード
+                            for (int i = 0; i < request.images.Length; i++)
+                            {
+                                if (string.IsNullOrWhiteSpace(request.images[i]))
+                                {
+                                    context.Response.StatusCode = 400;
+                                    await context.Response.WriteAsJsonAsync(new { error = $"Image {i + 1} is empty" });
+                                    return;
+                                }
+
+                                try
+                                {
+                                    var imageSource = ValidateAndDecodeImage(request.images[i]);
+                                    imageSources.Add(imageSource);
+                                }
+                                catch (ArgumentException ex)
+                                {
+                                    context.Response.StatusCode = 400;
+                                    await context.Response.WriteAsJsonAsync(new { error = $"Image {i + 1}: {ex.Message}" });
+                                    return;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine($"画像{i + 1}デコードエラー: {ex.Message}");
+                                    context.Response.StatusCode = 400;
+                                    await context.Response.WriteAsJsonAsync(new { error = $"Invalid image data in image {i + 1}" });
+                                    return;
+                                }
+                            }
+
+                            // 全体サイズ制限チェック
+                            long totalSize = 0;
+                            foreach (var imageData in request.images)
+                            {
+                                var base64Data = imageData.Split(',').Last();
+                                totalSize += base64Data.Length;
+                            }
+                            const long maxTotalSize = 15 * 1024 * 1024; // 15MB (Base64)
+                            if (totalSize > maxTotalSize)
+                            {
+                                context.Response.StatusCode = 400;
+                                await context.Response.WriteAsJsonAsync(new { error = $"Total image size exceeds maximum limit of {maxTotalSize / (1024 * 1024)}MB" });
+                                return;
+                            }
+                        }
+
                         // 通知をChatメッセージとして転送
                         var chatPayload = new ChatMessagePayload
                         {
@@ -136,7 +200,7 @@ namespace CocoroDock.Communication
                             // チャットウィンドウに表示
                             if (_communicationService is CommunicationService communicationService)
                             {
-                                communicationService.RaiseNotificationMessageReceived(chatPayload);
+                                communicationService.RaiseNotificationMessageReceived(chatPayload, imageSources);
                             }
 
                             // 即座にレスポンスを返す
@@ -148,7 +212,7 @@ namespace CocoroDock.Communication
                             {
                                 try
                                 {
-                                    await _communicationService.ProcessNotificationAsync(chatPayload);
+                                    await _communicationService.ProcessNotificationAsync(chatPayload, request.images);
                                 }
                                 catch (Exception ex)
                                 {
@@ -292,20 +356,68 @@ namespace CocoroDock.Communication
             }
         }
 
+        /// <summary>
+        /// 画像データの検証とデコード
+        /// </summary>
+        /// <param name="imageData">Base64エンコードされた画像データ（data URL形式）</param>
+        /// <returns>デコードされた画像</returns>
+        private BitmapSource ValidateAndDecodeImage(string imageData)
+        {
+            // data URL形式の検証
+            var dataUrlPattern = @"^data:image\/(png|jpeg|jpg|gif|webp);base64,([A-Za-z0-9+\/]+(=|==)?)";  
+            var match = Regex.Match(imageData, dataUrlPattern);
+            
+            if (!match.Success)
+            {
+                throw new ArgumentException("Invalid image format. Expected data URL format (data:image/type;base64,data)");
+            }
+            
+            var mimeType = match.Groups[1].Value;
+            var base64Data = match.Groups[2].Value;
+            
+            // サイズ制限（5MB）
+            const int maxSizeBytes = 5 * 1024 * 1024;
+            if (base64Data.Length > maxSizeBytes * 4 / 3) // Base64は約1.33倍になる
+            {
+                throw new ArgumentException($"Image size exceeds maximum limit of {maxSizeBytes / (1024 * 1024)}MB");
+            }
+            
+            // Base64デコード
+            byte[] imageBytes;
+            try
+            {
+                imageBytes = Convert.FromBase64String(base64Data);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException("Invalid Base64 image data");
+            }
+            
+            // 画像として読み込み
+            try
+            {
+                using (var stream = new MemoryStream(imageBytes))
+                {
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.StreamSource = stream;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                    return bitmap;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException($"Failed to decode image: {ex.Message}");
+            }
+        }
+
         public void Dispose()
         {
             _cts?.Cancel();
             _host?.Dispose();
             _cts?.Dispose();
         }
-    }
-
-    /// <summary>
-    /// 通知リクエストモデル
-    /// </summary>
-    public class NotificationRequest
-    {
-        public string from { get; set; } = string.Empty;
-        public string message { get; set; } = string.Empty;
     }
 }

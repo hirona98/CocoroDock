@@ -22,7 +22,7 @@ namespace CocoroDock.Services
         private string? _currentContextId;
 
         public event EventHandler<ChatRequest>? ChatMessageReceived;
-        public event EventHandler<ChatMessagePayload>? NotificationMessageReceived;
+        public event Action<ChatMessagePayload, List<System.Windows.Media.Imaging.BitmapSource>?>? NotificationMessageReceived;
         public event EventHandler<ControlRequest>? ControlCommandReceived;
         public event EventHandler<string>? ErrorOccurred;
         public event EventHandler<StatusUpdateEventArgs>? StatusUpdateRequested;
@@ -262,7 +262,8 @@ namespace CocoroDock.Services
         /// 通知メッセージを処理（Notification API用）
         /// </summary>
         /// <param name="notification">通知メッセージ</param>
-        public async Task ProcessNotificationAsync(ChatMessagePayload notification)
+        /// <param name="imageDataUrls">画像データURL配列（オプション）</param>
+        public async Task ProcessNotificationAsync(ChatMessagePayload notification, string[]? imageDataUrls = null)
         {
             try
             {
@@ -286,6 +287,24 @@ namespace CocoroDock.Services
                 var notificationText = $"<cocoro-notification>\nFrom: {notification.userId}\nMessage: {notification.message}\n</cocoro-notification>";
 
                 // AIAvatarKit仕様のリクエストを作成してCocoroCoreに転送
+                // 複数画像がある場合はファイルリストを作成
+                List<object>? files = null;
+                if (imageDataUrls != null && imageDataUrls.Length > 0)
+                {
+                    files = new List<object>();
+                    foreach (var imageDataUrl in imageDataUrls)
+                    {
+                        if (!string.IsNullOrEmpty(imageDataUrl))
+                        {
+                            files.Add(new Dictionary<string, string>
+                            {
+                                { "type", "image" },
+                                { "url", imageDataUrl }
+                            });
+                        }
+                    }
+                }
+
                 var request = new CoreChatRequest
                 {
                     type = "text",
@@ -294,7 +313,7 @@ namespace CocoroDock.Services
                     context_id = _currentContextId,
                     text = notificationText,
                     audio_data = null,
-                    files = null,
+                    files = files,
                     system_prompt_params = null,
                     metadata = new Dictionary<string, object>
                     {
@@ -341,9 +360,10 @@ namespace CocoroDock.Services
         /// 通知メッセージ受信イベントを発火（内部使用）
         /// </summary>
         /// <param name="notification">通知メッセージペイロード</param>
-        public void RaiseNotificationMessageReceived(ChatMessagePayload notification)
+        /// <param name="imageSources">画像データリスト（オプション）</param>
+        public void RaiseNotificationMessageReceived(ChatMessagePayload notification, List<System.Windows.Media.Imaging.BitmapSource>? imageSources = null)
         {
-            NotificationMessageReceived?.Invoke(this, notification);
+            NotificationMessageReceived?.Invoke(notification, imageSources);
         }
 
         /// <summary>

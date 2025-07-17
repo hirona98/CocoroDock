@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -205,7 +206,8 @@ namespace CocoroDock.Controls
         /// </summary>
         /// <param name="from">通知元のアプリ名</param>
         /// <param name="message">通知メッセージ</param>
-        public void AddNotificationMessage(string from, string message)
+        /// <param name="imageSources">画像データリスト（オプション）</param>
+        public void AddNotificationMessage(string from, string message, List<BitmapSource>? imageSources = null)
         {
             var messageContainer = new StackPanel();
 
@@ -223,6 +225,33 @@ namespace CocoroDock.Controls
             };
 
             messageContent.Children.Add(messageText);
+
+            // 複数画像がある場合は追加
+            if (imageSources != null && imageSources.Count > 0)
+            {
+                foreach (var imageSource in imageSources)
+                {
+                    var image = new Image
+                    {
+                        Source = imageSource,
+                        MaxWidth = 200,
+                        MaxHeight = 200,
+                        HorizontalAlignment = HorizontalAlignment.Left,
+                        Margin = new Thickness(0, 10, 0, 0),
+                        Cursor = Cursors.Hand
+                    };
+
+                    // 画像をクリックした時の拡大表示
+                    image.MouseLeftButtonDown += (sender, e) =>
+                    {
+                        var previewWindow = new ImagePreviewWindow(imageSource);
+                        previewWindow.Show();
+                    };
+
+                    messageContent.Children.Add(image);
+                }
+            }
+
             bubble.Child = messageContent;
             messageContainer.Children.Add(bubble);
 

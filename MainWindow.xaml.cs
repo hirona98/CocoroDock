@@ -544,12 +544,12 @@ namespace CocoroDock
         /// <summary>
         /// 通知メッセージ受信時のハンドラ
         /// </summary>
-        private void OnNotificationMessageReceived(object? sender, ChatMessagePayload notification)
+        private void OnNotificationMessageReceived(ChatMessagePayload notification, List<System.Windows.Media.Imaging.BitmapSource>? imageSources)
         {
             UIHelper.RunOnUIThread(() =>
             {
-                // 通知メッセージをチャットウィンドウに表示
-                ChatControlInstance.AddNotificationMessage(notification.userId, notification.message);
+                // 通知メッセージをチャットウィンドウに表示（複数画像付き）
+                ChatControlInstance.AddNotificationMessage(notification.userId, notification.message, imageSources);
             });
         }
 
