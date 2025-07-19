@@ -1,4 +1,5 @@
 using CocoroDock.Communication;
+using CocoroDock.Windows;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -20,6 +21,9 @@ namespace CocoroDock.Services
         // セッション管理用
         private string? _currentSessionId;
         private string? _currentContextId;
+
+        // ログビューアー管理用
+        private LogViewerWindow? _logViewerWindow;
 
         public event EventHandler<ChatRequest>? ChatMessageReceived;
         public event Action<ChatMessagePayload, List<System.Windows.Media.Imaging.BitmapSource>?>? NotificationMessageReceived;
@@ -45,6 +49,11 @@ namespace CocoroDock.Services
             {
                 // ステータス更新イベントを発火
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, request.message));
+            };
+            _apiServer.LogMessageReceived += (sender, logMessage) =>
+            {
+                // ログビューアーが開いている場合のみログを転送
+                _logViewerWindow?.AddLogMessage(logMessage);
             };
 
             // CocoroShellクライアントの初期化
@@ -527,10 +536,107 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
+        /// ログビューアーウィンドウを開く
+        /// </summary>
+        public void OpenLogViewer()
+        {
+            // 既にウィンドウが開いている場合は前面に表示
+            if (_logViewerWindow != null)
+            {
+                _logViewerWindow.Activate();
+                _logViewerWindow.WindowState = System.Windows.WindowState.Normal;
+                return;
+            }
+
+            // 新しいログビューアーウィンドウを作成
+            _logViewerWindow = new LogViewerWindow();
+
+            // ウィンドウクローズ時のイベントハンドラー
+            _logViewerWindow.LogForwardingStopped += async (sender, e) =>
+            {
+                // ログ送信停止を通知
+                await SendLogForwardingControlAsync(false);
+                _logViewerWindow = null;
+            };
+
+            // ログ送信開始を通知
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await SendLogForwardingControlAsync(true);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"ログ送信開始通知エラー: {ex.Message}");
+                }
+            });
+
+            // ウィンドウを表示
+            _logViewerWindow.Show();
+        }
+
+        /// <summary>
+        /// ログ送信制御コマンドを送信
+        /// </summary>
+        /// <param name="enabled">ログ送信を有効にするかどうか</param>
+        private async Task SendLogForwardingControlAsync(bool enabled)
+        {
+            var command = enabled ? "start_log_forwarding" : "stop_log_forwarding";
+
+            // CocoroCoreに送信
+            try
+            {
+                var controlRequest = new CoreControlRequest { command = command };
+                await _coreClient.SendControlCommandAsync(controlRequest);
+                Debug.WriteLine($"CocoreCoreへのログ制御コマンド送信成功: {command}");
+            }
+            catch (System.Net.Http.HttpRequestException ex)
+            {
+                // CocoroCore未起動の場合は正常（サイレント処理）
+                Debug.WriteLine($"CocoroCoreが未起動のため制御コマンドをスキップ: {command}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CocoreCoreへのログ制御コマンド送信エラー: {ex.Message}");
+            }
+
+            // CocoroMemoryにも送信
+            try
+            {
+                using var httpClient = new System.Net.Http.HttpClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(2); // タイムアウト設定
+                var payload = new { command = command };
+                var json = System.Text.Json.JsonSerializer.Serialize(payload);
+                var content = new System.Net.Http.StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                
+                var memoryPort = _appSettings.CocoroMemoryPort;
+                var response = await httpClient.PostAsync($"http://127.0.0.1:{memoryPort}/api/control", content);
+                response.EnsureSuccessStatusCode();
+                Debug.WriteLine($"CocoroMemoryへのログ制御コマンド送信成功: {command} (ポート:{memoryPort})");
+            }
+            catch (System.Net.Http.HttpRequestException ex)
+            {
+                // CocoroMemory未起動の場合は正常（サイレント処理）
+                Debug.WriteLine($"CocoroMemoryが未起動のため制御コマンドをスキップ: {command}");
+            }
+            catch (System.Threading.Tasks.TaskCanceledException ex)
+            {
+                // タイムアウトの場合
+                Debug.WriteLine($"CocoroMemoryへの制御コマンド送信がタイムアウト: {command}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CocoroMemoryへのログ制御コマンド送信エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// リソースの解放
         /// </summary>
         public void Dispose()
         {
+            _logViewerWindow?.Close();
             _notificationApiServer?.Dispose();
             _apiServer?.Dispose();
             _shellClient?.Dispose();

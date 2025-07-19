@@ -339,5 +339,16 @@ namespace CocoroDock.Communication
         public List<string>? logs { get; set; }
     }
 
+    /// <summary>
+    /// ログメッセージ
+    /// </summary>
+    public class LogMessage
+    {
+        public DateTime timestamp { get; set; } = DateTime.UtcNow;
+        public string level { get; set; } = string.Empty; // "DEBUG", "INFO", "WARNING", "ERROR"
+        public string component { get; set; } = string.Empty; // "CocoroCore", "CocoroMemory"
+        public string message { get; set; } = string.Empty;
+    }
+
     #endregion
 }

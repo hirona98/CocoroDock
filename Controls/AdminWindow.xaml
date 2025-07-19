@@ -1225,22 +1225,43 @@
                 Padding="15"
                 BorderBrush="#E0E0E0"
                 BorderThickness="0,1,0,0">
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Right">
-                <Button x:Name="OkButton"
-                        Content="OK"
-                        Width="80"
-                        Height="30"
-                        Margin="0,0,10,0"
-                        Style="{StaticResource DisabledButtonStyle}"
-                        Click="OkButton_Click"/>
-                <Button x:Name="CancelButton"
-                        Content="キャンセル"
-                        Width="80"
-                        Height="30"
-                        Style="{StaticResource DisabledButtonStyle}"
-                        Click="CancelButton_Click"/>
-            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- 左側：ログ表示ボタン -->
+                <StackPanel Grid.Column="0" 
+                            Orientation="Horizontal" 
+                            HorizontalAlignment="Left">
+                    <Button x:Name="LogViewerButton"
+                            Content="ログ表示"
+                            Width="100"
+                            Height="30"
+                            Style="{StaticResource DisabledButtonStyle}"
+                            Click="LogViewerButton_Click"
+                            ToolTip="デバッグログウィンドウを開きます"/>
+                </StackPanel>
+                
+                <!-- 右側：OK/キャンセルボタン -->
+                <StackPanel Grid.Column="1" 
+                            Orientation="Horizontal">
+                    <Button x:Name="OkButton"
+                            Content="OK"
+                            Width="80"
+                            Height="30"
+                            Margin="0,0,10,0"
+                            Style="{StaticResource DisabledButtonStyle}"
+                            Click="OkButton_Click"/>
+                    <Button x:Name="CancelButton"
+                            Content="キャンセル"
+                            Width="80"
+                            Height="30"
+                            Style="{StaticResource DisabledButtonStyle}"
+                            Click="CancelButton_Click"/>
+                </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </Window>

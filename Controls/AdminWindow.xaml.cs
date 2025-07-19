@@ -2428,5 +2428,24 @@ namespace CocoroDock.Controls
             }
         }
 
+        /// <summary>
+        /// ログ表示ボタンのクリックイベント
+        /// </summary>
+        private void LogViewerButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // 通信サービスからログビューアーを開く
+                _communicationService?.OpenLogViewer();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"ログビューアーの起動に失敗しました: {ex.Message}", 
+                               "エラー", 
+                               MessageBoxButton.OK, 
+                               MessageBoxImage.Error);
+            }
+        }
+
     }
 }

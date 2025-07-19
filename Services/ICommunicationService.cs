@@ -132,5 +132,10 @@ namespace CocoroDock.Services
         /// <param name="autoAdjustment">自動調節ON/OFF</param>
         /// <param name="inputThreshold">入力しきい値</param>
         Task SendMicrophoneSettingsToCoreAsync(bool autoAdjustment, float inputThreshold);
+
+        /// <summary>
+        /// ログビューアーウィンドウを開く
+        /// </summary>
+        void OpenLogViewer();
     }
 }
