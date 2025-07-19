@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -48,6 +49,10 @@ namespace CocoroDock.Communication
 
                 var builder = WebApplication.CreateBuilder();
                 builder.WebHost.UseUrls($"http://127.0.0.1:{_port}");
+                
+                // ログレベルを設定してHTTPリクエストログを無効化
+                builder.Logging.ClearProviders();
+                builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
                 // Kestrelサーバーの設定
                 builder.WebHost.ConfigureKestrel(serverOptions =>
@@ -425,7 +430,7 @@ namespace CocoroDock.Communication
                     }
 
                     // コンポーネント検証
-                    var validComponents = new[] { "CocoroCore", "CocoroMemory" };
+                    var validComponents = new[] { "CocoroCore", "CocoroMemory", "SEPARATOR" };
                     if (!Array.Exists(validComponents, comp => comp == request.component))
                     {
                         context.Response.StatusCode = 400;

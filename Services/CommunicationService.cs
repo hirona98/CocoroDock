@@ -589,12 +589,10 @@ namespace CocoroDock.Services
             {
                 var controlRequest = new CoreControlRequest { command = command };
                 await _coreClient.SendControlCommandAsync(controlRequest);
-                Debug.WriteLine($"CocoreCoreへのログ制御コマンド送信成功: {command}");
             }
-            catch (System.Net.Http.HttpRequestException ex)
+            catch (System.Net.Http.HttpRequestException)
             {
                 // CocoroCore未起動の場合は正常（サイレント処理）
-                Debug.WriteLine($"CocoroCoreが未起動のため制御コマンドをスキップ: {command}");
             }
             catch (Exception ex)
             {
@@ -605,25 +603,22 @@ namespace CocoroDock.Services
             try
             {
                 using var httpClient = new System.Net.Http.HttpClient();
-                httpClient.Timeout = TimeSpan.FromSeconds(2); // タイムアウト設定
+                httpClient.Timeout = TimeSpan.FromMilliseconds(500); // 高速化のため500msに短縮
                 var payload = new { command = command };
                 var json = System.Text.Json.JsonSerializer.Serialize(payload);
                 var content = new System.Net.Http.StringContent(json, System.Text.Encoding.UTF8, "application/json");
-                
+
                 var memoryPort = _appSettings.CocoroMemoryPort;
                 var response = await httpClient.PostAsync($"http://127.0.0.1:{memoryPort}/api/control", content);
                 response.EnsureSuccessStatusCode();
-                Debug.WriteLine($"CocoroMemoryへのログ制御コマンド送信成功: {command} (ポート:{memoryPort})");
             }
-            catch (System.Net.Http.HttpRequestException ex)
+            catch (System.Net.Http.HttpRequestException)
             {
                 // CocoroMemory未起動の場合は正常（サイレント処理）
-                Debug.WriteLine($"CocoroMemoryが未起動のため制御コマンドをスキップ: {command}");
             }
-            catch (System.Threading.Tasks.TaskCanceledException ex)
+            catch (System.Threading.Tasks.TaskCanceledException)
             {
-                // タイムアウトの場合
-                Debug.WriteLine($"CocoroMemoryへの制御コマンド送信がタイムアウト: {command}");
+                // タイムアウトの場合（サイレント処理）
             }
             catch (Exception ex)
             {

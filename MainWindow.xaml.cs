@@ -233,8 +233,6 @@ namespace CocoroDock
                 {
                     // デスクトップモニタリング用の送信処理
                     await _communicationService.SendDesktopMonitoringToCoreAsync(screenshotData.ImageBase64);
-
-                    Debug.WriteLine($"デスクトップモニタリング送信完了 - ウィンドウ: {screenshotData.WindowTitle}");
                 }
             }
             catch (Exception ex)
