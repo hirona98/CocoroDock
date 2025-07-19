@@ -145,18 +145,9 @@ namespace CocoroDock.Windows
         /// </summary>
         private void ClearButton_Click(object sender, RoutedEventArgs e)
         {
-            var result = MessageBox.Show(
-                "すべてのログをクリアしますか？",
-                "確認",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes)
-            {
-                _allLogs.Clear();
-                UpdateLogCount();
-                UpdateStatus("ログをクリアしました");
-            }
+            _allLogs.Clear();
+            UpdateLogCount();
+            UpdateStatus("ログをクリアしました");
         }
 
         /// <summary>

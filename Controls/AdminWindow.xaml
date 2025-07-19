@@ -441,7 +441,7 @@
                                 <StackPanel>
                                     <!-- MToon変換設定 -->
                                     <CheckBox x:Name="ConvertMToonCheckBox"
-                                              Content="UnlitをMToonに変換する"
+                                              Content="UnlitをMToonに変換する（正常に表示されないときに試してください）"
                                               Margin="0,5,0,10"
                                               Foreground="#FF4873CF"
                                               ToolTip="Convert Unlit to MToon"/>
@@ -1150,7 +1150,7 @@
                             </GroupBox>
 
                             <!-- MCP設定ファイル編集 -->
-                            <GroupBox Header="MCP設定 (cocoroAiMcp.json)"
+                            <GroupBox Header="MCP設定編集 (CocoroAiMcp.json)"
                                       Margin="0,0,0,10">
                                 <Grid Margin="10,10,0,10">
                                     <Grid.RowDefinitions>
@@ -1230,22 +1230,21 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                
+
                 <!-- 左側：ログ表示ボタン -->
-                <StackPanel Grid.Column="0" 
-                            Orientation="Horizontal" 
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
                             HorizontalAlignment="Left">
                     <Button x:Name="LogViewerButton"
                             Content="ログ表示"
                             Width="100"
                             Height="30"
-                            Style="{StaticResource DisabledButtonStyle}"
                             Click="LogViewerButton_Click"
                             ToolTip="デバッグログウィンドウを開きます"/>
                 </StackPanel>
-                
+
                 <!-- 右側：OK/キャンセルボタン -->
-                <StackPanel Grid.Column="1" 
+                <StackPanel Grid.Column="1"
                             Orientation="Horizontal">
                     <Button x:Name="OkButton"
                             Content="OK"
