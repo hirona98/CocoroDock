@@ -15,22 +15,22 @@
     <AssemblyName>CocoroAI</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="Resource\defaultSetting.json" />
-    <None Remove="Resource\sample_cocoroAiMcp.json" />
+    <None Remove="Resource\DefaultSetting.json" />
+    <None Remove="Resource\Sample_CocoroAiMcp.json" />
     <None Remove="Resource\logo.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resource\defaultSetting.json">
+    <None Include="Resource\DefaultSetting.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <PublishItemType>None</PublishItemType>
-      <TargetPath>UserData\defaultSetting.json</TargetPath>
+      <TargetPath>UserData\DefaultSetting.json</TargetPath>
     </None>
-    <None Include="Resource\sample_cocoroAiMcp.json">
+    <None Include="Resource\Sample_CocoroAiMcp.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <PublishItemType>None</PublishItemType>
-      <TargetPath>UserData\sample_cocoroAiMcp.json</TargetPath>
+      <TargetPath>UserData\Sample_CocoroAiMcp.json</TargetPath>
     </None>
     <EmbeddedResource Include="Resource\License.txt" />
   </ItemGroup>
@@ -72,11 +72,11 @@
   <!-- Publish時にUserDataフォルダに設定ファイルをコピー -->
   <Target Name="CopyUserDataFiles" AfterTargets="Publish">
     <MakeDir Directories="$(PublishDir)UserData" Condition="!Exists('$(PublishDir)UserData')" />
-    <Copy SourceFiles="$(PublishDir)defaultSetting.json" DestinationFiles="$(PublishDir)UserData\defaultSetting.json" Condition="Exists('$(PublishDir)defaultSetting.json')" />
-    <Copy SourceFiles="$(PublishDir)sample_cocoroAiMcp.json" DestinationFiles="$(PublishDir)UserData\sample_cocoroAiMcp.json" Condition="Exists('$(PublishDir)sample_cocoroAiMcp.json')" />
+    <Copy SourceFiles="$(PublishDir)DefaultSetting.json" DestinationFiles="$(PublishDir)UserData\DefaultSetting.json" Condition="Exists('$(PublishDir)DefaultSetting.json')" />
+    <Copy SourceFiles="$(PublishDir)Sample_CocoroAiMcp.json" DestinationFiles="$(PublishDir)UserData\Sample_CocoroAiMcp.json" Condition="Exists('$(PublishDir)Sample_CocoroAiMcp.json')" />
     <!-- 元のファイルを削除（UserDataフォルダにのみ存在させるため） -->
-    <Delete Files="$(PublishDir)defaultSetting.json" Condition="Exists('$(PublishDir)defaultSetting.json')" />
-    <Delete Files="$(PublishDir)sample_cocoroAiMcp.json" Condition="Exists('$(PublishDir)sample_cocoroAiMcp.json')" />
+    <Delete Files="$(PublishDir)DefaultSetting.json" Condition="Exists('$(PublishDir)DefaultSetting.json')" />
+    <Delete Files="$(PublishDir)Sample_CocoroAiMcp.json" Condition="Exists('$(PublishDir)Sample_CocoroAiMcp.json')" />
   </Target>
 
 </Project>

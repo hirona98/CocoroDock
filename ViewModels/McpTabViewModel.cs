@@ -193,9 +193,9 @@ namespace CocoroDock.ViewModels
                 }
                 else
                 {
-                    // サンプルファイルから読み込み（setting.jsonと同じUserDataディレクトリ）
+                    // サンプルファイルから読み込み（Settingと同じUserDataディレクトリ）
                     var userDataDir = Path.GetDirectoryName(_mcpConfigPath) ?? "";
-                    var samplePath = Path.Combine(userDataDir, "sample_cocoroAiMcp.json");
+                    var samplePath = Path.Combine(userDataDir, "Sample_CocoroAiMcp.json");
                     if (File.Exists(samplePath))
                     {
                         McpConfigJson = File.ReadAllText(samplePath);
@@ -407,10 +407,10 @@ namespace CocoroDock.ViewModels
                 // 設定を保存
                 _appSettings.IsEnableMcp = _isMcpEnabled;
                 _appSettings.SaveAppSettings();
-                
+
                 // 元の値を更新
                 _originalMcpEnabled = _isMcpEnabled;
-                
+
                 // CocoroCoreを再起動
                 await RestartCocoroCoreAsync();
             }

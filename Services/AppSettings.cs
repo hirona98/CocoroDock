@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 namespace CocoroDock.Services
 {
     /// <summary>
-    /// 古いバージョンのsetting.jsonのキャラクター設定クラス
+    /// 古いバージョンのSettingのキャラクター設定クラス
     /// </summary>
     public class OldCharacterSettings
     {
@@ -48,7 +48,7 @@ namespace CocoroDock.Services
     }
 
     /// <summary>
-    /// 古いバージョンのsetting.jsonの設定クラス
+    /// 古いバージョンのSettingの設定クラス
     /// </summary>
     public class OldConfigSettings
     {
@@ -110,12 +110,12 @@ namespace CocoroDock.Services
         // アプリケーション設定ファイルのパス
         private string AppSettingsFilePath => Path.Combine(
             AppContext.BaseDirectory,
-            "UserData", "setting.json");
+            "UserData", "Setting");
 
         // デフォルト設定ファイルのパス
         private string DefaultSettingsFilePath => Path.Combine(
             AppContext.BaseDirectory,
-            "UserData", "defaultSetting.json");
+            "UserData", "DefaultSetting.json");
 
         public int CocoroDockPort { get; set; } = 55600;
         public int CocoroCorePort { get; set; } = 55601;
