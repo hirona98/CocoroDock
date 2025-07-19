@@ -110,7 +110,7 @@ namespace CocoroDock.Services
         // アプリケーション設定ファイルのパス
         private string AppSettingsFilePath => Path.Combine(
             AppContext.BaseDirectory,
-            "UserData", "Setting");
+            "UserData", "Setting.json");
 
         // デフォルト設定ファイルのパス
         private string DefaultSettingsFilePath => Path.Combine(
