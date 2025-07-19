@@ -180,7 +180,7 @@
                                         HorizontalAlignment="Left"/>
                             </Grid>
                             <CheckBox x:Name="AutoMoveCheckBox"
-                                      Content="自動的に移動する（不安定です）"
+                                      Content="何もない場所に自動移動する（不安定です）"
                                       Margin="0,5,0,10"
                                       ToolTip="Auto move (unstable)"
                                       Foreground="#FF4873CF"/>
