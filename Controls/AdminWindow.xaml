@@ -107,14 +107,15 @@
             <TabItem Header="Display"
                      Style="{StaticResource AdminTabItemStyle}"
                      ToolTip="Display Setting">
-                <Grid Margin="20">
+                <Grid Margin="20,20,0,20">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <ScrollViewer Grid.Row="0"
+                    <ScrollViewer Grid.Row="1"
                                   VerticalScrollBarVisibility="Auto">
-                        <StackPanel>
+                        <StackPanel Margin="0,0,20,0">
                             <Grid Margin="0,5,0,10"
                                   HorizontalAlignment="Left">
                                 <Grid.ColumnDefinitions>
@@ -150,7 +151,7 @@
 
                             <!-- 逃げ先座標設定 -->
                             <GroupBox Header="逃げ先座標設定（最大10箇所）"
-                                      Margin="0,5,0,15"
+                                      Margin="15,5,0,15"
                                       Padding="10"
                                       ToolTip="Escape position settings">
                                 <Grid>
