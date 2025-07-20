@@ -177,8 +177,7 @@
                                             MaxHeight="200">
                                         <ScrollViewer VerticalScrollBarVisibility="Auto"
                                                       HorizontalScrollBarVisibility="Disabled">
-                                            <ItemsControl x:Name="EscapePositionsItemsControl"
-                                                          ItemsSource="{Binding ElementName=EscapePositionsDataGrid, Path=ItemsSource}">
+                                            <ItemsControl x:Name="EscapePositionsItemsControl">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
                                                         <Grid>
@@ -286,21 +285,6 @@
                                         </ScrollViewer>
                                     </Border>
 
-                                    <!-- 隠されたDataGrid（互換性のため） -->
-                                    <DataGrid x:Name="EscapePositionsDataGrid"
-                                              Visibility="Collapsed"
-                                              AutoGenerateColumns="False"
-                                              CanUserAddRows="False"
-                                              CanUserDeleteRows="False">
-                                        <DataGrid.Columns>
-                                            <DataGridCheckBoxColumn Header="有効"
-                                                                    Binding="{Binding Enabled, UpdateSourceTrigger=PropertyChanged}"/>
-                                            <DataGridTextColumn Header="X座標"
-                                                                Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}"/>
-                                            <DataGridTextColumn Header="Y座標"
-                                                                Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}"/>
-                                        </DataGrid.Columns>
-                                    </DataGrid>
 
                                     <!-- ボタンエリア -->
                                     <StackPanel Grid.Row="2"

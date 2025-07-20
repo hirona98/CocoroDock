@@ -515,8 +515,8 @@ namespace CocoroDock.Controls
         /// </summary>
         private void InitializeEscapePositions()
         {
-            // DataGridのItemsSourceを設定
-            EscapePositionsDataGrid.ItemsSource = EscapePositionsCollection;
+            // ItemsControlのItemsSourceを設定
+            EscapePositionsItemsControl.ItemsSource = EscapePositionsCollection;
 
             // 設定から逃げ先座標を読み込み
             LoadEscapePositionsFromSettings();
