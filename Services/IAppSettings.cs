@@ -64,6 +64,11 @@ namespace CocoroDock.Services
         bool IsEscapeCursor { get; set; }
 
         /// <summary>
+        /// 逃げ先座標リスト
+        /// </summary>
+        List<EscapePosition> EscapePositions { get; set; }
+
+        /// <summary>
         /// 仮想キー入力
         /// </summary>
         bool IsInputVirtualKey { get; set; }

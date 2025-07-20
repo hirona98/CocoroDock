@@ -65,6 +65,16 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
+    /// 逃げ先座標設定クラス
+    /// </summary>
+    public class EscapePosition
+    {
+        public float x { get; set; } = 0f;
+        public float y { get; set; } = 0f;
+        public bool enabled { get; set; } = true;
+    }
+
+    /// <summary>
     /// アプリケーション設定クラス
     /// </summary>
     public class ConfigSettings
@@ -80,6 +90,7 @@ namespace CocoroDock.Communication
         public bool isRestoreWindowPosition { get; set; } = false;
         public bool isTopmost { get; set; }
         public bool isEscapeCursor { get; set; }
+        public List<EscapePosition> escapePositions { get; set; } = new List<EscapePosition>();
         public bool isInputVirtualKey { get; set; }
         public string virtualKeyString { get; set; } = string.Empty;
         public bool isAutoMove { get; set; }

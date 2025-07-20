@@ -148,6 +148,179 @@
                                       ToolTip="Escape cursor (Disabled while holding down the Shift key)"
                                       Foreground="#FF4873CF"/>
 
+                            <!-- 逃げ先座標設定 -->
+                            <GroupBox Header="逃げ先座標設定（最大10箇所）"
+                                      Margin="0,5,0,15"
+                                      Padding="10"
+                                      ToolTip="Escape position settings">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- 説明テキスト -->
+                                    <TextBlock Grid.Row="0"
+                                               TextWrapping="Wrap"
+                                               Foreground="#666666"
+                                               Margin="0,0,0,10">
+                                        マウスに触れた時の逃げ先となる座標を最大10箇所まで設定できます。触れられた方向に移動します。
+                                    </TextBlock>
+
+                                    <!-- 座標リスト -->
+                                    <Border Grid.Row="1"
+                                            BorderBrush="#DDDDDD"
+                                            BorderThickness="1"
+                                            Background="White"
+                                            MaxHeight="200">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                                      HorizontalScrollBarVisibility="Disabled">
+                                            <ItemsControl x:Name="EscapePositionsItemsControl"
+                                                          ItemsSource="{Binding ElementName=EscapePositionsDataGrid, Path=ItemsSource}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto"/>
+                                                                <RowDefinition Height="1"/>
+                                                            </Grid.RowDefinitions>
+
+                                                            <!-- アイテム内容 -->
+                                                            <Grid Grid.Row="0"
+                                                                    Margin="8">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="30"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="30"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <!-- 有効/無効チェックボックス -->
+                                                                <CheckBox Grid.Column="0"
+                                                                          IsChecked="{Binding Enabled, UpdateSourceTrigger=PropertyChanged}"
+                                                                          VerticalAlignment="Center"/>
+
+                                                                <!-- X座標ラベル -->
+                                                                <TextBlock Grid.Column="1"
+                                                                           Text="X:"
+                                                                           VerticalAlignment="Center"
+                                                                           Margin="8,0,0,0"/>
+
+                                                                <!-- X座標入力 -->
+                                                                <TextBox Grid.Column="2"
+                                                                         Text="{Binding X, UpdateSourceTrigger=PropertyChanged}"
+                                                                         BorderBrush="#CCCCCC"
+                                                                         BorderThickness="1"
+                                                                         Padding="4,2"
+                                                                         Margin="4,0,8,0"
+                                                                         VerticalAlignment="Center"/>
+
+                                                                <!-- Y座標ラベル -->
+                                                                <TextBlock Grid.Column="3"
+                                                                           Text="Y:"
+                                                                           VerticalAlignment="Center"/>
+
+                                                                <!-- Y座標入力 -->
+                                                                <TextBox Grid.Column="4"
+                                                                         Text="{Binding Y, UpdateSourceTrigger=PropertyChanged}"
+                                                                         BorderBrush="#CCCCCC"
+                                                                         BorderThickness="1"
+                                                                         Padding="4,2"
+                                                                         Margin="4,0,8,0"
+                                                                         VerticalAlignment="Center"/>
+
+                                                                <!-- 削除ボタン -->
+                                                                <Button Grid.Column="5"
+                                                                        Content="×"
+                                                                        Width="20"
+                                                                        Height="20"
+                                                                        Background="#FF6B6B"
+                                                                        Foreground="White"
+                                                                        BorderThickness="0"
+                                                                        FontSize="12"
+                                                                        FontWeight="Bold"
+                                                                        VerticalAlignment="Center"
+                                                                        Click="RemoveEscapePosition_Click"
+                                                                        Tag="{Binding}"
+                                                                        ToolTip="この座標を削除">
+                                                                    <Button.Style>
+                                                                        <Style TargetType="Button">
+                                                                            <Setter Property="Template">
+                                                                                <Setter.Value>
+                                                                                    <ControlTemplate TargetType="Button">
+                                                                                        <Border Background="{TemplateBinding Background}"
+                                                                                                CornerRadius="10">
+                                                                                            <ContentPresenter HorizontalAlignment="Center"
+                                                                                                              VerticalAlignment="Center"/>
+                                                                                        </Border>
+                                                                                        <ControlTemplate.Triggers>
+                                                                                            <Trigger Property="IsMouseOver"
+                                                                                                    Value="True">
+                                                                                                <Setter Property="Background"
+                                                                                                        Value="#FF5252"/>
+                                                                                            </Trigger>
+                                                                                        </ControlTemplate.Triggers>
+                                                                                    </ControlTemplate>
+                                                                                </Setter.Value>
+                                                                            </Setter>
+                                                                        </Style>
+                                                                    </Button.Style>
+                                                                </Button>
+                                                            </Grid>
+
+                                                            <!-- 区切り線（最後の要素以外に表示） -->
+                                                            <Rectangle Grid.Row="1"
+                                                                       Fill="#E0E0E0"
+                                                                       Height="1"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </Border>
+
+                                    <!-- 隠されたDataGrid（互換性のため） -->
+                                    <DataGrid x:Name="EscapePositionsDataGrid"
+                                              Visibility="Collapsed"
+                                              AutoGenerateColumns="False"
+                                              CanUserAddRows="False"
+                                              CanUserDeleteRows="False">
+                                        <DataGrid.Columns>
+                                            <DataGridCheckBoxColumn Header="有効"
+                                                                    Binding="{Binding Enabled, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <DataGridTextColumn Header="X座標"
+                                                                Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <DataGridTextColumn Header="Y座標"
+                                                                Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+
+                                    <!-- ボタンエリア -->
+                                    <StackPanel Grid.Row="2"
+                                                Orientation="Horizontal"
+                                                HorizontalAlignment="Left"
+                                                Margin="0,10,0,0">
+                                        <Button x:Name="AddEscapePositionButton"
+                                                Content="現在位置を追加"
+                                                Padding="10,5"
+                                                Margin="0,0,10,0"
+                                                Foreground="#FF4873CF"
+                                                ToolTip="現在のキャラクター位置を逃げ先に追加"
+                                                Click="AddEscapePositionButton_Click"/>
+                                        <Button x:Name="ClearEscapePositionsButton"
+                                                Content="全削除"
+                                                Padding="10,5"
+                                                Background="#d32f2f"
+                                                Foreground="WhiteSmoke"
+                                                ToolTip="すべての逃げ先座標を削除"
+                                                Click="ClearEscapePositionsButton_Click"/>
+                                    </StackPanel>
+                                </Grid>
+                            </GroupBox>
+
                             <Grid Margin="0,5,0,10"
                                   HorizontalAlignment="Left">
                                 <Grid.ColumnDefinitions>

@@ -131,6 +131,7 @@ namespace CocoroDock.Services
         public bool IsRestoreWindowPosition { get; set; } = false;
         public bool IsTopmost { get; set; } = false;
         public bool IsEscapeCursor { get; set; } = false;
+        public List<EscapePosition> EscapePositions { get; set; } = new List<EscapePosition>();
         public bool IsInputVirtualKey { get; set; } = false;
         public string VirtualKeyString { get; set; } = string.Empty;
         public bool IsAutoMove { get; set; } = false;
@@ -185,6 +186,7 @@ namespace CocoroDock.Services
             IsRestoreWindowPosition = config.isRestoreWindowPosition;
             IsTopmost = config.isTopmost;
             IsEscapeCursor = config.isEscapeCursor;
+            EscapePositions = config.escapePositions != null ? new List<EscapePosition>(config.escapePositions) : new List<EscapePosition>();
             IsInputVirtualKey = config.isInputVirtualKey;
             VirtualKeyString = config.virtualKeyString;
             IsAutoMove = config.isAutoMove;
@@ -248,6 +250,7 @@ namespace CocoroDock.Services
                 isRestoreWindowPosition = IsRestoreWindowPosition,
                 isTopmost = IsTopmost,
                 isEscapeCursor = IsEscapeCursor,
+                escapePositions = new List<EscapePosition>(EscapePositions),
                 isInputVirtualKey = IsInputVirtualKey,
                 virtualKeyString = VirtualKeyString,
                 isAutoMove = IsAutoMove,

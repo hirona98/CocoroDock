@@ -4,6 +4,8 @@ using CocoroDock.Utilities;
 using CocoroDock.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -15,6 +17,63 @@ using System.Windows.Interop;
 
 namespace CocoroDock.Controls
 {
+    /// <summary>
+    /// 逃げ先座標設定用のViewModelクラス
+    /// </summary>
+    public class EscapePositionViewModel : INotifyPropertyChanged
+    {
+        private float _x;
+        private float _y;
+        private bool _enabled;
+
+        public float X
+        {
+            get => _x;
+            set
+            {
+                _x = value;
+                OnPropertyChanged(nameof(X));
+            }
+        }
+
+        public float Y
+        {
+            get => _y;
+            set
+            {
+                _y = value;
+                OnPropertyChanged(nameof(Y));
+            }
+        }
+
+        public bool Enabled
+        {
+            get => _enabled;
+            set
+            {
+                _enabled = value;
+                OnPropertyChanged(nameof(Enabled));
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public EscapePosition ToEscapePosition()
+        {
+            return new EscapePosition { x = X, y = Y, enabled = Enabled };
+        }
+
+        public static EscapePositionViewModel FromEscapePosition(EscapePosition position)
+        {
+            return new EscapePositionViewModel { X = position.x, Y = position.y, Enabled = position.enabled };
+        }
+    }
+
     /// <summary>
     /// AdminWindow.xaml の相互作用ロジック
     /// </summary>
@@ -36,6 +95,9 @@ namespace CocoroDock.Controls
 
         // 通信サービス
         private ICommunicationService? _communicationService;
+
+        // 逃げ先座標設定用コレクション
+        public ObservableCollection<EscapePositionViewModel> EscapePositionsCollection { get; set; } = new ObservableCollection<EscapePositionViewModel>();
 
         // MCPタブ用ViewModel
         private McpTabViewModel? _mcpTabViewModel;
@@ -106,6 +168,9 @@ namespace CocoroDock.Controls
 
             // キャラクター設定の初期化
             InitializeCharacterSettings();
+
+            // 逃げ先座標設定の初期化
+            InitializeEscapePositions();
 
             // ボタンイベントの登録
             RegisterButtonEvents();
@@ -443,6 +508,34 @@ namespace CocoroDock.Controls
 
             // 現在のキャラクターのアニメーション設定を表示
             UpdateAnimationUI();
+        }
+
+        /// <summary>
+        /// 逃げ先座標設定の初期化
+        /// </summary>
+        private void InitializeEscapePositions()
+        {
+            // DataGridのItemsSourceを設定
+            EscapePositionsDataGrid.ItemsSource = EscapePositionsCollection;
+
+            // 設定から逃げ先座標を読み込み
+            LoadEscapePositionsFromSettings();
+        }
+
+        /// <summary>
+        /// 設定から逃げ先座標を読み込み
+        /// </summary>
+        private void LoadEscapePositionsFromSettings()
+        {
+            EscapePositionsCollection.Clear();
+
+            var appSettings = AppSettings.Instance;
+            foreach (var position in appSettings.EscapePositions)
+            {
+                EscapePositionsCollection.Add(EscapePositionViewModel.FromEscapePosition(position));
+            }
+
+            // 初期状態は空のリスト（追加ボタンで座標を追加）
         }
 
         /// <summary>
@@ -1626,6 +1719,18 @@ namespace CocoroDock.Controls
             _displaySettings["RestoreWindowPosition"] = RestoreWindowPositionCheckBox.IsChecked ?? false;
             _displaySettings["TopMost"] = TopMostCheckBox.IsChecked ?? false;
             _displaySettings["EscapeCursor"] = EscapeCursorCheckBox.IsChecked ?? false;
+            
+            // 逃げ先座標の保存
+            var escapePositions = new List<EscapePosition>();
+            foreach (var position in EscapePositionsCollection)
+            {
+                if (position.Enabled || position.X != 0 || position.Y != 0)
+                {
+                    escapePositions.Add(position.ToEscapePosition());
+                }
+            }
+            _displaySettings["EscapePositions"] = escapePositions;
+            
             _displaySettings["InputVirtualKey"] = InputVirtualKeyCheckBox.IsChecked ?? false;
             _displaySettings["VirtualKeyString"] = VirtualKeyStringTextBox.Text;
             _displaySettings["AutoMove"] = AutoMoveCheckBox.IsChecked ?? false;
@@ -2441,6 +2546,93 @@ namespace CocoroDock.Controls
             catch (Exception ex)
             {
                 MessageBox.Show($"ログビューアーの起動に失敗しました: {ex.Message}", 
+                               "エラー", 
+                               MessageBoxButton.OK, 
+                               MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// 現在位置を追加ボタンのクリックイベント
+        /// </summary>
+        private void AddEscapePositionButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // 最大10箇所まで追加可能
+                if (EscapePositionsCollection.Count < 10)
+                {
+                    // 新しい座標を追加
+                    var newPosition = new EscapePositionViewModel 
+                    { 
+                        X = 100, // 実際には通信サービスから取得
+                        Y = 100, // 実際には通信サービスから取得
+                        Enabled = true 
+                    };
+                    EscapePositionsCollection.Add(newPosition);
+                }
+                else
+                {
+                    MessageBox.Show("設定可能な逃げ先の上限（10箇所）に達しています。", "追加できません", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"逃げ先座標の追加に失敗しました: {ex.Message}", 
+                               "エラー", 
+                               MessageBoxButton.OK, 
+                               MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// 逃げ先座標を削除
+        /// </summary>
+        private void RemoveEscapePosition_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is Button button && button.Tag is EscapePositionViewModel position)
+                {
+                    EscapePositionsCollection.Remove(position);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"逃げ先座標の削除に失敗しました: {ex.Message}", 
+                               "エラー", 
+                               MessageBoxButton.OK, 
+                               MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// 全削除ボタンのクリックイベント
+        /// </summary>
+        private void ClearEscapePositionsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var result = MessageBox.Show("すべての逃げ先座標を削除しますか？", 
+                                           "確認", 
+                                           MessageBoxButton.YesNo, 
+                                           MessageBoxImage.Question);
+                
+                if (result == MessageBoxResult.Yes)
+                {
+                    foreach (var position in EscapePositionsCollection)
+                    {
+                        position.X = 0;
+                        position.Y = 0;
+                        position.Enabled = false;
+                    }
+                    
+                    MessageBox.Show("すべての逃げ先座標を削除しました。", "削除完了", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"逃げ先座標の削除に失敗しました: {ex.Message}", 
                                "エラー", 
                                MessageBoxButton.OK, 
                                MessageBoxImage.Error);
