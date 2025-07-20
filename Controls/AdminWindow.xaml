@@ -189,7 +189,7 @@
 
                                                             <!-- アイテム内容 -->
                                                             <Grid Grid.Row="0"
-                                                                    Margin="8">
+                                                                  Margin="8">
                                                                 <Grid.ColumnDefinitions>
                                                                     <ColumnDefinition Width="Auto"/>
                                                                     <ColumnDefinition Width="30"/>
@@ -216,13 +216,14 @@
                                                                          BorderBrush="#CCCCCC"
                                                                          BorderThickness="1"
                                                                          Padding="4,2"
-                                                                         Margin="4,0,8,0"
+                                                                         Margin="2,0,8,0"
                                                                          VerticalAlignment="Center"/>
 
                                                                 <!-- Y座標ラベル -->
                                                                 <TextBlock Grid.Column="3"
                                                                            Text="Y:"
-                                                                           VerticalAlignment="Center"/>
+                                                                           VerticalAlignment="Center"
+                                                                           Margin="0,0,0,0"/>
 
                                                                 <!-- Y座標入力 -->
                                                                 <TextBox Grid.Column="4"
@@ -230,7 +231,7 @@
                                                                          BorderBrush="#CCCCCC"
                                                                          BorderThickness="1"
                                                                          Padding="4,2"
-                                                                         Margin="4,0,8,0"
+                                                                         Margin="1,0,8,0"
                                                                          VerticalAlignment="Center"/>
 
                                                                 <!-- 削除ボタン -->
@@ -238,12 +239,13 @@
                                                                         Content="×"
                                                                         Width="20"
                                                                         Height="20"
-                                                                        Background="#FF6B6B"
+                                                                        Background="#DC143C"
                                                                         Foreground="White"
                                                                         BorderThickness="0"
                                                                         FontSize="12"
                                                                         FontWeight="Bold"
                                                                         VerticalAlignment="Center"
+                                                                        Margin="0,0,0,0"
                                                                         Click="RemoveEscapePosition_Click"
                                                                         Tag="{Binding}"
                                                                         ToolTip="この座標を削除">
@@ -255,13 +257,14 @@
                                                                                         <Border Background="{TemplateBinding Background}"
                                                                                                 CornerRadius="10">
                                                                                             <ContentPresenter HorizontalAlignment="Center"
-                                                                                                              VerticalAlignment="Center"/>
+                                                                                                              VerticalAlignment="Top"
+                                                                                                              Margin="0,1,0,0"/>
                                                                                         </Border>
                                                                                         <ControlTemplate.Triggers>
                                                                                             <Trigger Property="IsMouseOver"
-                                                                                                    Value="True">
+                                                                                                     Value="True">
                                                                                                 <Setter Property="Background"
-                                                                                                        Value="#FF5252"/>
+                                                                                                        Value="#B22222"/>
                                                                                             </Trigger>
                                                                                         </ControlTemplate.Triggers>
                                                                                     </ControlTemplate>
