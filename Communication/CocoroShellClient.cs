@@ -182,6 +182,41 @@ namespace CocoroDock.Communication
         }
 
         /// <summary>
+        /// 現在のキャラクター位置を取得
+        /// </summary>
+        public async Task<PositionResponse> GetPositionAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync("/api/position");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<PositionResponse>();
+                    return result ?? throw new InvalidOperationException("Failed to deserialize position response");
+                }
+                else
+                {
+                    var errorResponse = await TryReadErrorResponse(response);
+                    throw new HttpRequestException($"API error: {errorResponse?.message ?? response.ReasonPhrase}");
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                throw new TimeoutException("Request to CocoroShell timed out");
+            }
+            catch (HttpRequestException)
+            {
+                throw; // そのまま再スロー
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"位置取得エラー: {ex.Message}");
+                throw new InvalidOperationException($"Failed to get position: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
         /// エラーレスポンスの読み取りを試みる
         /// </summary>
         private async Task<ErrorResponse?> TryReadErrorResponse(HttpResponseMessage response)

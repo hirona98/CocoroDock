@@ -137,5 +137,10 @@ namespace CocoroDock.Services
         /// ログビューアーウィンドウを開く
         /// </summary>
         void OpenLogViewer();
+
+        /// <summary>
+        /// CocoroShellから現在のキャラクター位置を取得
+        /// </summary>
+        Task<PositionResponse> GetShellPositionAsync();
     }
 }

@@ -627,6 +627,26 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
+        /// CocoroShellから現在のキャラクター位置を取得
+        /// </summary>
+        public async Task<PositionResponse> GetShellPositionAsync()
+        {
+            try
+            {
+                return await _shellClient.GetPositionAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"位置取得エラー: {ex.Message}");
+
+                // エラー時のステータス更新
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"位置取得に失敗しました: {ex.Message}"));
+
+                throw;
+            }
+        }
+
+        /// <summary>
         /// リソースの解放
         /// </summary>
         public void Dispose()

@@ -75,6 +75,36 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
+    /// 位置情報レスポンス
+    /// </summary>
+    public class PositionResponse
+    {
+        public string status { get; set; } = "success";
+        public string message { get; set; } = string.Empty;
+        public string timestamp { get; set; } = string.Empty;
+        public PositionData position { get; set; } = new PositionData();
+    }
+
+    /// <summary>
+    /// 位置情報データ
+    /// </summary>
+    public class PositionData
+    {
+        public float x { get; set; } = 0f;
+        public float y { get; set; } = 0f;
+        public SizeData windowSize { get; set; } = new SizeData();
+    }
+
+    /// <summary>
+    /// サイズ情報データ
+    /// </summary>
+    public class SizeData
+    {
+        public float width { get; set; } = 0f;
+        public float height { get; set; } = 0f;
+    }
+
+    /// <summary>
     /// アプリケーション設定クラス
     /// </summary>
     public class ConfigSettings

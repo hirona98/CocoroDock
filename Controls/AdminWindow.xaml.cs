@@ -1719,7 +1719,7 @@ namespace CocoroDock.Controls
             _displaySettings["RestoreWindowPosition"] = RestoreWindowPositionCheckBox.IsChecked ?? false;
             _displaySettings["TopMost"] = TopMostCheckBox.IsChecked ?? false;
             _displaySettings["EscapeCursor"] = EscapeCursorCheckBox.IsChecked ?? false;
-            
+
             // 逃げ先座標の保存
             var escapePositions = new List<EscapePosition>();
             foreach (var position in EscapePositionsCollection)
@@ -1730,7 +1730,7 @@ namespace CocoroDock.Controls
                 }
             }
             _displaySettings["EscapePositions"] = escapePositions;
-            
+
             _displaySettings["InputVirtualKey"] = InputVirtualKeyCheckBox.IsChecked ?? false;
             _displaySettings["VirtualKeyString"] = VirtualKeyStringTextBox.Text;
             _displaySettings["AutoMove"] = AutoMoveCheckBox.IsChecked ?? false;
@@ -1804,6 +1804,13 @@ namespace CocoroDock.Controls
             appSettings.IsRestoreWindowPosition = (bool)_displaySettings["RestoreWindowPosition"];
             appSettings.IsTopmost = (bool)_displaySettings["TopMost"];
             appSettings.IsEscapeCursor = (bool)_displaySettings["EscapeCursor"];
+            
+            // 逃げ先座標の更新
+            if (_displaySettings.ContainsKey("EscapePositions"))
+            {
+                appSettings.EscapePositions = (List<EscapePosition>)_displaySettings["EscapePositions"];
+            }
+            
             appSettings.IsInputVirtualKey = (bool)_displaySettings["InputVirtualKey"];
             appSettings.VirtualKeyString = (string)_displaySettings["VirtualKeyString"];
             appSettings.IsAutoMove = (bool)_displaySettings["AutoMove"];
@@ -2545,9 +2552,9 @@ namespace CocoroDock.Controls
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"ログビューアーの起動に失敗しました: {ex.Message}", 
-                               "エラー", 
-                               MessageBoxButton.OK, 
+                MessageBox.Show($"ログビューアーの起動に失敗しました: {ex.Message}",
+                               "エラー",
+                               MessageBoxButton.OK,
                                MessageBoxImage.Error);
             }
         }
@@ -2555,19 +2562,39 @@ namespace CocoroDock.Controls
         /// <summary>
         /// 現在位置を追加ボタンのクリックイベント
         /// </summary>
-        private void AddEscapePositionButton_Click(object sender, RoutedEventArgs e)
+        private async void AddEscapePositionButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 // 最大10箇所まで追加可能
                 if (EscapePositionsCollection.Count < 10)
                 {
+                    float x = 100, y = 100; // デフォルト値
+
+                    // CocoroShellから現在位置を取得
+                    if (_communicationService != null && _communicationService.IsServerRunning)
+                    {
+                        try
+                        {
+                            var position = await GetCurrentCharacterPositionAsync();
+                            if (position.HasValue)
+                            {
+                                x = position.Value.X;
+                                y = position.Value.Y;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"キャラクター位置取得エラー: {ex.Message}");
+                        }
+                    }
+
                     // 新しい座標を追加
-                    var newPosition = new EscapePositionViewModel 
-                    { 
-                        X = 100, // 実際には通信サービスから取得
-                        Y = 100, // 実際には通信サービスから取得
-                        Enabled = true 
+                    var newPosition = new EscapePositionViewModel
+                    {
+                        X = x,
+                        Y = y,
+                        Enabled = true
                     };
                     EscapePositionsCollection.Add(newPosition);
                 }
@@ -2578,11 +2605,35 @@ namespace CocoroDock.Controls
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"逃げ先座標の追加に失敗しました: {ex.Message}", 
-                               "エラー", 
-                               MessageBoxButton.OK, 
+                MessageBox.Show($"逃げ先座標の追加に失敗しました: {ex.Message}",
+                               "エラー",
+                               MessageBoxButton.OK,
                                MessageBoxImage.Error);
             }
+        }
+
+        /// <summary>
+        /// CocoroShellから現在のキャラクター位置を取得
+        /// </summary>
+        private async Task<(float X, float Y)?> GetCurrentCharacterPositionAsync()
+        {
+            try
+            {
+                if (_communicationService == null || !_communicationService.IsServerRunning)
+                    return null;
+
+                var positionResponse = await _communicationService.GetShellPositionAsync();
+                if (positionResponse?.position != null)
+                {
+                    return (positionResponse.position.x, positionResponse.position.y);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"位置取得エラー: {ex.Message}");
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -2599,9 +2650,9 @@ namespace CocoroDock.Controls
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"逃げ先座標の削除に失敗しました: {ex.Message}", 
-                               "エラー", 
-                               MessageBoxButton.OK, 
+                MessageBox.Show($"逃げ先座標の削除に失敗しました: {ex.Message}",
+                               "エラー",
+                               MessageBoxButton.OK,
                                MessageBoxImage.Error);
             }
         }
@@ -2613,11 +2664,11 @@ namespace CocoroDock.Controls
         {
             try
             {
-                var result = MessageBox.Show("すべての逃げ先座標を削除しますか？", 
-                                           "確認", 
-                                           MessageBoxButton.YesNo, 
+                var result = MessageBox.Show("すべての逃げ先座標を削除しますか？",
+                                           "確認",
+                                           MessageBoxButton.YesNo,
                                            MessageBoxImage.Question);
-                
+
                 if (result == MessageBoxResult.Yes)
                 {
                     foreach (var position in EscapePositionsCollection)
@@ -2626,15 +2677,15 @@ namespace CocoroDock.Controls
                         position.Y = 0;
                         position.Enabled = false;
                     }
-                    
+
                     MessageBox.Show("すべての逃げ先座標を削除しました。", "削除完了", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"逃げ先座標の削除に失敗しました: {ex.Message}", 
-                               "エラー", 
-                               MessageBoxButton.OK, 
+                MessageBox.Show($"逃げ先座標の削除に失敗しました: {ex.Message}",
+                               "エラー",
+                               MessageBoxButton.OK,
                                MessageBoxImage.Error);
             }
         }
