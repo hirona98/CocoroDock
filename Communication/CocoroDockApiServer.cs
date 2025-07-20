@@ -268,6 +268,60 @@ namespace CocoroDock.Communication
                 }
             });
 
+            // PUT /api/config/patch - 設定部分更新
+            app.MapPut("/api/config/patch", async (HttpContext context) =>
+            {
+                try
+                {
+                    var patch = await context.Request.ReadFromJsonAsync<ConfigPatchRequest>();
+                    if (patch == null || patch.updates == null)
+                    {
+                        context.Response.StatusCode = 400;
+                        await context.Response.WriteAsJsonAsync(new ErrorResponse
+                        {
+                            message = "Request body with updates is required",
+                            errorCode = "INVALID_REQUEST"
+                        });
+                        return;
+                    }
+
+                    // 現在の設定を取得
+                    var currentConfig = _appSettings.GetConfigSettings();
+                    
+                    // 部分更新を適用
+                    ApplyConfigPatch(currentConfig, patch.updates);
+                    
+                    // 設定を更新・保存
+                    _appSettings.UpdateSettings(currentConfig);
+                    _appSettings.SaveSettings();
+
+                    await context.Response.WriteAsJsonAsync(new StandardResponse
+                    {
+                        status = "success",
+                        message = $"Configuration patch applied: {string.Join(", ", patch.changedFields ?? new string[0])}"
+                    });
+                }
+                catch (System.Text.Json.JsonException)
+                {
+                    context.Response.StatusCode = 400;
+                    await context.Response.WriteAsJsonAsync(new ErrorResponse
+                    {
+                        message = "Invalid JSON format",
+                        errorCode = "JSON_ERROR"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"設定部分更新エラー: {ex.Message}");
+                    context.Response.StatusCode = 500;
+                    await context.Response.WriteAsJsonAsync(new ErrorResponse
+                    {
+                        message = "Failed to apply configuration patch",
+                        errorCode = "CONFIG_PATCH_ERROR"
+                    });
+                }
+            });
+
             // POST /api/control - 制御コマンド
             app.MapPost("/api/control", async (HttpContext context) =>
             {
@@ -504,6 +558,62 @@ namespace CocoroDock.Communication
                 _host = null;
                 try { _cts?.Dispose(); } catch { }
                 _cts = null;
+            }
+        }
+
+        /// <summary>
+        /// 設定に部分更新を適用
+        /// </summary>
+        private static void ApplyConfigPatch(ConfigSettings config, System.Collections.Generic.Dictionary<string, object> updates)
+        {
+            var configType = typeof(ConfigSettings);
+            
+            foreach (var kvp in updates)
+            {
+                var propertyInfo = configType.GetProperty(kvp.Key);
+                if (propertyInfo != null && propertyInfo.CanWrite)
+                {
+                    try
+                    {
+                        object convertedValue;
+                        
+                        // 型に応じて変換処理
+                        if (propertyInfo.PropertyType == typeof(float))
+                        {
+                            convertedValue = Convert.ToSingle(kvp.Value);
+                        }
+                        else if (propertyInfo.PropertyType == typeof(bool))
+                        {
+                            convertedValue = Convert.ToBoolean(kvp.Value);
+                        }
+                        else if (propertyInfo.PropertyType == typeof(int))
+                        {
+                            convertedValue = Convert.ToInt32(kvp.Value);
+                        }
+                        else if (propertyInfo.PropertyType.IsGenericType && 
+                                propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(System.Collections.Generic.List<>))
+                        {
+                            // List型の場合はJSONから直接デシリアライズ
+                            var json = System.Text.Json.JsonSerializer.Serialize(kvp.Value);
+                            convertedValue = System.Text.Json.JsonSerializer.Deserialize(json, propertyInfo.PropertyType);
+                        }
+                        else
+                        {
+                            convertedValue = Convert.ChangeType(kvp.Value, propertyInfo.PropertyType);
+                        }
+                        
+                        propertyInfo.SetValue(config, convertedValue);
+                        Debug.WriteLine($"Applied config patch: {kvp.Key} = {convertedValue}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Failed to apply patch for {kvp.Key}: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine($"Property {kvp.Key} not found or not writable in ConfigSettings");
+                }
             }
         }
 

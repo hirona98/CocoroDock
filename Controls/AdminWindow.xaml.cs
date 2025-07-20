@@ -1804,13 +1804,13 @@ namespace CocoroDock.Controls
             appSettings.IsRestoreWindowPosition = (bool)_displaySettings["RestoreWindowPosition"];
             appSettings.IsTopmost = (bool)_displaySettings["TopMost"];
             appSettings.IsEscapeCursor = (bool)_displaySettings["EscapeCursor"];
-            
+
             // 逃げ先座標の更新
             if (_displaySettings.ContainsKey("EscapePositions"))
             {
                 appSettings.EscapePositions = (List<EscapePosition>)_displaySettings["EscapePositions"];
             }
-            
+
             appSettings.IsInputVirtualKey = (bool)_displaySettings["InputVirtualKey"];
             appSettings.VirtualKeyString = (string)_displaySettings["VirtualKeyString"];
             appSettings.IsAutoMove = (bool)_displaySettings["AutoMove"];
@@ -2664,22 +2664,8 @@ namespace CocoroDock.Controls
         {
             try
             {
-                var result = MessageBox.Show("すべての逃げ先座標を削除しますか？",
-                                           "確認",
-                                           MessageBoxButton.YesNo,
-                                           MessageBoxImage.Question);
-
-                if (result == MessageBoxResult.Yes)
-                {
-                    foreach (var position in EscapePositionsCollection)
-                    {
-                        position.X = 0;
-                        position.Y = 0;
-                        position.Enabled = false;
-                    }
-
-                    MessageBox.Show("すべての逃げ先座標を削除しました。", "削除完了", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
+                // 確認ダイアログなしで直接削除
+                EscapePositionsCollection.Clear();
             }
             catch (Exception ex)
             {

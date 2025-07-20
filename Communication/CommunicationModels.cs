@@ -258,6 +258,15 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
+    /// CocoroShell API: 設定部分更新リクエスト
+    /// </summary>
+    public class ConfigPatchRequest
+    {
+        public Dictionary<string, object> updates { get; set; } = new Dictionary<string, object>();
+        public string[] changedFields { get; set; } = Array.Empty<string>();
+    }
+
+    /// <summary>
     /// CocoroCore API: チャットリクエスト (AIAvatarKit仕様準拠)
     /// </summary>
     public class CoreChatRequest

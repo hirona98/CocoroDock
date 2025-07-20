@@ -647,6 +647,33 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
+        /// CocoroShellに設定の部分更新を送信
+        /// </summary>
+        /// <param name="updates">更新する設定のキーと値のペア</param>
+        public async Task SendConfigPatchToShellAsync(Dictionary<string, object> updates)
+        {
+            try
+            {
+                var changedFields = new string[updates.Count];
+                updates.Keys.CopyTo(changedFields, 0);
+
+                var patch = new ConfigPatchRequest
+                {
+                    updates = updates,
+                    changedFields = changedFields
+                };
+
+                await _shellClient.UpdateConfigPatchAsync(patch);
+                Debug.WriteLine($"設定部分更新をCocoroShellに送信しました: {string.Join(", ", changedFields)}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CocoroShell設定部分更新エラー: {ex.Message}");
+                throw new InvalidOperationException($"Failed to send config patch to shell: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
         /// リソースの解放
         /// </summary>
         public void Dispose()

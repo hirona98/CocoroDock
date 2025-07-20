@@ -217,6 +217,45 @@ namespace CocoroDock.Communication
         }
 
         /// <summary>
+        /// 設定の部分更新を送信
+        /// </summary>
+        public async Task<StandardResponse> UpdateConfigPatchAsync(ConfigPatchRequest request)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("/api/config/patch", request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<StandardResponse>();
+                    return result ?? new StandardResponse
+                    {
+                        status = "success",
+                        message = "Config patch applied"
+                    };
+                }
+                else
+                {
+                    var errorResponse = await TryReadErrorResponse(response);
+                    throw new HttpRequestException($"API error: {errorResponse?.message ?? response.ReasonPhrase}");
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                throw new TimeoutException("Request to CocoroShell timed out");
+            }
+            catch (HttpRequestException)
+            {
+                throw; // そのまま再スロー
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"設定部分更新エラー: {ex.Message}");
+                throw new InvalidOperationException($"Failed to update config patch: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
         /// エラーレスポンスの読み取りを試みる
         /// </summary>
         private async Task<ErrorResponse?> TryReadErrorResponse(HttpResponseMessage response)

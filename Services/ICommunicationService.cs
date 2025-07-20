@@ -142,5 +142,11 @@ namespace CocoroDock.Services
         /// CocoroShellから現在のキャラクター位置を取得
         /// </summary>
         Task<PositionResponse> GetShellPositionAsync();
+
+        /// <summary>
+        /// CocoroShellに設定の部分更新を送信
+        /// </summary>
+        /// <param name="updates">更新する設定のキーと値のペア</param>
+        Task SendConfigPatchToShellAsync(Dictionary<string, object> updates);
     }
 }
