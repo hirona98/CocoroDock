@@ -54,14 +54,14 @@ namespace CocoroDock.Controls
         public void Initialize()
         {
             LoadCharacterList();
-            
+
             // 選択されたキャラクターの設定をUIに反映
             if (CharacterSelectComboBox.SelectedIndex >= 0)
             {
                 _currentCharacterIndex = CharacterSelectComboBox.SelectedIndex;
                 UpdateCharacterUI();
             }
-            
+
             _isInitialized = true;
         }
 
@@ -86,8 +86,8 @@ namespace CocoroDock.Controls
                 CharacterSelectComboBox.Items.Add(character.modelName);
             }
 
-            if (CharacterSelectComboBox.Items.Count > 0 && 
-                appSettings.CurrentCharacterIndex >= 0 && 
+            if (CharacterSelectComboBox.Items.Count > 0 &&
+                appSettings.CurrentCharacterIndex >= 0 &&
                 appSettings.CurrentCharacterIndex < CharacterSelectComboBox.Items.Count)
             {
                 CharacterSelectComboBox.SelectedIndex = appSettings.CurrentCharacterIndex;
@@ -103,7 +103,7 @@ namespace CocoroDock.Controls
                 return null;
 
             var character = AppSettings.Instance.CharacterList[_currentCharacterIndex];
-            
+
             // UIから最新の値を取得して設定
             character.modelName = CharacterNameTextBox.Text;
             character.vrmFilePath = VRMFilePathTextBox.Text;
@@ -147,7 +147,7 @@ namespace CocoroDock.Controls
 
             _currentCharacterIndex = CharacterSelectComboBox.SelectedIndex;
             UpdateCharacterUI();
-            
+
             // キャラクター変更イベントを発生
             CharacterChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -184,7 +184,7 @@ namespace CocoroDock.Controls
 
             // STT設定
             IsUseSTTCheckBox.IsChecked = character.isUseSTT;
-            
+
             // STTエンジンComboBox設定
             foreach (ComboBoxItem item in STTEngineComboBox.Items)
             {
@@ -194,7 +194,7 @@ namespace CocoroDock.Controls
                     break;
                 }
             }
-            
+
             STTWakeWordTextBox.Text = character.sttWakeWord;
             STTApiKeyPasswordBox.Password = character.sttApiKey;
 
@@ -214,22 +214,29 @@ namespace CocoroDock.Controls
         {
             try
             {
-                var dialog = new InputDialog("新しいキャラクター名を入力してください", "キャラクター追加");
-                if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.ResponseText))
+                // 新規キャラクターの名前を生成
+                var newName = "新規キャラクター";
+
+                // 同名のキャラクターが既に存在する場合は番号を付ける
+                int characterNumber = 1;
+                while (AppSettings.Instance.CharacterList.Any(c => c.modelName == newName))
                 {
-                    var newCharacter = new CharacterSettings
-                    {
-                        modelName = dialog.ResponseText,
-                        isReadOnly = false
-                    };
-
-                    AppSettings.Instance.CharacterList.Add(newCharacter);
-                    CharacterSelectComboBox.Items.Add(newCharacter.modelName);
-                    CharacterSelectComboBox.SelectedIndex = CharacterSelectComboBox.Items.Count - 1;
-
-                    // 設定変更イベントを発生
-                    SettingsChanged?.Invoke(this, EventArgs.Empty);
+                    newName = $"新規キャラクター{characterNumber}";
+                    characterNumber++;
                 }
+
+                var newCharacter = new CharacterSettings
+                {
+                    modelName = newName,
+                    isReadOnly = false
+                };
+
+                AppSettings.Instance.CharacterList.Add(newCharacter);
+                CharacterSelectComboBox.Items.Add(newCharacter.modelName);
+                CharacterSelectComboBox.SelectedIndex = CharacterSelectComboBox.Items.Count - 1;
+
+                // 設定変更イベントを発生
+                SettingsChanged?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
@@ -251,27 +258,19 @@ namespace CocoroDock.Controls
                 var character = AppSettings.Instance.CharacterList[_currentCharacterIndex];
                 if (character.isReadOnly)
                 {
-                    MessageBox.Show("このキャラクターは削除できません。", "削除不可",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                var result = MessageBox.Show($"キャラクター「{character.modelName}」を削除しますか？",
-                    "確認", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                AppSettings.Instance.CharacterList.RemoveAt(_currentCharacterIndex);
+                CharacterSelectComboBox.Items.RemoveAt(_currentCharacterIndex);
 
-                if (result == MessageBoxResult.Yes)
+                if (CharacterSelectComboBox.Items.Count > 0)
                 {
-                    AppSettings.Instance.CharacterList.RemoveAt(_currentCharacterIndex);
-                    CharacterSelectComboBox.Items.RemoveAt(_currentCharacterIndex);
-
-                    if (CharacterSelectComboBox.Items.Count > 0)
-                    {
-                        CharacterSelectComboBox.SelectedIndex = 0;
-                    }
-
-                    // 設定変更イベントを発生
-                    SettingsChanged?.Invoke(this, EventArgs.Empty);
+                    CharacterSelectComboBox.SelectedIndex = 0;
                 }
+
+                // 設定変更イベントを発生
+                SettingsChanged?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
@@ -291,10 +290,10 @@ namespace CocoroDock.Controls
                     return;
 
                 var sourceCharacter = AppSettings.Instance.CharacterList[_currentCharacterIndex];
-                
+
                 // 複製するキャラクターの名前を生成
                 var newName = sourceCharacter.modelName + "_copy";
-                
+
                 // 同名のキャラクターが既に存在する場合は番号を付ける
                 int copyNumber = 1;
                 while (AppSettings.Instance.CharacterList.Any(c => c.modelName == newName))
@@ -316,7 +315,6 @@ namespace CocoroDock.Controls
                     ttsEndpointURL = sourceCharacter.ttsEndpointURL,
                     ttsSperkerID = sourceCharacter.ttsSperkerID,
                     isEnableMemory = sourceCharacter.isEnableMemory,
-                    memoryRelevanceThreshold = sourceCharacter.memoryRelevanceThreshold,
                     userId = sourceCharacter.userId,
                     embeddedApiKey = sourceCharacter.embeddedApiKey,
                     embeddedModel = sourceCharacter.embeddedModel,
@@ -334,15 +332,12 @@ namespace CocoroDock.Controls
                 // リストに追加
                 AppSettings.Instance.CharacterList.Add(newCharacter);
                 CharacterSelectComboBox.Items.Add(newCharacter.modelName);
-                
+
                 // 新しく追加したキャラクターを選択
                 CharacterSelectComboBox.SelectedIndex = CharacterSelectComboBox.Items.Count - 1;
 
                 // 設定変更イベントを発生
                 SettingsChanged?.Invoke(this, EventArgs.Empty);
-                
-                MessageBox.Show($"キャラクター「{newCharacter.modelName}」を作成しました。", "複製完了",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -367,7 +362,7 @@ namespace CocoroDock.Controls
                 if (dialog.ShowDialog() == true)
                 {
                     VRMFilePathTextBox.Text = dialog.FileName;
-                    
+
                     // ファイル名から自動的にキャラクター名を更新（ユーザーが変更可能）
                     if (string.IsNullOrWhiteSpace(CharacterNameTextBox.Text))
                     {
@@ -419,84 +414,6 @@ namespace CocoroDock.Controls
                 MessageBox.Show($"リンクを開けませんでした: {ex.Message}", "エラー",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-    }
-
-    /// <summary>
-    /// 入力ダイアログ
-    /// </summary>
-    public class InputDialog : Window
-    {
-        private TextBox _responseTextBox;
-
-        public string ResponseText { get; private set; } = string.Empty;
-
-        public InputDialog(string question, string title)
-        {
-            Title = title;
-            Width = 400;
-            Height = 150;
-            WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            ResizeMode = ResizeMode.NoResize;
-
-            var grid = new Grid();
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-            var label = new TextBlock
-            {
-                Text = question,
-                Margin = new Thickness(10),
-                TextWrapping = TextWrapping.Wrap
-            };
-            Grid.SetRow(label, 0);
-            grid.Children.Add(label);
-
-            _responseTextBox = new TextBox
-            {
-                Margin = new Thickness(10),
-                HorizontalAlignment = HorizontalAlignment.Stretch
-            };
-            Grid.SetRow(_responseTextBox, 1);
-            grid.Children.Add(_responseTextBox);
-
-            var buttonPanel = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Margin = new Thickness(10)
-            };
-            Grid.SetRow(buttonPanel, 2);
-            grid.Children.Add(buttonPanel);
-
-            var okButton = new Button
-            {
-                Content = "OK",
-                Width = 75,
-                Margin = new Thickness(5),
-                IsDefault = true
-            };
-            okButton.Click += (s, e) =>
-            {
-                ResponseText = _responseTextBox.Text;
-                DialogResult = true;
-            };
-            buttonPanel.Children.Add(okButton);
-
-            var cancelButton = new Button
-            {
-                Content = "キャンセル",
-                Width = 75,
-                Margin = new Thickness(5),
-                IsCancel = true
-            };
-            cancelButton.Click += (s, e) => DialogResult = false;
-            buttonPanel.Children.Add(cancelButton);
-
-            Content = grid;
-            
-            Loaded += (s, e) => _responseTextBox.Focus();
         }
     }
 }

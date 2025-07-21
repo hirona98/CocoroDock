@@ -298,7 +298,7 @@ namespace CocoroDock.Controls
                 AnimationSetNameTextBox.Text = animSetting.animeSetName;
                 PostureChangeLoopCountStandingTextBox.Text = animSetting.postureChangeLoopCountStanding.ToString();
                 PostureChangeLoopCountSittingFloorTextBox.Text = animSetting.postureChangeLoopCountSittingFloor.ToString();
-                
+
                 UpdateAnimationListPanel(animSetting.animations);
             }
         }
@@ -416,10 +416,10 @@ namespace CocoroDock.Controls
                     return;
 
                 var sourceSet = _animationSettings[AnimationSetComboBox.SelectedIndex];
-                
+
                 // 複製するアニメーションセットの名前を生成
                 var newName = sourceSet.animeSetName + "_copy";
-                
+
                 // 同名のアニメーションセットが既に存在する場合は番号を付ける
                 int copyNumber = 1;
                 while (_animationSettings.Any(s => s.animeSetName == newName))
@@ -449,23 +449,20 @@ namespace CocoroDock.Controls
                 }
 
                 _animationSettings.Add(newAnimationSet);
-                
+
                 // ComboBoxのItemsSourceを更新
                 AnimationSetComboBox.ItemsSource = null;
                 AnimationSetComboBox.ItemsSource = _animationSettings;
                 AnimationSetComboBox.SelectedIndex = _animationSettings.Count - 1;
-                
+
                 UpdateAnimationListPanel(newAnimationSet.animations);
-                
+
                 // 名前と姿勢変更ループ回数のテキストボックスも更新
                 AnimationSetNameTextBox.Text = newAnimationSet.animeSetName;
                 PostureChangeLoopCountStandingTextBox.Text = newAnimationSet.postureChangeLoopCountStanding.ToString();
                 PostureChangeLoopCountSittingFloorTextBox.Text = newAnimationSet.postureChangeLoopCountSittingFloor.ToString();
-                
+
                 SettingsChanged?.Invoke(this, EventArgs.Empty);
-                
-                MessageBox.Show($"アニメーションセット「{newAnimationSet.animeSetName}」を作成しました。", "複製完了",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -483,38 +480,29 @@ namespace CocoroDock.Controls
             {
                 if (AnimationSetComboBox.SelectedIndex < 0 || _animationSettings.Count <= 1)
                 {
-                    MessageBox.Show("削除できるアニメーションセットがありません。", "削除不可",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
                 var selectedIndex = AnimationSetComboBox.SelectedIndex;
-                var setName = _animationSettings[selectedIndex].animeSetName;
 
-                var result = MessageBox.Show($"アニメーションセット「{setName}」を削除しますか？",
-                    "確認", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                _animationSettings.RemoveAt(selectedIndex);
 
-                if (result == MessageBoxResult.Yes)
+                // ComboBoxのItemsSourceを更新
+                AnimationSetComboBox.ItemsSource = null;
+                AnimationSetComboBox.ItemsSource = _animationSettings;
+
+                if (_animationSettings.Count > 0)
                 {
-                    _animationSettings.RemoveAt(selectedIndex);
-
-                    // ComboBoxのItemsSourceを更新
-                    AnimationSetComboBox.ItemsSource = null;
-                    AnimationSetComboBox.ItemsSource = _animationSettings;
-
-                    if (_animationSettings.Count > 0)
-                    {
-                        var newIndex = Math.Min(selectedIndex, _animationSettings.Count - 1);
-                        AnimationSetComboBox.SelectedIndex = newIndex;
-                        UpdateAnimationListPanel(_animationSettings[newIndex].animations);
-                    }
-                    else
-                    {
-                        AnimationListPanel.Children.Clear();
-                    }
-
-                    SettingsChanged?.Invoke(this, EventArgs.Empty);
+                    var newIndex = Math.Min(selectedIndex, _animationSettings.Count - 1);
+                    AnimationSetComboBox.SelectedIndex = newIndex;
+                    UpdateAnimationListPanel(_animationSettings[newIndex].animations);
                 }
+                else
+                {
+                    AnimationListPanel.Children.Clear();
+                }
+
+                SettingsChanged?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
