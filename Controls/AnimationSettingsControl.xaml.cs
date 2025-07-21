@@ -353,7 +353,7 @@ namespace CocoroDock.Controls
                     animations = new List<AnimationConfig>()
                 };
 
-                // 既存のアニメーションセットがある場合は、そこからアニメーションをコピー
+                // 既存のアニメーションセットからアニメーションをコピーして（全て有効にする）
                 if (sourceSet != null)
                 {
                     foreach (var animation in sourceSet.animations)
@@ -363,24 +363,13 @@ namespace CocoroDock.Controls
                             displayName = animation.displayName,
                             animationType = animation.animationType,
                             animationName = animation.animationName,
-                            isEnabled = animation.isEnabled
+                            isEnabled = true  // デフォルトでは全て有効
                         });
                     }
 
-                    // 姿勢変更ループ回数もコピー
-                    newAnimationSet.postureChangeLoopCountStanding = sourceSet.postureChangeLoopCountStanding;
-                    newAnimationSet.postureChangeLoopCountSittingFloor = sourceSet.postureChangeLoopCountSittingFloor;
-                }
-                else
-                {
-                    // 既存のセットがない場合はデフォルトのアニメーションを1つ追加
-                    newAnimationSet.animations.Add(new AnimationConfig
-                    {
-                        displayName = "デフォルト",
-                        animationType = 0,  // Standing
-                        animationName = "default",
-                        isEnabled = true
-                    });
+                    // 姿勢変更ループ回数はデフォルト値30を設定
+                    newAnimationSet.postureChangeLoopCountStanding = 30;
+                    newAnimationSet.postureChangeLoopCountSittingFloor = 30;
                 }
 
                 _animationSettings.Add(newAnimationSet);
