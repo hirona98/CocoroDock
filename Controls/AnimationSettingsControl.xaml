@@ -14,49 +14,64 @@
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <!-- Animation set グループボックス -->
-                <GroupBox Header="Animation set"
+                <!-- アニメーションセット選択 -->
+                <GroupBox Header="アニメーションセット選択"
                           Margin="0,0,20,20"
-                          Padding="10">
+                          Padding="10"
+                          ToolTip="Select Animation Set">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="80"/>
                             <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="85"/>
                         </Grid.ColumnDefinitions>
 
                         <ComboBox Grid.Column="0"
                                   x:Name="AnimationSetComboBox"
                                   Margin="0,5,10,5"
                                   Foreground="#FF4873CF"
-                                  IsEditable="True"
+                                  IsEditable="False"
                                   DisplayMemberPath="animeSetName"
                                   SelectedValuePath="animeSetName"/>
 
                         <Button Grid.Column="1"
                                 x:Name="AddAnimationSetButton"
                                 Content="追加"
-                                Margin="0,5,5,5"
+                                Margin="0,5,0,5"
                                 Padding="10,5"
                                 Foreground="#FF4873CF"
-                                Click="AddAnimationSetButton_Click"/>
+                                Click="AddAnimationSetButton_Click"
+                                ToolTip="Add animation set"/>
 
                         <Button Grid.Column="2"
+                                x:Name="DuplicateAnimationSetButton"
+                                Content="複製"
+                                Margin="5,5,0,5"
+                                Padding="10,5"
+                                Foreground="#FF4873CF"
+                                Click="DuplicateAnimationSetButton_Click"
+                                ToolTip="Duplicate current animation set"/>
+
+                        <Button Grid.Column="3"
                                 x:Name="DeleteAnimationSetButton"
                                 Content="削除"
-                                Margin="0,5,0,5"
+                                Margin="5,5,0,5"
                                 Padding="10,5"
                                 Background="#d32f2f"
                                 Foreground="WhiteSmoke"
-                                Click="DeleteAnimationSetButton_Click"/>
+                                Click="DeleteAnimationSetButton_Click"
+                                ToolTip="Delete this animation set"/>
                     </Grid>
                 </GroupBox>
 
-                <!-- 姿勢変更ループ回数設定 -->
-                <GroupBox Header="姿勢変更ループ回数設定"
+                <!-- 基本設定 -->
+                <GroupBox Header="基本設定"
                           Margin="0,0,20,20"
-                          Padding="10">
+                          Padding="10"
+                          ToolTip="Basic setting">
                     <StackPanel>
+                        <!-- 名前 -->
                         <Grid Margin="0,5">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="150"/>
@@ -64,18 +79,38 @@
                             </Grid.ColumnDefinitions>
 
                             <TextBlock Grid.Column="0"
-                                       Text="立ち姿勢:"
+                                       Text="名前:"
                                        VerticalAlignment="Center"
-                                       Margin="0,0,10,0"/>
+                                       ToolTip="Name"/>
+
+                            <TextBox Grid.Column="1"
+                                     x:Name="AnimationSetNameTextBox"
+                                     VerticalAlignment="Center"
+                                     Foreground="#FF0078D7"
+                                     LostFocus="AnimationSetNameTextBox_LostFocus"
+                                     ToolTip="アニメーションセットの名前を入力します"/>
+                        </Grid>
+
+                        <!-- 立ち姿勢ループ回数 -->
+                        <Grid Margin="0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Text="立ち姿勢ループ回数:"
+                                       VerticalAlignment="Center"/>
 
                             <TextBox Grid.Column="1"
                                      x:Name="PostureChangeLoopCountStandingTextBox"
                                      VerticalAlignment="Center"
-                                     Foreground="#FF4873CF"
+                                     Foreground="#FF0078D7"
                                      TextChanged="PostureChangeLoopCountStandingTextBox_TextChanged"
                                      ToolTip="立ち姿勢の変更ループ回数を設定します"/>
                         </Grid>
 
+                        <!-- 座り姿勢ループ回数 -->
                         <Grid Margin="0,5">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="150"/>
@@ -83,14 +118,13 @@
                             </Grid.ColumnDefinitions>
 
                             <TextBlock Grid.Column="0"
-                                       Text="座り姿勢:"
-                                       VerticalAlignment="Center"
-                                       Margin="0,0,10,0"/>
+                                       Text="座り姿勢ループ回数:"
+                                       VerticalAlignment="Center"/>
 
                             <TextBox Grid.Column="1"
                                      x:Name="PostureChangeLoopCountSittingFloorTextBox"
                                      VerticalAlignment="Center"
-                                     Foreground="#FF4873CF"
+                                     Foreground="#FF0078D7"
                                      TextChanged="PostureChangeLoopCountSittingFloorTextBox_TextChanged"
                                      ToolTip="座り姿勢の変更ループ回数を設定します"/>
                         </Grid>

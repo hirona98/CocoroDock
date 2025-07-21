@@ -133,13 +133,11 @@ namespace CocoroDock.Controls
             AnimationSetComboBox.SelectionChanged -= AnimationSetComboBox_SelectionChanged;
             AnimationSetComboBox.SelectionChanged += AnimationSetComboBox_SelectionChanged;
 
-            AnimationSetComboBox.LostFocus -= AnimationSetComboBox_LostFocus;
-            AnimationSetComboBox.LostFocus += AnimationSetComboBox_LostFocus;
-
-            // 姿勢変更ループ回数の設定
+            // 姿勢変更ループ回数と名前の設定
             if (_animationSettings.Count > 0 && AnimationSetComboBox.SelectedIndex >= 0)
             {
                 var currentSetting = _animationSettings[AnimationSetComboBox.SelectedIndex];
+                AnimationSetNameTextBox.Text = currentSetting.animeSetName;
                 PostureChangeLoopCountStandingTextBox.Text = currentSetting.postureChangeLoopCountStanding.ToString();
                 PostureChangeLoopCountSittingFloorTextBox.Text = currentSetting.postureChangeLoopCountSittingFloor.ToString();
             }
@@ -296,6 +294,11 @@ namespace CocoroDock.Controls
             var animSetting = _animationSettings[AnimationSetComboBox.SelectedIndex];
             if (animSetting != null)
             {
+                // 名前とループ回数を更新
+                AnimationSetNameTextBox.Text = animSetting.animeSetName;
+                PostureChangeLoopCountStandingTextBox.Text = animSetting.postureChangeLoopCountStanding.ToString();
+                PostureChangeLoopCountSittingFloorTextBox.Text = animSetting.postureChangeLoopCountSittingFloor.ToString();
+                
                 UpdateAnimationListPanel(animSetting.animations);
             }
         }
@@ -303,7 +306,7 @@ namespace CocoroDock.Controls
         /// <summary>
         /// アニメーションセット名変更イベント
         /// </summary>
-        private void AnimationSetComboBox_LostFocus(object sender, RoutedEventArgs e)
+        private void AnimationSetNameTextBox_LostFocus(object sender, RoutedEventArgs e)
         {
             if (!_isInitialized || AnimationSetComboBox.SelectedIndex < 0)
                 return;
@@ -311,12 +314,12 @@ namespace CocoroDock.Controls
             var selectedIndex = AnimationSetComboBox.SelectedIndex;
             if (selectedIndex >= 0 && selectedIndex < _animationSettings.Count)
             {
-                var newName = AnimationSetComboBox.Text;
+                var newName = AnimationSetNameTextBox.Text;
                 if (!string.IsNullOrWhiteSpace(newName))
                 {
                     _animationSettings[selectedIndex].animeSetName = newName;
 
-                    // ComboBoxのItemsSourceを更新（バインディングを使用している場合）
+                    // ComboBoxのItemsSourceを更新
                     AnimationSetComboBox.ItemsSource = null;
                     AnimationSetComboBox.ItemsSource = _animationSettings;
                     AnimationSetComboBox.SelectedIndex = selectedIndex;
@@ -398,6 +401,75 @@ namespace CocoroDock.Controls
             catch (Exception ex)
             {
                 MessageBox.Show($"アニメーションセット追加エラー: {ex.Message}", "エラー",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// アニメーションセット複製ボタンクリック
+        /// </summary>
+        private void DuplicateAnimationSetButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (AnimationSetComboBox.SelectedIndex < 0 || AnimationSetComboBox.SelectedIndex >= _animationSettings.Count)
+                    return;
+
+                var sourceSet = _animationSettings[AnimationSetComboBox.SelectedIndex];
+                
+                // 複製するアニメーションセットの名前を生成
+                var newName = sourceSet.animeSetName + "_copy";
+                
+                // 同名のアニメーションセットが既に存在する場合は番号を付ける
+                int copyNumber = 1;
+                while (_animationSettings.Any(s => s.animeSetName == newName))
+                {
+                    newName = $"{sourceSet.animeSetName}_copy{copyNumber}";
+                    copyNumber++;
+                }
+
+                var newAnimationSet = new AnimationSetting
+                {
+                    animeSetName = newName,
+                    animations = new List<AnimationConfig>(),
+                    postureChangeLoopCountStanding = sourceSet.postureChangeLoopCountStanding,
+                    postureChangeLoopCountSittingFloor = sourceSet.postureChangeLoopCountSittingFloor
+                };
+
+                // アニメーションをコピー
+                foreach (var animation in sourceSet.animations)
+                {
+                    newAnimationSet.animations.Add(new AnimationConfig
+                    {
+                        displayName = animation.displayName,
+                        animationType = animation.animationType,
+                        animationName = animation.animationName,
+                        isEnabled = animation.isEnabled
+                    });
+                }
+
+                _animationSettings.Add(newAnimationSet);
+                
+                // ComboBoxのItemsSourceを更新
+                AnimationSetComboBox.ItemsSource = null;
+                AnimationSetComboBox.ItemsSource = _animationSettings;
+                AnimationSetComboBox.SelectedIndex = _animationSettings.Count - 1;
+                
+                UpdateAnimationListPanel(newAnimationSet.animations);
+                
+                // 名前と姿勢変更ループ回数のテキストボックスも更新
+                AnimationSetNameTextBox.Text = newAnimationSet.animeSetName;
+                PostureChangeLoopCountStandingTextBox.Text = newAnimationSet.postureChangeLoopCountStanding.ToString();
+                PostureChangeLoopCountSittingFloorTextBox.Text = newAnimationSet.postureChangeLoopCountSittingFloor.ToString();
+                
+                SettingsChanged?.Invoke(this, EventArgs.Empty);
+                
+                MessageBox.Show($"アニメーションセット「{newAnimationSet.animeSetName}」を作成しました。", "複製完了",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"アニメーションセット複製エラー: {ex.Message}", "エラー",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
