@@ -1,0 +1,177 @@
+<UserControl x:Class="CocoroDock.Controls.SystemSettingsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="800">
+    
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- 通知API設定 -->
+                <GroupBox Header="通知API"
+                          Margin="0,0,20,20"
+                          Padding="10">
+                    <StackPanel>
+                        <!-- 説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="#666666"
+                                   Margin="0,0,0,10">
+                            REST APIで受信した通知をキャラクターが教えてくれます
+                        </TextBlock>
+
+                        <!-- 通知要求を受けるチェックボックス -->
+                        <CheckBox x:Name="IsEnableNotificationApiCheckBox"
+                                  Content="通知要求を受ける"
+                                  Margin="0,5,0,15"
+                                  Foreground="#FF4873CF"
+                                  ToolTip="Enable notification API"/>
+                        <!-- API説明 -->
+                        <TextBox x:Name="ApiDescriptionTextBox"
+                                 IsReadOnly="True"
+                                 BorderThickness="0"
+                                 VerticalScrollBarVisibility="Auto"
+                                 Foreground="#FF4873CF"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- デスクトップウォッチ設定 -->
+                <GroupBox Header="デスクトップウォッチ"
+                          Margin="0,0,20,20"
+                          Padding="10">
+                    <StackPanel>
+                        <!-- 説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="#666666"
+                                   Margin="0,0,0,10">
+                            デスクトップの画面を定期的に取得し、内容に応じたコメントをします。マルチモーダルモデルが必要です。
+                        </TextBlock>
+
+                        <!-- ウォッチ機能の有効/無効設定 -->
+                        <CheckBox x:Name="ScreenshotEnabledCheckBox"
+                                  Content="デスクトップウォッチを有効にする（LLMに画像を送信します）"
+                                  Margin="0,5,0,5"
+                                  Foreground="#FF4873CF"
+                                  ToolTip="Enable desktop monitoring"/>
+
+                        <!-- アクティブウィンドウのみ設定 -->
+                        <CheckBox x:Name="CaptureActiveWindowOnlyCheckBox"
+                                  Content="アクティブウィンドウだけを対象にする"
+                                  Margin="0,10,0,5"
+                                  Foreground="#FF4873CF"
+                                  ToolTip="Capture active window only"/>
+
+                        <!-- ウォッチ間隔設定 -->
+                        <Grid Margin="0,5,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="28"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="ウォッチ間隔:"
+                                       VerticalAlignment="Center"
+                                       Height="19"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="ScreenshotIntervalTextBox"
+                                     Foreground="#FF0078D7"
+                                     VerticalAlignment="Center"
+                                     Width="50"
+                                     HorizontalAlignment="Left"
+                                     Margin="10,0,10,0"/>
+                            <TextBlock Grid.Column="2"
+                                       Text="分"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Left"/>
+                        </Grid>
+
+                        <!-- アイドルタイムアウト設定 -->
+                        <Grid Margin="0,0,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="28"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="アイドルタイムアウト:"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="IdleTimeoutTextBox"
+                                     Foreground="#FF0078D7"
+                                     VerticalAlignment="Center"
+                                     Width="50"
+                                     HorizontalAlignment="Left"
+                                     Margin="10,0,10,0"/>
+                            <TextBlock Grid.Column="2"
+                                       Text="分"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Left"/>
+                        </Grid>
+
+                        <!-- アイドルタイムアウト説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="0,0,0,10"
+                                   Foreground="#FF4873CF">
+                            ※マウスやキーボードの操作がない時間が設定値を超えると、デスクトップウォッチを一時停止します。
+                        </TextBlock>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- マイク設定 -->
+                <GroupBox Header="マイク設定"
+                          Margin="0,0,20,20"
+                          Padding="10">
+                    <StackPanel>
+                        <!-- 説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="#666666"
+                                   Margin="0,0,0,10">
+                            音声認識時のマイク入力感度を調整します。STTが有効なキャラクターに適用されます。
+                        </TextBlock>
+
+                        <!-- 自動調節設定 -->
+                        <CheckBox x:Name="MicAutoAdjustmentCheckBox"
+                                  Content="マイクしきい値の自動調節を有効にする"
+                                  Margin="0,5,0,15"
+                                  Foreground="#FF4873CF"
+                                  ToolTip="Enable microphone threshold auto adjustment"/>
+
+                        <!-- 手動しきい値設定 -->
+                        <Grid Margin="0,5,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="60"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="入力しきい値（手動）:"
+                                       VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1"
+                                    x:Name="MicThresholdSlider"
+                                    Minimum="-50"
+                                    Maximum="0"
+                                    Value="-45"
+                                    TickFrequency="10"
+                                    TickPlacement="BottomRight"
+                                    Margin="10,0,10,0"/>
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding ElementName=MicThresholdSlider, Path=Value, StringFormat='{}{0:0} dB'}"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- しきい値説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="0,0,0,10"
+                                   Foreground="#FF4873CF">
+                            ※値が低いほど（-50dBに近いほど）音声を拾いやすくなりますが、環境音も拾いやすくなります。自動調節時は無効です。
+                        </TextBlock>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

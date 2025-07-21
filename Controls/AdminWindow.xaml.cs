@@ -17,62 +17,6 @@ using System.Windows.Interop;
 
 namespace CocoroDock.Controls
 {
-    /// <summary>
-    /// 逃げ先座標設定用のViewModelクラス
-    /// </summary>
-    public class EscapePositionViewModel : INotifyPropertyChanged
-    {
-        private float _x;
-        private float _y;
-        private bool _enabled;
-
-        public float X
-        {
-            get => _x;
-            set
-            {
-                _x = value;
-                OnPropertyChanged(nameof(X));
-            }
-        }
-
-        public float Y
-        {
-            get => _y;
-            set
-            {
-                _y = value;
-                OnPropertyChanged(nameof(Y));
-            }
-        }
-
-        public bool Enabled
-        {
-            get => _enabled;
-            set
-            {
-                _enabled = value;
-                OnPropertyChanged(nameof(Enabled));
-            }
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        public EscapePosition ToEscapePosition()
-        {
-            return new EscapePosition { x = X, y = Y, enabled = Enabled };
-        }
-
-        public static EscapePositionViewModel FromEscapePosition(EscapePosition position)
-        {
-            return new EscapePositionViewModel { X = position.x, Y = position.y, Enabled = position.enabled };
-        }
-    }
 
     /// <summary>
     /// AdminWindow.xaml の相互作用ロジック
@@ -90,21 +34,13 @@ namespace CocoroDock.Controls
         // 現在選択されているキャラクターのインデックス
         private int _currentCharacterIndex = 0;
 
-        // 設定が変更されたかどうかを追跡するフラグ
-        private bool _settingsChanged = false;
 
         // 通信サービス
         private ICommunicationService? _communicationService;
 
-        // 逃げ先座標設定用コレクション
-        public ObservableCollection<EscapePositionViewModel> EscapePositionsCollection { get; set; } = new ObservableCollection<EscapePositionViewModel>();
 
-        // MCPタブ用ViewModel
-        private McpTabViewModel? _mcpTabViewModel;
 
-        // アニメーション設定を保存するためのリスト
-        private List<AnimationSetting> _animationSettings = new List<AnimationSetting>();
-        private List<AnimationSetting> _originalAnimationSettings = new List<AnimationSetting>();        // キーボードフック用
+        // キーボードフック用
         private HwndSource? _source;
         private bool _isCapturingKey = false;
         private bool _isWinKeyPressed = false; // Windowsキーの状態
@@ -170,13 +106,22 @@ namespace CocoroDock.Controls
             InitializeCharacterSettings();
 
             // 逃げ先座標設定の初期化
-            InitializeEscapePositions();
+            InitializeEscapePositionControl();
 
             // ボタンイベントの登録
             RegisterButtonEvents();
 
             // MCPタブの初期化
-            InitializeMcpTab();
+            McpSettingsControl.Initialize();
+
+            // システム設定コントロールを初期化
+            SystemSettingsControl.Initialize();
+
+            // システム設定変更イベントを登録
+            SystemSettingsControl.SettingsChanged += (sender, args) =>
+            {
+                // 設定変更の記録（必要に応じて処理を追加）
+            };
 
             // 元の設定のバックアップを作成
             BackupSettings();
@@ -256,7 +201,6 @@ namespace CocoroDock.Controls
             VirtualKeyStringTextBox.Text = result;
 
             // 設定が変更されたことを記録
-            _settingsChanged = true;
 
             // キー捕捉モードを解除
             _isCapturingKey = false;
@@ -358,17 +302,8 @@ namespace CocoroDock.Controls
             AutoMoveCheckBox.IsChecked = appSettings.IsAutoMove;
             ShowMessageWindowCheckBox.IsChecked = appSettings.ShowMessageWindow;
             AmbientOcclusionCheckBox.IsChecked = appSettings.IsEnableAmbientOcclusion;
-            IsEnableNotificationApiCheckBox.IsChecked = appSettings.IsEnableNotificationApi;
 
-            // スクリーンショット設定の初期化
-            ScreenshotEnabledCheckBox.IsChecked = appSettings.ScreenshotSettings.enabled;
-            ScreenshotIntervalTextBox.Text = appSettings.ScreenshotSettings.intervalMinutes.ToString();
-            IdleTimeoutTextBox.Text = appSettings.ScreenshotSettings.idleTimeoutMinutes.ToString();
-            CaptureActiveWindowOnlyCheckBox.IsChecked = appSettings.ScreenshotSettings.captureActiveWindowOnly;
-
-            // マイク設定の初期化
-            MicAutoAdjustmentCheckBox.IsChecked = appSettings.MicrophoneSettings.autoAdjustment;
-            MicThresholdSlider.Value = appSettings.MicrophoneSettings.inputThreshold;
+            // システム設定（通知API、スクリーンショット、マイク）はSystemSettingsControlで初期化済み
 
             foreach (ComboBoxItem item in MSAAComboBox.Items)
             {
@@ -454,88 +389,53 @@ namespace CocoroDock.Controls
         /// </summary>
         private void InitializeCharacterSettings()
         {
-            // アプリ設定からキャラクター設定を取得
-            var appSettings = AppSettings.Instance;
+            // CharacterManagementControlの初期化
+            CharacterManagementControl.SetCommunicationService(_communicationService);
+            CharacterManagementControl.Initialize();
 
-            // キャラクターリストのクリア
-            _characterSettings.Clear();
-            CharacterSelectComboBox.Items.Clear();
-
-            // キャラクター設定を辞書のリストに変換
-            foreach (var character in appSettings.CharacterList)
+            // 設定変更イベントを登録
+            CharacterManagementControl.SettingsChanged += (sender, args) =>
             {
-                var characterDict = new Dictionary<string, string>
-                {
-                    { "Name", character.modelName ?? "不明" },
-                    { "VRMFilePath", character.vrmFilePath ?? "" },
-                    { "IsUseLLM", character.isUseLLM.ToString() },
-                    { "ApiKey", character.apiKey ?? "" },
-                    { "LLMModel", character.llmModel ?? "" },
-                    { "SystemPrompt", character.systemPrompt ?? "" },
-                    { "IsUseTTS", character.isUseTTS.ToString() },
-                    { "TTSEndpointURL", character.ttsEndpointURL ?? "" },
-                    { "TTSSperkerID", character.ttsSperkerID ?? "" },
-                    { "IsEnableMemory", character.isEnableMemory.ToString() },
-                    { "UserId", character.userId ?? "" },
-                    { "EmbeddedApiKey", character.embeddedApiKey ?? "" },
-                    { "EmbeddedModel", character.embeddedModel ?? "" },
-                    { "IsUseSTT", character.isUseSTT.ToString() },
-                    { "STTEngine", character.sttEngine ?? "amivoice" },
-                    { "STTWakeWord", character.sttWakeWord ?? "" },
-                    { "STTApiKey", character.sttApiKey ?? "" },
-                    { "STTLanguage", character.sttLanguage ?? "ja" },
-                    { "IsEnableShadowOff", character.isEnableShadowOff.ToString() },
-                    { "ShadowOffMesh", character.shadowOffMesh ?? "Face, U_Char_1" },
-                    { "IsConvertMToon", character.isConvertMToon.ToString() }
-                };
-                _characterSettings.Add(characterDict);
+                // 設定が変更されたときの処理（必要に応じて）
+            };
 
-                // コンボボックスに項目を追加
-                var item = new ComboBoxItem { Content = character.modelName ?? "不明" };
-                CharacterSelectComboBox.Items.Add(item);
-            }
+            // キャラクター変更イベントを登録
+            CharacterManagementControl.CharacterChanged += (sender, args) =>
+            {
+                // 現在のキャラクターインデックスを更新
+                _currentCharacterIndex = CharacterManagementControl.GetCurrentCharacterIndex();
 
-            // 初期キャラクターの設定をUIに反映
-            var currentIndex = appSettings.CurrentCharacterIndex;
-            // 選択変更イベントを発生させないようにイベントハンドラを一時的に削除
-            CharacterSelectComboBox.SelectionChanged -= CharacterSelectComboBox_SelectionChanged;
-            CharacterSelectComboBox.SelectedIndex = currentIndex;
-            CharacterSelectComboBox.SelectionChanged += CharacterSelectComboBox_SelectionChanged;
-            UpdateCharacterUI(currentIndex);
+                // アニメーション設定を更新
+                AnimationSettingsControl.Initialize();
+            };
 
-            // アニメーション設定を初期化
-            _animationSettings = new List<AnimationSetting>(appSettings.AnimationSettings);
+            // 現在のキャラクターインデックスを取得
+            _currentCharacterIndex = CharacterManagementControl.GetCurrentCharacterIndex();
 
-            // 現在のキャラクターのアニメーション設定を表示
-            UpdateAnimationUI();
+            // アニメーション設定コントロールを初期化
+            AnimationSettingsControl.SetCommunicationService(_communicationService);
+            AnimationSettingsControl.Initialize();
+
+            // アニメーション設定変更イベントを登録
+            AnimationSettingsControl.SettingsChanged += (sender, args) =>
+            {
+                // 設定変更の記録（必要に応じて処理を追加）
+            };
         }
 
         /// <summary>
-        /// 逃げ先座標設定の初期化
+        /// 逃げ先座標設定コントロールの初期化
         /// </summary>
-        private void InitializeEscapePositions()
+        private void InitializeEscapePositionControl()
         {
-            // ItemsControlのItemsSourceを設定
-            EscapePositionsItemsControl.ItemsSource = EscapePositionsCollection;
+            // UserControlに設定変更イベントを登録
+            EscapePositionControl.SettingsChanged += (sender, args) =>
+            {
+                // 設定が変更されたときの処理（必要に応じて）
+            };
 
             // 設定から逃げ先座標を読み込み
-            LoadEscapePositionsFromSettings();
-        }
-
-        /// <summary>
-        /// 設定から逃げ先座標を読み込み
-        /// </summary>
-        private void LoadEscapePositionsFromSettings()
-        {
-            EscapePositionsCollection.Clear();
-
-            var appSettings = AppSettings.Instance;
-            foreach (var position in appSettings.EscapePositions)
-            {
-                EscapePositionsCollection.Add(EscapePositionViewModel.FromEscapePosition(position));
-            }
-
-            // 初期状態は空のリスト（追加ボタンで座標を追加）
+            EscapePositionControl.LoadEscapePositionsFromSettings();
         }
 
         /// <summary>
@@ -546,6 +446,12 @@ namespace CocoroDock.Controls
             // 表示設定のバックアップ
             _originalDisplaySettings = new Dictionary<string, object>(_displaySettings);
 
+            // 通知API設定が含まれていない場合は現在の値を追加
+            if (!_originalDisplaySettings.ContainsKey("IsEnableNotificationApi"))
+            {
+                _originalDisplaySettings["IsEnableNotificationApi"] = AppSettings.Instance.IsEnableNotificationApi;
+            }
+
             // キャラクター設定のディープコピー
             _originalCharacterSettings = new List<Dictionary<string, string>>();
             foreach (var character in _characterSettings)
@@ -553,202 +459,33 @@ namespace CocoroDock.Controls
                 _originalCharacterSettings.Add(new Dictionary<string, string>(character));
             }
 
-            // アニメーション設定のディープコピー
-            _originalAnimationSettings = new List<AnimationSetting>();
-            foreach (var animSetting in _animationSettings)
-            {
-                var newAnimSetting = new AnimationSetting
-                {
-                    animeSetName = animSetting.animeSetName,
-                    animations = new List<AnimationConfig>()
-                };
-                foreach (var anim in animSetting.animations)
-                {
-                    newAnimSetting.animations.Add(new AnimationConfig
-                    {
-                        displayName = anim.displayName,
-                        animationType = anim.animationType,
-                        animationName = anim.animationName,
-                        isEnabled = anim.isEnabled
-                    });
-                }
-                _originalAnimationSettings.Add(newAnimSetting);
-            }
         }
 
         #endregion
 
-        /// <summary>
-        /// アニメーション設定をUIに反映
-        /// </summary>
-        private void UpdateAnimationUI()
-        {
-            // アニメーションセットをコンボボックスに設定
-            AnimationSetComboBox.ItemsSource = _animationSettings;
+        #region 表示設定メソッド
 
-            if (_currentCharacterIndex >= 0 && _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
-            {
-                var animationIndex = AppSettings.Instance.CurrentAnimationSettingIndex;
-
-                // キャラクターのアニメーション設定を取得
-                if (animationIndex >= 0 &&
-                    animationIndex < _animationSettings.Count)
-                {
-                    AnimationSetComboBox.SelectedIndex = animationIndex;
-                    var animSetting = _animationSettings[animationIndex];
-
-                    // アニメーションリストを更新
-                    UpdateAnimationListPanel(animSetting.animations);
-
-                    // PostureChangeLoopCountを表示
-                    PostureChangeLoopCountStandingTextBox.Text = animSetting.postureChangeLoopCountStanding.ToString();
-                    PostureChangeLoopCountSittingFloorTextBox.Text = animSetting.postureChangeLoopCountSittingFloor.ToString();
-                }
-                else if (_animationSettings.Count > 0)
-                {
-                    // インデックスが範囲外の場合は最初の設定を使用
-                    AnimationSetComboBox.SelectedIndex = 0;
-                    UpdateAnimationListPanel(_animationSettings[0].animations);
-
-                    // PostureChangeLoopCountを表示
-                    PostureChangeLoopCountStandingTextBox.Text = _animationSettings[0].postureChangeLoopCountStanding.ToString();
-                    PostureChangeLoopCountSittingFloorTextBox.Text = _animationSettings[0].postureChangeLoopCountSittingFloor.ToString();
-                }
-            }
-
-            // コンボボックスの選択変更イベントを設定
-            AnimationSetComboBox.SelectionChanged -= AnimationSetComboBox_SelectionChanged;
-            AnimationSetComboBox.SelectionChanged += AnimationSetComboBox_SelectionChanged;
-
-            // テキスト変更イベントを設定（名前の編集用）
-            AnimationSetComboBox.LostFocus -= AnimationSetComboBox_LostFocus;
-            AnimationSetComboBox.LostFocus += AnimationSetComboBox_LostFocus;
-
-            // コンボボックスのロード時イベントを設定
-            AnimationSetComboBox.Loaded -= AnimationSetComboBox_Loaded;
-            AnimationSetComboBox.Loaded += AnimationSetComboBox_Loaded;
-        }
 
         /// <summary>
-        /// アニメーションリストパネルを更新
+        /// UIの設定値をメモリに保存
         /// </summary>
-        private void UpdateAnimationListPanel(List<AnimationConfig> animations)
+        private void UpdateDisplaySettings()
         {
-            AnimationListPanel.Children.Clear();
+            // SystemSettingsControlから設定を取得
+            _displaySettings["IsEnableNotificationApi"] = SystemSettingsControl.GetIsEnableNotificationApi();
 
-            // animationTypeでグループ化
-            var groupedAnimations = animations.GroupBy(a => a.animationType).OrderBy(g => g.Key);
+            var screenshotSettings = SystemSettingsControl.GetScreenshotSettings();
+            _displaySettings["ScreenshotEnabled"] = screenshotSettings.enabled;
+            _displaySettings["ScreenshotInterval"] = screenshotSettings.intervalMinutes;
+            _displaySettings["IdleTimeout"] = screenshotSettings.idleTimeoutMinutes;
+            _displaySettings["CaptureActiveWindowOnly"] = screenshotSettings.captureActiveWindowOnly;
 
-            foreach (var group in groupedAnimations)
-            {
-                // グループボックスを作成
-                var groupBox = new GroupBox
-                {
-                    Header = GetAnimationTypeDisplayName(group.Key),
-                    Margin = new Thickness(0, 0, 0, 10),
-                    Padding = new Thickness(10)
-                };
-
-                // グループボックス内のスタックパネル
-                var stackPanel = new StackPanel();
-
-                foreach (var animation in group)
-                {
-                    var grid = new Grid();
-                    grid.Margin = new Thickness(0, 5, 0, 5);
-                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-                    // Playボタン
-                    var playButton = new Button
-                    {
-                        Content = "Play",
-                        Margin = new Thickness(0, 0, 10, 0),
-                        Padding = new Thickness(10, 5, 10, 5),
-                        Tag = animation,
-                        VerticalAlignment = VerticalAlignment.Center,
-                        Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x48, 0x73, 0xCF))
-                    };
-                    playButton.Click += PlayAnimationButton_Click;
-                    Grid.SetColumn(playButton, 0);
-
-                    // チェックボックス
-                    var checkBox = new CheckBox
-                    {
-                        Content = animation.displayName,
-                        IsChecked = animation.isEnabled,
-                        Tag = animation,
-                        Margin = new Thickness(0, 0, 0, 0),
-                        VerticalAlignment = VerticalAlignment.Center,
-                        Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x48, 0x73, 0xCF))
-                    };
-                    checkBox.Checked += AnimationCheckBox_Checked;
-                    checkBox.Unchecked += AnimationCheckBox_Unchecked;
-                    Grid.SetColumn(checkBox, 1);
-
-                    grid.Children.Add(playButton);
-                    grid.Children.Add(checkBox);
-
-                    stackPanel.Children.Add(grid);
-                }
-
-                groupBox.Content = stackPanel;
-                AnimationListPanel.Children.Add(groupBox);
-            }
+            var microphoneSettings = SystemSettingsControl.GetMicrophoneSettings();
+            _displaySettings["MicAutoAdjustment"] = microphoneSettings.autoAdjustment;
+            _displaySettings["MicInputThreshold"] = microphoneSettings.inputThreshold;
         }
 
-        /// <summary>
-        /// アニメーションタイプの表示名を取得
-        /// </summary>
-        private string GetAnimationTypeDisplayName(int animationType)
-        {
-            switch (animationType)
-            {
-                case 0:
-                    return "Standing Animation ON/OFF";
-                case 1:
-                    return "Sitting Floor Animation ON/OFF";
-                case 2:
-                    return "Lying Down Animation ON/OFF";
-                default:
-                    return "Unknown";
-            }
-        }
-
-        /// <summary>
-        /// アニメーションセット選択変更時の処理
-        /// </summary>
-        private void AnimationSetComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (AnimationSetComboBox.SelectedIndex >= 0 &&
-                AnimationSetComboBox.SelectedIndex < _animationSettings.Count)
-            {
-                var animSetting = _animationSettings[AnimationSetComboBox.SelectedIndex];
-                UpdateAnimationListPanel(animSetting.animations);
-
-                // PostureChangeLoopCountを表示
-                PostureChangeLoopCountStandingTextBox.Text = animSetting.postureChangeLoopCountStanding.ToString();
-                PostureChangeLoopCountSittingFloorTextBox.Text = animSetting.postureChangeLoopCountSittingFloor.ToString();
-
-                // 現在のキャラクターのアニメーション設定インデックスを更新
-                if (_currentCharacterIndex >= 0 &&
-                    _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
-                {
-                    AppSettings.Instance.CurrentAnimationSettingIndex = AnimationSetComboBox.SelectedIndex;
-                }
-
-                // テキストの選択を解除
-                Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    var textBox = AnimationSetComboBox.Template.FindName("PART_EditableTextBox", AnimationSetComboBox) as TextBox;
-                    if (textBox != null)
-                    {
-                        textBox.SelectionLength = 0;
-                        textBox.CaretIndex = 0;
-                    }
-                }), System.Windows.Threading.DispatcherPriority.Background);
-            }
-        }
+        #endregion
 
         /// <summary>
         /// アニメーションチェックボックスのチェック時の処理
@@ -799,517 +536,24 @@ namespace CocoroDock.Controls
             }
         }
 
-        /// <summary>
-        /// アニメーションセット追加ボタンクリック時の処理
-        /// </summary>
-        private void AddAnimationSetButton_Click(object sender, RoutedEventArgs e)
-        {
-            // 新しいアニメーションセットを追加
-            var newSet = new AnimationSetting
-            {
-                animeSetName = "新規セット" + (_animationSettings.Count + 1),
-                postureChangeLoopCountStanding = 30,
-                postureChangeLoopCountSittingFloor = 30,
-                animations = new List<AnimationConfig>()
-            };
 
-            // デフォルトのアニメーションリストを作成（既存の最初のセットからコピー）
-            if (_animationSettings.Count > 0 && _animationSettings[0].animations.Count > 0)
-            {
-                foreach (var anim in _animationSettings[0].animations)
-                {
-                    newSet.animations.Add(new AnimationConfig
-                    {
-                        displayName = anim.displayName,
-                        animationType = anim.animationType,
-                        animationName = anim.animationName,
-                        isEnabled = true
-                    });
-                }
-            }
 
-            _animationSettings.Add(newSet);
-            AnimationSetComboBox.ItemsSource = null;
-            AnimationSetComboBox.ItemsSource = _animationSettings;
-            AnimationSetComboBox.SelectedIndex = _animationSettings.Count - 1;
-        }
+
 
         /// <summary>
-        /// アニメーションセットコンボボックスのロード時の処理
-        /// </summary>
-        private void AnimationSetComboBox_Loaded(object sender, RoutedEventArgs e)
-        {
-            // テキストボックス部分の選択を解除
-            if (sender is ComboBox comboBox)
-            {
-                var textBox = comboBox.Template.FindName("PART_EditableTextBox", comboBox) as TextBox;
-                if (textBox != null)
-                {
-                    textBox.SelectionLength = 0;
-                    textBox.CaretIndex = 0;
-                }
-            }
-        }
-
-        /// <summary>
-        /// アニメーションセットコンボボックスのフォーカス喪失時の処理
-        /// </summary>
-        private void AnimationSetComboBox_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (AnimationSetComboBox.SelectedIndex >= 0 &&
-                AnimationSetComboBox.SelectedIndex < _animationSettings.Count)
-            {
-                var newName = AnimationSetComboBox.Text?.Trim();
-                if (!string.IsNullOrEmpty(newName))
-                {
-                    // 選択されているアニメーションセットの名前を更新
-                    _animationSettings[AnimationSetComboBox.SelectedIndex].animeSetName = newName;
-
-                    // コンボボックスを更新（表示を反映）
-                    var selectedIndex = AnimationSetComboBox.SelectedIndex;
-                    AnimationSetComboBox.ItemsSource = null;
-                    AnimationSetComboBox.ItemsSource = _animationSettings;
-                    AnimationSetComboBox.SelectedIndex = selectedIndex;
-                }
-            }
-        }
-
-        /// <summary>
-        /// アニメーションセット削除ボタンクリック時の処理
-        /// </summary>
-        private void DeleteAnimationSetButton_Click(object sender, RoutedEventArgs e)
-        {
-            // 最後の1個は削除できないようにする
-            if (_animationSettings.Count <= 1)
-            {
-                MessageBox.Show("最後のアニメーションセットは削除できません。", "削除不可", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            // 現在選択されているセットのインデックスを取得
-            int selectedIndex = AnimationSetComboBox.SelectedIndex;
-            if (selectedIndex < 0 || selectedIndex >= _animationSettings.Count)
-            {
-                return;
-            }
-
-            // 削除確認
-            var selectedSet = _animationSettings[selectedIndex];
-            var result = MessageBox.Show($"アニメーションセット「{selectedSet.animeSetName}」を削除しますか？", "削除確認", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (result != MessageBoxResult.Yes)
-            {
-                return;
-            }
-
-            // セットを削除
-            _animationSettings.RemoveAt(selectedIndex);
-
-            // コンボボックスを更新
-            AnimationSetComboBox.ItemsSource = null;
-            AnimationSetComboBox.ItemsSource = _animationSettings;
-
-            // 新しい選択インデックスを設定
-            if (selectedIndex >= _animationSettings.Count)
-            {
-                selectedIndex = _animationSettings.Count - 1;
-            }
-            AnimationSetComboBox.SelectedIndex = selectedIndex;
-
-            // アニメーション設定インデックスを調整
-            if (AppSettings.Instance.CurrentAnimationSettingIndex >= _animationSettings.Count)
-            {
-                AppSettings.Instance.CurrentAnimationSettingIndex = 0;
-            }
-        }
-
-        /// <summary>
-        /// キャラクター情報をUIに反映
+        /// キャラクター情報をUIに反映（CharacterManagementControlに移行済み）
         /// </summary>
         private void UpdateCharacterUI(int index)
         {
-            if (index >= 0 && index < _characterSettings.Count)
-            {
-                CharacterNameTextBox.Text = _characterSettings[index]["Name"];
-                VRMFilePathTextBox.Text = _characterSettings[index]["VRMFilePath"];
-                ApiKeyPasswordBox.Password = _characterSettings[index]["ApiKey"];
-                LlmModelTextBox.Text = _characterSettings[index]["LLMModel"];
-                SystemPromptTextBox.Text = _characterSettings[index]["SystemPrompt"];
-                TTSEndpointURLTextBox.Text = _characterSettings[index]["TTSEndpointURL"];
-                TTSSperkerIDTextBox.Text = _characterSettings[index]["TTSSperkerID"];
-                UserIdTextBox.Text = _characterSettings[index].ContainsKey("UserId") ? _characterSettings[index]["UserId"] : "";
-                EmbeddedApiKeyPasswordBox.Password = _characterSettings[index].ContainsKey("EmbeddedApiKey") ? _characterSettings[index]["EmbeddedApiKey"] : "";
-                EmbeddedModelTextBox.Text = _characterSettings[index].ContainsKey("EmbeddedModel") ? _characterSettings[index]["EmbeddedModel"] : "";
-                STTWakeWordTextBox.Text = _characterSettings[index].ContainsKey("STTWakeWord") ? _characterSettings[index]["STTWakeWord"] : "";
-                STTApiKeyPasswordBox.Password = _characterSettings[index].ContainsKey("STTApiKey") ? _characterSettings[index]["STTApiKey"] : "";
-
-                // STTエンジンの設定を更新
-                string sttEngine = "amivoice"; // デフォルト
-                if (_characterSettings[index].ContainsKey("STTEngine"))
-                {
-                    sttEngine = _characterSettings[index]["STTEngine"];
-                }
-                // ComboBoxの選択を更新
-                foreach (ComboBoxItem item in STTEngineComboBox.Items)
-                {
-                    if ((string)item.Tag == sttEngine)
-                    {
-                        STTEngineComboBox.SelectedItem = item;
-                        break;
-                    }
-                }
-
-                // IsUseLLMチェックボックスの状態を更新
-                bool isUseLLM = false;
-                if (_characterSettings[index].ContainsKey("IsUseLLM"))
-                {
-                    bool.TryParse(_characterSettings[index]["IsUseLLM"], out isUseLLM);
-                }
-                IsUseLLMCheckBox.IsChecked = isUseLLM;
-
-                // IsUseTTSチェックボックスの状態を更新
-                bool isUseTTS = false;
-                if (_characterSettings[index].ContainsKey("IsUseTTS"))
-                {
-                    bool.TryParse(_characterSettings[index]["IsUseTTS"], out isUseTTS);
-                }
-                IsUseTTSCheckBox.IsChecked = isUseTTS;
-
-                // IsEnableMemoryチェックボックスの状態を更新
-                bool isEnableMemory = true; // デフォルトはtrue
-                if (_characterSettings[index].ContainsKey("IsEnableMemory"))
-                {
-                    bool.TryParse(_characterSettings[index]["IsEnableMemory"], out isEnableMemory);
-                }
-                IsEnableMemoryCheckBox.IsChecked = isEnableMemory;
-
-                // 埋め込みモデル設定の更新
-                EmbeddedApiKeyPasswordBox.Password = _characterSettings[index].ContainsKey("EmbeddedApiKey") ? _characterSettings[index]["EmbeddedApiKey"] : "";
-                EmbeddedModelTextBox.Text = _characterSettings[index].ContainsKey("EmbeddedModel") ? _characterSettings[index]["EmbeddedModel"] : "";
-
-                // IsUseSTTチェックボックスの状態を更新
-                bool isUseSTT = false;
-                if (_characterSettings[index].ContainsKey("IsUseSTT"))
-                {
-                    bool.TryParse(_characterSettings[index]["IsUseSTT"], out isUseSTT);
-                }
-                IsUseSTTCheckBox.IsChecked = isUseSTT;
-
-                // Shadow設定の更新
-                bool isEnableShadowOff = true; // デフォルトはtrue
-                if (_characterSettings[index].ContainsKey("IsEnableShadowOff"))
-                {
-                    bool.TryParse(_characterSettings[index]["IsEnableShadowOff"], out isEnableShadowOff);
-                }
-                EnableShadowOffCheckBox.IsChecked = isEnableShadowOff;
-
-                string shadowOffMesh = "Face, U_Char_1"; // デフォルト値
-                if (_characterSettings[index].ContainsKey("ShadowOffMesh"))
-                {
-                    shadowOffMesh = _characterSettings[index]["ShadowOffMesh"];
-                }
-                ShadowOffMeshTextBox.Text = shadowOffMesh;
-                // EnableShadowOffがチェックされていない場合はテキストボックスを無効化
-                ShadowOffMeshTextBox.IsEnabled = isEnableShadowOff;
-
-                // IsConvertMToonチェックボックスの状態を更新
-                bool isConvertMToon = false;
-                if (_characterSettings[index].ContainsKey("IsConvertMToon"))
-                {
-                    bool.TryParse(_characterSettings[index]["IsConvertMToon"], out isConvertMToon);
-                }
-                ConvertMToonCheckBox.IsChecked = isConvertMToon;
-
-                // IsReadOnlyの状態を確認し、該当するUIコントロールの有効/無効を設定
-                bool isReadOnly = false;
-                if (index < AppSettings.Instance.CharacterList.Count)
-                {
-                    isReadOnly = AppSettings.Instance.CharacterList[index].isReadOnly;
-                }
-                CharacterNameTextBox.IsEnabled = !isReadOnly;
-                VRMFilePathTextBox.IsEnabled = !isReadOnly;
-                BrowseVrmFileButton.IsEnabled = !isReadOnly;
-
-                _currentCharacterIndex = index;
-            }
+            // CharacterManagementControlに移行済み - このメソッドは使用されません
+            return;
         }
 
         #region キャラクター設定イベントハンドラ
 
-        /// <summary>
-        /// キャラクター選択時のイベントハンドラ
-        /// </summary>
-        private void CharacterSelectComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // 現在のキャラクター設定を保存
-            SaveCurrentCharacterSettings();
-
-            // 新しいキャラクターのUIを更新
-            int selectedIndex = CharacterSelectComboBox.SelectedIndex;
-            if (selectedIndex >= 0)
-            {
-                UpdateCharacterUI(selectedIndex);
-                // アニメーション設定も更新
-                UpdateAnimationUI();
-            }
-        }
-
-        /// <summary>
-        /// 新しいキャラクター作成ボタンのクリックイベントハンドラ
-        /// </summary>
-        private void AddCharacterButton_Click(object sender, RoutedEventArgs e)
-        {
-            // 現在のキャラクター設定を保存
-            SaveCurrentCharacterSettings();
-
-            // 新しいキャラクターを追加
-            var newName = "New Character" + (_characterSettings.Count + 1);
-            var newCharacter = new Dictionary<string, string>
-            {
-                { "Name", "" },
-                { "VRMFilePath", "" },
-                { "IsUseLLM", "false" },
-                { "ApiKey", "" },
-                { "LLMModel", "" },
-                { "SystemPrompt", "" },
-                { "IsUseTTS", "false"},
-                { "TTSEndpointURL", "" },
-                { "TTSSperkerID", "" },
-                { "IsEnableMemory", "true" },
-                { "UserId", "" },
-                { "EmbeddedApiKey", "" },
-                { "EmbeddedModel", "" },
-                { "IsUseSTT", "false" },
-                { "STTEngine", "amivoice" },
-                { "STTWakeWord", "" },
-                { "STTApiKey", "" },
-                { "IsEnableShadowOff", "true" },
-                { "ShadowOffMesh", "Face, U_Char_1" },
-                { "IsConvertMToon", "false" }
-            };
-            _characterSettings.Add(newCharacter);
-            var newItem = new ComboBoxItem { Content = newName };
-            CharacterSelectComboBox.Items.Add(newItem);
-            CharacterSelectComboBox.SelectedIndex = _characterSettings.Count - 1;
-
-            // 設定変更フラグを設定
-            _settingsChanged = true;
-        }
-
-        /// <summary>
-        /// キャラクター削除ボタンのクリックイベントハンドラ
-        /// </summary>
-        private void DeleteCharacterButton_Click(object sender, RoutedEventArgs e)
-        {
-            // デフォルトキャラクターは削除不可
-            if (_currentCharacterIndex == 0)
-            {
-                MessageBox.Show("デフォルトキャラクターは削除できません。", "削除不可", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            // 確認ダイアログを表示
-            var name = _characterSettings[_currentCharacterIndex]["Name"];
-            var result = MessageBox.Show($"キャラクター「{name}」を削除しますか？", "確認", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes)
-            {
-                // キャラクター設定を削除
-                _characterSettings.RemoveAt(_currentCharacterIndex);
-                CharacterSelectComboBox.Items.RemoveAt(_currentCharacterIndex);
-
-                // デフォルトキャラクターを選択
-                CharacterSelectComboBox.SelectedIndex = 0;
-
-                // 設定変更フラグを設定
-                _settingsChanged = true;
-            }
-        }
-
-        /// <summary>
-        /// 現在のキャラクター設定をメモリに保存
-        /// </summary>
-        private void SaveCurrentCharacterSettings()
-        {
-            if (_currentCharacterIndex >= 0 && _currentCharacterIndex < _characterSettings.Count)
-            {
-                // UIから値を取得して設定を更新
-                var name = CharacterNameTextBox.Text;
-                var systemPrompt = SystemPromptTextBox.Text;
-                var vrmFilePath = VRMFilePathTextBox.Text;
-                var apiKey = ApiKeyPasswordBox.Password;
-                var llmModel = LlmModelTextBox.Text;
-                var isUseLLM = IsUseLLMCheckBox.IsChecked ?? false;
-                var isUseTTS = IsUseTTSCheckBox.IsChecked ?? false;
-                var ttsEndpointURL = TTSEndpointURLTextBox.Text;
-                var ttsSperkerID = TTSSperkerIDTextBox.Text;
-                var isEnableMemory = IsEnableMemoryCheckBox.IsChecked ?? true;
-                var userId = UserIdTextBox.Text;
-                var embeddedApiKey = EmbeddedApiKeyPasswordBox.Password;
-                var embeddedModel = EmbeddedModelTextBox.Text;
-                var isUseSTT = IsUseSTTCheckBox.IsChecked ?? false;
-                var sttEngine = (STTEngineComboBox.SelectedItem as ComboBoxItem)?.Tag as string ?? "amivoice";
-                var sttWakeWord = STTWakeWordTextBox.Text;
-                var sttApiKey = STTApiKeyPasswordBox.Password;
-                var isEnableShadowOff = EnableShadowOffCheckBox.IsChecked ?? true;
-                var shadowOffMesh = ShadowOffMeshTextBox.Text;
-                var isConvertMToon = ConvertMToonCheckBox.IsChecked ?? false;
-
-                // IsReadOnlyの状態を確認
-                bool isReadOnly = false;
-                if (_currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
-                {
-                    isReadOnly = AppSettings.Instance.CharacterList[_currentCharacterIndex].isReadOnly;
-                }
-
-                // ReadOnlyの場合、元の名前とVRMファイルパスを保持
-                if (isReadOnly)
-                {
-                    name = _characterSettings[_currentCharacterIndex]["Name"];
-                    vrmFilePath = _characterSettings[_currentCharacterIndex]["VRMFilePath"];
-                }
-
-                // 値が変更された場合のみ更新
-                bool isUseLLMChanged = false;
-                if (_characterSettings[_currentCharacterIndex].ContainsKey("IsUseLLM"))
-                {
-                    bool currentIsUseLLM = false;
-                    bool.TryParse(_characterSettings[_currentCharacterIndex]["IsUseLLM"], out currentIsUseLLM);
-                    isUseLLMChanged = currentIsUseLLM != isUseLLM;
-                }
-                else
-                {
-                    isUseLLMChanged = isUseLLM; // デフォルトはfalseとして扱う
-                }
-                bool isUseTTSChanged = false;
-                if (_characterSettings[_currentCharacterIndex].ContainsKey("IsUseTTS"))
-                {
-                    bool currentIsUseTTS = false;
-                    bool.TryParse(_characterSettings[_currentCharacterIndex]["IsUseTTS"], out currentIsUseTTS);
-                    isUseTTSChanged = currentIsUseTTS != isUseTTS;
-                }
-                else
-                {
-                    isUseTTSChanged = isUseTTS; // デフォルトはfalseとして扱う
-                }
-
-                bool vrmFilePathChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("VRMFilePath") ||
-                                         _characterSettings[_currentCharacterIndex]["VRMFilePath"] != vrmFilePath;
-
-                bool apiKeyChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("ApiKey") ||
-                                    _characterSettings[_currentCharacterIndex]["ApiKey"] != apiKey;
-
-                bool llmModelChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("LLMModel") ||
-                                     _characterSettings[_currentCharacterIndex]["LLMModel"] != llmModel;
-                bool ttsEndpointURLChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("TTSEndpointURL") ||
-                                            _characterSettings[_currentCharacterIndex]["TTSEndpointURL"] != ttsEndpointURL;
-                bool ttsSperkerIDChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("TTSSperkerID") ||
-                                            _characterSettings[_currentCharacterIndex]["TTSSperkerID"] != ttsSperkerID;
-                bool isEnableMemoryChanged = false;
-                if (_characterSettings[_currentCharacterIndex].ContainsKey("IsEnableMemory"))
-                {
-                    bool currentIsEnableMemory = true;
-                    bool.TryParse(_characterSettings[_currentCharacterIndex]["IsEnableMemory"], out currentIsEnableMemory);
-                    isEnableMemoryChanged = currentIsEnableMemory != isEnableMemory;
-                }
-                else
-                {
-                    isEnableMemoryChanged = !isEnableMemory; // デフォルトはtrueとして扱う
-                }
-                bool userIdChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("UserId") ||
-                                     _characterSettings[_currentCharacterIndex]["UserId"] != userId;
-                bool embeddedApiKeyChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("EmbeddedApiKey") ||
-                                     _characterSettings[_currentCharacterIndex]["EmbeddedApiKey"] != embeddedApiKey;
-                bool embeddedModelChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("EmbeddedModel") ||
-                                     _characterSettings[_currentCharacterIndex]["EmbeddedModel"] != embeddedModel;
-                bool isUseSTTChanged = false;
-                if (_characterSettings[_currentCharacterIndex].ContainsKey("IsUseSTT"))
-                {
-                    bool currentIsUseSTT = false;
-                    bool.TryParse(_characterSettings[_currentCharacterIndex]["IsUseSTT"], out currentIsUseSTT);
-                    isUseSTTChanged = currentIsUseSTT != isUseSTT;
-                }
-                else
-                {
-                    isUseSTTChanged = isUseSTT; // デフォルトはfalseとして扱う
-                }
-                bool sttEngineChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("STTEngine") ||
-                                     _characterSettings[_currentCharacterIndex]["STTEngine"] != sttEngine;
-                bool sttWakeWordChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("STTWakeWord") ||
-                                     _characterSettings[_currentCharacterIndex]["STTWakeWord"] != sttWakeWord;
-                bool sttApiKeyChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("STTApiKey") ||
-                                     _characterSettings[_currentCharacterIndex]["STTApiKey"] != sttApiKey;
-
-                bool isEnableShadowOffChanged = false;
-                if (_characterSettings[_currentCharacterIndex].ContainsKey("IsEnableShadowOff"))
-                {
-                    bool currentIsEnableShadowOff = true;
-                    bool.TryParse(_characterSettings[_currentCharacterIndex]["IsEnableShadowOff"], out currentIsEnableShadowOff);
-                    isEnableShadowOffChanged = currentIsEnableShadowOff != isEnableShadowOff;
-                }
-                else
-                {
-                    isEnableShadowOffChanged = !isEnableShadowOff; // デフォルトはtrueとして扱う
-                }
-
-                bool shadowOffMeshChanged = !_characterSettings[_currentCharacterIndex].ContainsKey("ShadowOffMesh") ||
-                                         _characterSettings[_currentCharacterIndex]["ShadowOffMesh"] != shadowOffMesh;
-
-                bool isConvertMToonChanged = false;
-                if (_characterSettings[_currentCharacterIndex].ContainsKey("IsConvertMToon"))
-                {
-                    bool currentIsConvertMToon = false;
-                    bool.TryParse(_characterSettings[_currentCharacterIndex]["IsConvertMToon"], out currentIsConvertMToon);
-                    isConvertMToonChanged = currentIsConvertMToon != isConvertMToon;
-                }
-                else
-                {
-                    isConvertMToonChanged = isConvertMToon; // デフォルトはfalseとして扱う
-                }
 
 
-                if (_characterSettings[_currentCharacterIndex]["Name"] != name ||
-                    _characterSettings[_currentCharacterIndex]["SystemPrompt"] != systemPrompt ||
-                    isUseLLMChanged || isUseTTSChanged || vrmFilePathChanged || apiKeyChanged || llmModelChanged ||
-                    ttsEndpointURLChanged || ttsSperkerIDChanged || userIdChanged || isEnableMemoryChanged ||
-                    embeddedApiKeyChanged || embeddedModelChanged || isUseSTTChanged || sttEngineChanged || sttWakeWordChanged || sttApiKeyChanged ||
-                    isEnableShadowOffChanged || shadowOffMeshChanged || isConvertMToonChanged)
-                {
-                    _characterSettings[_currentCharacterIndex]["Name"] = name;
-                    _characterSettings[_currentCharacterIndex]["SystemPrompt"] = systemPrompt;
-                    _characterSettings[_currentCharacterIndex]["VRMFilePath"] = vrmFilePath;
-                    _characterSettings[_currentCharacterIndex]["ApiKey"] = apiKey;
-                    _characterSettings[_currentCharacterIndex]["LLMModel"] = llmModel;
-                    _characterSettings[_currentCharacterIndex]["IsUseLLM"] = isUseLLM.ToString();
-                    _characterSettings[_currentCharacterIndex]["TTSEndpointURL"] = ttsEndpointURL;
-                    _characterSettings[_currentCharacterIndex]["TTSSperkerID"] = ttsSperkerID;
-                    _characterSettings[_currentCharacterIndex]["IsUseTTS"] = isUseTTS.ToString();
-                    _characterSettings[_currentCharacterIndex]["IsEnableMemory"] = isEnableMemory.ToString();
-                    _characterSettings[_currentCharacterIndex]["UserId"] = userId;
-                    _characterSettings[_currentCharacterIndex]["EmbeddedApiKey"] = embeddedApiKey;
-                    _characterSettings[_currentCharacterIndex]["EmbeddedModel"] = embeddedModel;
-                    _characterSettings[_currentCharacterIndex]["IsUseSTT"] = isUseSTT.ToString();
-                    _characterSettings[_currentCharacterIndex]["STTEngine"] = sttEngine;
-                    _characterSettings[_currentCharacterIndex]["STTWakeWord"] = sttWakeWord;
-                    _characterSettings[_currentCharacterIndex]["STTApiKey"] = sttApiKey;
-                    _characterSettings[_currentCharacterIndex]["IsEnableShadowOff"] = isEnableShadowOff.ToString();
-                    _characterSettings[_currentCharacterIndex]["ShadowOffMesh"] = shadowOffMesh;
-                    _characterSettings[_currentCharacterIndex]["IsConvertMToon"] = isConvertMToon.ToString();
 
-                    // コンボボックスの表示も更新
-                    if (_currentCharacterIndex < CharacterSelectComboBox.Items.Count)
-                    {
-                        var item = CharacterSelectComboBox.Items[_currentCharacterIndex] as ComboBoxItem;
-                        if (item != null)
-                        {
-                            item.Content = name;
-                        }
-                    }
-
-                    // 設定変更フラグを設定
-                    _settingsChanged = true;
-                }
-            }
-        }
 
         #endregion
 
@@ -1325,17 +569,9 @@ namespace CocoroDock.Controls
 
             try
             {
-                // 現在のキャラクター設定を一時保存
-                SaveCurrentCharacterSettings();
+                // CharacterManagementControlに移行済み
 
-                // バリデーション（警告のみ）
-                if (!ValidateCharacterSettings())
-                {
-                    // バリデーション失敗時はボタンを再有効化
-                    OkButton.IsEnabled = true;
-                    CancelButton.IsEnabled = true;
-                    return;
-                }
+                // CharacterManagementControlでバリデーション実行済み
 
                 // 設定変更前の値を保存
                 int lastSelectedIndex = AppSettings.Instance.CurrentCharacterIndex;
@@ -1355,9 +591,9 @@ namespace CocoroDock.Controls
                 }
 
                 // MCP設定の変更をチェックして適用
-                if (_mcpTabViewModel != null)
+                if (McpSettingsControl.GetViewModel() != null)
                 {
-                    await _mcpTabViewModel.ApplyMcpSettingsAsync();
+                    await McpSettingsControl.GetViewModel()!.ApplyMcpSettingsAsync();
                 }
 
                 // すべてのタブの設定を保存
@@ -1414,67 +650,6 @@ namespace CocoroDock.Controls
                     }
                 }
 
-                // アニメーション設定が変更されたかチェック
-                if (!isNeedsRestart)
-                {
-                    // アニメーション設定数が変更された場合
-                    if (_animationSettings.Count != _originalAnimationSettings.Count)
-                    {
-                        isNeedsRestart = true;
-                    }
-                    else
-                    {
-                        // 各アニメーション設定を比較
-                        for (int i = 0; i < _animationSettings.Count; i++)
-                        {
-                            var current = _animationSettings[i];
-                            var original = _originalAnimationSettings[i];
-
-                            // セット名が変更された場合
-                            if (current.animeSetName != original.animeSetName)
-                            {
-                                isNeedsRestart = true;
-                                break;
-                            }
-
-                            // 姿勢変更ループ回数が変更された場合
-                            if (current.postureChangeLoopCountStanding != original.postureChangeLoopCountStanding ||
-                                current.postureChangeLoopCountSittingFloor != original.postureChangeLoopCountSittingFloor)
-                            {
-                                isNeedsRestart = true;
-                                break;
-                            }
-
-                            // アニメーション数が変更された場合
-                            if (current.animations.Count != original.animations.Count)
-                            {
-                                isNeedsRestart = true;
-                                break;
-                            }
-
-                            // 各アニメーションの設定を比較
-                            for (int j = 0; j < current.animations.Count; j++)
-                            {
-                                var currentAnim = current.animations[j];
-                                var originalAnim = original.animations[j];
-
-                                if (currentAnim.displayName != originalAnim.displayName ||
-                                    currentAnim.animationType != originalAnim.animationType ||
-                                    currentAnim.animationName != originalAnim.animationName ||
-                                    currentAnim.isEnabled != originalAnim.isEnabled)
-                                {
-                                    isNeedsRestart = true;
-                                    break;
-                                }
-                            }
-
-                            if (isNeedsRestart)
-                            {
-                                break;
-                            }
-                        }
-                    }
-                }
 
                 // 設定が変更された場合、メッセージボックスを表示して CocoroCore と CocoroShell を再起動
                 if (isNeedsRestart)
@@ -1542,18 +717,6 @@ namespace CocoroDock.Controls
         /// </summary>
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            // 設定が変更されていた場合は確認ダイアログを表示
-            if (_settingsChanged)
-            {
-                var result = MessageBox.Show("変更した設定は保存されません。よろしいですか？",
-                    "確認", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-                if (result == MessageBoxResult.No)
-                {
-                    return;
-                }
-            }
-
             // 変更を破棄して元の設定に戻す
             RestoreOriginalSettings();
 
@@ -1569,8 +732,11 @@ namespace CocoroDock.Controls
         {
             try
             {
+                // SystemSettingsControlから設定を取得して辞書に保存
+                UpdateDisplaySettings();
+
                 SaveDisplaySettings();
-                SaveCurrentCharacterSettings();
+                // CharacterManagementControlに移行済み
                 // AppSettings に設定を反映
                 UpdateAppSettings();
 
@@ -1605,7 +771,7 @@ namespace CocoroDock.Controls
                 }
 
                 // 通知APIサーバーの設定が変更された場合の処理
-                bool currentIsEnableNotificationApi = (bool)_displaySettings["IsEnableNotificationApi"];
+                bool currentIsEnableNotificationApi = SystemSettingsControl.GetIsEnableNotificationApi();
                 if (lastIsEnableNotificationApi != currentIsEnableNotificationApi)
                 {
                     // 通知APIサーバーの動的な起動/停止は現在サポートされていません
@@ -1663,27 +829,6 @@ namespace CocoroDock.Controls
                 _characterSettings.Add(new Dictionary<string, string>(character));
             }
 
-            // アニメーション設定の復元
-            _animationSettings.Clear();
-            foreach (var animSetting in _originalAnimationSettings)
-            {
-                var newAnimSetting = new AnimationSetting
-                {
-                    animeSetName = animSetting.animeSetName,
-                    animations = new List<AnimationConfig>()
-                };
-                foreach (var anim in animSetting.animations)
-                {
-                    newAnimSetting.animations.Add(new AnimationConfig
-                    {
-                        displayName = anim.displayName,
-                        animationType = anim.animationType,
-                        animationName = anim.animationName,
-                        isEnabled = anim.isEnabled
-                    });
-                }
-                _animationSettings.Add(newAnimSetting);
-            }
         }
 
         #endregion
@@ -1696,7 +841,7 @@ namespace CocoroDock.Controls
         protected override void OnClosed(EventArgs e)
         {
             // MCPタブのViewModelを破棄
-            _mcpTabViewModel?.Dispose();
+            McpSettingsControl.GetViewModel()?.Dispose();
 
             // フックを解除
             if (_source != null)
@@ -1721,15 +866,7 @@ namespace CocoroDock.Controls
             _displaySettings["EscapeCursor"] = EscapeCursorCheckBox.IsChecked ?? false;
 
             // 逃げ先座標の保存
-            var escapePositions = new List<EscapePosition>();
-            foreach (var position in EscapePositionsCollection)
-            {
-                if (position.Enabled || position.X != 0 || position.Y != 0)
-                {
-                    escapePositions.Add(position.ToEscapePosition());
-                }
-            }
-            _displaySettings["EscapePositions"] = escapePositions;
+            _displaySettings["EscapePositions"] = EscapePositionControl.GetEscapePositions();
 
             _displaySettings["InputVirtualKey"] = InputVirtualKeyCheckBox.IsChecked ?? false;
             _displaySettings["VirtualKeyString"] = VirtualKeyStringTextBox.Text;
@@ -1778,19 +915,22 @@ namespace CocoroDock.Controls
             _displaySettings["BackgroundShadowResolution"] = backShadowRes;
 
             _displaySettings["WindowSize"] = WindowSizeSlider.Value;
-            _displaySettings["IsEnableNotificationApi"] = IsEnableNotificationApiCheckBox.IsChecked ?? false;
+            // SystemSettingsControlから設定を取得
+            _displaySettings["IsEnableNotificationApi"] = SystemSettingsControl.GetIsEnableNotificationApi();
             // MCPタブの設定を取得（ViewModelから）
-            _displaySettings["IsEnableMcp"] = _mcpTabViewModel?.IsMcpEnabled ?? false;
+            _displaySettings["IsEnableMcp"] = McpSettingsControl.GetMcpEnabled();
 
             // スクリーンショット設定を保存
-            _displaySettings["ScreenshotEnabled"] = ScreenshotEnabledCheckBox.IsChecked ?? false;
-            _displaySettings["ScreenshotInterval"] = int.TryParse(ScreenshotIntervalTextBox.Text, out int interval) ? interval : 10;
-            _displaySettings["IdleTimeout"] = int.TryParse(IdleTimeoutTextBox.Text, out int idleTimeout) ? idleTimeout : 0;
-            _displaySettings["CaptureActiveWindowOnly"] = CaptureActiveWindowOnlyCheckBox.IsChecked ?? true;
+            var screenshotSettings = SystemSettingsControl.GetScreenshotSettings();
+            _displaySettings["ScreenshotEnabled"] = screenshotSettings.enabled;
+            _displaySettings["ScreenshotInterval"] = screenshotSettings.intervalMinutes;
+            _displaySettings["IdleTimeout"] = screenshotSettings.idleTimeoutMinutes;
+            _displaySettings["CaptureActiveWindowOnly"] = screenshotSettings.captureActiveWindowOnly;
 
             // マイク設定を保存
-            _displaySettings["MicAutoAdjustment"] = MicAutoAdjustmentCheckBox.IsChecked ?? true;
-            _displaySettings["MicInputThreshold"] = (int)MicThresholdSlider.Value;
+            var microphoneSettings = SystemSettingsControl.GetMicrophoneSettings();
+            _displaySettings["MicAutoAdjustment"] = microphoneSettings.autoAdjustment;
+            _displaySettings["MicInputThreshold"] = microphoneSettings.inputThreshold;
         }
 
         /// <summary>
@@ -1809,6 +949,8 @@ namespace CocoroDock.Controls
             if (_displaySettings.ContainsKey("EscapePositions"))
             {
                 appSettings.EscapePositions = (List<EscapePosition>)_displaySettings["EscapePositions"];
+                // UserControlにも反映
+                EscapePositionControl.SetEscapePositions(appSettings.EscapePositions);
             }
 
             appSettings.IsInputVirtualKey = (bool)_displaySettings["InputVirtualKey"];
@@ -1826,10 +968,7 @@ namespace CocoroDock.Controls
             appSettings.IsEnableMcp = (bool)_displaySettings["IsEnableMcp"];
 
             // MCPタブのViewModelにも反映
-            if (_mcpTabViewModel != null)
-            {
-                _mcpTabViewModel.IsMcpEnabled = (bool)_displaySettings["IsEnableMcp"];
-            }
+            McpSettingsControl.SetMcpEnabled((bool)_displaySettings["IsEnableMcp"]);
 
             // スクリーンショット設定の更新
             appSettings.ScreenshotSettings.enabled = (bool)_displaySettings["ScreenshotEnabled"];
@@ -1842,183 +981,23 @@ namespace CocoroDock.Controls
             appSettings.MicrophoneSettings.inputThreshold = (int)_displaySettings["MicInputThreshold"];
 
             // キャラクター設定の更新
-            appSettings.CurrentCharacterIndex = _currentCharacterIndex;
+            appSettings.CurrentCharacterIndex = CharacterManagementControl.GetCurrentCharacterIndex();
 
-            // キャラクターリストの更新
-            var newCharacterList = new List<CharacterSettings>();
-
-            for (int i = 0; i < _characterSettings.Count; i++)
+            // CharacterManagementControlから現在のキャラクター設定を取得
+            var currentCharacterSetting = CharacterManagementControl.GetCurrentCharacterSetting();
+            if (currentCharacterSetting != null)
             {
-                var character = _characterSettings[i];
-
-                // 既存のCharacterSettingsオブジェクトを取得（存在する場合）
-                CharacterSettings? existingCharacter = null;
-                if (i < appSettings.CharacterList.Count)
+                // 現在選択されているキャラクターの設定を更新
+                var currentIndex = CharacterManagementControl.GetCurrentCharacterIndex();
+                if (currentIndex >= 0 && currentIndex < appSettings.CharacterList.Count)
                 {
-                    existingCharacter = appSettings.CharacterList[i];
+                    appSettings.CharacterList[currentIndex] = currentCharacterSetting;
                 }
-
-                // 新しいCharacterSettingsオブジェクトを作成または既存のものを更新
-                CharacterSettings newCharacter = existingCharacter ?? new CharacterSettings();
-
-                // 基本項目の更新
-                newCharacter.modelName = character["Name"];
-                newCharacter.systemPrompt = character["SystemPrompt"];
-
-                // IsUseLLMの設定を更新
-                bool isUseLLM = false;
-                if (character.ContainsKey("IsUseLLM"))
-                {
-                    bool.TryParse(character["IsUseLLM"], out isUseLLM);
-                }
-                newCharacter.isUseLLM = isUseLLM;
-
-                // VRMFilePathの設定を更新
-                if (character.ContainsKey("VRMFilePath"))
-                {
-                    newCharacter.vrmFilePath = character["VRMFilePath"];
-                }
-
-                // ApiKeyの設定を更新
-                if (character.ContainsKey("ApiKey"))
-                {
-                    newCharacter.apiKey = character["ApiKey"];
-                }
-
-                // LLMModelの設定を更新
-                if (character.ContainsKey("LLMModel"))
-                {
-                    newCharacter.llmModel = character["LLMModel"];
-                }
-
-                // IsUseTTSの設定を更新
-                bool isUseTTS = false;
-                if (character.ContainsKey("IsUseTTS"))
-                {
-                    bool.TryParse(character["IsUseTTS"], out isUseTTS);
-                }
-                newCharacter.isUseTTS = isUseTTS;
-
-                // TTSEndpointURLの設定を更新
-                if (character.ContainsKey("TTSEndpointURL"))
-                {
-                    newCharacter.ttsEndpointURL = character["TTSEndpointURL"];
-                }
-
-                // TTSSperkerIDの設定を更新
-                if (character.ContainsKey("TTSSperkerID"))
-                {
-                    newCharacter.ttsSperkerID = character["TTSSperkerID"];
-                }
-
-                // IsEnableMemoryの設定を更新
-                bool isEnableMemory = true; // デフォルトはtrue
-                if (character.ContainsKey("IsEnableMemory"))
-                {
-                    bool.TryParse(character["IsEnableMemory"], out isEnableMemory);
-                }
-                newCharacter.isEnableMemory = isEnableMemory;
-
-                // UserIdの設定を更新
-                if (character.ContainsKey("UserId"))
-                {
-                    newCharacter.userId = character["UserId"];
-                }
-
-                // EmbeddedApiKeyの設定を更新
-                if (character.ContainsKey("EmbeddedApiKey"))
-                {
-                    newCharacter.embeddedApiKey = character["EmbeddedApiKey"];
-                }
-
-                // EmbeddedModelの設定を更新
-                if (character.ContainsKey("EmbeddedModel"))
-                {
-                    newCharacter.embeddedModel = character["EmbeddedModel"];
-                }
-
-                // IsUseSTTの設定を更新
-                bool isUseSTT = false;
-                if (character.ContainsKey("IsUseSTT"))
-                {
-                    bool.TryParse(character["IsUseSTT"], out isUseSTT);
-                }
-                newCharacter.isUseSTT = isUseSTT;
-
-                // STTEngineの設定を更新
-                if (character.ContainsKey("STTEngine"))
-                {
-                    newCharacter.sttEngine = character["STTEngine"];
-                }
-                else
-                {
-                    newCharacter.sttEngine = "amivoice"; // デフォルト値
-                }
-
-                // STTWakeWordの設定を更新
-                if (character.ContainsKey("STTWakeWord"))
-                {
-                    newCharacter.sttWakeWord = character["STTWakeWord"];
-                }
-
-                // STTApiKeyの設定を更新
-                if (character.ContainsKey("STTApiKey"))
-                {
-                    newCharacter.sttApiKey = character["STTApiKey"];
-                }
-
-                // STTLanguageの設定を更新（GUIでは設定しないが、保存時は既存の値を保持）
-                if (character.ContainsKey("STTLanguage"))
-                {
-                    newCharacter.sttLanguage = character["STTLanguage"];
-                }
-                else if (existingCharacter != null)
-                {
-                    newCharacter.sttLanguage = existingCharacter.sttLanguage;
-                }
-                else
-                {
-                    newCharacter.sttLanguage = "ja"; // デフォルト値
-                }
-
-                // Shadow設定を更新
-                bool isEnableShadowOff = true; // デフォルトはtrue
-                if (character.ContainsKey("IsEnableShadowOff"))
-                {
-                    bool.TryParse(character["IsEnableShadowOff"], out isEnableShadowOff);
-                }
-                newCharacter.isEnableShadowOff = isEnableShadowOff;
-
-                if (character.ContainsKey("ShadowOffMesh"))
-                {
-                    newCharacter.shadowOffMesh = character["ShadowOffMesh"];
-                }
-                else
-                {
-                    newCharacter.shadowOffMesh = "Face, U_Char_1"; // デフォルト値
-                }
-
-                // IsConvertMToonの設定を更新
-                bool isConvertMToon = false;
-                if (character.ContainsKey("IsConvertMToon"))
-                {
-                    bool.TryParse(character["IsConvertMToon"], out isConvertMToon);
-                }
-                newCharacter.isConvertMToon = isConvertMToon;
-
-                // 既存の設定を保持（null になることはないという前提）
-                newCharacter.isReadOnly = existingCharacter?.isReadOnly ?? false;
-
-                // リストに追加
-                newCharacterList.Add(newCharacter);
             }
 
-            // 更新したリストをAppSettingsに設定
-            appSettings.CharacterList = newCharacterList;
-
             // アニメーション設定の更新
-            appSettings.CurrentAnimationSettingIndex = AppSettings.Instance.CurrentAnimationSettingIndex;
-            appSettings.AnimationSettings = new List<AnimationSetting>(_animationSettings);
+            appSettings.CurrentAnimationSettingIndex = AnimationSettingsControl.GetCurrentAnimationSettingIndex();
+            appSettings.AnimationSettings = AnimationSettingsControl.GetAnimationSettings();
         }
 
         #endregion
@@ -2042,8 +1021,7 @@ namespace CocoroDock.Controls
             // ダイアログを表示
             if (dialog.ShowDialog() == true)
             {
-                // 選択されたファイルのパスをテキストボックスに設定
-                VRMFilePathTextBox.Text = dialog.FileName;
+                // CharacterManagementControlに移行済み
             }
         }
 
@@ -2086,41 +1064,8 @@ namespace CocoroDock.Controls
         /// </summary>
         private void SetApiDescriptionText()
         {
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("エンドポイント:");
-            sb.AppendLine("POST http://127.0.0.1:55604/api/v1/notification");
-            sb.AppendLine();
-            sb.AppendLine("リクエストボディ (JSON):");
-            sb.AppendLine("{");
-            sb.AppendLine("  \"from\": \"アプリ名\",");
-            sb.AppendLine("  \"message\": \"通知メッセージ\",");
-            sb.AppendLine("  \"images\": [  // オプション（最大5枚）");
-            sb.AppendLine("    \"data:image/jpeg;base64,/9j/4AAQ...\",  // 1枚目");
-            sb.AppendLine("    \"data:image/png;base64,iVBORw0KGgo...\"  // 2枚目");
-            sb.AppendLine("  ]");
-            sb.AppendLine("}");
-            sb.AppendLine();
-            sb.AppendLine("レスポンス:");
-            sb.AppendLine("HTTP/1.1 204 No Content");
-            sb.AppendLine();
-            sb.AppendLine("使用例 (cURL):");
-            sb.AppendLine("# 1枚の画像を送る場合");
-            sb.AppendLine("curl -X POST http://127.0.0.1:55604/api/v1/notification \\");
-            sb.AppendLine("  -H \"Content-Type: application/json\" \\");
-            sb.AppendLine("  -d '{\"from\":\"MyApp\",\"message\":\"処理完了\",\"images\":[\"data:image/jpeg;base64,...\"]}'");
-            sb.AppendLine();
-            sb.AppendLine("# 複数枚の画像を送る場合");
-            sb.AppendLine("curl -X POST http://127.0.0.1:55604/api/v1/notification \\");
-            sb.AppendLine("  -H \"Content-Type: application/json\" \\");
-            sb.AppendLine("  -d '{\"from\":\"MyApp\",\"message\":\"結果\",\"images\":[\"data:image/jpeg;base64,...\",\"data:image/png;base64,...\"]}'");
-            sb.AppendLine();
-            sb.AppendLine("使用例 (PowerShell):");
-            sb.AppendLine("# 複数枚の画像を送る場合");
-            sb.AppendLine("Invoke-RestMethod -Method Post `");
-            sb.AppendLine("  -Uri \"http://127.0.0.1:55604/api/v1/notification\" `");
-            sb.AppendLine("  -ContentType \"application/json; charset=utf-8\" `");
-            sb.AppendLine("  -Body '{\"from\":\"MyApp\",\"message\":\"結果\",\"images\":[\"data:image/jpeg;base64,...\",\"data:image/png;base64,...\"]}'");
-            ApiDescriptionTextBox.Text = sb.ToString();
+            // API説明はSystemSettingsControlで管理される
+            // 必要に応じて削除可能
         }
 
         /// <summary>
@@ -2199,100 +1144,6 @@ namespace CocoroDock.Controls
             }
         }
 
-        /// <summary>
-        /// キャラクター設定のバリデーション（警告のみ）
-        /// </summary>
-        /// <returns>続行する場合はtrue、キャンセルする場合はfalse</returns>
-        private bool ValidateCharacterSettings()
-        {
-            var warnings = new List<string>();
-
-            foreach (var character in _characterSettings)
-            {
-                string characterName = character["Name"];
-
-                // LLMが有効なのにLLM Modelが空欄
-                bool isUseLLM = false;
-                if (character.ContainsKey("IsUseLLM"))
-                {
-                    bool.TryParse(character["IsUseLLM"], out isUseLLM);
-                }
-                if (isUseLLM && string.IsNullOrWhiteSpace(character["LLMModel"]))
-                {
-                    warnings.Add($"・キャラクター「{characterName}」でLLMが有効ですが、LLM Modelが空欄です");
-                }
-
-                // 記憶機能が有効なのに関連する各項目が空欄
-                bool isEnableMemory = true;
-                if (character.ContainsKey("IsEnableMemory"))
-                {
-                    bool.TryParse(character["IsEnableMemory"], out isEnableMemory);
-                }
-                if (isEnableMemory)
-                {
-                    if (string.IsNullOrWhiteSpace(character.ContainsKey("UserId") ? character["UserId"] : ""))
-                    {
-                        warnings.Add($"・キャラクター「{characterName}」で記憶機能が有効ですが、ユーザーIDが空欄です");
-                    }
-                    if (string.IsNullOrWhiteSpace(character.ContainsKey("EmbeddedApiKey") ? character["EmbeddedApiKey"] : ""))
-                    {
-                        warnings.Add($"・キャラクター「{characterName}」で記憶機能が有効ですが、埋め込みAPIキーが空欄です");
-                    }
-                    if (string.IsNullOrWhiteSpace(character.ContainsKey("EmbeddedModel") ? character["EmbeddedModel"] : ""))
-                    {
-                        warnings.Add($"・キャラクター「{characterName}」で記憶機能が有効ですが、埋め込みモデルが空欄です");
-                    }
-                }
-
-                // TTSが有効なのに関連する各項目が空欄
-                bool isUseTTS = false;
-                if (character.ContainsKey("IsUseTTS"))
-                {
-                    bool.TryParse(character["IsUseTTS"], out isUseTTS);
-                }
-                if (isUseTTS)
-                {
-                    if (string.IsNullOrWhiteSpace(character["TTSEndpointURL"]))
-                    {
-                        warnings.Add($"・キャラクター「{characterName}」でTTSが有効ですが、TTSエンドポイントURLが空欄です");
-                    }
-                    if (string.IsNullOrWhiteSpace(character["TTSSperkerID"]))
-                    {
-                        warnings.Add($"・キャラクター「{characterName}」でTTSが有効ですが、TTSスピーカーIDが空欄です");
-                    }
-                }
-
-                // STTが有効なのに関連する各項目が空欄
-                bool isUseSTT = false;
-                if (character.ContainsKey("IsUseSTT"))
-                {
-                    bool.TryParse(character["IsUseSTT"], out isUseSTT);
-                }
-                if (isUseSTT)
-                {
-                    if (string.IsNullOrWhiteSpace(character.ContainsKey("STTWakeWord") ? character["STTWakeWord"] : ""))
-                    {
-                        warnings.Add($"・キャラクター「{characterName}」でSTTが有効ですが、STT 起動ワードが空欄です");
-                    }
-                    if (string.IsNullOrWhiteSpace(character.ContainsKey("STTApiKey") ? character["STTApiKey"] : ""))
-                    {
-                        warnings.Add($"・キャラクター「{characterName}」でSTTが有効ですが、STT APIキーが空欄です");
-                    }
-                }
-            }
-
-            // 警告がある場合はまとめて表示
-            if (warnings.Count > 0)
-            {
-                string message = "以下の設定に問題があります:\n\n" + string.Join("\n", warnings) + "\n\nこのまま保存しますか？";
-                var result = MessageBox.Show(message, "設定の警告", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                if (result == MessageBoxResult.No)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
 
         /// <summary>
         /// デスクトップウォッチ設定の変更を適用
@@ -2413,132 +1264,9 @@ namespace CocoroDock.Controls
             }
         }
 
-        /// <summary>
-        /// PostureChangeLoopCountStandingテキストボックスの値変更時の処理
-        /// </summary>
-        private void PostureChangeLoopCountStandingTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (AnimationSetComboBox.SelectedIndex >= 0 &&
-                AnimationSetComboBox.SelectedIndex < _animationSettings.Count)
-            {
-                if (int.TryParse(PostureChangeLoopCountStandingTextBox.Text, out int loopCount))
-                {
-                    if (loopCount > 0 && loopCount <= 100) // 妥当な範囲の値のみ受け付ける
-                    {
-                        _animationSettings[AnimationSetComboBox.SelectedIndex].postureChangeLoopCountStanding = loopCount;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// PostureChangeLoopCountSittingFloorテキストボックスの値変更時の処理
-        /// </summary>
-        private void PostureChangeLoopCountSittingFloorTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (AnimationSetComboBox.SelectedIndex >= 0 &&
-                AnimationSetComboBox.SelectedIndex < _animationSettings.Count)
-            {
-                if (int.TryParse(PostureChangeLoopCountSittingFloorTextBox.Text, out int loopCount))
-                {
-                    if (loopCount > 0 && loopCount <= 100) // 妥当な範囲の値のみ受け付ける
-                    {
-                        _animationSettings[AnimationSetComboBox.SelectedIndex].postureChangeLoopCountSittingFloor = loopCount;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// EnableShadowOffCheckBoxのチェック時の処理
-        /// </summary>
-        private void EnableShadowOffCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            // チェックが入った時はテキストボックスを無効化
-            if (ShadowOffMeshTextBox != null)
-            {
-                ShadowOffMeshTextBox.IsEnabled = true;
-            }
-        }
-
-        /// <summary>
-        /// EnableShadowOffCheckBoxのアンチェック時の処理
-        /// </summary>
-        private void EnableShadowOffCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            // チェックが外れた時はテキストボックスを有効化
-            if (ShadowOffMeshTextBox != null)
-            {
-                ShadowOffMeshTextBox.IsEnabled = false;
-            }
-        }
-
-        /// <summary>
-        /// MCPタブの初期化
-        /// </summary>
-        private void InitializeMcpTab()
-        {
-            try
-            {
-                var appSettings = AppSettings.Instance;
-                _mcpTabViewModel = new McpTabViewModel(appSettings);
-
-                // MCPタブのDataContextを設定
-                ((TabItem)AdminTabControl.Items[4]).DataContext = _mcpTabViewModel; // MCPタブは5番目（0ベース）
-
-                // UIエレメントとViewModelのバインディング
-                McpEnabledCheckBox.IsChecked = _mcpTabViewModel.IsMcpEnabled;
-                McpConfigTextBox.Text = _mcpTabViewModel.McpConfigJson;
-                McpServersList.ItemsSource = _mcpTabViewModel.McpServers;
-                McpStatusMessage.Text = _mcpTabViewModel.StatusMessage;
-
-                // イベントハンドラーの登録
-                McpEnabledCheckBox.Checked += (s, e) =>
-                {
-                    _mcpTabViewModel.IsMcpEnabled = true;
-                };
-                McpEnabledCheckBox.Unchecked += (s, e) =>
-                {
-                    _mcpTabViewModel.IsMcpEnabled = false;
-                };
-
-                McpConfigTextBox.TextChanged += (s, e) =>
-                {
-                    _mcpTabViewModel.McpConfigJson = McpConfigTextBox.Text;
-                };
 
 
-                // ViewModelプロパティ変更イベントの監視
-                _mcpTabViewModel.PropertyChanged += (s, e) =>
-                {
-                    Dispatcher.Invoke(() =>
-                    {
-                        switch (e.PropertyName)
-                        {
-                            case nameof(McpTabViewModel.McpServers):
-                                McpServersList.ItemsSource = _mcpTabViewModel.McpServers;
-                                break;
-                            case nameof(McpTabViewModel.StatusMessage):
-                                McpStatusMessage.Text = _mcpTabViewModel.StatusMessage;
-                                break;
-                            case nameof(McpTabViewModel.DiagnosticDetails):
-                                DiagnosticDetailsTextBox.Text = _mcpTabViewModel.DiagnosticDetails;
-                                break;
-                            case nameof(McpTabViewModel.IsLoading):
-                                // ローディング表示は削除されたため、何もしない
-                                break;
-                        }
-                    });
-                };
 
-                // 初期化完了（監視は自動的に開始される）
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"MCPタブ初期化エラー: {ex.Message}");
-                McpStatusMessage.Text = $"初期化エラー: {ex.Message}";
-            }
-        }
 
         /// <summary>
         /// ログ表示ボタンのクリックイベント
@@ -2559,122 +1287,7 @@ namespace CocoroDock.Controls
             }
         }
 
-        /// <summary>
-        /// 現在位置を追加ボタンのクリックイベント
-        /// </summary>
-        private async void AddEscapePositionButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                // 最大10箇所まで追加可能
-                if (EscapePositionsCollection.Count < 10)
-                {
-                    float x = 100, y = 100; // デフォルト値
 
-                    // CocoroShellから現在位置を取得
-                    if (_communicationService != null && _communicationService.IsServerRunning)
-                    {
-                        try
-                        {
-                            var position = await GetCurrentCharacterPositionAsync();
-                            if (position.HasValue)
-                            {
-                                x = position.Value.X;
-                                y = position.Value.Y;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"キャラクター位置取得エラー: {ex.Message}");
-                        }
-                    }
-
-                    // 新しい座標を追加
-                    var newPosition = new EscapePositionViewModel
-                    {
-                        X = x,
-                        Y = y,
-                        Enabled = true
-                    };
-                    EscapePositionsCollection.Add(newPosition);
-                }
-                else
-                {
-                    MessageBox.Show("設定可能な逃げ先の上限（10箇所）に達しています。", "追加できません", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"逃げ先座標の追加に失敗しました: {ex.Message}",
-                               "エラー",
-                               MessageBoxButton.OK,
-                               MessageBoxImage.Error);
-            }
-        }
-
-        /// <summary>
-        /// CocoroShellから現在のキャラクター位置を取得
-        /// </summary>
-        private async Task<(float X, float Y)?> GetCurrentCharacterPositionAsync()
-        {
-            try
-            {
-                if (_communicationService == null || !_communicationService.IsServerRunning)
-                    return null;
-
-                var positionResponse = await _communicationService.GetShellPositionAsync();
-                if (positionResponse?.position != null)
-                {
-                    return (positionResponse.position.x, positionResponse.position.y);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"位置取得エラー: {ex.Message}");
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// 逃げ先座標を削除
-        /// </summary>
-        private void RemoveEscapePosition_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (sender is Button button && button.Tag is EscapePositionViewModel position)
-                {
-                    EscapePositionsCollection.Remove(position);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"逃げ先座標の削除に失敗しました: {ex.Message}",
-                               "エラー",
-                               MessageBoxButton.OK,
-                               MessageBoxImage.Error);
-            }
-        }
-
-        /// <summary>
-        /// 全削除ボタンのクリックイベント
-        /// </summary>
-        private void ClearEscapePositionsButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                // 確認ダイアログなしで直接削除
-                EscapePositionsCollection.Clear();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"逃げ先座標の削除に失敗しました: {ex.Message}",
-                               "エラー",
-                               MessageBoxButton.OK,
-                               MessageBoxImage.Error);
-            }
-        }
 
     }
 }

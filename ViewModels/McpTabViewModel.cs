@@ -59,6 +59,7 @@ namespace CocoroDock.ViewModels
 
             // 初期表示を設定
             DiagnosticDetails = "設定確認中...";
+            StatusMessage = "接続状態を確認中...";
 
             // 設定ダイアログ開始時にデータ取得
             _ = InitialMcpStatusUpdateAsync();

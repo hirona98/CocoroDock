@@ -31,10 +31,12 @@ namespace CocoroDock.Communication
         public string ttsEndpointURL { get; set; } = string.Empty;
         public string ttsSperkerID { get; set; } = string.Empty;
         public bool isEnableMemory { get; set; } = true; // メモリ機能の有効/無効（デフォルト: true）
+        public float memoryRelevanceThreshold { get; set; } = 0.7f; // メモリ関連性閾値
         public string userId { get; set; } = "";
         public string embeddedApiKey { get; set; } = string.Empty; // 埋め込みモデル用APIキー
         public string embeddedModel { get; set; } = "openai/text-embedding-3-small"; // 埋め込みモデル名
         public bool isUseSTT { get; set; } = false; // STT（音声認識）機能の有効/無効
+        public string sttModel { get; set; } = string.Empty; // STTモデル
         public string sttEngine { get; set; } = "amivoice"; // STTエンジン ("amivoice" | "openai")
         public string sttWakeWord { get; set; } = string.Empty; // STT起動ワード
         public string sttApiKey { get; set; } = string.Empty; // STT用APIキー
