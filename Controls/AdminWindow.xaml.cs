@@ -693,9 +693,9 @@ namespace CocoroDock.Controls
             {
                 var appSettings = AppSettings.Instance;
 
-                // ウィンドウ位置を0.0にリセット
-                appSettings.WindowPositionX = 0.0f;
-                appSettings.WindowPositionY = 0.0f;
+                // ウィンドウ位置を未設定状態にリセット（CocoroShellが初期位置を使用する）
+                appSettings.WindowPositionX = float.MinValue;
+                appSettings.WindowPositionY = float.MinValue;
                 appSettings.IsRestoreWindowPosition = false;
                 RestoreWindowPositionCheckBox.IsChecked = false;
                 appSettings.SaveAppSettings();
