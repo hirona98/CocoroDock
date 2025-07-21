@@ -221,7 +221,7 @@
                                                          VerticalContentAlignment="Top"
                                                          PreviewKeyDown="MessageTextBox_KeyDown"
                                                          TextWrapping="Wrap"
-                                                         MaxLength="1000"
+                                                         MaxLength="10485760"
                                                          AcceptsReturn="True"
                                                          AllowDrop="True"
                                                          PreviewDragEnter="TextBox_PreviewDragEnter"

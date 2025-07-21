@@ -105,7 +105,7 @@ namespace CocoroDock.Communication
                             return;
                         }
 
-                        const int maxMessageLength = 5000;
+                        const int maxMessageLength = 10 * 1024 * 1024; // 10MB
                         if (request.message.Length + request.from.Length > maxMessageLength)
                         {
                             context.Response.StatusCode = 400;
