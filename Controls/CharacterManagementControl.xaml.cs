@@ -281,6 +281,77 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
+        /// キャラクター複製ボタンクリック
+        /// </summary>
+        private void DuplicateCharacterButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_currentCharacterIndex < 0 || _currentCharacterIndex >= AppSettings.Instance.CharacterList.Count)
+                    return;
+
+                var sourceCharacter = AppSettings.Instance.CharacterList[_currentCharacterIndex];
+                
+                // 複製するキャラクターの名前を生成
+                var newName = sourceCharacter.modelName + "_copy";
+                
+                // 同名のキャラクターが既に存在する場合は番号を付ける
+                int copyNumber = 1;
+                while (AppSettings.Instance.CharacterList.Any(c => c.modelName == newName))
+                {
+                    newName = $"{sourceCharacter.modelName}_copy{copyNumber}";
+                    copyNumber++;
+                }
+
+                // キャラクター設定をコピー
+                var newCharacter = new CharacterSettings
+                {
+                    modelName = newName,
+                    vrmFilePath = sourceCharacter.vrmFilePath,
+                    isUseLLM = sourceCharacter.isUseLLM,
+                    apiKey = sourceCharacter.apiKey,
+                    llmModel = sourceCharacter.llmModel,
+                    systemPrompt = sourceCharacter.systemPrompt,
+                    isUseTTS = sourceCharacter.isUseTTS,
+                    ttsEndpointURL = sourceCharacter.ttsEndpointURL,
+                    ttsSperkerID = sourceCharacter.ttsSperkerID,
+                    isEnableMemory = sourceCharacter.isEnableMemory,
+                    memoryRelevanceThreshold = sourceCharacter.memoryRelevanceThreshold,
+                    userId = sourceCharacter.userId,
+                    embeddedApiKey = sourceCharacter.embeddedApiKey,
+                    embeddedModel = sourceCharacter.embeddedModel,
+                    isUseSTT = sourceCharacter.isUseSTT,
+                    sttModel = sourceCharacter.sttModel,
+                    sttEngine = sourceCharacter.sttEngine,
+                    sttWakeWord = sourceCharacter.sttWakeWord,
+                    sttApiKey = sourceCharacter.sttApiKey,
+                    isConvertMToon = sourceCharacter.isConvertMToon,
+                    isEnableShadowOff = sourceCharacter.isEnableShadowOff,
+                    shadowOffMesh = sourceCharacter.shadowOffMesh,
+                    isReadOnly = false
+                };
+
+                // リストに追加
+                AppSettings.Instance.CharacterList.Add(newCharacter);
+                CharacterSelectComboBox.Items.Add(newCharacter.modelName);
+                
+                // 新しく追加したキャラクターを選択
+                CharacterSelectComboBox.SelectedIndex = CharacterSelectComboBox.Items.Count - 1;
+
+                // 設定変更イベントを発生
+                SettingsChanged?.Invoke(this, EventArgs.Empty);
+                
+                MessageBox.Show($"キャラクター「{newCharacter.modelName}」を作成しました。", "複製完了",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"キャラクター複製エラー: {ex.Message}", "エラー",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
         /// VRMファイル選択ボタンクリック
         /// </summary>
         private void BrowseVrmFileButton_Click(object sender, RoutedEventArgs e)

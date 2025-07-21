@@ -18,6 +18,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="80"/>
                             <ColumnDefinition Width="85"/>
                         </Grid.ColumnDefinitions>
 
@@ -37,8 +38,17 @@
                                 Foreground="#FF4873CF"
                                 ToolTip="Add character"/>
 
-                        <Button x:Name="DeleteCharacterButton"
+                        <Button x:Name="DuplicateCharacterButton"
                                 Grid.Column="2"
+                                Content="複製"
+                                Margin="5,5,0,5"
+                                Padding="10,5"
+                                Click="DuplicateCharacterButton_Click"
+                                Foreground="#FF4873CF"
+                                ToolTip="Duplicate current character"/>
+
+                        <Button x:Name="DeleteCharacterButton"
+                                Grid.Column="3"
                                 Content="削除"
                                 Margin="5,5,0,5"
                                 Padding="10,5"
