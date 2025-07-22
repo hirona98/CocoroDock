@@ -26,6 +26,7 @@ namespace CocoroDock.Communication
         public bool isUseLLM { get; set; }
         public string apiKey { get; set; } = string.Empty;
         public string llmModel { get; set; } = string.Empty;
+        public string localLLMBaseUrl { get; set; } = string.Empty; // ローカルLLMのベースURL
         public string systemPrompt { get; set; } = string.Empty;
         public bool isUseTTS { get; set; }
         public string ttsEndpointURL { get; set; } = string.Empty;

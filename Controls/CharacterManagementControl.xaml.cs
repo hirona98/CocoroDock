@@ -46,6 +46,11 @@ namespace CocoroDock.Controls
         {
             InitializeComponent();
             _communicationService = new CommunicationService(AppSettings.Instance);
+
+            // Base URLのプレースホルダー制御イベントを設定
+            BaseUrlTextBox.TextChanged += BaseUrlTextBox_TextChanged;
+            BaseUrlTextBox.GotFocus += BaseUrlTextBox_GotFocus;
+            BaseUrlTextBox.LostFocus += BaseUrlTextBox_LostFocus;
         }
 
         /// <summary>
@@ -113,6 +118,7 @@ namespace CocoroDock.Controls
             character.isUseLLM = IsUseLLMCheckBox.IsChecked ?? false;
             character.apiKey = ApiKeyPasswordBox.Password;
             character.llmModel = LlmModelTextBox.Text;
+            character.localLLMBaseUrl = BaseUrlTextBox.Text;
             character.systemPrompt = SystemPromptTextBox.Text;
             character.isEnableMemory = IsEnableMemoryCheckBox.IsChecked ?? false;
             character.userId = UserIdTextBox.Text;
@@ -174,6 +180,8 @@ namespace CocoroDock.Controls
             IsUseLLMCheckBox.IsChecked = character.isUseLLM;
             ApiKeyPasswordBox.Password = character.apiKey;
             LlmModelTextBox.Text = character.llmModel;
+            BaseUrlTextBox.Text = character.localLLMBaseUrl;
+            UpdateBaseUrlPlaceholder(); // プレースホルダー更新
             SystemPromptTextBox.Text = character.systemPrompt;
 
             // 記憶機能
@@ -310,6 +318,7 @@ namespace CocoroDock.Controls
                     isUseLLM = sourceCharacter.isUseLLM,
                     apiKey = sourceCharacter.apiKey,
                     llmModel = sourceCharacter.llmModel,
+                    localLLMBaseUrl = sourceCharacter.localLLMBaseUrl,
                     systemPrompt = sourceCharacter.systemPrompt,
                     isUseTTS = sourceCharacter.isUseTTS,
                     ttsEndpointURL = sourceCharacter.ttsEndpointURL,
@@ -413,6 +422,33 @@ namespace CocoroDock.Controls
             {
                 MessageBox.Show($"リンクを開けませんでした: {ex.Message}", "エラー",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Base URLテキストボックスのプレースホルダー制御
+        /// </summary>
+        private void BaseUrlTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            UpdateBaseUrlPlaceholder();
+        }
+
+        private void BaseUrlTextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            UpdateBaseUrlPlaceholder();
+        }
+
+        private void BaseUrlTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            UpdateBaseUrlPlaceholder();
+        }
+
+        private void UpdateBaseUrlPlaceholder()
+        {
+            if (BaseUrlTextBox != null && BaseUrlPlaceholder != null)
+            {
+                BaseUrlPlaceholder.Visibility = string.IsNullOrEmpty(BaseUrlTextBox.Text) ?
+                    Visibility.Visible : Visibility.Collapsed;
             }
         }
     }
