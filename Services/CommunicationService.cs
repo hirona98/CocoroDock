@@ -292,8 +292,13 @@ namespace CocoroDock.Services
                     _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
                 }
 
-                // 通知メッセージを特別なタグで囲む
-                var notificationText = $"<cocoro-notification>\nFrom: {notification.userId}\nMessage: {notification.message}\n</cocoro-notification>";
+                // 通知メッセージをJSON形式で特別なタグで囲む
+                var notificationJson = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    from = notification.userId,
+                    message = notification.message
+                });
+                var notificationText = $"<cocoro-notification>{notificationJson}</cocoro-notification>";
 
                 // AIAvatarKit仕様のリクエストを作成してCocoroCoreに転送
                 // 複数画像がある場合はファイルリストを作成
