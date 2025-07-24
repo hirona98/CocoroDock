@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Diagnostics;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -49,7 +50,7 @@ namespace CocoroDock.Communication
 
                 var builder = WebApplication.CreateBuilder();
                 builder.WebHost.UseUrls($"http://127.0.0.1:{_port}");
-                
+
                 // ログレベルを設定してHTTPリクエストログを無効化
                 builder.Logging.ClearProviders();
                 builder.Logging.SetMinimumLevel(LogLevel.Warning);
@@ -273,7 +274,14 @@ namespace CocoroDock.Communication
             {
                 try
                 {
-                    var patch = await context.Request.ReadFromJsonAsync<ConfigPatchRequest>();
+                    // PropertyNameCaseInsensitiveを有効にしてCocoroShellからのPascalCaseプロパティも受け入れる
+                    var jsonOptions = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    };
+
+                    var patch = await context.Request.ReadFromJsonAsync<ConfigPatchRequest>(jsonOptions);
                     if (patch == null || patch.updates == null)
                     {
                         context.Response.StatusCode = 400;
@@ -287,10 +295,10 @@ namespace CocoroDock.Communication
 
                     // 現在の設定を取得
                     var currentConfig = _appSettings.GetConfigSettings();
-                    
-                    // 部分更新を適用
-                    ApplyConfigPatch(currentConfig, patch.updates);
-                    
+
+                    // 部分更新を適用（同じJsonSerializerOptionsを使用）
+                    ApplyConfigPatch(currentConfig, patch.updates, jsonOptions);
+
                     // 設定を更新・保存
                     _appSettings.UpdateSettings(currentConfig);
                     _appSettings.SaveSettings();
@@ -564,10 +572,10 @@ namespace CocoroDock.Communication
         /// <summary>
         /// 設定に部分更新を適用
         /// </summary>
-        private static void ApplyConfigPatch(ConfigSettings config, System.Collections.Generic.Dictionary<string, object> updates)
+        private static void ApplyConfigPatch(ConfigSettings config, System.Collections.Generic.Dictionary<string, object> updates, JsonSerializerOptions jsonOptions)
         {
             var configType = typeof(ConfigSettings);
-            
+
             foreach (var kvp in updates)
             {
                 var propertyInfo = configType.GetProperty(kvp.Key);
@@ -576,32 +584,66 @@ namespace CocoroDock.Communication
                     try
                     {
                         object convertedValue;
-                        
-                        // 型に応じて変換処理
-                        if (propertyInfo.PropertyType == typeof(float))
+
+                        // JsonElementの場合は適切に変換処理
+                        if (kvp.Value is JsonElement jsonElement)
                         {
-                            convertedValue = Convert.ToSingle(kvp.Value);
-                        }
-                        else if (propertyInfo.PropertyType == typeof(bool))
-                        {
-                            convertedValue = Convert.ToBoolean(kvp.Value);
-                        }
-                        else if (propertyInfo.PropertyType == typeof(int))
-                        {
-                            convertedValue = Convert.ToInt32(kvp.Value);
-                        }
-                        else if (propertyInfo.PropertyType.IsGenericType && 
-                                propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(System.Collections.Generic.List<>))
-                        {
-                            // List型の場合はJSONから直接デシリアライズ
-                            var json = System.Text.Json.JsonSerializer.Serialize(kvp.Value);
-                            convertedValue = System.Text.Json.JsonSerializer.Deserialize(json, propertyInfo.PropertyType);
+                            if (propertyInfo.PropertyType == typeof(float))
+                            {
+                                convertedValue = jsonElement.GetSingle();
+                            }
+                            else if (propertyInfo.PropertyType == typeof(bool))
+                            {
+                                convertedValue = jsonElement.GetBoolean();
+                            }
+                            else if (propertyInfo.PropertyType == typeof(int))
+                            {
+                                convertedValue = jsonElement.GetInt32();
+                            }
+                            else if (propertyInfo.PropertyType == typeof(string))
+                            {
+                                convertedValue = jsonElement.GetString() ?? string.Empty;
+                            }
+                            else if (propertyInfo.PropertyType.IsGenericType &&
+                                    propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(System.Collections.Generic.List<>))
+                            {
+                                // List型の場合はJsonElementから直接デシリアライズ
+                                convertedValue = JsonSerializer.Deserialize(jsonElement.GetRawText(), propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType);
+                            }
+                            else
+                            {
+                                // その他の型はJsonElementから直接デシリアライズ
+                                convertedValue = JsonSerializer.Deserialize(jsonElement.GetRawText(), propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType);
+                            }
                         }
                         else
                         {
-                            convertedValue = Convert.ChangeType(kvp.Value, propertyInfo.PropertyType);
+                            // JsonElement以外の場合は従来の変換処理
+                            if (propertyInfo.PropertyType == typeof(float))
+                            {
+                                convertedValue = Convert.ToSingle(kvp.Value);
+                            }
+                            else if (propertyInfo.PropertyType == typeof(bool))
+                            {
+                                convertedValue = Convert.ToBoolean(kvp.Value);
+                            }
+                            else if (propertyInfo.PropertyType == typeof(int))
+                            {
+                                convertedValue = Convert.ToInt32(kvp.Value);
+                            }
+                            else if (propertyInfo.PropertyType.IsGenericType &&
+                                    propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(System.Collections.Generic.List<>))
+                            {
+                                // List型の場合はJSONから直接デシリアライズ（同じオプションを使用）
+                                var json = JsonSerializer.Serialize(kvp.Value, jsonOptions);
+                                convertedValue = JsonSerializer.Deserialize(json, propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType);
+                            }
+                            else
+                            {
+                                convertedValue = Convert.ChangeType(kvp.Value, propertyInfo.PropertyType);
+                            }
                         }
-                        
+
                         propertyInfo.SetValue(config, convertedValue);
                         Debug.WriteLine($"Applied config patch: {kvp.Key} = {convertedValue}");
                     }
