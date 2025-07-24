@@ -1,11 +1,12 @@
 <UserControl x:Class="CocoroDock.Controls.EscapePositionControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
-    
+             mc:Ignorable="d"
+             d:DesignHeight="450"
+        d:DesignWidth="800">
+
     <!-- 逃げ先座標設定 -->
     <GroupBox Header="逃げ先座標設定（最大10箇所）"
               Margin="15,5,0,15"
@@ -24,6 +25,8 @@
                        Foreground="#666666"
                        Margin="0,0,0,10">
                 マウスに触れた時の逃げ先となる座標を最大10箇所まで設定できます。触れられた方向に移動します。
+                <LineBreak/>
+                指定しない場合は水平方向の反対側となります。
             </TextBlock>
 
             <!-- 座標リスト -->
