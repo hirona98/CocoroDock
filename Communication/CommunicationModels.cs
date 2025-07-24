@@ -14,6 +14,28 @@ namespace CocoroDock.Communication
         public string message { get; set; } = string.Empty;
     }
 
+    /// <summary>
+    /// Style-Bert-VITS2の設定を保持するクラス
+    /// </summary>
+    public class StyleBertVits2Config
+    {
+        public string modelName { get; set; } = "amitaro";
+        public int modelId { get; set; } = 0;
+        public string speakerName { get; set; } = "あみたろ";
+        public int speakerId { get; set; } = 0;
+        public string style { get; set; } = "Neutral";
+        public float styleWeight { get; set; } = 1.0f;
+        public float sdpRatio { get; set; } = 0.2f;
+        public float noise { get; set; } = 0.6f;
+        public float noiseW { get; set; } = 0.8f;
+        public float length { get; set; } = 1.0f;
+        public string language { get; set; } = "JP";
+        public bool autoSplit { get; set; } = true;
+        public float splitInterval { get; set; } = 0.5f;
+        public string assistText { get; set; } = "";
+        public float assistTextWeight { get; set; } = 0f;
+        public string referenceAudioPath { get; set; } = "";
+    }
 
     /// <summary>
     /// キャラクター設定クラス
@@ -31,6 +53,10 @@ namespace CocoroDock.Communication
         public bool isUseTTS { get; set; }
         public string ttsEndpointURL { get; set; } = string.Empty;
         public string ttsSperkerID { get; set; } = string.Empty;
+        public string ttsType { get; set; } = "voicevox"; // "voicevox" or "style-bert-vits2"
+        
+        // Style-Bert-VITS2用設定
+        public StyleBertVits2Config styleBertVits2Config { get; set; } = new StyleBertVits2Config();
         public bool isEnableMemory { get; set; } = false; // メモリ機能の有効/無効
         public string userId { get; set; } = "";
         public string embeddedApiKey { get; set; } = string.Empty; // 埋め込みモデル用APIキー

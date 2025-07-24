@@ -131,6 +131,32 @@ namespace CocoroDock.Controls
             character.isUseTTS = IsUseTTSCheckBox.IsChecked ?? false;
             character.ttsEndpointURL = TTSEndpointURLTextBox.Text;
             character.ttsSperkerID = TTSSperkerIDTextBox.Text;
+            
+            // TTSエンジンタイプ
+            character.ttsType = TTSEngineComboBox.SelectedItem is ComboBoxItem selectedTtsEngine ? selectedTtsEngine.Tag?.ToString() ?? "voicevox" : "voicevox";
+            
+            // Style-Bert-VITS2設定
+            character.styleBertVits2Config.modelName = SBV2ModelNameTextBox.Text;
+            if (int.TryParse(SBV2ModelIdTextBox.Text, out int modelId))
+                character.styleBertVits2Config.modelId = modelId;
+            character.styleBertVits2Config.speakerName = SBV2SpeakerNameTextBox.Text;
+            if (int.TryParse(SBV2SpeakerIdTextBox.Text, out int speakerId))
+                character.styleBertVits2Config.speakerId = speakerId;
+            character.styleBertVits2Config.style = SBV2StyleTextBox.Text;
+            if (float.TryParse(SBV2StyleWeightTextBox.Text, out float styleWeight))
+                character.styleBertVits2Config.styleWeight = styleWeight;
+            character.styleBertVits2Config.language = SBV2LanguageTextBox.Text;
+            if (float.TryParse(SBV2SdpRatioTextBox.Text, out float sdpRatio))
+                character.styleBertVits2Config.sdpRatio = sdpRatio;
+            if (float.TryParse(SBV2NoiseTextBox.Text, out float noise))
+                character.styleBertVits2Config.noise = noise;
+            if (float.TryParse(SBV2NoiseWTextBox.Text, out float noiseW))
+                character.styleBertVits2Config.noiseW = noiseW;
+            if (float.TryParse(SBV2LengthTextBox.Text, out float length))
+                character.styleBertVits2Config.length = length;
+            character.styleBertVits2Config.autoSplit = SBV2AutoSplitCheckBox.IsChecked ?? true;
+            if (float.TryParse(SBV2SplitIntervalTextBox.Text, out float splitInterval))
+                character.styleBertVits2Config.splitInterval = splitInterval;
 
             return character;
         }
@@ -210,6 +236,34 @@ namespace CocoroDock.Controls
             IsUseTTSCheckBox.IsChecked = character.isUseTTS;
             TTSEndpointURLTextBox.Text = character.ttsEndpointURL;
             TTSSperkerIDTextBox.Text = character.ttsSperkerID;
+            
+            // TTSエンジンComboBox設定
+            foreach (ComboBoxItem item in TTSEngineComboBox.Items)
+            {
+                if (item.Tag?.ToString() == character.ttsType)
+                {
+                    TTSEngineComboBox.SelectedItem = item;
+                    break;
+                }
+            }
+            
+            // Style-Bert-VITS2設定の読み込み
+            SBV2ModelNameTextBox.Text = character.styleBertVits2Config.modelName;
+            SBV2ModelIdTextBox.Text = character.styleBertVits2Config.modelId.ToString();
+            SBV2SpeakerNameTextBox.Text = character.styleBertVits2Config.speakerName;
+            SBV2SpeakerIdTextBox.Text = character.styleBertVits2Config.speakerId.ToString();
+            SBV2StyleTextBox.Text = character.styleBertVits2Config.style;
+            SBV2StyleWeightTextBox.Text = character.styleBertVits2Config.styleWeight.ToString("F1");
+            SBV2LanguageTextBox.Text = character.styleBertVits2Config.language;
+            SBV2SdpRatioTextBox.Text = character.styleBertVits2Config.sdpRatio.ToString("F1");
+            SBV2NoiseTextBox.Text = character.styleBertVits2Config.noise.ToString("F1");
+            SBV2NoiseWTextBox.Text = character.styleBertVits2Config.noiseW.ToString("F1");
+            SBV2LengthTextBox.Text = character.styleBertVits2Config.length.ToString("F1");
+            SBV2AutoSplitCheckBox.IsChecked = character.styleBertVits2Config.autoSplit;
+            SBV2SplitIntervalTextBox.Text = character.styleBertVits2Config.splitInterval.ToString("F1");
+            
+            // TTSパネルの表示を更新
+            UpdateTTSPanelVisibility(character.ttsType);
 
             // 読み取り専用の場合は削除ボタンを無効化
             DeleteCharacterButton.IsEnabled = !character.isReadOnly;
@@ -449,6 +503,52 @@ namespace CocoroDock.Controls
             {
                 BaseUrlPlaceholder.Visibility = string.IsNullOrEmpty(BaseUrlTextBox.Text) ?
                     Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// TTSエンジン選択変更処理
+        /// </summary>
+        private void TTSEngineComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_isInitialized || TTSEngineComboBox.SelectedItem == null)
+                return;
+
+            var selectedItem = (ComboBoxItem)TTSEngineComboBox.SelectedItem;
+            var engineType = selectedItem.Tag?.ToString();
+
+            // エンジンタイプに応じて表示パネルを切り替え
+            UpdateTTSPanelVisibility(engineType);
+
+            // 設定変更イベントを発火
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// TTSパネルの表示/非表示を切り替え
+        /// </summary>
+        private void UpdateTTSPanelVisibility(string? engineType)
+        {
+            if (VoicevoxSettingsPanel == null || StyleBertVits2BasicPanel == null || StyleBertVits2SettingsPanel == null)
+                return;
+
+            switch (engineType)
+            {
+                case "voicevox":
+                    VoicevoxSettingsPanel.Visibility = Visibility.Visible;
+                    StyleBertVits2BasicPanel.Visibility = Visibility.Collapsed;
+                    StyleBertVits2SettingsPanel.Visibility = Visibility.Collapsed;
+                    break;
+                case "style-bert-vits2":
+                    VoicevoxSettingsPanel.Visibility = Visibility.Collapsed;
+                    StyleBertVits2BasicPanel.Visibility = Visibility.Visible;
+                    StyleBertVits2SettingsPanel.Visibility = Visibility.Visible;
+                    break;
+                default:
+                    VoicevoxSettingsPanel.Visibility = Visibility.Visible;
+                    StyleBertVits2BasicPanel.Visibility = Visibility.Collapsed;
+                    StyleBertVits2SettingsPanel.Visibility = Visibility.Collapsed;
+                    break;
             }
         }
     }

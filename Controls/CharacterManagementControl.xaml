@@ -357,7 +357,7 @@
                 </GroupBox>
 
                 <!-- TTSパラメータ -->
-                <GroupBox Header="音声合成 (VOICEVOX/SHAREVOX/AivisSpeech)"
+                <GroupBox Header="音声合成"
                           Margin="0,0,20,20"
                           Padding="10">
                     <StackPanel>
@@ -368,7 +368,28 @@
                                       ToolTip="Use TTS"/>
                         </Grid>
 
-                        <!-- エンドポイントURLの設定 -->
+                        <!-- TTSエンジンの選択 -->
+                        <Grid Margin="0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="エンジン:"
+                                       VerticalAlignment="Center"/>
+                            <ComboBox Grid.Column="1"
+                                      x:Name="TTSEngineComboBox"
+                                      Margin="0,5"
+                                      Foreground="#FF4873CF"
+                                      SelectionChanged="TTSEngineComboBox_SelectionChanged">
+                                <ComboBoxItem Content="VOICEVOX/SHAREVOX/AivisSpeech"
+                                              Tag="voicevox"/>
+                                <ComboBoxItem Content="Style-Bert-VITS2（動作未確認！）"
+                                              Tag="style-bert-vits2"/>
+                            </ComboBox>
+                        </Grid>
+
+                        <!-- 共通設定：エンドポイントURL -->
                         <Grid Margin="0,5">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
@@ -384,28 +405,236 @@
                                      Text=""/>
                         </Grid>
 
-                        <!-- スピーカーIDの設定 -->
-                        <Grid Margin="0,5">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="Sperker ID:"
-                                       VerticalAlignment="Center"/>
-                            <TextBox Grid.Column="1"
-                                     x:Name="TTSSperkerIDTextBox"
-                                     Margin="0,5"
-                                     Foreground="#FF0078D7"
-                                     Text=""/>
-                        </Grid>
+                        <!-- VOICEVOX用設定 -->
+                        <StackPanel x:Name="VoicevoxSettingsPanel">
+                            <Grid Margin="0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="Speaker ID:"
+                                           VerticalAlignment="Center"/>
+                                <TextBox Grid.Column="1"
+                                         x:Name="TTSSperkerIDTextBox"
+                                         Margin="0,5"
+                                         Foreground="#FF0078D7"
+                                         Text=""/>
+                            </Grid>
+                        </StackPanel>
 
-                        <Grid Margin="0,5">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                        </Grid>
+                        <!-- Style-Bert-VITS2用設定：基本設定 -->
+                        <StackPanel x:Name="StyleBertVits2BasicPanel">
+                            <!-- Model Name -->
+                            <Grid Margin="0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="Model Name:"
+                                           VerticalAlignment="Center"
+                                           Foreground="#FF4873CF"/>
+                                <TextBox Grid.Column="1"
+                                         x:Name="SBV2ModelNameTextBox"
+                                         Margin="0,5"
+                                         Foreground="#FF0078D7"/>
+                            </Grid>
+
+                            <!-- Model ID -->
+                            <Grid Margin="0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="Model ID:"
+                                           VerticalAlignment="Center"
+                                           Foreground="#FF4873CF"/>
+                                <TextBox Grid.Column="1"
+                                         x:Name="SBV2ModelIdTextBox"
+                                         Margin="0,5"
+                                         Foreground="#FF0078D7"/>
+                            </Grid>
+
+                            <!-- Speaker Name -->
+                            <Grid Margin="0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="Speaker Name:"
+                                           VerticalAlignment="Center"
+                                           Foreground="#FF4873CF"/>
+                                <TextBox Grid.Column="1"
+                                         x:Name="SBV2SpeakerNameTextBox"
+                                         Margin="0,5"
+                                         Foreground="#FF0078D7"/>
+                            </Grid>
+
+                            <!-- Speaker ID -->
+                            <Grid Margin="0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="Speaker ID:"
+                                           VerticalAlignment="Center"
+                                           Foreground="#FF4873CF"/>
+                                <TextBox Grid.Column="1"
+                                         x:Name="SBV2SpeakerIdTextBox"
+                                         Margin="0,5"
+                                         Foreground="#FF0078D7"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Style-Bert-VITS2用設定：詳細設定 -->
+                        <Expander x:Name="StyleBertVits2SettingsPanel"
+                                  Margin="0,5"
+                                  IsExpanded="False">
+                            <Expander.Header>
+                                <TextBlock Text="Style-Bert-VITS2 詳細設定"
+                                           Foreground="#FF4873CF"/>
+                            </Expander.Header>
+                            <StackPanel Margin="10,10,0,10">
+                                <!-- Style -->
+                                <Grid Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="Style:"
+                                               VerticalAlignment="Center"
+                                               Foreground="#FF4873CF"/>
+                                    <TextBox Grid.Column="1"
+                                             x:Name="SBV2StyleTextBox"
+                                             Margin="0,5"
+                                             Foreground="#FF0078D7"/>
+                                </Grid>
+
+                                <!-- Style Weight -->
+                                <Grid Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="Style Weight:"
+                                               VerticalAlignment="Center"
+                                               Foreground="#FF4873CF"/>
+                                    <TextBox Grid.Column="1"
+                                             x:Name="SBV2StyleWeightTextBox"
+                                             Margin="0,5"
+                                             Foreground="#FF0078D7"/>
+                                </Grid>
+
+                                <!-- Language -->
+                                <Grid Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="Language:"
+                                               VerticalAlignment="Center"
+                                               Foreground="#FF4873CF"/>
+                                    <TextBox Grid.Column="1"
+                                             x:Name="SBV2LanguageTextBox"
+                                             Margin="0,5"
+                                             Foreground="#FF0078D7"/>
+                                </Grid>
+
+                                <!-- SDP Ratio -->
+                                <Grid Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="SDP Ratio:"
+                                               VerticalAlignment="Center"
+                                               Foreground="#FF4873CF"/>
+                                    <TextBox Grid.Column="1"
+                                             x:Name="SBV2SdpRatioTextBox"
+                                             Margin="0,5"
+                                             Foreground="#FF0078D7"/>
+                                </Grid>
+
+                                <!-- Noise -->
+                                <Grid Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="Noise:"
+                                               VerticalAlignment="Center"
+                                               Foreground="#FF4873CF"/>
+                                    <TextBox Grid.Column="1"
+                                             x:Name="SBV2NoiseTextBox"
+                                             Margin="0,5"
+                                             Foreground="#FF0078D7"/>
+                                </Grid>
+
+                                <!-- Noise W -->
+                                <Grid Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="Noise W:"
+                                               VerticalAlignment="Center"
+                                               Foreground="#FF4873CF"/>
+                                    <TextBox Grid.Column="1"
+                                             x:Name="SBV2NoiseWTextBox"
+                                             Margin="0,5"
+                                             Foreground="#FF0078D7"/>
+                                </Grid>
+
+                                <!-- Length -->
+                                <Grid Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="Length:"
+                                               VerticalAlignment="Center"
+                                               Foreground="#FF4873CF"/>
+                                    <TextBox Grid.Column="1"
+                                             x:Name="SBV2LengthTextBox"
+                                             Margin="0,5"
+                                             Foreground="#FF0078D7"/>
+                                </Grid>
+
+                                <!-- Auto Split -->
+                                <Grid Margin="0,5">
+                                    <CheckBox x:Name="SBV2AutoSplitCheckBox"
+                                              Content="Auto Split"
+                                              Foreground="#FF4873CF"/>
+                                </Grid>
+
+                                <!-- Split Interval -->
+                                <Grid Margin="0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="Split Interval:"
+                                               VerticalAlignment="Center"
+                                               Foreground="#FF4873CF"/>
+                                    <TextBox Grid.Column="1"
+                                             x:Name="SBV2SplitIntervalTextBox"
+                                             Margin="0,5"
+                                             Foreground="#FF0078D7"/>
+                                </Grid>
+                            </StackPanel>
+                        </Expander>
                     </StackPanel>
                 </GroupBox>
 
