@@ -386,6 +386,8 @@
                                               Tag="voicevox"/>
                                 <ComboBoxItem Content="Style-Bert-VITS2（動作未確認！）"
                                               Tag="style-bert-vits2"/>
+                                <ComboBoxItem Content="Aivis Cloud"
+                                              Tag="aivis-cloud"/>
                             </ComboBox>
                         </Grid>
 
@@ -635,6 +637,164 @@
                                 </Grid>
                             </StackPanel>
                         </Expander>
+
+                        <!-- AivisCloud用設定 -->
+                        <StackPanel x:Name="AivisCloudSettingsPanel">
+                            <!-- API Key -->
+                            <Grid Margin="0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="API Key:"
+                                           VerticalAlignment="Center"
+                                           Foreground="#FF4873CF"/>
+                                <PasswordBox Grid.Column="1"
+                                             x:Name="AivisCloudApiKeyPasswordBox"
+                                             Margin="0,5"
+                                             Foreground="#FF0078D7"
+                                             ToolTip="AivisCloud APIキー"/>
+                            </Grid>
+
+                            <!-- Model UUID -->
+                            <Grid Margin="0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="Model UUID:"
+                                           VerticalAlignment="Center"
+                                           Foreground="#FF4873CF"/>
+                                <TextBox Grid.Column="1"
+                                         x:Name="AivisCloudModelUuidTextBox"
+                                         Margin="0,5"
+                                         Foreground="#FF0078D7"
+                                         ToolTip="音声合成モデルのUUID"/>
+                            </Grid>
+
+                            <!-- Speaker UUID -->
+                            <Grid Margin="0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="Speaker UUID:"
+                                           VerticalAlignment="Center"
+                                           Foreground="#FF4873CF"/>
+                                <TextBox Grid.Column="1"
+                                         x:Name="AivisCloudSpeakerUuidTextBox"
+                                         Margin="0,5"
+                                         Foreground="#FF0078D7"
+                                         ToolTip="スピーカーUUID（オプション）"/>
+                            </Grid>
+
+                            <!-- Style ID -->
+                            <Grid Margin="0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="Style ID:"
+                                           VerticalAlignment="Center"
+                                           Foreground="#FF4873CF"/>
+                                <TextBox Grid.Column="1"
+                                         x:Name="AivisCloudStyleIdTextBox"
+                                         Margin="0,5"
+                                         Foreground="#FF0078D7"
+                                         ToolTip="スタイルID"/>
+                            </Grid>
+
+                            <!-- 詳細設定 -->
+                            <Expander x:Name="AivisCloudAdvancedSettingsPanel"
+                                      Margin="0,5"
+                                      IsExpanded="False">
+                                <Expander.Header>
+                                    <TextBlock Text="AivisCloud 詳細設定"
+                                               Foreground="#FF4873CF"/>
+                                </Expander.Header>
+                                <StackPanel Margin="10,10,0,10">
+                                    <!-- Speaking Rate -->
+                                    <Grid Margin="0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="話速:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <TextBox Grid.Column="1"
+                                                 x:Name="AivisCloudSpeakingRateTextBox"
+                                                 Margin="0,5"
+                                                 Foreground="#FF0078D7"
+                                                 ToolTip="話速 (0.5-2.0)"/>
+                                    </Grid>
+
+                                    <!-- Emotional Intensity -->
+                                    <Grid Margin="0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="感情強度:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <TextBox Grid.Column="1"
+                                                 x:Name="AivisCloudEmotionalIntensityTextBox"
+                                                 Margin="0,5"
+                                                 Foreground="#FF0078D7"
+                                                 ToolTip="感情表現の強さ (0.0-2.0)"/>
+                                    </Grid>
+
+                                    <!-- Tempo Dynamics -->
+                                    <Grid Margin="0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="テンポ変化:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <TextBox Grid.Column="1"
+                                                 x:Name="AivisCloudTempoDynamicsTextBox"
+                                                 Margin="0,5"
+                                                 Foreground="#FF0078D7"
+                                                 ToolTip="テンポの緩急 (0.0-2.0)"/>
+                                    </Grid>
+
+                                    <!-- Volume -->
+                                    <Grid Margin="0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="音量:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <TextBox Grid.Column="1"
+                                                 x:Name="AivisCloudVolumeTextBox"
+                                                 Margin="0,5"
+                                                 Foreground="#FF0078D7"
+                                                 ToolTip="音量 (0.0-2.0)"/>
+                                    </Grid>
+
+                                    <!-- Enable Streaming -->
+                                    <Grid Margin="0,5">
+                                        <CheckBox x:Name="AivisCloudEnableStreamingCheckBox"
+                                                  Content="ストリーミング有効"
+                                                  Foreground="#FF4873CF"
+                                                  ToolTip="リアルタイム音声合成を有効にする"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
                     </StackPanel>
                 </GroupBox>
 

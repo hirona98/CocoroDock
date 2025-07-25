@@ -158,6 +158,22 @@ namespace CocoroDock.Controls
             if (float.TryParse(SBV2SplitIntervalTextBox.Text, out float splitInterval))
                 character.styleBertVits2Config.splitInterval = splitInterval;
 
+            // AivisCloud設定
+            character.aivisCloudConfig.apiKey = AivisCloudApiKeyPasswordBox.Password;
+            character.aivisCloudConfig.modelUuid = AivisCloudModelUuidTextBox.Text;
+            character.aivisCloudConfig.speakerUuid = AivisCloudSpeakerUuidTextBox.Text;
+            if (int.TryParse(AivisCloudStyleIdTextBox.Text, out int styleId))
+                character.aivisCloudConfig.styleId = styleId;
+            if (float.TryParse(AivisCloudSpeakingRateTextBox.Text, out float speakingRate))
+                character.aivisCloudConfig.speakingRate = speakingRate;
+            if (float.TryParse(AivisCloudEmotionalIntensityTextBox.Text, out float emotionalIntensity))
+                character.aivisCloudConfig.emotionalIntensity = emotionalIntensity;
+            if (float.TryParse(AivisCloudTempoDynamicsTextBox.Text, out float tempoDynamics))
+                character.aivisCloudConfig.tempoDynamics = tempoDynamics;
+            if (float.TryParse(AivisCloudVolumeTextBox.Text, out float volume))
+                character.aivisCloudConfig.volume = volume;
+            character.aivisCloudConfig.enableStreaming = AivisCloudEnableStreamingCheckBox.IsChecked ?? true;
+
             return character;
         }
 
@@ -261,6 +277,17 @@ namespace CocoroDock.Controls
             SBV2LengthTextBox.Text = character.styleBertVits2Config.length.ToString("F1");
             SBV2AutoSplitCheckBox.IsChecked = character.styleBertVits2Config.autoSplit;
             SBV2SplitIntervalTextBox.Text = character.styleBertVits2Config.splitInterval.ToString("F1");
+
+            // AivisCloud設定の読み込み
+            AivisCloudApiKeyPasswordBox.Password = character.aivisCloudConfig.apiKey;
+            AivisCloudModelUuidTextBox.Text = character.aivisCloudConfig.modelUuid;
+            AivisCloudSpeakerUuidTextBox.Text = character.aivisCloudConfig.speakerUuid;
+            AivisCloudStyleIdTextBox.Text = character.aivisCloudConfig.styleId.ToString();
+            AivisCloudSpeakingRateTextBox.Text = character.aivisCloudConfig.speakingRate.ToString("F1");
+            AivisCloudEmotionalIntensityTextBox.Text = character.aivisCloudConfig.emotionalIntensity.ToString("F1");
+            AivisCloudTempoDynamicsTextBox.Text = character.aivisCloudConfig.tempoDynamics.ToString("F1");
+            AivisCloudVolumeTextBox.Text = character.aivisCloudConfig.volume.ToString("F1");
+            AivisCloudEnableStreamingCheckBox.IsChecked = character.aivisCloudConfig.enableStreaming;
             
             // TTSパネルの表示を更新
             UpdateTTSPanelVisibility(character.ttsType);
@@ -377,6 +404,52 @@ namespace CocoroDock.Controls
                     isUseTTS = sourceCharacter.isUseTTS,
                     ttsEndpointURL = sourceCharacter.ttsEndpointURL,
                     ttsSperkerID = sourceCharacter.ttsSperkerID,
+                    ttsType = sourceCharacter.ttsType,
+                    styleBertVits2Config = new StyleBertVits2Config
+                    {
+                        modelName = sourceCharacter.styleBertVits2Config.modelName,
+                        modelId = sourceCharacter.styleBertVits2Config.modelId,
+                        speakerName = sourceCharacter.styleBertVits2Config.speakerName,
+                        speakerId = sourceCharacter.styleBertVits2Config.speakerId,
+                        style = sourceCharacter.styleBertVits2Config.style,
+                        styleWeight = sourceCharacter.styleBertVits2Config.styleWeight,
+                        language = sourceCharacter.styleBertVits2Config.language,
+                        sdpRatio = sourceCharacter.styleBertVits2Config.sdpRatio,
+                        noise = sourceCharacter.styleBertVits2Config.noise,
+                        noiseW = sourceCharacter.styleBertVits2Config.noiseW,
+                        length = sourceCharacter.styleBertVits2Config.length,
+                        autoSplit = sourceCharacter.styleBertVits2Config.autoSplit,
+                        splitInterval = sourceCharacter.styleBertVits2Config.splitInterval,
+                        assistText = sourceCharacter.styleBertVits2Config.assistText,
+                        assistTextWeight = sourceCharacter.styleBertVits2Config.assistTextWeight,
+                        referenceAudioPath = sourceCharacter.styleBertVits2Config.referenceAudioPath
+                    },
+                    aivisCloudConfig = new AivisCloudConfig
+                    {
+                        apiKey = sourceCharacter.aivisCloudConfig.apiKey,
+                        endpointUrl = sourceCharacter.aivisCloudConfig.endpointUrl,
+                        modelUuid = sourceCharacter.aivisCloudConfig.modelUuid,
+                        speakerUuid = sourceCharacter.aivisCloudConfig.speakerUuid,
+                        styleId = sourceCharacter.aivisCloudConfig.styleId,
+                        styleName = sourceCharacter.aivisCloudConfig.styleName,
+                        useSSML = sourceCharacter.aivisCloudConfig.useSSML,
+                        language = sourceCharacter.aivisCloudConfig.language,
+                        speakingRate = sourceCharacter.aivisCloudConfig.speakingRate,
+                        emotionalIntensity = sourceCharacter.aivisCloudConfig.emotionalIntensity,
+                        tempoDynamics = sourceCharacter.aivisCloudConfig.tempoDynamics,
+                        pitch = sourceCharacter.aivisCloudConfig.pitch,
+                        volume = sourceCharacter.aivisCloudConfig.volume,
+                        outputFormat = sourceCharacter.aivisCloudConfig.outputFormat,
+                        outputBitrate = sourceCharacter.aivisCloudConfig.outputBitrate,
+                        outputSamplingRate = sourceCharacter.aivisCloudConfig.outputSamplingRate,
+                        outputAudioChannels = sourceCharacter.aivisCloudConfig.outputAudioChannels,
+                        leadingSilenceSeconds = sourceCharacter.aivisCloudConfig.leadingSilenceSeconds,
+                        trailingSilenceSeconds = sourceCharacter.aivisCloudConfig.trailingSilenceSeconds,
+                        lineBreakSilenceSeconds = sourceCharacter.aivisCloudConfig.lineBreakSilenceSeconds,
+                        enableStreaming = sourceCharacter.aivisCloudConfig.enableStreaming,
+                        maxTextLengthBeforeSplit = sourceCharacter.aivisCloudConfig.maxTextLengthBeforeSplit,
+                        streamingBufferTime = sourceCharacter.aivisCloudConfig.streamingBufferTime
+                    },
                     isEnableMemory = sourceCharacter.isEnableMemory,
                     userId = sourceCharacter.userId,
                     embeddedApiKey = sourceCharacter.embeddedApiKey,
@@ -529,7 +602,7 @@ namespace CocoroDock.Controls
         /// </summary>
         private void UpdateTTSPanelVisibility(string? engineType)
         {
-            if (VoicevoxSettingsPanel == null || StyleBertVits2BasicPanel == null || StyleBertVits2SettingsPanel == null)
+            if (VoicevoxSettingsPanel == null || StyleBertVits2BasicPanel == null || StyleBertVits2SettingsPanel == null || AivisCloudSettingsPanel == null)
                 return;
 
             switch (engineType)
@@ -538,16 +611,25 @@ namespace CocoroDock.Controls
                     VoicevoxSettingsPanel.Visibility = Visibility.Visible;
                     StyleBertVits2BasicPanel.Visibility = Visibility.Collapsed;
                     StyleBertVits2SettingsPanel.Visibility = Visibility.Collapsed;
+                    AivisCloudSettingsPanel.Visibility = Visibility.Collapsed;
                     break;
                 case "style-bert-vits2":
                     VoicevoxSettingsPanel.Visibility = Visibility.Collapsed;
                     StyleBertVits2BasicPanel.Visibility = Visibility.Visible;
                     StyleBertVits2SettingsPanel.Visibility = Visibility.Visible;
+                    AivisCloudSettingsPanel.Visibility = Visibility.Collapsed;
+                    break;
+                case "aivis-cloud":
+                    VoicevoxSettingsPanel.Visibility = Visibility.Collapsed;
+                    StyleBertVits2BasicPanel.Visibility = Visibility.Collapsed;
+                    StyleBertVits2SettingsPanel.Visibility = Visibility.Collapsed;
+                    AivisCloudSettingsPanel.Visibility = Visibility.Visible;
                     break;
                 default:
                     VoicevoxSettingsPanel.Visibility = Visibility.Visible;
                     StyleBertVits2BasicPanel.Visibility = Visibility.Collapsed;
                     StyleBertVits2SettingsPanel.Visibility = Visibility.Collapsed;
+                    AivisCloudSettingsPanel.Visibility = Visibility.Collapsed;
                     break;
             }
         }
