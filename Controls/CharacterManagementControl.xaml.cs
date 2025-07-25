@@ -136,6 +136,7 @@ namespace CocoroDock.Controls
             character.ttsType = TTSEngineComboBox.SelectedItem is ComboBoxItem selectedTtsEngine ? selectedTtsEngine.Tag?.ToString() ?? "voicevox" : "voicevox";
             
             // Style-Bert-VITS2設定
+            character.styleBertVits2Config.endpointUrl = SBV2EndpointUrlTextBox.Text;
             character.styleBertVits2Config.modelName = SBV2ModelNameTextBox.Text;
             if (int.TryParse(SBV2ModelIdTextBox.Text, out int modelId))
                 character.styleBertVits2Config.modelId = modelId;
@@ -159,6 +160,7 @@ namespace CocoroDock.Controls
                 character.styleBertVits2Config.splitInterval = splitInterval;
 
             // AivisCloud設定
+            character.aivisCloudConfig.endpointUrl = AivisCloudEndpointUrlTextBox.Text;
             character.aivisCloudConfig.apiKey = AivisCloudApiKeyPasswordBox.Password;
             character.aivisCloudConfig.modelUuid = AivisCloudModelUuidTextBox.Text;
             character.aivisCloudConfig.speakerUuid = AivisCloudSpeakerUuidTextBox.Text;
@@ -264,6 +266,7 @@ namespace CocoroDock.Controls
             }
             
             // Style-Bert-VITS2設定の読み込み
+            SBV2EndpointUrlTextBox.Text = character.styleBertVits2Config.endpointUrl;
             SBV2ModelNameTextBox.Text = character.styleBertVits2Config.modelName;
             SBV2ModelIdTextBox.Text = character.styleBertVits2Config.modelId.ToString();
             SBV2SpeakerNameTextBox.Text = character.styleBertVits2Config.speakerName;
@@ -279,6 +282,7 @@ namespace CocoroDock.Controls
             SBV2SplitIntervalTextBox.Text = character.styleBertVits2Config.splitInterval.ToString("F1");
 
             // AivisCloud設定の読み込み
+            AivisCloudEndpointUrlTextBox.Text = character.aivisCloudConfig.endpointUrl;
             AivisCloudApiKeyPasswordBox.Password = character.aivisCloudConfig.apiKey;
             AivisCloudModelUuidTextBox.Text = character.aivisCloudConfig.modelUuid;
             AivisCloudSpeakerUuidTextBox.Text = character.aivisCloudConfig.speakerUuid;
@@ -407,6 +411,7 @@ namespace CocoroDock.Controls
                     ttsType = sourceCharacter.ttsType,
                     styleBertVits2Config = new StyleBertVits2Config
                     {
+                        endpointUrl = sourceCharacter.styleBertVits2Config.endpointUrl,
                         modelName = sourceCharacter.styleBertVits2Config.modelName,
                         modelId = sourceCharacter.styleBertVits2Config.modelId,
                         speakerName = sourceCharacter.styleBertVits2Config.speakerName,

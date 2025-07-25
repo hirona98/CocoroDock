@@ -49,6 +49,7 @@
       "ttsSperkerID": "18",
       "ttsType": "voicevox",
       "styleBertVits2Config": {
+        "endpointUrl": "http://localhost:5000",
         "modelName": "amitaro",
         "modelId": 0,
         "speakerName": "あみたろ",
@@ -118,6 +119,7 @@
       "ttsSperkerID": "",
       "ttsType": "voicevox",
       "styleBertVits2Config": {
+        "endpointUrl": "http://localhost:5000",
         "modelName": "amitaro",
         "modelId": 0,
         "speakerName": "あみたろ",
