@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Diagnostics;
 
 namespace CocoroDock.Windows
 {
@@ -14,12 +15,25 @@ namespace CocoroDock.Windows
         private const double ZOOM_STEP = 0.1;
         private const double MIN_ZOOM = 0.1;
         private const double MAX_ZOOM = 5.0;
-        private bool _isFitToWindow = false;
+        private bool _isFitToWindow = true;
 
         public ImagePreviewWindow(BitmapSource imageSource)
         {
             InitializeComponent();
             PreviewImage.Source = imageSource;
+            PreviewImageZoom.Source = imageSource;
+            
+            Debug.WriteLine($"Image size: {imageSource.PixelWidth}x{imageSource.PixelHeight}");
+            Debug.WriteLine($"Window size: {Width}x{Height}");
+            
+            // デフォルトでウィンドウに合わせる
+            _isFitToWindow = true;
+            _currentZoom = 1.0;
+            
+            // Viewboxを表示、ScrollViewerを非表示
+            ImageViewbox.Visibility = Visibility.Visible;
+            ImageScrollViewer.Visibility = Visibility.Collapsed;
+            
             UpdateZoomText();
         }
 
@@ -49,9 +63,12 @@ namespace CocoroDock.Windows
         private void FitToWindowButton_Click(object sender, RoutedEventArgs e)
         {
             _isFitToWindow = true;
-            PreviewImage.Stretch = Stretch.Uniform;
             _currentZoom = 1.0;
-            PreviewImage.LayoutTransform = new ScaleTransform(1.0, 1.0);
+            
+            // Viewboxを表示、ScrollViewerを非表示
+            ImageViewbox.Visibility = Visibility.Visible;
+            ImageScrollViewer.Visibility = Visibility.Collapsed;
+            
             UpdateZoomText();
         }
 
@@ -68,8 +85,12 @@ namespace CocoroDock.Windows
         /// </summary>
         private void ApplyZoom()
         {
-            PreviewImage.Stretch = Stretch.None;
-            PreviewImage.LayoutTransform = new ScaleTransform(_currentZoom, _currentZoom);
+            // ScrollViewerを表示、Viewboxを非表示
+            ImageViewbox.Visibility = Visibility.Collapsed;
+            ImageScrollViewer.Visibility = Visibility.Visible;
+            
+            // ズーム適用
+            PreviewImageZoom.LayoutTransform = new ScaleTransform(_currentZoom, _currentZoom);
             UpdateZoomText();
         }
 

@@ -17,14 +17,23 @@
         </Grid.RowDefinitions>
         
         <!-- 画像表示エリア -->
-        <ScrollViewer Grid.Row="0" 
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Auto"
-                      Background="#2B2B2B">
-            <Image x:Name="PreviewImage" 
-                   Stretch="None"
-                   Margin="10"/>
-        </ScrollViewer>
+        <Grid Grid.Row="0" Background="#2B2B2B">
+            <ScrollViewer x:Name="ImageScrollViewer"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Auto"
+                          Visibility="Collapsed">
+                <Image x:Name="PreviewImageZoom" 
+                       Stretch="None"
+                       Margin="10"/>
+            </ScrollViewer>
+            
+            <Viewbox x:Name="ImageViewbox"
+                     Stretch="Uniform"
+                     Margin="10">
+                <Image x:Name="PreviewImage" 
+                       Stretch="None"/>
+            </Viewbox>
+        </Grid>
         
         <!-- コントロールバー -->
         <Border Grid.Row="1" 
