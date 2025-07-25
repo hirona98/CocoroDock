@@ -174,7 +174,6 @@ namespace CocoroDock.Controls
                 character.aivisCloudConfig.tempoDynamics = tempoDynamics;
             if (float.TryParse(AivisCloudVolumeTextBox.Text, out float volume))
                 character.aivisCloudConfig.volume = volume;
-            character.aivisCloudConfig.enableStreaming = AivisCloudEnableStreamingCheckBox.IsChecked ?? true;
 
             return character;
         }
@@ -290,7 +289,6 @@ namespace CocoroDock.Controls
             AivisCloudEmotionalIntensityTextBox.Text = character.aivisCloudConfig.emotionalIntensity.ToString("F1");
             AivisCloudTempoDynamicsTextBox.Text = character.aivisCloudConfig.tempoDynamics.ToString("F1");
             AivisCloudVolumeTextBox.Text = character.aivisCloudConfig.volume.ToString("F1");
-            AivisCloudEnableStreamingCheckBox.IsChecked = character.aivisCloudConfig.enableStreaming;
 
             // TTSパネルの表示を更新
             UpdateTTSPanelVisibility(character.ttsType);
@@ -450,9 +448,6 @@ namespace CocoroDock.Controls
                         leadingSilenceSeconds = sourceCharacter.aivisCloudConfig.leadingSilenceSeconds,
                         trailingSilenceSeconds = sourceCharacter.aivisCloudConfig.trailingSilenceSeconds,
                         lineBreakSilenceSeconds = sourceCharacter.aivisCloudConfig.lineBreakSilenceSeconds,
-                        enableStreaming = sourceCharacter.aivisCloudConfig.enableStreaming,
-                        maxTextLengthBeforeSplit = sourceCharacter.aivisCloudConfig.maxTextLengthBeforeSplit,
-                        streamingBufferTime = sourceCharacter.aivisCloudConfig.streamingBufferTime
                     },
                     isEnableMemory = sourceCharacter.isEnableMemory,
                     userId = sourceCharacter.userId,

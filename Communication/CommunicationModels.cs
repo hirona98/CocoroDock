@@ -44,28 +44,25 @@ namespace CocoroDock.Communication
     public class AivisCloudConfig
     {
         public string apiKey { get; set; } = "";
-        public string endpointUrl { get; set; } = "https://api.aivis-project.com";
+        public string endpointUrl { get; set; } = "";
         public string modelUuid { get; set; } = "a59cb814-0083-4369-8542-f51a29e72af7";
         public string speakerUuid { get; set; } = "";
         public int styleId { get; set; } = 0;
         public string styleName { get; set; } = "";
-        public bool useSSML { get; set; } = true;
+        public bool useSSML { get; set; } = false;
         public string language { get; set; } = "ja";
-        public float speakingRate { get; set; } = 1.0f;
-        public float emotionalIntensity { get; set; } = 1.0f;
-        public float tempoDynamics { get; set; } = 1.0f;
-        public float pitch { get; set; } = 0.0f;
-        public float volume { get; set; } = 1.0f;
-        public string outputFormat { get; set; } = "mp3";
-        public int outputBitrate { get; set; } = 192;
-        public int outputSamplingRate { get; set; } = 44100;
+        public float speakingRate { get; set; } = 1f;
+        public float emotionalIntensity { get; set; } = 1f;
+        public float tempoDynamics { get; set; } = 1f;
+        public float pitch { get; set; } = 0f;
+        public float volume { get; set; } = 1f;
+        public string outputFormat { get; set; } = "wav";
+        public int outputBitrate { get; set; } = 0;
+        public int outputSamplingRate { get; set; } = 16000;
         public string outputAudioChannels { get; set; } = "mono";
-        public float leadingSilenceSeconds { get; set; } = 0.1f;
-        public float trailingSilenceSeconds { get; set; } = 0.1f;
-        public float lineBreakSilenceSeconds { get; set; } = 0.4f;
-        public bool enableStreaming { get; set; } = true;
-        public int maxTextLengthBeforeSplit { get; set; } = 100;
-        public float streamingBufferTime { get; set; } = 0.2f;
+        public float leadingSilenceSeconds { get; set; } = 0.0f;
+        public float trailingSilenceSeconds { get; set; } = 0.3f;
+        public float lineBreakSilenceSeconds { get; set; } = 0.3f;
     }
 
     /// <summary>
@@ -85,10 +82,10 @@ namespace CocoroDock.Communication
         public string ttsEndpointURL { get; set; } = string.Empty;
         public string ttsSperkerID { get; set; } = string.Empty;
         public string ttsType { get; set; } = "voicevox"; // "voicevox" or "style-bert-vits2" or "aivis-cloud"
-        
+
         // Style-Bert-VITS2用設定
         public StyleBertVits2Config styleBertVits2Config { get; set; } = new StyleBertVits2Config();
-        
+
         // AivisCloud用設定
         public AivisCloudConfig aivisCloudConfig { get; set; } = new AivisCloudConfig();
         public bool isEnableMemory { get; set; } = false; // メモリ機能の有効/無効

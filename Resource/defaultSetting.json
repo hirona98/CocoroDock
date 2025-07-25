@@ -87,10 +87,7 @@
         "outputAudioChannels": "mono",
         "leadingSilenceSeconds": 0.0,
         "trailingSilenceSeconds": 0.3,
-        "lineBreakSilenceSeconds": 0.3,
-        "enableStreaming": true,
-        "maxTextLengthBeforeSplit": 100,
-        "streamingBufferTime": 0.2
+        "lineBreakSilenceSeconds": 0.3
       },
       "isEnableMemory": false,
       "userId": "",
@@ -154,13 +151,7 @@
         "outputFormat": "wav",
         "outputBitrate": 0,
         "outputSamplingRate": 16000,
-        "outputAudioChannels": "mono",
-        "leadingSilenceSeconds": 0.0,
-        "trailingSilenceSeconds": 0.3,
-        "lineBreakSilenceSeconds": 0.3,
-        "enableStreaming": true,
-        "maxTextLengthBeforeSplit": 100,
-        "streamingBufferTime": 0.2
+        "outputAudioChannels": "mono"
       },
       "isEnableMemory": false,
       "userId": "",
