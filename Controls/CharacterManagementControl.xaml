@@ -657,23 +657,6 @@
 
                         <!-- AivisCloud用設定 -->
                         <StackPanel x:Name="AivisCloudSettingsPanel">
-                            <!-- Endpoint URL -->
-                            <Grid Margin="0,5">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="Endpoint URL:"
-                                           VerticalAlignment="Center"
-                                           Foreground="#FF4873CF"/>
-                                <TextBox Grid.Column="1"
-                                         x:Name="AivisCloudEndpointUrlTextBox"
-                                         Margin="0,5"
-                                         Foreground="#FF0078D7"
-                                         ToolTip="AivisCloud エンドポイントURL"/>
-                            </Grid>
-
                             <!-- API Key -->
                             <Grid Margin="0,5">
                                 <Grid.ColumnDefinitions>

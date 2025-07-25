@@ -131,10 +131,10 @@ namespace CocoroDock.Controls
             character.isUseTTS = IsUseTTSCheckBox.IsChecked ?? false;
             character.ttsEndpointURL = TTSEndpointURLTextBox.Text;
             character.ttsSperkerID = TTSSperkerIDTextBox.Text;
-            
+
             // TTSエンジンタイプ
             character.ttsType = TTSEngineComboBox.SelectedItem is ComboBoxItem selectedTtsEngine ? selectedTtsEngine.Tag?.ToString() ?? "voicevox" : "voicevox";
-            
+
             // Style-Bert-VITS2設定
             character.styleBertVits2Config.endpointUrl = SBV2EndpointUrlTextBox.Text;
             character.styleBertVits2Config.modelName = SBV2ModelNameTextBox.Text;
@@ -160,7 +160,7 @@ namespace CocoroDock.Controls
                 character.styleBertVits2Config.splitInterval = splitInterval;
 
             // AivisCloud設定
-            character.aivisCloudConfig.endpointUrl = AivisCloudEndpointUrlTextBox.Text;
+            character.aivisCloudConfig.endpointUrl = String.Empty; // AivisCloudのエンドポイントURLはCocoroShellで設定
             character.aivisCloudConfig.apiKey = AivisCloudApiKeyPasswordBox.Password;
             character.aivisCloudConfig.modelUuid = AivisCloudModelUuidTextBox.Text;
             character.aivisCloudConfig.speakerUuid = AivisCloudSpeakerUuidTextBox.Text;
@@ -254,7 +254,7 @@ namespace CocoroDock.Controls
             IsUseTTSCheckBox.IsChecked = character.isUseTTS;
             TTSEndpointURLTextBox.Text = character.ttsEndpointURL;
             TTSSperkerIDTextBox.Text = character.ttsSperkerID;
-            
+
             // TTSエンジンComboBox設定
             foreach (ComboBoxItem item in TTSEngineComboBox.Items)
             {
@@ -264,7 +264,7 @@ namespace CocoroDock.Controls
                     break;
                 }
             }
-            
+
             // Style-Bert-VITS2設定の読み込み
             SBV2EndpointUrlTextBox.Text = character.styleBertVits2Config.endpointUrl;
             SBV2ModelNameTextBox.Text = character.styleBertVits2Config.modelName;
@@ -282,7 +282,6 @@ namespace CocoroDock.Controls
             SBV2SplitIntervalTextBox.Text = character.styleBertVits2Config.splitInterval.ToString("F1");
 
             // AivisCloud設定の読み込み
-            AivisCloudEndpointUrlTextBox.Text = character.aivisCloudConfig.endpointUrl;
             AivisCloudApiKeyPasswordBox.Password = character.aivisCloudConfig.apiKey;
             AivisCloudModelUuidTextBox.Text = character.aivisCloudConfig.modelUuid;
             AivisCloudSpeakerUuidTextBox.Text = character.aivisCloudConfig.speakerUuid;
@@ -292,7 +291,7 @@ namespace CocoroDock.Controls
             AivisCloudTempoDynamicsTextBox.Text = character.aivisCloudConfig.tempoDynamics.ToString("F1");
             AivisCloudVolumeTextBox.Text = character.aivisCloudConfig.volume.ToString("F1");
             AivisCloudEnableStreamingCheckBox.IsChecked = character.aivisCloudConfig.enableStreaming;
-            
+
             // TTSパネルの表示を更新
             UpdateTTSPanelVisibility(character.ttsType);
 

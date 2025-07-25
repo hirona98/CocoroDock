@@ -69,7 +69,7 @@
       },
       "aivisCloudConfig": {
         "apiKey": "",
-        "endpointUrl": "https://api.aivis-project.com",
+        "endpointUrl": "",
         "modelUuid": "a59cb814-0083-4369-8542-f51a29e72af7",
         "speakerUuid": "",
         "styleId": 0,
@@ -139,7 +139,7 @@
       },
       "aivisCloudConfig": {
         "apiKey": "",
-        "endpointUrl": "https://api.aivis-project.com",
+        "endpointUrl": "",
         "modelUuid": "a59cb814-0083-4369-8542-f51a29e72af7",
         "speakerUuid": "",
         "styleId": 0,
