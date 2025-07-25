@@ -386,7 +386,7 @@
                                               Tag="voicevox"/>
                                 <ComboBoxItem Content="Style-Bert-VITS2（動作未確認！）"
                                               Tag="style-bert-vits2"/>
-                                <ComboBoxItem Content="Aivis Cloud"
+                                <ComboBoxItem Content="Aivis Cloud API"
                                               Tag="aivis-cloud"/>
                             </ComboBox>
                         </Grid>
@@ -671,7 +671,7 @@
                                              x:Name="AivisCloudApiKeyPasswordBox"
                                              Margin="0,5"
                                              Foreground="#FF0078D7"
-                                             ToolTip="AivisCloud APIキー"/>
+                                             ToolTip="Aivis Cloud APIキー"/>
                             </Grid>
 
                             <!-- Model UUID -->
@@ -730,7 +730,7 @@
                                       Margin="0,5"
                                       IsExpanded="False">
                                 <Expander.Header>
-                                    <TextBlock Text="AivisCloud 詳細設定"
+                                    <TextBlock Text="Aivis Cloud API詳細設定"
                                                Foreground="#FF4873CF"/>
                                 </Expander.Header>
                                 <StackPanel Margin="10,10,0,10">
