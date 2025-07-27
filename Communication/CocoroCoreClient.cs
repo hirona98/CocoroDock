@@ -18,12 +18,11 @@ namespace CocoroDock.Communication
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
 
-        // SSEデータ用のクラス
-        public class SseData
+        // REST APIレスポンス用のクラス
+        public class ChatStartResponse
         {
-            public string? type { get; set; }
-            public string? content { get; set; }
-            public string? role { get; set; }
+            public string? status { get; set; }
+            public string? message { get; set; }
             public string? session_id { get; set; }
             public string? context_id { get; set; }
         }
@@ -32,21 +31,22 @@ namespace CocoroDock.Communication
         {
             _httpClient = new HttpClient
             {
-                Timeout = TimeSpan.FromMinutes(5) // SSE用に長めのタイムアウトを設定
+                Timeout = TimeSpan.FromSeconds(30) // REST API用のタイムアウト
             };
             _baseUrl = $"http://127.0.0.1:{port}";
         }
 
         /// <summary>
-        /// SSEレスポンス結果
+        /// チャットレスポンス結果（処理開始通知）
         /// </summary>
         public class ChatResponse : StandardResponse
         {
             public string? context_id { get; set; }
+            public string? content { get; set; }  // 処理開始時はnull、実際のコンテンツは/api/addChatUiで受信
         }
 
         /// <summary>
-        /// CocoroCoreにチャットメッセージを送信（SSEストリーミング対応）
+        /// CocoroCoreにチャットメッセージを送信（REST対応）
         /// </summary>
         /// <param name="request">チャットリクエスト</param>
         public async Task<ChatResponse> SendChatMessageAsync(CoreChatRequest request)
@@ -56,73 +56,36 @@ namespace CocoroDock.Communication
                 var json = MessageHelper.SerializeToJson(request);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                // SSEストリームを受信するため、特別なリクエストを構成
-                var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/chat")
-                {
-                    Content = content
-                };
-                
-                using var response = await _httpClient.SendAsync(
-                    httpRequest, 
-                    HttpCompletionOption.ResponseHeadersRead
-                );
+                Debug.WriteLine($"CocoroCoreにチャットメッセージを送信: {request.text}");
+
+                using var response = await _httpClient.PostAsync($"{_baseUrl}/chat", content);
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+                Debug.WriteLine($"CocoroCoreからの応答: {responseBody}");
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var errorBody = await response.Content.ReadAsStringAsync();
-                    var error = MessageHelper.DeserializeFromJson<ErrorResponse>(errorBody);
-                    throw new HttpRequestException($"CocoroCoreエラー: {error?.message ?? errorBody}");
+                    var error = MessageHelper.DeserializeFromJson<ErrorResponse>(responseBody);
+                    throw new HttpRequestException($"CocoroCoreエラー: {error?.message ?? responseBody}");
                 }
 
-                // Server-Sent Eventsの処理
-                await using var stream = await response.Content.ReadAsStreamAsync();
-                using var reader = new StreamReader(stream);
-                
-                string? finalContextId = null;
-                var responseReceived = false;
-
-                while (!reader.EndOfStream)
+                // JSON形式のレスポンスを解析
+                var startResponse = MessageHelper.DeserializeFromJson<ChatStartResponse>(responseBody);
+                if (startResponse == null)
                 {
-                    var line = await reader.ReadLineAsync();
-                    if (line == null) break;
-
-                    if (line.StartsWith("data: "))
-                    {
-                        var jsonData = line.Substring(6);
-                        if (jsonData == "[DONE]") break;
-
-                        try
-                        {
-                            var data = MessageHelper.DeserializeFromJson<SseData>(jsonData);
-                            if (data != null)
-                            {
-                                // context_idを保存（今後の会話継続用）
-                                if (!string.IsNullOrEmpty(data.context_id))
-                                {
-                                    finalContextId = data.context_id;
-                                }
-
-                                // チャンクごとの処理（必要に応じて）
-                                Debug.WriteLine($"SSE チャンク受信: type={data.type}, content={data.content?.Length ?? 0} chars");
-                                
-                                responseReceived = true;
-                            }
-                        }
-                        catch (JsonException ex)
-                        {
-                            Debug.WriteLine($"SSEデータのパースエラー: {ex.Message}");
-                        }
-                    }
+                    throw new InvalidOperationException("チャット開始応答の解析に失敗しました");
                 }
 
-                // 最終的なレスポンスはCocoroCoreから/api/addChatUiに送信されるため、
-                // ここでは成功レスポンスとcontext_idを返す
+                Debug.WriteLine($"チャット処理開始: status={startResponse.status}, context_id={startResponse.context_id}");
+
+                // 処理開始応答を返す（実際のメッセージは/api/addChatUiで受信）
                 return new ChatResponse 
                 { 
-                    status = "success", 
-                    message = responseReceived ? "AI response received via SSE" : "No response received",
+                    status = startResponse.status ?? "success", 
+                    message = startResponse.message ?? "Chat processing started",
                     timestamp = DateTime.UtcNow,
-                    context_id = finalContextId
+                    context_id = startResponse.context_id,
+                    content = null  // 実際のコンテンツは後で/api/addChatUiで受信
                 };
             }
             catch (TaskCanceledException)

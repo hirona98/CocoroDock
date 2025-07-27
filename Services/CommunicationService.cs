@@ -198,11 +198,17 @@ namespace CocoroDock.Services
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "チャットメッセージ送信"));
                 var response = await _coreClient.SendChatMessageAsync(request);
 
-                // SSEレスポンスから新しいcontext_idを保存
+                // REST応答から新しいcontext_idを保存
                 if (!string.IsNullOrEmpty(response.context_id))
                 {
                     _currentContextId = response.context_id;
                     Debug.WriteLine($"新しいcontext_idを取得: {_currentContextId}");
+                }
+
+                // チャット内容をログ出力（デバッグ用）
+                if (!string.IsNullOrEmpty(response.content))
+                {
+                    Debug.WriteLine($"AI応答内容: {response.content}");
                 }
 
                 // 成功時のステータス更新
@@ -339,7 +345,7 @@ namespace CocoroDock.Services
 
                 var response = await _coreClient.SendChatMessageAsync(request);
 
-                // SSEレスポンスから新しいcontext_idを保存
+                // REST応答から新しいcontext_idを保存
                 if (!string.IsNullOrEmpty(response.context_id))
                 {
                     _currentContextId = response.context_id;
@@ -434,7 +440,7 @@ namespace CocoroDock.Services
 
                 var response = await _coreClient.SendChatMessageAsync(request);
 
-                // SSEレスポンスから新しいcontext_idを保存
+                // REST応答から新しいcontext_idを保存
                 if (!string.IsNullOrEmpty(response.context_id))
                 {
                     _currentContextId = response.context_id;
