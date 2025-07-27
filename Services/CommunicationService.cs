@@ -301,7 +301,7 @@ namespace CocoroDock.Services
                 // 通知メッセージをJSON形式で特別なタグで囲む
                 var notificationJson = System.Text.Json.JsonSerializer.Serialize(new
                 {
-                    from = notification.userId,
+                    from = notification.from,
                     message = notification.message
                 });
                 var notificationText = $"<cocoro-notification>{notificationJson}</cocoro-notification>";
@@ -338,7 +338,7 @@ namespace CocoroDock.Services
                     metadata = new Dictionary<string, object>
                     {
                         { "source", "notification" },
-                        { "notification_from", notification.userId },
+                        { "notification_from", notification.from },
                         { "character_name", currentCharacter.modelName ?? "default" }
                     }
                 };

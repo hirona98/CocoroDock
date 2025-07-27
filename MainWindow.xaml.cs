@@ -547,7 +547,7 @@ namespace CocoroDock
             UIHelper.RunOnUIThread(() =>
             {
                 // 通知メッセージをチャットウィンドウに表示（複数画像付き）
-                ChatControlInstance.AddNotificationMessage(notification.userId, notification.message, imageSources);
+                ChatControlInstance.AddNotificationMessage(notification.from, notification.message, imageSources);
             });
         }
 

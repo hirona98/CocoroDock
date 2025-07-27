@@ -189,7 +189,7 @@ namespace CocoroDock.Communication
                         // 通知をChatメッセージとして転送
                         var chatPayload = new ChatMessagePayload
                         {
-                            userId = request.from.Trim(),
+                            from = request.from.Trim(),
                             sessionId = $"notification_{DateTime.Now:yyyyMMddHHmmss}",
                             message = request.message.Trim()
                         };
@@ -364,24 +364,24 @@ namespace CocoroDock.Communication
         private BitmapSource ValidateAndDecodeImage(string imageData)
         {
             // data URL形式の検証
-            var dataUrlPattern = @"^data:image\/(png|jpeg|jpg|gif|webp);base64,([A-Za-z0-9+\/]+(=|==)?)";  
+            var dataUrlPattern = @"^data:image\/(png|jpeg|jpg|gif|webp);base64,([A-Za-z0-9+\/]+(=|==)?)";
             var match = Regex.Match(imageData, dataUrlPattern);
-            
+
             if (!match.Success)
             {
                 throw new ArgumentException("Invalid image format. Expected data URL format (data:image/type;base64,data)");
             }
-            
+
             var mimeType = match.Groups[1].Value;
             var base64Data = match.Groups[2].Value;
-            
+
             // サイズ制限（5MB）
             const int maxSizeBytes = 5 * 1024 * 1024;
             if (base64Data.Length > maxSizeBytes * 4 / 3) // Base64は約1.33倍になる
             {
                 throw new ArgumentException($"Image size exceeds maximum limit of {maxSizeBytes / (1024 * 1024)}MB");
             }
-            
+
             // Base64デコード
             byte[] imageBytes;
             try
@@ -392,7 +392,7 @@ namespace CocoroDock.Communication
             {
                 throw new ArgumentException("Invalid Base64 image data");
             }
-            
+
             // 画像として読み込み
             try
             {
