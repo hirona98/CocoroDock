@@ -328,21 +328,7 @@ namespace CocoroDock.Communication
         public string[] changedFields { get; set; } = Array.Empty<string>();
     }
 
-    /// <summary>
-    /// CocoroCore API: チャットリクエスト (AIAvatarKit仕様準拠)
-    /// </summary>
-    public class CoreChatRequest
-    {
-        public string type { get; set; } = "invoke"; // AIAvatarKit: リクエストタイプ
-        public string session_id { get; set; } = string.Empty; // セッションID
-        public string user_id { get; set; } = string.Empty; // ユーザーID
-        public string? context_id { get; set; } // コンテキストID（会話継続用）
-        public string text { get; set; } = string.Empty; // テキストメッセージ
-        public string? audio_data { get; set; } // Base64エンコードされた音声データ
-        public List<object>? files { get; set; } // 添付ファイル
-        public Dictionary<string, object>? system_prompt_params { get; set; } // システムプロンプトパラメータ
-        public Dictionary<string, object>? metadata { get; set; } // メタデータ
-    }
+    // CoreChatRequest は廃止されました - 統一API（UnifiedChatRequest）を使用してください
 
     /// <summary>
     /// CocoroCore API: 通知リクエスト (AIAvatarKit仕様準拠)

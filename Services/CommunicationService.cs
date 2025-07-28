@@ -235,83 +235,6 @@ namespace CocoroDock.Services
             }
         }
 
-        /// <summary>
-        /// CocoroCoreにチャットメッセージを送信
-        /// </summary>
-        /// <param name="message">送信メッセージ</param>
-        /// <param name="characterName">キャラクター名（オプション）</param>
-        /// <param name="imageDataUrl">画像データURL（オプション）</param>
-        public async Task SendChatToCoreAsync(string message, string? characterName = null, string? imageDataUrl = null)
-        {
-            try
-            {
-                // 現在のキャラクター設定を取得
-                var currentCharacter = GetCurrentCharacterSettings();
-
-                // セッションIDを生成または既存のものを使用
-                if (string.IsNullOrEmpty(_currentSessionId))
-                {
-                    _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
-                }
-
-                // 画像データがある場合はfilesリストを作成
-                List<object>? files = null;
-                if (!string.IsNullOrEmpty(imageDataUrl))
-                {
-                    files = new List<object>
-                    {
-                        new Dictionary<string, string>
-                        {
-                            { "type", "image" },
-                            { "url", imageDataUrl }
-                        }
-                    };
-                }
-
-                // AIAvatarKit仕様のリクエストを作成
-                var request = new CoreChatRequest
-                {
-                    type = "invoke",
-                    session_id = _currentSessionId,
-                    user_id = "user", // TODO: 将来 characterList.userId から取得するよう変更予定
-                    context_id = _currentContextId, // 前回の会話からのコンテキストを使用
-                    text = message,
-                    audio_data = null, // テキストのみ
-                    files = files,
-                    system_prompt_params = null,
-                    metadata = new Dictionary<string, object>
-                    {
-                        { "source", "CocoroDock" },
-                        { "character_name", characterName ?? currentCharacter?.modelName ?? "default" }
-                    }
-                };
-
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "チャットメッセージ送信"));
-                var response = await _coreClient.SendChatMessageAsync(request);
-
-                // REST応答から新しいcontext_idを保存
-                if (!string.IsNullOrEmpty(response.context_id))
-                {
-                    _currentContextId = response.context_id;
-                    Debug.WriteLine($"新しいcontext_idを取得: {_currentContextId}");
-                }
-
-                // チャット内容をログ出力（デバッグ用）
-                if (!string.IsNullOrEmpty(response.content))
-                {
-                    Debug.WriteLine($"AI応答内容: {response.content}");
-                }
-
-                // 成功時のステータス更新
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "チャットメッセージ応答受信"));
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"CocoroCoreへのチャット送信エラー: {ex.Message}");
-                // ステータスバーにエラー表示
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"CocoroCoreへの通信エラー: {ex.Message}"));
-            }
-        }
 
         /// <summary>
         /// CocoroShellにアニメーションコマンドを送信
@@ -397,17 +320,17 @@ namespace CocoroDock.Services
                 });
                 var notificationText = $"<cocoro-notification>{notificationJson}</cocoro-notification>";
 
-                // AIAvatarKit仕様のリクエストを作成してCocoroCoreに転送
+                // 統一APIリクエストを作成してCocoroCoreに転送
                 // 複数画像がある場合はファイルリストを作成
-                List<object>? files = null;
+                List<Dictionary<string, object>>? files = null;
                 if (imageDataUrls != null && imageDataUrls.Length > 0)
                 {
-                    files = new List<object>();
+                    files = new List<Dictionary<string, object>>();
                     foreach (var imageDataUrl in imageDataUrls)
                     {
                         if (!string.IsNullOrEmpty(imageDataUrl))
                         {
-                            files.Add(new Dictionary<string, string>
+                            files.Add(new Dictionary<string, object>
                             {
                                 { "type", "image" },
                                 { "url", imageDataUrl }
@@ -416,25 +339,23 @@ namespace CocoroDock.Services
                     }
                 }
 
-                var request = new CoreChatRequest
+                var request = new UnifiedChatRequest
                 {
-                    type = "text",
-                    session_id = _currentSessionId,
                     user_id = "user", // TODO: 将来 characterList.userId から取得するよう変更予定
+                    session_id = _currentSessionId,
+                    message = notificationText,
+                    character_name = currentCharacter.modelName ?? "default",
+                    system_prompt = currentCharacter.systemPrompt,
                     context_id = _currentContextId,
-                    text = notificationText,
-                    audio_data = null,
                     files = files,
-                    system_prompt_params = null,
                     metadata = new Dictionary<string, object>
                     {
                         { "source", "notification" },
-                        { "notification_from", notification.from },
-                        { "character_name", currentCharacter.modelName ?? "default" }
+                        { "notification_from", notification.from }
                     }
                 };
 
-                var response = await _coreClient.SendChatMessageAsync(request);
+                var response = await _coreClient.SendUnifiedChatMessageAsync(request);
 
                 // REST応答から新しいcontext_idを保存
                 if (!string.IsNullOrEmpty(response.context_id))
@@ -501,35 +422,34 @@ namespace CocoroDock.Services
                     _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
                 }
 
-                // 仕様に従ったfilesリストを作成
-                var files = new List<object>
+                // 統一API用のfilesリストを作成
+                var files = new List<Dictionary<string, object>>
                 {
-                    new Dictionary<string, string>
+                    new Dictionary<string, object>
                     {
+                        { "type", "image" },
                         { "url", $"data:image/png;base64,{imageBase64}" }
                     }
                 };
 
-                // AIAvatarKit仕様のリクエストを作成
-                var request = new CoreChatRequest
+                // 統一APIリクエストを作成
+                var request = new UnifiedChatRequest
                 {
-                    type = "text",  // デスクトップモニタリング用
-                    session_id = _currentSessionId,
                     user_id = "user", // TODO: 将来 characterList.userId から取得するよう変更予定
+                    session_id = _currentSessionId,
+                    message = "<cocoro-desktop-monitoring>",  // 特別なタグ
+                    character_name = currentCharacter.modelName ?? "default",
+                    system_prompt = currentCharacter.systemPrompt,
                     context_id = _currentContextId,
-                    text = "<cocoro-desktop-monitoring>",  // 特別なタグ
-                    audio_data = null,
                     files = files,
-                    system_prompt_params = null,
                     metadata = new Dictionary<string, object>
                     {
                         { "source", "CocoroDock" },
-                        { "character_name", currentCharacter.modelName ?? "default" },
                         { "monitoring_type", "desktop" }
                     }
                 };
 
-                var response = await _coreClient.SendChatMessageAsync(request);
+                var response = await _coreClient.SendUnifiedChatMessageAsync(request);
 
                 // REST応答から新しいcontext_idを保存
                 if (!string.IsNullOrEmpty(response.context_id))
