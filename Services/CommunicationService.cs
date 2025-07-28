@@ -182,7 +182,7 @@ namespace CocoroDock.Services
                 {
                     type = "invoke",
                     session_id = _currentSessionId,
-                    user_id = "user",
+                    user_id = "user", // TODO: 将来 characterList.userId から取得するよう変更予定
                     context_id = _currentContextId, // 前回の会話からのコンテキストを使用
                     text = message,
                     audio_data = null, // テキストのみ
@@ -329,7 +329,7 @@ namespace CocoroDock.Services
                 {
                     type = "text",
                     session_id = _currentSessionId,
-                    user_id = "user",
+                    user_id = "user", // TODO: 将来 characterList.userId から取得するよう変更予定
                     context_id = _currentContextId,
                     text = notificationText,
                     audio_data = null,
@@ -424,7 +424,7 @@ namespace CocoroDock.Services
                 {
                     type = "text",  // デスクトップモニタリング用
                     session_id = _currentSessionId,
-                    user_id = "user",
+                    user_id = "user", // TODO: 将来 characterList.userId から取得するよう変更予定
                     context_id = _currentContextId,
                     text = "<cocoro-desktop-monitoring>",  // 特別なタグ
                     audio_data = null,
