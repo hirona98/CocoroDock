@@ -231,6 +231,9 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ChatRequest
     {
+        public string userId { get; set; } = string.Empty;
+        public string sessionId { get; set; } = string.Empty;
+        public string message { get; set; } = string.Empty;
         public string role { get; set; } = string.Empty; // "user" | "assistant"
         public string content { get; set; } = string.Empty;
         public DateTime timestamp { get; set; } = DateTime.UtcNow;
@@ -352,6 +355,35 @@ namespace CocoroDock.Communication
         public string? context_id { get; set; } // コンテキストID
         public string text { get; set; } = string.Empty; // 通知メッセージ
         public Dictionary<string, object>? metadata { get; set; } // メタデータ
+    }
+
+    /// <summary>
+    /// CocoroCore2 統一API: チャットリクエスト（新設計）
+    /// </summary>
+    public class UnifiedChatRequest
+    {
+        public string user_id { get; set; } = string.Empty; // ユーザーID（固定値）
+        public string session_id { get; set; } = string.Empty; // セッションID
+        public string message { get; set; } = string.Empty; // メッセージテキスト
+        public string? character_name { get; set; } // キャラクター名
+        public string? system_prompt { get; set; } // システムプロンプト
+        public string? context_id { get; set; } // コンテキストID
+        public List<Dictionary<string, object>>? files { get; set; } // 添付ファイル
+        public Dictionary<string, object>? metadata { get; set; } // メタデータ
+    }
+
+    /// <summary>
+    /// CocoroCore2 統一API: チャットレスポンス（新設計）
+    /// </summary>
+    public class UnifiedChatResponse
+    {
+        public string status { get; set; } = string.Empty; // 処理状態
+        public string message { get; set; } = string.Empty; // 処理結果メッセージ
+        public string? response { get; set; } // AIの応答
+        public string? context_id { get; set; } // 新しいコンテキストID
+        public string? session_id { get; set; } // セッションID
+        public int? response_length { get; set; } // レスポンス文字数
+        public DateTime timestamp { get; set; } // タイムスタンプ
     }
 
     /// <summary>

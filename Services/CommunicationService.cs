@@ -145,6 +145,97 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
+        /// CocoroCore2に統一APIでチャットメッセージを送信（新設計）
+        /// </summary>
+        /// <param name="message">送信メッセージ</param>
+        /// <param name="characterName">キャラクター名（オプション）</param>
+        /// <param name="imageDataUrl">画像データURL（オプション）</param>
+        public async Task SendChatToCoreUnifiedAsync(string message, string? characterName = null, string? imageDataUrl = null)
+        {
+            try
+            {
+                // 現在のキャラクター設定を取得
+                var currentCharacter = GetCurrentCharacterSettings();
+
+                // セッションIDを生成または既存のものを使用
+                if (string.IsNullOrEmpty(_currentSessionId))
+                {
+                    _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
+                }
+
+                // 画像データがある場合はfilesリストを作成
+                List<Dictionary<string, object>>? files = null;
+                if (!string.IsNullOrEmpty(imageDataUrl))
+                {
+                    files = new List<Dictionary<string, object>>
+                    {
+                        new Dictionary<string, object>
+                        {
+                            { "type", "image" },
+                            { "url", imageDataUrl }
+                        }
+                    };
+                }
+
+                // システムプロンプトを取得
+                string? systemPrompt = currentCharacter?.systemPrompt;
+
+                // 統一APIリクエストを作成
+                var request = new UnifiedChatRequest
+                {
+                    user_id = "user", // TODO: 将来 characterList.userId から取得するよう変更予定
+                    session_id = _currentSessionId,
+                    message = message,
+                    character_name = characterName ?? currentCharacter?.modelName ?? "default",
+                    system_prompt = systemPrompt,
+                    context_id = _currentContextId,
+                    files = files,
+                    metadata = new Dictionary<string, object>
+                    {
+                        { "source", "CocoroDock" },
+                        { "timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") }
+                    }
+                };
+
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "統一APIでチャットメッセージ送信"));
+                var response = await _coreClient.SendUnifiedChatMessageAsync(request);
+
+                // 新しいcontext_idを保存
+                if (!string.IsNullOrEmpty(response.context_id))
+                {
+                    _currentContextId = response.context_id;
+                    Debug.WriteLine($"統一API: 新しいcontext_idを取得: {_currentContextId}");
+                }
+
+                // AI応答を処理
+                if (!string.IsNullOrEmpty(response.response))
+                {
+                    Debug.WriteLine($"統一API: AI応答内容: {response.response}");
+                    
+                    // CocoroDockのUIに応答を表示するためのイベントを発火
+                    var chatRequest = new ChatRequest
+                    {
+                        userId = request.user_id,
+                        sessionId = request.session_id,
+                        message = response.response,
+                        role = "assistant",
+                        content = response.response
+                    };
+                    ChatMessageReceived?.Invoke(this, chatRequest);
+                }
+
+                // 成功時のステータス更新
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "統一APIチャット応答受信"));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"統一APIチャット送信エラー: {ex.Message}");
+                // ステータスバーにエラー表示
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"統一API通信エラー: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
         /// CocoroCoreにチャットメッセージを送信
         /// </summary>
         /// <param name="message">送信メッセージ</param>
@@ -570,7 +661,7 @@ namespace CocoroDock.Services
                 _logViewerWindow = null;
             };
 
-            // ログ送信開始を通知
+            // ログ送信開始を通知（バックグラウンドで実行）
             _ = Task.Run(async () =>
             {
                 try

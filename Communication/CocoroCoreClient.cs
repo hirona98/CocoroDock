@@ -104,6 +104,56 @@ namespace CocoroDock.Communication
         }
 
         /// <summary>
+        /// CocoroCore2に統一APIでチャットメッセージを送信（新設計）
+        /// </summary>
+        /// <param name="request">統一チャットリクエスト</param>
+        public async Task<UnifiedChatResponse> SendUnifiedChatMessageAsync(UnifiedChatRequest request)
+        {
+            try
+            {
+                var json = MessageHelper.SerializeToJson(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                Debug.WriteLine($"CocoroCore2に統一APIでチャットメッセージを送信: {request.message}");
+
+                using var response = await _httpClient.PostAsync($"{_baseUrl}/api/chat/unified", content);
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+                Debug.WriteLine($"CocoroCore2からの統一API応答: {responseBody}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = MessageHelper.DeserializeFromJson<ErrorResponse>(responseBody);
+                    throw new HttpRequestException($"CocoroCore2エラー: {error?.message ?? responseBody}");
+                }
+
+                // JSON形式のレスポンスを解析
+                var unifiedResponse = MessageHelper.DeserializeFromJson<UnifiedChatResponse>(responseBody);
+                if (unifiedResponse == null)
+                {
+                    throw new InvalidOperationException("統一API応答の解析に失敗しました");
+                }
+
+                Debug.WriteLine($"統一API応答受信: status={unifiedResponse.status}, length={unifiedResponse.response_length}");
+
+                return unifiedResponse;
+            }
+            catch (TaskCanceledException)
+            {
+                throw new TimeoutException("CocoroCore2への統一APIリクエストがタイムアウトしました");
+            }
+            catch (HttpRequestException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CocoroCore2への統一API送信エラー: {ex.Message}");
+                throw new InvalidOperationException($"CocoroCore2との統一API通信に失敗しました: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
         /// CocoroCoreに通知メッセージを送信（/chatエンドポイントを使用）
         /// </summary>
         /// <param name="request">通知リクエスト</param>
