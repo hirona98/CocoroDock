@@ -77,12 +77,12 @@ namespace CocoroDock.Services
         void UpdateAndSaveConfig(ConfigSettings settings);
 
         /// <summary>
-        /// CocoroCoreにチャットメッセージを送信
+        /// CocoroCoreに統一APIでチャットメッセージを送信（新設計）
         /// </summary>
         /// <param name="message">送信メッセージ</param>
         /// <param name="characterName">キャラクター名（オプション）</param>
         /// <param name="imageDataUrl">画像データURL（オプション）</param>
-        Task SendChatToCoreAsync(string message, string? characterName = null, string? imageDataUrl = null);
+        Task SendChatToCoreUnifiedAsync(string message, string? characterName = null, string? imageDataUrl = null);
 
         /// <summary>
         /// 新しい会話セッションを開始

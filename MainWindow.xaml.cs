@@ -485,8 +485,8 @@ namespace CocoroDock
             {
                 try
                 {
-                    // CocoroCoreにメッセージを送信（画像付きの場合は画像データも送信）
-                    await _communicationService.SendChatToCoreAsync(message, null, imageDataUrl);
+                    // CocoroCoreにメッセージを送信（統一API使用、画像付きの場合は画像データも送信）
+                    await _communicationService.SendChatToCoreUnifiedAsync(message, null, imageDataUrl);
                 }
                 catch (TimeoutException)
                 {
