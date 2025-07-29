@@ -154,6 +154,16 @@ namespace CocoroDock.Services
         List<CharacterSettings> CharacterList { get; set; }
 
         /// <summary>
+        /// 現在のアニメーション設定インデックス
+        /// </summary>
+        int CurrentAnimationSettingIndex { get; set; }
+
+        /// <summary>
+        /// アニメーション設定リスト
+        /// </summary>
+        List<AnimationSetting> AnimationSettings { get; set; }
+
+        /// <summary>
         /// 設定が読み込まれたかどうか
         /// </summary>
         bool IsLoaded { get; set; }
@@ -189,5 +199,15 @@ namespace CocoroDock.Services
         /// 全設定をファイルに保存
         /// </summary>
         void SaveSettings();
+
+        /// <summary>
+        /// アニメーション設定をファイルから読み込む
+        /// </summary>
+        void LoadAnimationSettings();
+
+        /// <summary>
+        /// アニメーション設定をファイルに保存
+        /// </summary>
+        void SaveAnimationSettings();
     }
 }

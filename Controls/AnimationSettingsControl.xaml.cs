@@ -56,6 +56,12 @@ namespace CocoroDock.Controls
             {
                 var appSettings = AppSettings.Instance;
 
+                // アニメーション設定が空の場合、強制的に読み込みを実行
+                if (appSettings.AnimationSettings.Count == 0)
+                {
+                    appSettings.LoadAnimationSettings();
+                }
+
                 // 現在の設定をコピー
                 _animationSettings = new List<AnimationSetting>(appSettings.AnimationSettings);
 
@@ -112,6 +118,7 @@ namespace CocoroDock.Controls
             if (_animationSettings.Count > 0)
             {
                 var animationIndex = AppSettings.Instance.CurrentAnimationSettingIndex;
+                
                 if (animationIndex >= 0 && animationIndex < _animationSettings.Count)
                 {
                     AnimationSetComboBox.SelectedIndex = animationIndex;

@@ -20,15 +20,20 @@ namespace CocoroDock.Services
 
         public static AppSettings Instance => _instance.Value;
 
+        // UserData2ディレクトリのパスを取得
+        private string UserDataDirectory => FindUserDataDirectory();
+
         // アプリケーション設定ファイルのパス
-        private string AppSettingsFilePath => Path.Combine(
-            AppContext.BaseDirectory,
-            "UserData", "Setting.json");
+        private string AppSettingsFilePath => Path.Combine(UserDataDirectory, "Setting.json");
 
         // デフォルト設定ファイルのパス
-        private string DefaultSettingsFilePath => Path.Combine(
-            AppContext.BaseDirectory,
-            "UserData", "DefaultSetting.json");
+        private string DefaultSettingsFilePath => Path.Combine(UserDataDirectory, "DefaultSetting.json");
+
+        // アニメーション設定ファイルのパス
+        private string AnimationSettingsFilePath => Path.Combine(UserDataDirectory, "AnimationSettings.json");
+
+        // デフォルトアニメーション設定ファイルのパス
+        private string DefaultAnimationSettingsFilePath => Path.Combine(UserDataDirectory, "DefaultAnimationSettings.json");
 
         public int CocoroDockPort { get; set; } = 55600;
         public int CocoroCorePort { get; set; } = 55601;
@@ -80,6 +85,42 @@ namespace CocoroDock.Services
         {
             // 設定ファイルから読み込み
             LoadSettings();
+        }
+
+        /// <summary>
+        /// UserData2ディレクトリを探索して見つける
+        /// </summary>
+        /// <returns>UserData2ディレクトリのパス</returns>
+        private string FindUserDataDirectory()
+        {
+            var baseDirectory = AppContext.BaseDirectory;
+            Debug.WriteLine($"[AppSettings] BaseDirectory: {baseDirectory}");
+
+            // 探索するパスの配列
+            string[] searchPaths = {
+                Path.Combine(baseDirectory, "..", "UserData2"),
+                Path.Combine(baseDirectory, "..", "..", "UserData2"),
+                Path.Combine(baseDirectory, "..", "..", "..", "UserData2"),
+                Path.Combine(baseDirectory, "..", "..", "..", "..", "UserData2")
+            };
+
+            foreach (var path in searchPaths)
+            {
+                var fullPath = Path.GetFullPath(path);
+                Debug.WriteLine($"[AppSettings] UserData2探索中: {fullPath}");
+
+                if (Directory.Exists(fullPath))
+                {
+                    Debug.WriteLine($"[AppSettings] UserData2ディレクトリを発見: {fullPath}");
+                    return fullPath;
+                }
+            }
+
+            // 見つからない場合は、最初のパスを使用してディレクトリを作成
+            var defaultPath = Path.GetFullPath(searchPaths[0]);
+            Debug.WriteLine($"[AppSettings] UserData2が見つからないため作成: {defaultPath}");
+            Directory.CreateDirectory(defaultPath);
+            return defaultPath;
         }
 
         /// <summary>
@@ -195,6 +236,8 @@ namespace CocoroDock.Services
             {
                 // アプリケーション設定ファイルを読み込む
                 LoadAppSettings();
+                // アニメーション設定ファイルを読み込む
+                LoadAnimationSettings();
                 // 設定読み込み完了フラグを設定
                 IsLoaded = true;
             }
@@ -242,9 +285,7 @@ namespace CocoroDock.Services
         /// </summary>
         private void EnsureUserDataDirectoryExists()
         {
-            string userDataDir = Path.Combine(
-                AppContext.BaseDirectory,
-                "UserData");
+            string userDataDir = UserDataDirectory;
 
             if (!Directory.Exists(userDataDir))
             {
@@ -344,6 +385,129 @@ namespace CocoroDock.Services
         public void SaveSettings()
         {
             SaveAppSettings();
+            SaveAnimationSettings();
         }
+
+        /// <summary>
+        /// アニメーション設定をファイルから読み込む
+        /// </summary>
+        public void LoadAnimationSettings()
+        {
+            try
+            {
+                AnimationSettingsData animationData = null;
+
+                // 設定ファイルが存在するか確認
+                if (File.Exists(AnimationSettingsFilePath))
+                {
+                    string json = File.ReadAllText(AnimationSettingsFilePath);
+                    animationData = MessageHelper.DeserializeFromJson<AnimationSettingsData>(json);
+                }
+
+                // 設定ファイルがない場合やデシリアライズに失敗した場合は、デフォルト設定を読み込む
+                if (animationData == null)
+                {
+                    animationData = LoadDefaultAnimationSettings();
+
+                    if (animationData != null)
+                    {
+                        // デフォルト設定をファイルに保存
+                        SaveAnimationSettingsData(animationData);
+                        Debug.WriteLine($"デフォルトアニメーション設定をファイルに保存しました: {AnimationSettingsFilePath}");
+                    }
+                }
+
+                // 読み込んだ設定を適用
+                if (animationData != null)
+                {
+                    CurrentAnimationSettingIndex = animationData.currentAnimationSettingIndex;
+                    AnimationSettings = new List<AnimationSetting>(animationData.animationSettings);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"アニメーション設定ファイル読み込みエラー: {ex.Message}");
+                // エラーが発生した場合はデフォルト設定を使用
+                var defaultData = LoadDefaultAnimationSettings();
+                if (defaultData != null)
+                {
+                    CurrentAnimationSettingIndex = defaultData.currentAnimationSettingIndex;
+                    AnimationSettings = new List<AnimationSetting>(defaultData.animationSettings);
+                }
+            }
+        }
+
+        /// <summary>
+        /// アニメーション設定をファイルに保存
+        /// </summary>
+        public void SaveAnimationSettings()
+        {
+            try
+            {
+                var animationData = new AnimationSettingsData
+                {
+                    currentAnimationSettingIndex = CurrentAnimationSettingIndex,
+                    animationSettings = new List<AnimationSetting>(AnimationSettings)
+                };
+
+                SaveAnimationSettingsData(animationData);
+                Debug.WriteLine($"アニメーション設定をファイルに保存しました: {AnimationSettingsFilePath}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"アニメーション設定ファイル保存エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// デフォルトアニメーション設定を読み込む
+        /// </summary>
+        private AnimationSettingsData LoadDefaultAnimationSettings()
+        {
+            if (File.Exists(DefaultAnimationSettingsFilePath))
+            {
+                try
+                {
+                    string json = File.ReadAllText(DefaultAnimationSettingsFilePath);
+                    var defaultData = MessageHelper.DeserializeFromJson<AnimationSettingsData>(json);
+
+                    if (defaultData != null)
+                    {
+                        return defaultData;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"デフォルトアニメーション設定ファイル読み込みエラー: {ex.Message}");
+                }
+            }
+
+            // 読み込みに失敗した場合は空の設定を返す
+            return new AnimationSettingsData();
+        }
+
+        /// <summary>
+        /// アニメーション設定データをファイルに保存する
+        /// </summary>
+        private void SaveAnimationSettingsData(AnimationSettingsData animationData)
+        {
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
+            string json = JsonSerializer.Serialize(animationData, options);
+            File.WriteAllText(AnimationSettingsFilePath, json);
+        }
+    }
+
+    /// <summary>
+    /// アニメーション設定データクラス
+    /// </summary>
+    public class AnimationSettingsData
+    {
+        public int currentAnimationSettingIndex { get; set; } = 0;
+        public List<AnimationSetting> animationSettings { get; set; } = new List<AnimationSetting>();
     }
 }
