@@ -83,7 +83,7 @@ namespace CocoroDock.Controls
             // Base URLのプレースホルダー制御イベントを設定
             BaseUrlTextBox.TextChanged += BaseUrlTextBox_TextChanged;
             BaseUrlTextBox.GotFocus += BaseUrlTextBox_GotFocus;
-            
+
             // SystemPromptTextBoxのテキスト変更イベントを設定
             SystemPromptTextBox.TextChanged += SystemPromptTextBox_TextChanged;
             BaseUrlTextBox.LostFocus += BaseUrlTextBox_LostFocus;
@@ -154,7 +154,7 @@ namespace CocoroDock.Controls
             character.localLLMBaseUrl = BaseUrlTextBox.Text;
             // systemPromptはOK押下時まで一時保存（ファイル生成は後で）
             _tempSystemPromptText = SystemPromptTextBox.Text;
-            
+
             // systemPromptFilePathの準備（実際のファイル生成はしない）
             if (string.IsNullOrEmpty(character.systemPromptFilePath))
             {
@@ -287,8 +287,8 @@ namespace CocoroDock.Controls
             }
             else
             {
-                promptText = !string.IsNullOrEmpty(character.systemPromptFilePath) 
-                    ? AppSettings.Instance.LoadSystemPrompt(character.systemPromptFilePath) 
+                promptText = !string.IsNullOrEmpty(character.systemPromptFilePath)
+                    ? AppSettings.Instance.LoadSystemPrompt(character.systemPromptFilePath)
                     : string.Empty;
                 _allCharacterSystemPrompts[_currentCharacterIndex] = promptText; // 初回読み込み時に保存
                 Debug.WriteLine($"キャラクター復元: インデックス {_currentCharacterIndex} の内容をファイルから読み込み");
@@ -484,8 +484,8 @@ namespace CocoroDock.Controls
                     llmModel = sourceCharacter.llmModel,
                     localLLMBaseUrl = sourceCharacter.localLLMBaseUrl,
                     // systemPromptは複製時に即座にファイル作成（複製は即座実行）
-                    systemPromptFilePath = !string.IsNullOrEmpty(sourceCharacter.systemPromptFilePath) 
-                        ? CopySystemPromptFile(sourceCharacter.systemPromptFilePath, newName) 
+                    systemPromptFilePath = !string.IsNullOrEmpty(sourceCharacter.systemPromptFilePath)
+                        ? CopySystemPromptFile(sourceCharacter.systemPromptFilePath, newName)
                         : AppSettings.Instance.GenerateSystemPromptFilePath(newName),
                     isUseTTS = sourceCharacter.isUseTTS,
                     ttsEndpointURL = sourceCharacter.ttsEndpointURL,
@@ -530,16 +530,12 @@ namespace CocoroDock.Controls
                         outputBitrate = sourceCharacter.aivisCloudConfig.outputBitrate,
                         outputSamplingRate = sourceCharacter.aivisCloudConfig.outputSamplingRate,
                         outputAudioChannels = sourceCharacter.aivisCloudConfig.outputAudioChannels,
-                        leadingSilenceSeconds = sourceCharacter.aivisCloudConfig.leadingSilenceSeconds,
-                        trailingSilenceSeconds = sourceCharacter.aivisCloudConfig.trailingSilenceSeconds,
-                        lineBreakSilenceSeconds = sourceCharacter.aivisCloudConfig.lineBreakSilenceSeconds,
                     },
                     isEnableMemory = sourceCharacter.isEnableMemory,
                     userId = sourceCharacter.userId,
                     embeddedApiKey = sourceCharacter.embeddedApiKey,
                     embeddedModel = sourceCharacter.embeddedModel,
                     isUseSTT = sourceCharacter.isUseSTT,
-                    sttModel = sourceCharacter.sttModel,
                     sttEngine = sourceCharacter.sttEngine,
                     sttWakeWord = sourceCharacter.sttWakeWord,
                     sttApiKey = sourceCharacter.sttApiKey,
@@ -788,13 +784,13 @@ namespace CocoroDock.Controls
             {
                 // 元のプロンプトを読み込み
                 string promptContent = AppSettings.Instance.LoadSystemPrompt(sourceFilePath);
-                
+
                 // 新しいファイルパスを生成（新しいUUID）
                 string newFilePath = AppSettings.Instance.GenerateSystemPromptFilePath(newModelName);
-                
+
                 // 新しいファイルに保存
                 AppSettings.Instance.SaveSystemPrompt(newFilePath, promptContent);
-                
+
                 return newFilePath;
             }
             catch (Exception ex)
@@ -814,7 +810,7 @@ namespace CocoroDock.Controls
             try
             {
                 var fullPath = Path.Combine(AppSettings.Instance.SystemPromptsDirectory, filePath);
-                
+
                 if (File.Exists(fullPath))
                 {
                     File.Delete(fullPath);
@@ -844,7 +840,7 @@ namespace CocoroDock.Controls
                 for (int i = 0; i < AppSettings.Instance.CharacterList.Count; i++)
                 {
                     var character = AppSettings.Instance.CharacterList[i];
-                    
+
                     // systemPromptFilePathが空の場合、新しいファイルを生成
                     if (string.IsNullOrEmpty(character.systemPromptFilePath))
                     {
@@ -858,7 +854,7 @@ namespace CocoroDock.Controls
                     {
                         var currentFileName = $"{character.modelName}_{uuid}.txt";
                         var oldFilePath = AppSettings.Instance.FindSystemPromptFileByUuid(uuid);
-                        
+
                         if (oldFilePath != null && oldFilePath != currentFileName)
                         {
                             // ファイル名変更
@@ -868,17 +864,17 @@ namespace CocoroDock.Controls
                     }
 
                     // 各キャラクターのシステムプロンプト内容を取得してファイルに保存
-                    string promptContent = _allCharacterSystemPrompts.ContainsKey(i) 
-                        ? _allCharacterSystemPrompts[i] 
+                    string promptContent = _allCharacterSystemPrompts.ContainsKey(i)
+                        ? _allCharacterSystemPrompts[i]
                         : string.Empty;
-                    
+
                     AppSettings.Instance.SaveSystemPrompt(character.systemPromptFilePath, promptContent);
 
                     Debug.WriteLine($"設定確定: インデックス {i}, キャラクター '{character.modelName}', ファイル '{character.systemPromptFilePath}'");
                 }
-                
+
                 Debug.WriteLine($"全 {AppSettings.Instance.CharacterList.Count} キャラクターの設定確定完了");
-                
+
                 // 削除予定ファイルを実際に削除
                 if (_filesToDelete.Count > 0)
                 {
@@ -906,10 +902,10 @@ namespace CocoroDock.Controls
             {
                 // 削除予定リストをクリア
                 _filesToDelete.Clear();
-                
+
                 // 一時保存されたプロンプト内容をクリア
                 _allCharacterSystemPrompts.Clear();
-                
+
                 Debug.WriteLine("キャンセル処理: 削除予定リストと一時保存内容をクリアしました");
             }
             catch (Exception ex)
