@@ -77,7 +77,7 @@ namespace CocoroDock.Communication
         public string apiKey { get; set; } = string.Empty;
         public string llmModel { get; set; } = string.Empty;
         public string localLLMBaseUrl { get; set; } = string.Empty; // ローカルLLMのベースURL
-        public string systemPrompt { get; set; } = string.Empty;
+        public string systemPromptFilePath { get; set; } = string.Empty;
         public bool isUseTTS { get; set; }
         public string ttsEndpointURL { get; set; } = string.Empty;
         public string ttsSperkerID { get; set; } = string.Empty;

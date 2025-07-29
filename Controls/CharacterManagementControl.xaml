@@ -235,7 +235,7 @@
                                          Text=""
                                          ToolTip="ローカルLLMのベースURL (例: http://localhost:11434)"/>
                                 <TextBlock x:Name="BaseUrlPlaceholder"
-                                           Text="ローカルLLM使用時のみ入力してください"
+                                           Text="ローカルLLM使用時のみ設定可能です"
                                            Foreground="#999999"
                                            VerticalAlignment="Center"
                                            Margin="5,5,0,5"

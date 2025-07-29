@@ -569,9 +569,7 @@ namespace CocoroDock.Controls
 
             try
             {
-                // CharacterManagementControlに移行済み
-
-                // CharacterManagementControlでバリデーション実行済み
+                // CharacterManagementControlでも設定前保持
 
                 // 設定変更前の値を保存
                 int lastSelectedIndex = AppSettings.Instance.CurrentCharacterIndex;
@@ -595,6 +593,9 @@ namespace CocoroDock.Controls
                 {
                     await McpSettingsControl.GetViewModel()!.ApplyMcpSettingsAsync();
                 }
+
+                // CharacterManagementControlの設定確定処理を実行
+                CharacterManagementControl.ConfirmSettings();
 
                 // すべてのタブの設定を保存
                 SaveAllSettings(lastIsEnableNotificationApi);
@@ -717,6 +718,9 @@ namespace CocoroDock.Controls
         /// </summary>
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
+            // CharacterManagementControlの削除予定リストをクリア
+            CharacterManagementControl.ResetPendingChanges();
+            
             // 変更を破棄して元の設定に戻す
             RestoreOriginalSettings();
 

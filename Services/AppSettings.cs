@@ -35,6 +35,9 @@ namespace CocoroDock.Services
         // デフォルトアニメーション設定ファイルのパス
         private string DefaultAnimationSettingsFilePath => Path.Combine(UserDataDirectory, "DefaultAnimationSettings.json");
 
+        // SystemPromptsディレクトリのパス
+        public string SystemPromptsDirectory => Path.Combine(UserDataDirectory, "SystemPrompts");
+
         public int CocoroDockPort { get; set; } = 55600;
         public int CocoroCorePort { get; set; } = 55601;
         public int CocoroMemoryPort { get; set; } = 55602;
@@ -162,12 +165,6 @@ namespace CocoroDock.Services
                 CharacterList = new List<CharacterSettings>(config.characterList);
             }
 
-            // アニメーション設定を更新
-            CurrentAnimationSettingIndex = config.currentAnimationSettingIndex;
-            if (config.animationSettings != null && config.animationSettings.Count > 0)
-            {
-                AnimationSettings = new List<AnimationSetting>(config.animationSettings);
-            }
 
             // スクリーンショット設定を更新
             if (config.screenshotSettings != null)
@@ -220,8 +217,6 @@ namespace CocoroDock.Services
                 windowPositionY = WindowPositionY,
                 currentCharacterIndex = CurrentCharacterIndex,
                 characterList = new List<CharacterSettings>(CharacterList),
-                currentAnimationSettingIndex = CurrentAnimationSettingIndex,
-                animationSettings = new List<AnimationSetting>(AnimationSettings),
                 screenshotSettings = ScreenshotSettings,
                 microphoneSettings = MicrophoneSettings
             };
@@ -315,7 +310,6 @@ namespace CocoroDock.Services
                 SaveAppSettings();
             }
         }
-
 
         /// <summary>
         /// デフォルト設定ファイルを読み込む
@@ -499,6 +493,184 @@ namespace CocoroDock.Services
             };
             string json = JsonSerializer.Serialize(animationData, options);
             File.WriteAllText(AnimationSettingsFilePath, json);
+        }
+
+        /// <summary>
+        /// キャラクターのsystemPromptをファイルから読み込む
+        /// </summary>
+        /// <param name="promptFilePath">プロンプトファイルのパス</param>
+        /// <returns>プロンプトテキスト</returns>
+        public string LoadSystemPrompt(string promptFilePath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(promptFilePath))
+                {
+                    return string.Empty;
+                }
+
+                string fullPath = Path.Combine(SystemPromptsDirectory, promptFilePath);
+
+                if (File.Exists(fullPath))
+                {
+                    return File.ReadAllText(fullPath);
+                }
+                else
+                {
+                    Debug.WriteLine($"SystemPromptファイルが見つかりません: {fullPath}");
+                    return string.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"SystemPrompt読み込みエラー: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// キャラクターのsystemPromptをファイルに保存
+        /// </summary>
+        /// <param name="promptFilePath">プロンプトファイルのパス</param>
+        /// <param name="promptText">プロンプトテキスト</param>
+        public void SaveSystemPrompt(string promptFilePath, string promptText)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(promptFilePath))
+                {
+                    return;
+                }
+
+                // SystemPromptsディレクトリが存在しない場合は作成
+                if (!Directory.Exists(SystemPromptsDirectory))
+                {
+                    Directory.CreateDirectory(SystemPromptsDirectory);
+                }
+
+                string fullPath = Path.Combine(SystemPromptsDirectory, promptFilePath);
+                File.WriteAllText(fullPath, promptText ?? string.Empty);
+
+                Debug.WriteLine($"SystemPromptを保存しました: {fullPath}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"SystemPrompt保存エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 新しいsystemPromptファイル用のファイルパスを生成
+        /// </summary>
+        /// <param name="modelName">キャラクターのモデル名</param>
+        /// <returns>モデル名_UUIDベースのファイルパス</returns>
+        public string GenerateSystemPromptFilePath(string modelName)
+        {
+            return $"{modelName}_{Guid.NewGuid()}.txt";
+        }
+
+        /// <summary>
+        /// UUID中間一致でsystemPromptファイルを検索
+        /// </summary>
+        /// <param name="uuid">検索するUUID</param>
+        /// <returns>見つかったファイルパス、見つからない場合はnull</returns>
+        public string? FindSystemPromptFileByUuid(string uuid)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(uuid) || !Directory.Exists(SystemPromptsDirectory))
+                {
+                    return null;
+                }
+
+                var files = Directory.GetFiles(SystemPromptsDirectory, "*.txt");
+                foreach (var file in files)
+                {
+                    var fileName = Path.GetFileNameWithoutExtension(file);
+                    if (fileName.Contains(uuid))
+                    {
+                        return Path.GetFileName(file);
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"UUID検索エラー: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// systemPromptファイル名からUUIDを抽出
+        /// </summary>
+        /// <param name="fileName">ファイル名</param>
+        /// <returns>抽出されたUUID、抽出できない場合はnull</returns>
+        public string? ExtractUuidFromFileName(string fileName)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(fileName))
+                {
+                    return null;
+                }
+
+                var nameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+                var lastUnderscoreIndex = nameWithoutExtension.LastIndexOf('_');
+
+                if (lastUnderscoreIndex >= 0 && lastUnderscoreIndex < nameWithoutExtension.Length - 1)
+                {
+                    var uuidPart = nameWithoutExtension.Substring(lastUnderscoreIndex + 1);
+                    // UUID形式の検証（簡易）
+                    if (Guid.TryParse(uuidPart, out _))
+                    {
+                        return uuidPart;
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"UUID抽出エラー: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// modelName変更時にsystemPromptファイル名を更新
+        /// </summary>
+        /// <param name="oldFileName">古いファイル名</param>
+        /// <param name="newModelName">新しいモデル名</param>
+        /// <returns>新しいファイル名</returns>
+        public string UpdateSystemPromptFileName(string oldFileName, string newModelName)
+        {
+            try
+            {
+                var uuid = ExtractUuidFromFileName(oldFileName);
+                if (uuid != null)
+                {
+                    var newFileName = $"{newModelName}_{uuid}.txt";
+                    var oldFullPath = Path.Combine(SystemPromptsDirectory, oldFileName);
+                    var newFullPath = Path.Combine(SystemPromptsDirectory, newFileName);
+
+                    if (File.Exists(oldFullPath) && !File.Exists(newFullPath))
+                    {
+                        File.Move(oldFullPath, newFullPath);
+                        Debug.WriteLine($"ファイル名を更新しました: {oldFileName} → {newFileName}");
+                    }
+
+                    return newFileName;
+                }
+
+                return oldFileName;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ファイル名更新エラー: {ex.Message}");
+                return oldFileName;
+            }
         }
     }
 

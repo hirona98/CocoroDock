@@ -39,6 +39,21 @@ namespace CocoroDock.Controls
         private bool _isInitialized = false;
 
         /// <summary>
+        /// 一時的なsystemPromptテキスト（OK押下まで保留）
+        /// </summary>
+        private string _tempSystemPromptText = string.Empty;
+
+        /// <summary>
+        /// 全キャラクターのシステムプロンプト内容を保持（キャラクターインデックス -> プロンプト内容）
+        /// </summary>
+        private Dictionary<int, string> _allCharacterSystemPrompts = new Dictionary<int, string>();
+
+        /// <summary>
+        /// OK押下時に削除予定のシステムプロンプトファイルパス一覧
+        /// </summary>
+        private List<string> _filesToDelete = new List<string>();
+
+        /// <summary>
         /// 通信サービス
         /// </summary>
         private ICommunicationService? _communicationService;
@@ -68,6 +83,9 @@ namespace CocoroDock.Controls
             // Base URLのプレースホルダー制御イベントを設定
             BaseUrlTextBox.TextChanged += BaseUrlTextBox_TextChanged;
             BaseUrlTextBox.GotFocus += BaseUrlTextBox_GotFocus;
+            
+            // SystemPromptTextBoxのテキスト変更イベントを設定
+            SystemPromptTextBox.TextChanged += SystemPromptTextBox_TextChanged;
             BaseUrlTextBox.LostFocus += BaseUrlTextBox_LostFocus;
         }
 
@@ -102,7 +120,7 @@ namespace CocoroDock.Controls
         private void LoadCharacterList()
         {
             var appSettings = AppSettings.Instance;
-            
+
             // ItemsSourceを使用
             CharacterSelectComboBox.ItemsSource = appSettings.CharacterList;
 
@@ -134,7 +152,20 @@ namespace CocoroDock.Controls
             character.apiKey = ApiKeyPasswordBox.Password;
             character.llmModel = LlmModelTextBox.Text;
             character.localLLMBaseUrl = BaseUrlTextBox.Text;
-            character.systemPrompt = SystemPromptTextBox.Text;
+            // systemPromptはOK押下時まで一時保存（ファイル生成は後で）
+            _tempSystemPromptText = SystemPromptTextBox.Text;
+            
+            // systemPromptFilePathの準備（実際のファイル生成はしない）
+            if (string.IsNullOrEmpty(character.systemPromptFilePath))
+            {
+                character.systemPromptFilePath = AppSettings.Instance.GenerateSystemPromptFilePath(character.modelName);
+            }
+            else
+            {
+                // modelName変更時はファイル名も更新（実際のファイル移動はしない）
+                var newFileName = $"{character.modelName}_{AppSettings.Instance.ExtractUuidFromFileName(character.systemPromptFilePath)}.txt";
+                character.systemPromptFilePath = newFileName;
+            }
             character.isEnableMemory = IsEnableMemoryCheckBox.IsChecked ?? false;
             character.userId = UserIdTextBox.Text;
             character.embeddedApiKey = EmbeddedApiKeyPasswordBox.Password;
@@ -209,6 +240,13 @@ namespace CocoroDock.Controls
             if (!_isInitialized || CharacterSelectComboBox.SelectedIndex < 0)
                 return;
 
+            // 前のキャラクターの内容を保存
+            if (_currentCharacterIndex >= 0 && _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
+            {
+                _allCharacterSystemPrompts[_currentCharacterIndex] = SystemPromptTextBox.Text;
+                Debug.WriteLine($"キャラクター切り替え: インデックス {_currentCharacterIndex} の内容を保存");
+            }
+
             _currentCharacterIndex = CharacterSelectComboBox.SelectedIndex;
             UpdateCharacterUI();
 
@@ -240,7 +278,23 @@ namespace CocoroDock.Controls
             LlmModelTextBox.Text = character.llmModel;
             BaseUrlTextBox.Text = character.localLLMBaseUrl;
             UpdateBaseUrlPlaceholder(); // プレースホルダー更新
-            SystemPromptTextBox.Text = character.systemPrompt;
+            // systemPromptは保存された内容があればそれを使用、なければファイルから読み込み
+            string promptText;
+            if (_allCharacterSystemPrompts.ContainsKey(_currentCharacterIndex))
+            {
+                promptText = _allCharacterSystemPrompts[_currentCharacterIndex];
+                Debug.WriteLine($"キャラクター復元: インデックス {_currentCharacterIndex} の保存された内容を使用");
+            }
+            else
+            {
+                promptText = !string.IsNullOrEmpty(character.systemPromptFilePath) 
+                    ? AppSettings.Instance.LoadSystemPrompt(character.systemPromptFilePath) 
+                    : string.Empty;
+                _allCharacterSystemPrompts[_currentCharacterIndex] = promptText; // 初回読み込み時に保存
+                Debug.WriteLine($"キャラクター復元: インデックス {_currentCharacterIndex} の内容をファイルから読み込み");
+            }
+            SystemPromptTextBox.Text = promptText;
+            _tempSystemPromptText = promptText; // 一時保存も初期化
 
             // 記憶機能
             IsEnableMemoryCheckBox.IsChecked = character.isEnableMemory;
@@ -337,7 +391,7 @@ namespace CocoroDock.Controls
                 };
 
                 AppSettings.Instance.CharacterList.Add(newCharacter);
-                
+
                 // ComboBoxのItemsSourceを更新
                 CharacterSelectComboBox.ItemsSource = null;
                 CharacterSelectComboBox.ItemsSource = AppSettings.Instance.CharacterList;
@@ -369,8 +423,15 @@ namespace CocoroDock.Controls
                     return;
                 }
 
+                // systemPromptファイルを削除予定リストに追加（実際の削除はOK押下時）
+                if (!string.IsNullOrEmpty(character.systemPromptFilePath))
+                {
+                    _filesToDelete.Add(character.systemPromptFilePath);
+                    Debug.WriteLine($"削除予定に追加: {character.systemPromptFilePath}");
+                }
+
                 AppSettings.Instance.CharacterList.RemoveAt(_currentCharacterIndex);
-                
+
                 // ComboBoxのItemsSourceを更新
                 CharacterSelectComboBox.ItemsSource = null;
                 CharacterSelectComboBox.ItemsSource = AppSettings.Instance.CharacterList;
@@ -422,7 +483,10 @@ namespace CocoroDock.Controls
                     apiKey = sourceCharacter.apiKey,
                     llmModel = sourceCharacter.llmModel,
                     localLLMBaseUrl = sourceCharacter.localLLMBaseUrl,
-                    systemPrompt = sourceCharacter.systemPrompt,
+                    // systemPromptは複製時に即座にファイル作成（複製は即座実行）
+                    systemPromptFilePath = !string.IsNullOrEmpty(sourceCharacter.systemPromptFilePath) 
+                        ? CopySystemPromptFile(sourceCharacter.systemPromptFilePath, newName) 
+                        : AppSettings.Instance.GenerateSystemPromptFilePath(newName),
                     isUseTTS = sourceCharacter.isUseTTS,
                     ttsEndpointURL = sourceCharacter.ttsEndpointURL,
                     ttsSperkerID = sourceCharacter.ttsSperkerID,
@@ -487,10 +551,13 @@ namespace CocoroDock.Controls
 
                 // リストに追加
                 AppSettings.Instance.CharacterList.Add(newCharacter);
-                CharacterSelectComboBox.Items.Add(newCharacter.modelName);
+
+                // ComboBoxのItemsSourceを更新（ItemsSourceとItemsの併用を避ける）
+                CharacterSelectComboBox.ItemsSource = null;
+                CharacterSelectComboBox.ItemsSource = AppSettings.Instance.CharacterList;
 
                 // 新しく追加したキャラクターを選択
-                CharacterSelectComboBox.SelectedIndex = CharacterSelectComboBox.Items.Count - 1;
+                CharacterSelectComboBox.SelectedIndex = AppSettings.Instance.CharacterList.Count - 1;
 
                 // 設定変更イベントを発生
                 SettingsChanged?.Invoke(this, EventArgs.Empty);
@@ -688,24 +755,182 @@ namespace CocoroDock.Controls
             {
                 // 現在選択されているアイテムのインデックスを保存
                 var currentSelectedIndex = _currentCharacterIndex;
-                
+
                 // キャラクター設定の名前を更新
                 AppSettings.Instance.CharacterList[_currentCharacterIndex].modelName = newName;
 
                 // ComboBoxのItemsSourceを一時的に無効にしてSelectionChangedイベントを防ぐ
                 CharacterSelectComboBox.SelectionChanged -= CharacterSelectComboBox_SelectionChanged;
-                
+
                 // ComboBoxのItemsSourceを更新
                 CharacterSelectComboBox.ItemsSource = null;
                 CharacterSelectComboBox.ItemsSource = AppSettings.Instance.CharacterList;
-                
+
                 // 選択状態を復元
                 CharacterSelectComboBox.SelectedIndex = currentSelectedIndex;
-                
+
                 // SelectionChangedイベントハンドラーを再設定
                 CharacterSelectComboBox.SelectionChanged += CharacterSelectComboBox_SelectionChanged;
 
                 SettingsChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        /// <summary>
+        /// systemPromptファイルをコピーして新しいUUIDファイル名で保存
+        /// </summary>
+        /// <param name="sourceFilePath">コピー元のファイルパス</param>
+        /// <param name="newModelName">新しいモデル名</param>
+        /// <returns>新しいファイルパス</returns>
+        private string CopySystemPromptFile(string sourceFilePath, string newModelName)
+        {
+            try
+            {
+                // 元のプロンプトを読み込み
+                string promptContent = AppSettings.Instance.LoadSystemPrompt(sourceFilePath);
+                
+                // 新しいファイルパスを生成（新しいUUID）
+                string newFilePath = AppSettings.Instance.GenerateSystemPromptFilePath(newModelName);
+                
+                // 新しいファイルに保存
+                AppSettings.Instance.SaveSystemPrompt(newFilePath, promptContent);
+                
+                return newFilePath;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"systemPromptファイルコピーエラー: {ex.Message}");
+                // エラーの場合は新しいファイルを生成
+                return AppSettings.Instance.GenerateSystemPromptFilePath(newModelName);
+            }
+        }
+
+        /// <summary>
+        /// systemPromptファイルを削除
+        /// </summary>
+        /// <param name="filePath">削除するファイルパス</param>
+        private void DeleteSystemPromptFile(string filePath)
+        {
+            try
+            {
+                var fullPath = Path.Combine(AppSettings.Instance.SystemPromptsDirectory, filePath);
+                
+                if (File.Exists(fullPath))
+                {
+                    File.Delete(fullPath);
+                    Debug.WriteLine($"systemPromptファイルを削除しました: {filePath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"systemPromptファイル削除エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// OK押下時の実際のファイル生成と設定確定処理
+        /// </summary>
+        public void ConfirmSettings()
+        {
+            try
+            {
+                // 現在表示中のキャラクターの内容を保存
+                if (_currentCharacterIndex >= 0 && _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
+                {
+                    _allCharacterSystemPrompts[_currentCharacterIndex] = SystemPromptTextBox.Text;
+                }
+
+                // 全キャラクターを処理
+                for (int i = 0; i < AppSettings.Instance.CharacterList.Count; i++)
+                {
+                    var character = AppSettings.Instance.CharacterList[i];
+                    
+                    // systemPromptFilePathが空の場合、新しいファイルを生成
+                    if (string.IsNullOrEmpty(character.systemPromptFilePath))
+                    {
+                        character.systemPromptFilePath = AppSettings.Instance.GenerateSystemPromptFilePath(character.modelName);
+                        Debug.WriteLine($"新しいファイルパスを生成: インデックス {i}, ファイル '{character.systemPromptFilePath}'");
+                    }
+
+                    // 既存ファイルがある場合は、名前変更が必要かチェック
+                    var uuid = AppSettings.Instance.ExtractUuidFromFileName(character.systemPromptFilePath);
+                    if (uuid != null)
+                    {
+                        var currentFileName = $"{character.modelName}_{uuid}.txt";
+                        var oldFilePath = AppSettings.Instance.FindSystemPromptFileByUuid(uuid);
+                        
+                        if (oldFilePath != null && oldFilePath != currentFileName)
+                        {
+                            // ファイル名変更
+                            character.systemPromptFilePath = AppSettings.Instance.UpdateSystemPromptFileName(oldFilePath, character.modelName);
+                            Debug.WriteLine($"ファイル名を変更: インデックス {i}, 新ファイル '{character.systemPromptFilePath}'");
+                        }
+                    }
+
+                    // 各キャラクターのシステムプロンプト内容を取得してファイルに保存
+                    string promptContent = _allCharacterSystemPrompts.ContainsKey(i) 
+                        ? _allCharacterSystemPrompts[i] 
+                        : string.Empty;
+                    
+                    AppSettings.Instance.SaveSystemPrompt(character.systemPromptFilePath, promptContent);
+
+                    Debug.WriteLine($"設定確定: インデックス {i}, キャラクター '{character.modelName}', ファイル '{character.systemPromptFilePath}'");
+                }
+                
+                Debug.WriteLine($"全 {AppSettings.Instance.CharacterList.Count} キャラクターの設定確定完了");
+                
+                // 削除予定ファイルを実際に削除
+                if (_filesToDelete.Count > 0)
+                {
+                    Debug.WriteLine($"{_filesToDelete.Count} 個のファイルを削除開始");
+                    foreach (var fileToDelete in _filesToDelete)
+                    {
+                        DeleteSystemPromptFile(fileToDelete);
+                    }
+                    _filesToDelete.Clear();
+                    Debug.WriteLine("削除予定ファイルの削除完了");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"設定確定エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// キャンセル時の状態リセット処理
+        /// </summary>
+        public void ResetPendingChanges()
+        {
+            try
+            {
+                // 削除予定リストをクリア
+                _filesToDelete.Clear();
+                
+                // 一時保存されたプロンプト内容をクリア
+                _allCharacterSystemPrompts.Clear();
+                
+                Debug.WriteLine("キャンセル処理: 削除予定リストと一時保存内容をクリアしました");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"キャンセル処理エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// SystemPromptTextBoxのテキスト変更イベント
+        /// </summary>
+        private void SystemPromptTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_isInitialized)
+            {
+                _tempSystemPromptText = SystemPromptTextBox.Text;
+                // 現在のキャラクターの内容もDictionaryに保存
+                if (_currentCharacterIndex >= 0)
+                {
+                    _allCharacterSystemPrompts[_currentCharacterIndex] = SystemPromptTextBox.Text;
+                }
             }
         }
     }
