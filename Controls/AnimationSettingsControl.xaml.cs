@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace CocoroDock.Controls
 {
@@ -34,9 +35,26 @@ namespace CocoroDock.Controls
         /// </summary>
         private ICommunicationService? _communicationService;
 
+        /// <summary>
+        /// 名前変更のデバウンス用タイマー
+        /// </summary>
+        private DispatcherTimer? _nameChangeTimer;
+
+        /// <summary>
+        /// デバウンス遅延時間（ミリ秒）
+        /// </summary>
+        private const int DEBOUNCE_DELAY_MS = 200; // 300ms → 200ms に短縮
+
         public AnimationSettingsControl()
         {
             InitializeComponent();
+
+            // 名前変更用のデバウンスタイマーを初期化
+            _nameChangeTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(DEBOUNCE_DELAY_MS)
+            };
+            _nameChangeTimer.Tick += NameChangeTimer_Tick;
         }
 
         /// <summary>
@@ -118,7 +136,7 @@ namespace CocoroDock.Controls
             if (_animationSettings.Count > 0)
             {
                 var animationIndex = AppSettings.Instance.CurrentAnimationSettingIndex;
-                
+
                 if (animationIndex >= 0 && animationIndex < _animationSettings.Count)
                 {
                     AnimationSetComboBox.SelectedIndex = animationIndex;
@@ -307,6 +325,65 @@ namespace CocoroDock.Controls
                 PostureChangeLoopCountSittingFloorTextBox.Text = animSetting.postureChangeLoopCountSittingFloor.ToString();
 
                 UpdateAnimationListPanel(animSetting.animations);
+            }
+        }
+
+        /// <summary>
+        /// アニメーションセット名のテキスト変更イベント（リアルタイム更新）
+        /// </summary>
+        private void AnimationSetNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!_isInitialized || AnimationSetComboBox.SelectedIndex < 0)
+                return;
+
+            // タイマーがすでに動作中の場合はリセット
+            if (_nameChangeTimer != null)
+            {
+                _nameChangeTimer.Stop();
+                _nameChangeTimer.Start();
+            }
+        }
+
+        /// <summary>
+        /// 名前変更タイマーのTickイベント（デバウンス処理）
+        /// </summary>
+        private void NameChangeTimer_Tick(object? sender, EventArgs e)
+        {
+            if (_nameChangeTimer != null)
+            {
+                _nameChangeTimer.Stop();
+            }
+
+            if (!_isInitialized || AnimationSetComboBox.SelectedIndex < 0)
+                return;
+
+            var selectedIndex = AnimationSetComboBox.SelectedIndex;
+            if (selectedIndex >= 0 && selectedIndex < _animationSettings.Count)
+            {
+                var newName = AnimationSetNameTextBox.Text;
+                if (!string.IsNullOrWhiteSpace(newName))
+                {
+                    // 現在選択されているアイテムのインデックスを保存
+                    var currentSelectedIndex = selectedIndex;
+
+                    // アニメーション設定の名前を更新
+                    _animationSettings[selectedIndex].animeSetName = newName;
+
+                    // ComboBoxのItemsSourceを一時的に無効にしてSelectionChangedイベントを防ぐ
+                    AnimationSetComboBox.SelectionChanged -= AnimationSetComboBox_SelectionChanged;
+
+                    // ComboBoxのItemsSourceを更新
+                    AnimationSetComboBox.ItemsSource = null;
+                    AnimationSetComboBox.ItemsSource = _animationSettings;
+
+                    // 選択状態を復元
+                    AnimationSetComboBox.SelectedIndex = currentSelectedIndex;
+
+                    // SelectionChangedイベントハンドラーを再設定
+                    AnimationSetComboBox.SelectionChanged += AnimationSetComboBox_SelectionChanged;
+
+                    SettingsChanged?.Invoke(this, EventArgs.Empty);
+                }
             }
         }
 

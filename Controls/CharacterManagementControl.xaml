@@ -27,7 +27,9 @@
                                   Grid.Column="0"
                                   Margin="0,5,10,5"
                                   SelectionChanged="CharacterSelectComboBox_SelectionChanged"
-                                  Foreground="#FF4873CF">
+                                  Foreground="#FF4873CF"
+                                  DisplayMemberPath="modelName"
+                                  SelectedValuePath="modelName">
                         </ComboBox>
 
                         <Button x:Name="AddCharacterButton"
@@ -79,7 +81,8 @@
                             <TextBox Grid.Column="1"
                                      x:Name="CharacterNameTextBox"
                                      Margin="0,5"
-                                     Foreground="#FF0078D7"/>
+                                     Foreground="#FF0078D7"
+                                     TextChanged="CharacterNameTextBox_TextChanged"/>
                         </Grid>
 
                         <!-- VRMFilePathの設定 -->

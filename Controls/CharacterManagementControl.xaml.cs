@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace CocoroDock.Controls
 {
@@ -42,10 +43,27 @@ namespace CocoroDock.Controls
         /// </summary>
         private ICommunicationService? _communicationService;
 
+        /// <summary>
+        /// キャラクター名変更のデバウンス用タイマー
+        /// </summary>
+        private DispatcherTimer? _characterNameChangeTimer;
+
+        /// <summary>
+        /// デバウンス遅延時間（ミリ秒）
+        /// </summary>
+        private const int CHARACTER_NAME_DEBOUNCE_DELAY_MS = 200;
+
         public CharacterManagementControl()
         {
             InitializeComponent();
             _communicationService = new CommunicationService(AppSettings.Instance);
+
+            // キャラクター名変更用のデバウンスタイマーを初期化
+            _characterNameChangeTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(CHARACTER_NAME_DEBOUNCE_DELAY_MS)
+            };
+            _characterNameChangeTimer.Tick += CharacterNameChangeTimer_Tick;
 
             // Base URLのプレースホルダー制御イベントを設定
             BaseUrlTextBox.TextChanged += BaseUrlTextBox_TextChanged;
@@ -84,16 +102,13 @@ namespace CocoroDock.Controls
         private void LoadCharacterList()
         {
             var appSettings = AppSettings.Instance;
-            CharacterSelectComboBox.Items.Clear();
+            
+            // ItemsSourceを使用
+            CharacterSelectComboBox.ItemsSource = appSettings.CharacterList;
 
-            foreach (var character in appSettings.CharacterList)
-            {
-                CharacterSelectComboBox.Items.Add(character.modelName);
-            }
-
-            if (CharacterSelectComboBox.Items.Count > 0 &&
+            if (appSettings.CharacterList.Count > 0 &&
                 appSettings.CurrentCharacterIndex >= 0 &&
-                appSettings.CurrentCharacterIndex < CharacterSelectComboBox.Items.Count)
+                appSettings.CurrentCharacterIndex < appSettings.CharacterList.Count)
             {
                 CharacterSelectComboBox.SelectedIndex = appSettings.CurrentCharacterIndex;
             }
@@ -322,8 +337,11 @@ namespace CocoroDock.Controls
                 };
 
                 AppSettings.Instance.CharacterList.Add(newCharacter);
-                CharacterSelectComboBox.Items.Add(newCharacter.modelName);
-                CharacterSelectComboBox.SelectedIndex = CharacterSelectComboBox.Items.Count - 1;
+                
+                // ComboBoxのItemsSourceを更新
+                CharacterSelectComboBox.ItemsSource = null;
+                CharacterSelectComboBox.ItemsSource = AppSettings.Instance.CharacterList;
+                CharacterSelectComboBox.SelectedIndex = AppSettings.Instance.CharacterList.Count - 1;
 
                 // 設定変更イベントを発生
                 SettingsChanged?.Invoke(this, EventArgs.Empty);
@@ -352,9 +370,12 @@ namespace CocoroDock.Controls
                 }
 
                 AppSettings.Instance.CharacterList.RemoveAt(_currentCharacterIndex);
-                CharacterSelectComboBox.Items.RemoveAt(_currentCharacterIndex);
+                
+                // ComboBoxのItemsSourceを更新
+                CharacterSelectComboBox.ItemsSource = null;
+                CharacterSelectComboBox.ItemsSource = AppSettings.Instance.CharacterList;
 
-                if (CharacterSelectComboBox.Items.Count > 0)
+                if (AppSettings.Instance.CharacterList.Count > 0)
                 {
                     CharacterSelectComboBox.SelectedIndex = 0;
                 }
@@ -630,6 +651,61 @@ namespace CocoroDock.Controls
                     StyleBertVits2SettingsPanel.Visibility = Visibility.Collapsed;
                     AivisCloudSettingsPanel.Visibility = Visibility.Collapsed;
                     break;
+            }
+        }
+
+        /// <summary>
+        /// キャラクター名のテキスト変更イベント（リアルタイム更新）
+        /// </summary>
+        private void CharacterNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!_isInitialized || _currentCharacterIndex < 0)
+                return;
+
+            // タイマーがすでに動作中の場合はリセット
+            if (_characterNameChangeTimer != null)
+            {
+                _characterNameChangeTimer.Stop();
+                _characterNameChangeTimer.Start();
+            }
+        }
+
+        /// <summary>
+        /// キャラクター名変更タイマーのTickイベント（デバウンス処理）
+        /// </summary>
+        private void CharacterNameChangeTimer_Tick(object? sender, EventArgs e)
+        {
+            if (_characterNameChangeTimer != null)
+            {
+                _characterNameChangeTimer.Stop();
+            }
+
+            if (!_isInitialized || _currentCharacterIndex < 0 || _currentCharacterIndex >= AppSettings.Instance.CharacterList.Count)
+                return;
+
+            var newName = CharacterNameTextBox.Text;
+            if (!string.IsNullOrWhiteSpace(newName))
+            {
+                // 現在選択されているアイテムのインデックスを保存
+                var currentSelectedIndex = _currentCharacterIndex;
+                
+                // キャラクター設定の名前を更新
+                AppSettings.Instance.CharacterList[_currentCharacterIndex].modelName = newName;
+
+                // ComboBoxのItemsSourceを一時的に無効にしてSelectionChangedイベントを防ぐ
+                CharacterSelectComboBox.SelectionChanged -= CharacterSelectComboBox_SelectionChanged;
+                
+                // ComboBoxのItemsSourceを更新
+                CharacterSelectComboBox.ItemsSource = null;
+                CharacterSelectComboBox.ItemsSource = AppSettings.Instance.CharacterList;
+                
+                // 選択状態を復元
+                CharacterSelectComboBox.SelectedIndex = currentSelectedIndex;
+                
+                // SelectionChangedイベントハンドラーを再設定
+                CharacterSelectComboBox.SelectionChanged += CharacterSelectComboBox_SelectionChanged;
+
+                SettingsChanged?.Invoke(this, EventArgs.Empty);
             }
         }
     }
