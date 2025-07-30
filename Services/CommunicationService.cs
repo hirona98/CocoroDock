@@ -235,7 +235,7 @@ namespace CocoroDock.Services
                 // APIリクエストを作成
                 var request = new UnifiedChatRequest
                 {
-                    user_id = "user", // TODO: 将来 characterList.userId から取得するよう変更予定
+                    user_id = !string.IsNullOrEmpty(currentCharacter?.userId) ? currentCharacter.userId : "user",
                     session_id = _currentSessionId,
                     message = message,
                     character_name = characterName ?? currentCharacter?.modelName ?? "default",
@@ -393,7 +393,7 @@ namespace CocoroDock.Services
 
                 var request = new UnifiedChatRequest
                 {
-                    user_id = "user", // TODO: 将来 characterList.userId から取得するよう変更予定
+                    user_id = !string.IsNullOrEmpty(currentCharacter.userId) ? currentCharacter.userId : "user",
                     session_id = _currentSessionId,
                     message = notificationText,
                     character_name = currentCharacter.modelName ?? "default",
@@ -488,7 +488,7 @@ namespace CocoroDock.Services
                 // APIリクエストを作成
                 var request = new UnifiedChatRequest
                 {
-                    user_id = "user", // TODO: 将来 characterList.userId から取得するよう変更予定
+                    user_id = !string.IsNullOrEmpty(currentCharacter.userId) ? currentCharacter.userId : "user",
                     session_id = _currentSessionId,
                     message = "<cocoro-desktop-monitoring>",  // 特別なタグ
                     character_name = currentCharacter.modelName ?? "default",
