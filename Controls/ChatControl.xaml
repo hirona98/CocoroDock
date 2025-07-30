@@ -237,10 +237,13 @@
                                                            IsHitTestVisible="False">
                                                         <TextBlock.Style>
                                                                 <Style TargetType="TextBlock">
-                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        <Setter Property="Visibility"
+                                                                                        Value="Collapsed"/>
                                                                         <Style.Triggers>
-                                                                                <DataTrigger Binding="{Binding Text, ElementName=MessageTextBox}" Value="">
-                                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                                <DataTrigger Binding="{Binding Text, ElementName=MessageTextBox}"
+                                                                                                Value="">
+                                                                                        <Setter Property="Visibility"
+                                                                                                        Value="Visible"/>
                                                                                 </DataTrigger>
                                                                         </Style.Triggers>
                                                                 </Style>
@@ -250,21 +253,21 @@
                                 </Border>
 
                                 <!-- 音声レベルバー（縦向き） -->
-                                <Border Grid.Column="1" 
-                                        Width="10" 
+                                <Border Grid.Column="1"
+                                        Width="10"
                                         Height="55"
                                         Margin="5,0,5,0"
                                         Background="#E0E0E0"
                                         CornerRadius="5">
-                                    <Grid VerticalAlignment="Bottom">
-                                        <Rectangle x:Name="VoiceLevelBar"
-                                                   Width="10"
-                                                   Height="0"
-                                                   Fill="#4CAF50"
-                                                   VerticalAlignment="Bottom"
-                                                   RadiusX="5"
-                                                   RadiusY="5"/>
-                                    </Grid>
+                                        <Grid VerticalAlignment="Bottom">
+                                                <Rectangle x:Name="VoiceLevelBar"
+                                                           Width="10"
+                                                           Height="0"
+                                                           Fill="#4CAF50"
+                                                           VerticalAlignment="Bottom"
+                                                           RadiusX="5"
+                                                           RadiusY="5"/>
+                                        </Grid>
                                 </Border>
 
                                 <Button x:Name="SendButton"

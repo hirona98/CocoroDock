@@ -38,13 +38,14 @@ namespace CocoroDock.Services
             string wakeWords,
             float voiceThreshold = 0.02f,
             int silenceTimeoutMs = 300,
-            int activeTimeoutMs = 60000)
+            int activeTimeoutMs = 60000,
+            bool startActive = false)
         {
             _voiceThreshold = voiceThreshold;
             _silenceTimeoutMs = silenceTimeoutMs;
 
             _amiVoiceClient = new AmiVoiceSyncClient(apiKey);
-            _stateMachine = new VoiceRecognitionStateMachine(wakeWords, activeTimeoutMs);
+            _stateMachine = new VoiceRecognitionStateMachine(wakeWords, activeTimeoutMs, startActive);
 
             // イベントの転送
             _stateMachine.OnRecognizedText += (text) => OnRecognizedText?.Invoke(text);

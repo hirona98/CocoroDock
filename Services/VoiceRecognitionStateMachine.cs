@@ -17,6 +17,7 @@ namespace CocoroDock.Services
         private readonly int _activeTimeoutMs;
         private readonly WakeWordDetector _wakeWordDetector;
         private readonly object _lockObject = new object();
+        private bool _isMicButtonActivated = false;  // MicButton切り替えで開始されたかどうか
 
         public event Action<string>? OnRecognizedText;
         public event Action<VoiceRecognitionState>? OnStateChanged;
@@ -32,10 +33,23 @@ namespace CocoroDock.Services
             }
         }
 
-        public VoiceRecognitionStateMachine(string wakeWords, int activeTimeoutMs = 60000)
+        public VoiceRecognitionStateMachine(string wakeWords, int activeTimeoutMs = 60000, bool startActive = false)
         {
             _activeTimeoutMs = activeTimeoutMs;
             _wakeWordDetector = new WakeWordDetector(wakeWords);
+            _isMicButtonActivated = startActive;
+            
+            // MicButton切り替え時はACTIVE状態から開始
+            if (startActive)
+            {
+                _currentState = VoiceRecognitionState.ACTIVE;
+                StartTimeoutTimer();
+                System.Diagnostics.Debug.WriteLine("[VoiceRecognition] Started in ACTIVE state (MicButton activated)");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("[VoiceRecognition] Started in SLEEPING state (normal startup)");
+            }
         }
 
         public void ProcessRecognitionResult(string text)
@@ -118,7 +132,25 @@ namespace CocoroDock.Services
 
         private void OnTimeout(object? state)
         {
-            TransitionTo(VoiceRecognitionState.SLEEPING);
+            lock (_lockObject)
+            {
+                if (_currentState == VoiceRecognitionState.ACTIVE)
+                {
+                    System.Diagnostics.Debug.WriteLine("[VoiceRecognition] Timeout occurred");
+                    if (_isMicButtonActivated)
+                    {
+                        // MicButton切り替えの場合：タイムアウト後もACTIVE状態を維持（ウェイクアップワード検出済み状態）
+                        System.Diagnostics.Debug.WriteLine("[VoiceRecognition] MicButton mode: staying in ACTIVE after timeout");
+                        ResetTimeoutTimer(); // タイマーを再開始
+                    }
+                    else
+                    {
+                        // 通常起動の場合：タイムアウト後はSLEEPING状態に戻る
+                        System.Diagnostics.Debug.WriteLine("[VoiceRecognition] Normal mode: returning to SLEEPING after timeout");
+                        TransitionTo(VoiceRecognitionState.SLEEPING);
+                    }
+                }
+            }
         }
 
         public void Dispose()

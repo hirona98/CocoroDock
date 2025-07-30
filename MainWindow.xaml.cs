@@ -770,8 +770,8 @@ namespace CocoroDock
                 // 音声認識サービスの開始/停止
                 if (currentCharacter.isUseSTT)
                 {
-                    // STTを有効にする場合は音声認識を開始
-                    InitializeVoiceRecognitionService();
+                    // STTを有効にする場合は音声認識を開始（MicButton切り替えなのでACTIVE状態から開始）
+                    InitializeVoiceRecognitionService(startActive: true);
                 }
                 else
                 {
@@ -949,7 +949,8 @@ namespace CocoroDock
         /// <summary>
         /// 音声認識サービスを初期化
         /// </summary>
-        private void InitializeVoiceRecognitionService()
+        /// <param name="startActive">ACTIVE状態から開始するかどうか（MicButton切り替え時はtrue）</param>
+        private void InitializeVoiceRecognitionService(bool startActive = false)
         {
             try
             {
@@ -997,7 +998,8 @@ namespace CocoroDock
                     currentCharacter.sttWakeWord,
                     voiceThreshold,
                     silenceTimeoutMs,
-                    activeTimeoutMs
+                    activeTimeoutMs,
+                    startActive
                 );
 
                 // イベント購読
