@@ -11,6 +11,7 @@ using System.Linq;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using CocoroDock.Windows;
+using CocoroDock.Services;
 
 namespace CocoroDock.Controls
 {
@@ -685,6 +686,48 @@ namespace CocoroDock.Controls
         public BitmapSource? GetAttachedImageSource()
         {
             return _attachedImageSource;
+        }
+
+        /// <summary>
+        /// 音声レベルを更新
+        /// </summary>
+        /// <param name="level">音声レベル (0.0-1.0)</param>
+        public void UpdateVoiceLevel(float level)
+        {
+            // 0-1の値を0-55ピクセルにマッピング（下から上に伸びる）
+            double height = Math.Max(0, Math.Min(1, level)) * 55;
+            VoiceLevelBar.Height = height;
+        }
+
+        /// <summary>
+        /// 音声認識結果をチャットに追加
+        /// </summary>
+        /// <param name="text">認識されたテキスト</param>
+        public void AddVoiceMessage(string text)
+        {
+            var messageContainer = new StackPanel();
+
+            var bubble = new Border
+            {
+                Style = (Style)Resources["VoiceBubbleStyle"]
+            };
+
+            var messageContent = new StackPanel();
+
+            var messageText = new TextBox
+            {
+                Style = (Style)Resources["UserMessageTextStyle"],
+                Text = $"🎤 {text}"
+            };
+
+            messageContent.Children.Add(messageText);
+            bubble.Child = messageContent;
+            messageContainer.Children.Add(bubble);
+
+            ChatMessagesPanel.Children.Add(messageContainer);
+
+            // 自動スクロール
+            ChatScrollViewer.ScrollToEnd();
         }
     }
 }
