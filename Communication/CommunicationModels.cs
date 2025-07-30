@@ -116,7 +116,6 @@ namespace CocoroDock.Communication
     public class MicrophoneSettings
     {
         public int inputThreshold { get; set; } = -45;
-        public bool autoAdjustment { get; set; } = true;
     }
 
     /// <summary>

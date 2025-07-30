@@ -81,12 +81,13 @@ namespace CocoroDock.Controls
             _characterNameChangeTimer.Tick += CharacterNameChangeTimer_Tick;
 
             // Base URLのプレースホルダー制御イベントを設定
-            BaseUrlTextBox.TextChanged += BaseUrlTextBox_TextChanged;
-            BaseUrlTextBox.GotFocus += BaseUrlTextBox_GotFocus;
+            // TODO: LiteLLM
+            // BaseUrlTextBox.TextChanged += BaseUrlTextBox_TextChanged;
+            // BaseUrlTextBox.GotFocus += BaseUrlTextBox_GotFocus;
 
             // SystemPromptTextBoxのテキスト変更イベントを設定
             SystemPromptTextBox.TextChanged += SystemPromptTextBox_TextChanged;
-            BaseUrlTextBox.LostFocus += BaseUrlTextBox_LostFocus;
+            // BaseUrlTextBox.LostFocus += BaseUrlTextBox_LostFocus;
         }
 
         /// <summary>
@@ -151,7 +152,7 @@ namespace CocoroDock.Controls
             character.isUseLLM = IsUseLLMCheckBox.IsChecked ?? false;
             character.apiKey = ApiKeyPasswordBox.Password;
             character.llmModel = LlmModelTextBox.Text;
-            character.localLLMBaseUrl = BaseUrlTextBox.Text;
+            // TODO: LiteLLM character.localLLMBaseUrl = BaseUrlTextBox.Text;
             // systemPromptはOK押下時まで一時保存（ファイル生成は後で）
             _tempSystemPromptText = SystemPromptTextBox.Text;
 
@@ -276,7 +277,7 @@ namespace CocoroDock.Controls
             IsUseLLMCheckBox.IsChecked = character.isUseLLM;
             ApiKeyPasswordBox.Password = character.apiKey;
             LlmModelTextBox.Text = character.llmModel;
-            BaseUrlTextBox.Text = character.localLLMBaseUrl;
+            // TODO: LiteLLM/ BaseUrlTextBox.Text = character.localLLMBaseUrl;
             UpdateBaseUrlPlaceholder(); // プレースホルダー更新
             // systemPromptは保存された内容があればそれを使用、なければファイルから読み込み
             string promptText;
@@ -655,11 +656,12 @@ namespace CocoroDock.Controls
 
         private void UpdateBaseUrlPlaceholder()
         {
-            if (BaseUrlTextBox != null && BaseUrlPlaceholder != null)
-            {
-                BaseUrlPlaceholder.Visibility = string.IsNullOrEmpty(BaseUrlTextBox.Text) ?
-                    Visibility.Visible : Visibility.Collapsed;
-            }
+            // TODO: LiteLLM
+            // if (BaseUrlTextBox != null && BaseUrlPlaceholder != null)
+            // {
+            //     BaseUrlPlaceholder.Visibility = string.IsNullOrEmpty(BaseUrlTextBox.Text) ?
+            //         Visibility.Visible : Visibility.Collapsed;
+            // }
         }
 
         /// <summary>

@@ -206,6 +206,8 @@
                         <TextBlock TextWrapping="Wrap"
                                    Margin="100,0,0,10">
                             <TextBlock.Inlines>
+                                <Run Text="OpenAIのみ対応"/>
+                                <!-- TODO: LiteLLM実装時復活
                                 <Run Text="LiteLLM の書式で記載してください"/>
                                 <LineBreak/>
                                 <Run Text="ex) openai/gpt-4o-mini, gemini/gemini-2.0-flash, ollama_chat/gemma3:12b"/>
@@ -216,10 +218,12 @@
                                     <Run Text="https://docs.litellm.ai/docs/providers"/>
                                 </Hyperlink>
                                 <Run Text=" を参照してください"/>
+                                -->
                             </TextBlock.Inlines>
                         </TextBlock>
 
                         <!-- Base URLの設定（ローカルLLM用） -->
+                        <!-- TODO: LiteLLM実装時復活
                         <Grid Margin="0,5,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
@@ -243,7 +247,9 @@
                                            Visibility="Visible"/>
                             </Grid>
                         </Grid>
+                        -->
                         <!-- LLM説明テキスト -->
+                        <!-- TODO: LiteLLM実装時復活
                         <TextBlock TextWrapping="Wrap"
                                    Margin="100,0,0,10">
                             <TextBlock.Inlines>
@@ -251,6 +257,7 @@
                                 <LineBreak/>
                             </TextBlock.Inlines>
                         </TextBlock>
+                        -->
                         <Grid Margin="0,5">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
@@ -303,7 +310,7 @@
                         <!-- ユーザーID説明テキスト -->
                         <TextBlock TextWrapping="Wrap"
                                    Margin="100,0,0,10">
-                            長期記憶を保存する時にキャラクターとあなたを紐づけるIDです。変更すると別人と認識されます。
+                            あなたとキャラクターの記憶を紐づけるIDです。キャラクター毎に別の名前にすることを推奨します。
                         </TextBlock>
 
                         <!-- 埋め込みモデル設定 -->
@@ -342,6 +349,8 @@
                         <TextBlock TextWrapping="Wrap"
                                    Margin="100,0,0,10">
                             <TextBlock.Inlines>
+                                <Run Text="OpenAIのみ対応（text-embedding-3-large推奨）"/>
+                                <!--
                                 <Run Text="長期記憶をベクトル化するための埋め込みモデルを設定します。LiteLLM の書式で記載してください。"/>
                                 <LineBreak/>
                                 <Run Text="ex) openai/text-embedding-3-large（推奨）, openai/text-embedding-3-small, gemini/text-embedding-004"/>
@@ -354,6 +363,7 @@
                                     <Run Text="https://docs.litellm.ai/docs/embedding/supported_embedding"/>
                                 </Hyperlink>
                                 <Run Text=" を参照してください"/>
+                                -->
                             </TextBlock.Inlines>
                         </TextBlock>
                     </StackPanel>
@@ -811,7 +821,10 @@
                 </GroupBox>
 
                 <!-- STTパラメータ -->
+                <!-- TODO: Whisper対応時
                 <GroupBox Header="音声認識 (AmiVoice/Whisper)"
+                -->
+                <GroupBox Header="音声認識 (現状AmiVoiceのみ)"
                           Margin="0,0,20,20"
                           Padding="10">
                     <StackPanel>
@@ -837,8 +850,10 @@
                                       Foreground="#FF4873CF">
                                 <ComboBoxItem Content="AmiVoice"
                                               Tag="amivoice"/>
+                                <!-- TODO: Whisper対応時
                                 <ComboBoxItem Content="Whisper(OpenAI)"
                                               Tag="openai"/>
+                                -->
                             </ComboBox>
                         </Grid>
 

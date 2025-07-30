@@ -34,24 +34,23 @@ namespace CocoroDock.Controls
             try
             {
                 var appSettings = AppSettings.Instance;
-                
+
                 // 通知API設定
                 IsEnableNotificationApiCheckBox.IsChecked = appSettings.IsEnableNotificationApi;
                 ApiDescriptionTextBox.Text = GetApiDescription();
-                
+
                 // デスクトップウォッチ設定
                 ScreenshotEnabledCheckBox.IsChecked = appSettings.ScreenshotSettings.enabled;
                 CaptureActiveWindowOnlyCheckBox.IsChecked = appSettings.ScreenshotSettings.captureActiveWindowOnly;
                 ScreenshotIntervalTextBox.Text = appSettings.ScreenshotSettings.intervalMinutes.ToString();
                 IdleTimeoutTextBox.Text = appSettings.ScreenshotSettings.idleTimeoutMinutes.ToString();
-                
+
                 // マイク設定
-                MicAutoAdjustmentCheckBox.IsChecked = appSettings.MicrophoneSettings.autoAdjustment;
                 MicThresholdSlider.Value = appSettings.MicrophoneSettings.inputThreshold;
-                
+
                 // イベントハンドラーを設定
                 SetupEventHandlers();
-                
+
                 _isInitialized = true;
             }
             catch (Exception ex)
@@ -69,7 +68,7 @@ namespace CocoroDock.Controls
             // 通知API設定
             IsEnableNotificationApiCheckBox.Checked += OnSettingsChanged;
             IsEnableNotificationApiCheckBox.Unchecked += OnSettingsChanged;
-            
+
             // デスクトップウォッチ設定
             ScreenshotEnabledCheckBox.Checked += OnSettingsChanged;
             ScreenshotEnabledCheckBox.Unchecked += OnSettingsChanged;
@@ -77,10 +76,8 @@ namespace CocoroDock.Controls
             CaptureActiveWindowOnlyCheckBox.Unchecked += OnSettingsChanged;
             ScreenshotIntervalTextBox.TextChanged += OnSettingsChanged;
             IdleTimeoutTextBox.TextChanged += OnSettingsChanged;
-            
+
             // マイク設定
-            MicAutoAdjustmentCheckBox.Checked += OnSettingsChanged;
-            MicAutoAdjustmentCheckBox.Unchecked += OnSettingsChanged;
             MicThresholdSlider.ValueChanged += OnSettingsChanged;
         }
 
@@ -195,7 +192,6 @@ namespace CocoroDock.Controls
         {
             return new MicrophoneSettings
             {
-                autoAdjustment = MicAutoAdjustmentCheckBox.IsChecked ?? false,
                 inputThreshold = (int)MicThresholdSlider.Value
             };
         }
@@ -205,7 +201,6 @@ namespace CocoroDock.Controls
         /// </summary>
         public void SetMicrophoneSettings(MicrophoneSettings settings)
         {
-            MicAutoAdjustmentCheckBox.IsChecked = settings.autoAdjustment;
             MicThresholdSlider.Value = settings.inputThreshold;
         }
     }

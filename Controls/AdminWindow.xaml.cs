@@ -379,7 +379,6 @@ namespace CocoroDock.Controls
                 { "ScreenshotInterval", appSettings.ScreenshotSettings.intervalMinutes },
                 { "IdleTimeout", appSettings.ScreenshotSettings.idleTimeoutMinutes },
                 { "CaptureActiveWindowOnly", appSettings.ScreenshotSettings.captureActiveWindowOnly },
-                { "MicAutoAdjustment", appSettings.MicrophoneSettings.autoAdjustment},
                 { "MicInputThreshold", appSettings.MicrophoneSettings.inputThreshold}
             };
         }
@@ -481,7 +480,6 @@ namespace CocoroDock.Controls
             _displaySettings["CaptureActiveWindowOnly"] = screenshotSettings.captureActiveWindowOnly;
 
             var microphoneSettings = SystemSettingsControl.GetMicrophoneSettings();
-            _displaySettings["MicAutoAdjustment"] = microphoneSettings.autoAdjustment;
             _displaySettings["MicInputThreshold"] = microphoneSettings.inputThreshold;
         }
 
@@ -720,7 +718,7 @@ namespace CocoroDock.Controls
         {
             // CharacterManagementControlの削除予定リストをクリア
             CharacterManagementControl.ResetPendingChanges();
-            
+
             // 変更を破棄して元の設定に戻す
             RestoreOriginalSettings();
 
@@ -786,36 +784,11 @@ namespace CocoroDock.Controls
 
                 // デスクトップウォッチの設定変更を反映
                 UpdateDesktopWatchSettings();
-
-                // マイク設定をCocoroCoreに送信
-                await SendMicrophoneSettingsToCore();
             }
             catch (System.Exception ex)
             {
                 MessageBox.Show($"設定の保存中にエラーが発生しました: {ex.Message}",
                     "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        /// <summary>
-        /// マイク設定をCocoroCoreに送信
-        /// </summary>
-        private async Task SendMicrophoneSettingsToCore()
-        {
-            try
-            {
-                if (_communicationService != null && _communicationService.IsServerRunning)
-                {
-                    bool autoAdjustment = (bool)_displaySettings["MicAutoAdjustment"];
-                    float inputThreshold = (float)(int)_displaySettings["MicInputThreshold"];
-
-                    await _communicationService.SendMicrophoneSettingsToCoreAsync(autoAdjustment, inputThreshold);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"マイク設定送信エラー: {ex.Message}");
-                // エラーは表示せず、ログのみに残す（CocoroCoreが起動していない場合もあるため）
             }
         }
 
@@ -933,7 +906,6 @@ namespace CocoroDock.Controls
 
             // マイク設定を保存
             var microphoneSettings = SystemSettingsControl.GetMicrophoneSettings();
-            _displaySettings["MicAutoAdjustment"] = microphoneSettings.autoAdjustment;
             _displaySettings["MicInputThreshold"] = microphoneSettings.inputThreshold;
         }
 
@@ -981,7 +953,6 @@ namespace CocoroDock.Controls
             appSettings.ScreenshotSettings.captureActiveWindowOnly = (bool)_displaySettings["CaptureActiveWindowOnly"];
 
             // マイク設定の更新
-            appSettings.MicrophoneSettings.autoAdjustment = (bool)_displaySettings["MicAutoAdjustment"];
             appSettings.MicrophoneSettings.inputThreshold = (int)_displaySettings["MicInputThreshold"];
 
             // キャラクター設定の更新

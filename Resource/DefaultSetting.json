@@ -31,8 +31,7 @@
     "idleTimeoutMinutes": 10
   },
   "microphoneSettings": {
-    "inputThreshold": -45,
-    "autoAdjustment": true
+    "inputThreshold": -45
   },
   "currentCharacterIndex": 1,
   "characterList": [
