@@ -20,6 +20,11 @@ namespace CocoroDock.Services
 
         public static AppSettings Instance => _instance.Value;
 
+        /// <summary>
+        /// 設定が保存されたときに発生するイベント
+        /// </summary>
+        public static event EventHandler? SettingsSaved;
+
         // UserData2ディレクトリのパスを取得
         private string UserDataDirectory => FindUserDataDirectory();
 
@@ -363,6 +368,9 @@ namespace CocoroDock.Services
                 File.WriteAllText(AppSettingsFilePath, json);
 
                 Debug.WriteLine($"設定をファイルに保存しました: {AppSettingsFilePath}");
+
+                // イベント発生
+                SettingsSaved?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
@@ -549,6 +557,9 @@ namespace CocoroDock.Services
                 File.WriteAllText(fullPath, promptText ?? string.Empty);
 
                 Debug.WriteLine($"SystemPromptを保存しました: {fullPath}");
+
+                // SystemPrompt変更時もイベント発生
+                SettingsSaved?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {

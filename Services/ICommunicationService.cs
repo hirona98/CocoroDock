@@ -148,5 +148,10 @@ namespace CocoroDock.Services
         /// </summary>
         /// <param name="updates">更新する設定のキーと値のペア</param>
         Task SendConfigPatchToShellAsync(Dictionary<string, object> updates);
+
+        /// <summary>
+        /// 設定キャッシュを更新
+        /// </summary>
+        void RefreshSettingsCache();
     }
 }

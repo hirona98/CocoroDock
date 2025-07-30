@@ -25,6 +25,10 @@ namespace CocoroDock.Services
         // ログビューアー管理用
         private LogViewerWindow? _logViewerWindow;
 
+        // 設定キャッシュ用
+        private ConfigSettings? _cachedConfigSettings;
+        private readonly Dictionary<string, string> _cachedSystemPrompts = new Dictionary<string, string>();
+
         public event EventHandler<ChatRequest>? ChatMessageReceived;
         public event Action<ChatMessagePayload, List<System.Windows.Media.Imaging.BitmapSource>?>? NotificationMessageReceived;
         public event EventHandler<ControlRequest>? ControlCommandReceived;
@@ -67,6 +71,12 @@ namespace CocoroDock.Services
             {
                 _notificationApiServer = new NotificationApiServer(_appSettings.NotificationApiPort, this);
             }
+
+            // 設定キャッシュを初期化
+            RefreshSettingsCache();
+
+            // AppSettingsの変更イベントを購読
+            AppSettings.SettingsSaved += OnSettingsSaved;
         }
 
 
@@ -132,6 +142,48 @@ namespace CocoroDock.Services
         {
             _appSettings.UpdateSettings(settings);
             _appSettings.SaveSettings();
+            // 設定変更後にキャッシュを更新
+            RefreshSettingsCache();
+        }
+
+        /// <summary>
+        /// 設定キャッシュを更新
+        /// </summary>
+        public void RefreshSettingsCache()
+        {
+            _cachedConfigSettings = _appSettings.GetConfigSettings();
+            // SystemPromptキャッシュもクリア（次回アクセス時に再読み込み）
+            _cachedSystemPrompts.Clear();
+        }
+
+        /// <summary>
+        /// AppSettings保存イベントハンドラー
+        /// </summary>
+        private void OnSettingsSaved(object? sender, EventArgs e)
+        {
+            RefreshSettingsCache();
+        }
+
+        /// <summary>
+        /// キャッシュされたSystemPromptを取得
+        /// </summary>
+        /// <param name="promptFilePath">プロンプトファイルのパス</param>
+        /// <returns>プロンプトテキスト</returns>
+        private string? GetCachedSystemPrompt(string? promptFilePath)
+        {
+            if (string.IsNullOrEmpty(promptFilePath))
+                return null;
+
+            // キャッシュから取得
+            if (_cachedSystemPrompts.TryGetValue(promptFilePath, out var cachedPrompt))
+            {
+                return cachedPrompt;
+            }
+
+            // キャッシュにない場合はファイルから読み込んでキャッシュに保存
+            var prompt = AppSettings.Instance.LoadSystemPrompt(promptFilePath);
+            _cachedSystemPrompts[promptFilePath] = prompt;
+            return prompt;
         }
 
         /// <summary>
@@ -177,12 +229,8 @@ namespace CocoroDock.Services
                     };
                 }
 
-                // システムプロンプトを取得
-                string? systemPrompt = null;
-                if (currentCharacter != null && !string.IsNullOrEmpty(currentCharacter.systemPromptFilePath))
-                {
-                    systemPrompt = AppSettings.Instance.LoadSystemPrompt(currentCharacter.systemPromptFilePath);
-                }
+                // システムプロンプトを取得（キャッシュ使用）
+                string? systemPrompt = GetCachedSystemPrompt(currentCharacter?.systemPromptFilePath);
 
                 // APIリクエストを作成
                 var request = new UnifiedChatRequest
@@ -349,7 +397,7 @@ namespace CocoroDock.Services
                     session_id = _currentSessionId,
                     message = notificationText,
                     character_name = currentCharacter.modelName ?? "default",
-                    system_prompt = !string.IsNullOrEmpty(currentCharacter.systemPromptFilePath) ? AppSettings.Instance.LoadSystemPrompt(currentCharacter.systemPromptFilePath) : null,
+                    system_prompt = GetCachedSystemPrompt(currentCharacter.systemPromptFilePath),
                     context_id = _currentContextId,
                     files = files,
                     metadata = new Dictionary<string, object>
@@ -378,12 +426,13 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// 現在のキャラクター設定を取得
+        /// 現在のキャラクター設定を取得（キャッシュ使用）
         /// </summary>
         private CharacterSettings? GetCurrentCharacterSettings()
         {
-            var config = _appSettings.GetConfigSettings();
-            if (config.characterList != null &&
+            // キャッシュされた設定を使用
+            var config = _cachedConfigSettings;
+            if (config?.characterList != null &&
                 config.currentCharacterIndex >= 0 &&
                 config.currentCharacterIndex < config.characterList.Count)
             {
@@ -443,7 +492,7 @@ namespace CocoroDock.Services
                     session_id = _currentSessionId,
                     message = "<cocoro-desktop-monitoring>",  // 特別なタグ
                     character_name = currentCharacter.modelName ?? "default",
-                    system_prompt = !string.IsNullOrEmpty(currentCharacter.systemPromptFilePath) ? AppSettings.Instance.LoadSystemPrompt(currentCharacter.systemPromptFilePath) : null,
+                    system_prompt = GetCachedSystemPrompt(currentCharacter.systemPromptFilePath),
                     context_id = _currentContextId,
                     files = files,
                     metadata = new Dictionary<string, object>
@@ -704,6 +753,9 @@ namespace CocoroDock.Services
         /// </summary>
         public void Dispose()
         {
+            // イベント購読解除
+            AppSettings.SettingsSaved -= OnSettingsSaved;
+
             _logViewerWindow?.Close();
             _notificationApiServer?.Dispose();
             _apiServer?.Dispose();
