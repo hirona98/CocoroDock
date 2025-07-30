@@ -97,7 +97,6 @@ namespace CocoroDock.Services
         private string FindUserDataDirectory()
         {
             var baseDirectory = AppContext.BaseDirectory;
-            Debug.WriteLine($"[AppSettings] BaseDirectory: {baseDirectory}");
 
             // 探索するパスの配列
             string[] searchPaths = {
@@ -110,18 +109,16 @@ namespace CocoroDock.Services
             foreach (var path in searchPaths)
             {
                 var fullPath = Path.GetFullPath(path);
-                Debug.WriteLine($"[AppSettings] UserData2探索中: {fullPath}");
-
                 if (Directory.Exists(fullPath))
                 {
-                    Debug.WriteLine($"[AppSettings] UserData2ディレクトリを発見: {fullPath}");
+                    Debug.WriteLine($"UserData2ディレクトリ: {fullPath}");
                     return fullPath;
                 }
             }
 
             // 見つからない場合は、最初のパスを使用してディレクトリを作成
             var defaultPath = Path.GetFullPath(searchPaths[0]);
-            Debug.WriteLine($"[AppSettings] UserData2が見つからないため作成: {defaultPath}");
+            Debug.WriteLine($"UserData2が見つからないため作成: {defaultPath}");
             Directory.CreateDirectory(defaultPath);
             return defaultPath;
         }

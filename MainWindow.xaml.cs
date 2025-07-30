@@ -27,6 +27,7 @@ namespace CocoroDock
         private const int MaxStatusMessages = 5; // 最大表示メッセージ数
         private ScreenshotService? _screenshotService;
         private bool _isScreenshotPaused = false;
+        private RealtimeVoiceRecognitionService? _voiceRecognitionService;
 
         private class StatusMessage
         {
@@ -86,6 +87,9 @@ namespace CocoroDock
 
                 // スクリーンショットサービスを初期化
                 InitializeScreenshotService();
+
+                // 音声認識サービスを初期化
+                InitializeVoiceRecognitionService();
 
                 // UIコントロールのイベントハンドラを登録
                 RegisterEventHandlers();
@@ -763,6 +767,28 @@ namespace CocoroDock
                     MicButton.Opacity = currentCharacter.isUseSTT ? 1.0 : 0.6;
                 }
 
+                // 音声認識サービスの開始/停止
+                if (currentCharacter.isUseSTT)
+                {
+                    // STTを有効にする場合は音声認識を開始
+                    InitializeVoiceRecognitionService();
+                }
+                else
+                {
+                    // STTを無効にする場合は音声認識を停止
+                    if (_voiceRecognitionService != null)
+                    {
+                        _voiceRecognitionService.Dispose();
+                        _voiceRecognitionService = null;
+                    }
+
+                    // 音量バーを0にリセット（UIスレッドで確実に実行）
+                    UIHelper.RunOnUIThread(() =>
+                    {
+                        ChatControlInstance.UpdateVoiceLevel(0);
+                    });
+                }
+
                 // CocoroCoreにSTT状態を送信
                 _ = Task.Run(async () =>
                 {
@@ -921,6 +947,152 @@ namespace CocoroDock
         }
 
         /// <summary>
+        /// 音声認識サービスを初期化
+        /// </summary>
+        private void InitializeVoiceRecognitionService()
+        {
+            try
+            {
+                // 現在のキャラクター設定を取得
+                var currentCharacter = GetCurrentCharacterSettings();
+                if (currentCharacter == null)
+                {
+                    Debug.WriteLine("[MainWindow] 現在のキャラクター設定が見つかりません");
+                    return;
+                }
+
+                // 音声認識が有効でAPIキーが設定されている場合のみ初期化
+                if (!currentCharacter.isUseSTT || string.IsNullOrEmpty(currentCharacter.sttApiKey))
+                {
+                    Debug.WriteLine("[MainWindow] 音声認識機能が無効、またはAPIキーが未設定");
+                    // 音量バーを0にリセット（UIスレッドで確実に実行）
+                    UIHelper.RunOnUIThread(() =>
+                    {
+                        ChatControlInstance.UpdateVoiceLevel(0);
+                    });
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(currentCharacter.sttWakeWord))
+                {
+                    Debug.WriteLine("[MainWindow] ウェイクアップワードが未設定");
+                    // 音量バーを0にリセット（UIスレッドで確実に実行）
+                    UIHelper.RunOnUIThread(() =>
+                    {
+                        ChatControlInstance.UpdateVoiceLevel(0);
+                    });
+                    return;
+                }
+
+                // 音声処理パラメータ
+                // 無音区間判定用の閾値（dB値）
+                float inputThresholdDb = _appSettings.MicrophoneSettings?.inputThreshold ?? -45.0f;
+                // 音声検出用の閾値（振幅比率に変換）
+                float voiceThreshold = (float)(Math.Pow(10, inputThresholdDb / 20.0));
+                const int silenceTimeoutMs = 500; // 高速化のため短縮
+                const int activeTimeoutMs = 60000;
+
+                _voiceRecognitionService = new RealtimeVoiceRecognitionService(
+                    currentCharacter.sttApiKey,
+                    currentCharacter.sttWakeWord,
+                    voiceThreshold,
+                    silenceTimeoutMs,
+                    activeTimeoutMs
+                );
+
+                // イベント購読
+                _voiceRecognitionService.OnRecognizedText += OnVoiceRecognized;
+                _voiceRecognitionService.OnStateChanged += OnVoiceStateChanged;
+                _voiceRecognitionService.OnVoiceLevel += OnVoiceLevelChanged;
+
+                // 音声認識開始
+                _voiceRecognitionService.StartListening();
+
+                AddStatusMessage("音声認識開始");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MainWindow] 音声認識サービス初期化エラー: {ex.Message}");
+                AddStatusMessage("音声認識初期化失敗");
+            }
+        }
+
+        /// <summary>
+        /// 音声認識結果を処理
+        /// </summary>
+        private void OnVoiceRecognized(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return;
+
+            UIHelper.RunOnUIThread(() =>
+            {
+                // チャットに音声認識結果を表示
+                ChatControlInstance.AddVoiceMessage(text);
+
+                // CocoroCore2に送信
+                SendMessageToCocoroCore(text, null);
+
+                Debug.WriteLine($"[MainWindow] 音声認識結果: {text}");
+            });
+        }
+
+        /// <summary>
+        /// 音声認識状態変更を処理
+        /// </summary>
+        private void OnVoiceStateChanged(VoiceRecognitionState state)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                string statusMessage = state switch
+                {
+                    VoiceRecognitionState.SLEEPING => "ウェイクアップワード待機中",
+                    VoiceRecognitionState.ACTIVE => "会話モード開始",
+                    VoiceRecognitionState.PROCESSING => "音声認識処理中",
+                    _ => ""
+                };
+
+                if (!string.IsNullOrEmpty(statusMessage))
+                {
+                    AddStatusMessage(statusMessage);
+                }
+            });
+        }
+
+        /// <summary>
+        /// 音声レベル変更を処理
+        /// </summary>
+        private void OnVoiceLevelChanged(float level)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                ChatControlInstance.UpdateVoiceLevel(level);
+            });
+        }
+
+        /// <summary>
+        /// CocoroCore2にメッセージを送信
+        /// </summary>
+        private async void SendMessageToCocoroCore(string message, string? imageData)
+        {
+            try
+            {
+                if (_communicationService != null)
+                {
+                    var currentCharacter = GetCurrentCharacterSettings();
+                    if (currentCharacter != null && currentCharacter.isUseLLM)
+                    {
+                        await _communicationService.SendChatToCoreUnifiedAsync(message, currentCharacter.modelName, imageData);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MainWindow] CocoroCore2送信エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// ウィンドウのクローズイベントをキャンセルし、代わりに最小化する
         /// </summary>
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
@@ -940,6 +1112,12 @@ namespace CocoroDock
                 {
                     _screenshotService.Dispose();
                 }
+
+                if (_voiceRecognitionService != null)
+                {
+                    _voiceRecognitionService.Dispose();
+                }
+
                 base.OnClosing(e);
             }
         }

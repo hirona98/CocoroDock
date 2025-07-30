@@ -215,7 +215,7 @@ namespace CocoroDock.Services
                 if (!string.IsNullOrEmpty(response.response))
                 {
                     Debug.WriteLine($"統一API: AI応答内容: {response.response}");
-                    
+
                     // CocoroDockのUIに応答を表示するためのイベントを発火
                     var chatRequest = new ChatRequest
                     {
