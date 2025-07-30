@@ -211,7 +211,7 @@ namespace CocoroDock.ViewModels
             catch (Exception ex)
             {
                 Debug.WriteLine($"MCPファイル読み込みエラー: {ex.Message}");
-                StatusMessage = $"設定ファイルの読み込みに失敗しました: {ex.Message}";
+                StatusMessage = $"設定ファイルの読み込み失敗: {ex.Message}";
             }
         }
 
@@ -240,7 +240,7 @@ namespace CocoroDock.ViewModels
                 _appSettings.UpdateSettings(currentSettings);
                 _appSettings.SaveAppSettings(); // ファイルに保存
 
-                StatusMessage = "設定を保存しました";
+                StatusMessage = "設定保存";
 
                 // 元の値を更新（設定保存後の基準値として）
                 _originalMcpEnabled = IsMcpEnabled;
@@ -251,7 +251,7 @@ namespace CocoroDock.ViewModels
             catch (Exception ex)
             {
                 Debug.WriteLine($"MCP設定保存エラー: {ex.Message}");
-                StatusMessage = $"設定の保存に失敗しました: {ex.Message}";
+                StatusMessage = $"設定保存失敗: {ex.Message}";
             }
             finally
             {
@@ -392,7 +392,7 @@ namespace CocoroDock.ViewModels
             catch (Exception ex)
             {
                 Debug.WriteLine($"CocoroCore再起動エラー: {ex.Message}");
-                StatusMessage = "再起動に失敗しました";
+                StatusMessage = "再起動失敗";
                 IsLoading = false;
             }
         }

@@ -77,7 +77,7 @@ namespace CocoroDock.Services
         void UpdateAndSaveConfig(ConfigSettings settings);
 
         /// <summary>
-        /// CocoroCoreに統一APIでチャットメッセージを送信（新設計）
+        /// CocoroCoreにAPIでチャットメッセージを送信
         /// </summary>
         /// <param name="message">送信メッセージ</param>
         /// <param name="characterName">キャラクター名（オプション）</param>

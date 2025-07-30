@@ -322,8 +322,6 @@ namespace CocoroDock.Communication
         public string[] changedFields { get; set; } = Array.Empty<string>();
     }
 
-    // CoreChatRequest は廃止されました - 統一API（UnifiedChatRequest）を使用してください
-
     /// <summary>
     /// CocoroCore API: 通知リクエスト (AIAvatarKit仕様準拠)
     /// </summary>
@@ -338,7 +336,7 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// CocoroCore2 統一API: チャットリクエスト（新設計）
+    /// CocoroCore2 API: チャットリクエスト
     /// </summary>
     public class UnifiedChatRequest
     {
@@ -353,7 +351,7 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// CocoroCore2 統一API: チャットレスポンス（新設計）
+    /// CocoroCore2 API: チャットレスポンス
     /// </summary>
     public class UnifiedChatResponse
     {

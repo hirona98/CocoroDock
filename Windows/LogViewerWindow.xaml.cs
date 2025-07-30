@@ -33,9 +33,9 @@ namespace CocoroDock.Windows
         {
             _filteredLogs = CollectionViewSource.GetDefaultView(_allLogs);
             _filteredLogs.Filter = LogFilter;
-            
+
             LogDataGrid.ItemsSource = _filteredLogs;
-            
+
             UpdateLogCount();
         }
 
@@ -50,7 +50,7 @@ namespace CocoroDock.Windows
                 _allLogs.Add(logMessage);
                 UpdateLogCount();
                 UpdateStatus($"最新ログ: {logMessage.timestamp:HH:mm:ss} [{logMessage.level}] {logMessage.component}");
-                
+
                 // 自動スクロール
                 if (AutoScrollCheckBox.IsChecked == true && LogDataGrid.Items.Count > 0)
                 {
@@ -86,10 +86,10 @@ namespace CocoroDock.Windows
         {
             // UIが初期化されていない場合は何もしない
             if (LogCountTextBlock == null) return;
-            
+
             var totalCount = _allLogs.Count;
             var filteredCount = _filteredLogs?.Cast<LogMessage>().Count() ?? 0;
-            
+
             if (totalCount == filteredCount)
             {
                 LogCountTextBlock.Text = $"総件数: {totalCount}";
@@ -108,7 +108,7 @@ namespace CocoroDock.Windows
         {
             // UIが初期化されていない場合は何もしない
             if (StatusTextBlock == null) return;
-            
+
             StatusTextBlock.Text = message;
         }
 
@@ -147,7 +147,7 @@ namespace CocoroDock.Windows
         {
             _allLogs.Clear();
             UpdateLogCount();
-            UpdateStatus("ログをクリアしました");
+            UpdateStatus("ログクリア");
         }
 
         /// <summary>

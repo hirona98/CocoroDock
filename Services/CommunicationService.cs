@@ -145,7 +145,7 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// CocoroCore2に統一APIでチャットメッセージを送信（新設計）
+        /// CocoroCore2にAPIでチャットメッセージを送信
         /// </summary>
         /// <param name="message">送信メッセージ</param>
         /// <param name="characterName">キャラクター名（オプション）</param>
@@ -184,7 +184,7 @@ namespace CocoroDock.Services
                     systemPrompt = AppSettings.Instance.LoadSystemPrompt(currentCharacter.systemPromptFilePath);
                 }
 
-                // 統一APIリクエストを作成
+                // APIリクエストを作成
                 var request = new UnifiedChatRequest
                 {
                     user_id = "user", // TODO: 将来 characterList.userId から取得するよう変更予定
@@ -201,20 +201,20 @@ namespace CocoroDock.Services
                     }
                 };
 
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "統一APIでチャットメッセージ送信"));
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "チャットメッセージ送信"));
                 var response = await _coreClient.SendUnifiedChatMessageAsync(request);
 
                 // 新しいcontext_idを保存
                 if (!string.IsNullOrEmpty(response.context_id))
                 {
                     _currentContextId = response.context_id;
-                    Debug.WriteLine($"統一API: 新しいcontext_idを取得: {_currentContextId}");
+                    Debug.WriteLine($"API: 新しいcontext_idを取得: {_currentContextId}");
                 }
 
                 // AI応答を処理
                 if (!string.IsNullOrEmpty(response.response))
                 {
-                    Debug.WriteLine($"統一API: AI応答内容: {response.response}");
+                    Debug.WriteLine($"API: AI応答内容: {response.response}");
 
                     // CocoroDockのUIに応答を表示するためのイベントを発火
                     var chatRequest = new ChatRequest
@@ -229,13 +229,13 @@ namespace CocoroDock.Services
                 }
 
                 // 成功時のステータス更新
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "統一APIチャット応答受信"));
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "チャット応答受信"));
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"統一APIチャット送信エラー: {ex.Message}");
+                Debug.WriteLine($"チャット送信エラー: {ex.Message}");
                 // ステータスバーにエラー表示
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"統一API通信エラー: {ex.Message}"));
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"通信エラー: {ex.Message}"));
             }
         }
 
@@ -256,7 +256,7 @@ namespace CocoroDock.Services
                 await _shellClient.SendAnimationCommandAsync(request);
 
                 // 成功時のステータス更新
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, $"アニメーション '{animationName}' を実行しました"));
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, $"アニメーション '{animationName}' 実行"));
             }
             catch (Exception ex)
             {
@@ -282,7 +282,7 @@ namespace CocoroDock.Services
                 await _shellClient.SendControlCommandAsync(request);
 
                 // 成功時のステータス更新
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, $"コマンド '{command}' を実行しました"));
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, $"コマンド '{command}' 実行"));
             }
             catch (Exception ex)
             {
@@ -324,7 +324,7 @@ namespace CocoroDock.Services
                 });
                 var notificationText = $"<cocoro-notification>{notificationJson}</cocoro-notification>";
 
-                // 統一APIリクエストを作成してCocoroCoreに転送
+                // APIリクエストを作成してCocoroCoreに転送
                 // 複数画像がある場合はファイルリストを作成
                 List<Dictionary<string, object>>? files = null;
                 if (imageDataUrls != null && imageDataUrls.Length > 0)
@@ -369,7 +369,7 @@ namespace CocoroDock.Services
                 }
 
                 // 成功時のステータス更新
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "通知を処理しました"));
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "通知実行"));
             }
             catch (Exception ex)
             {
@@ -426,7 +426,7 @@ namespace CocoroDock.Services
                     _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
                 }
 
-                // 統一API用のfilesリストを作成
+                // API用のfilesリストを作成
                 var files = new List<Dictionary<string, object>>
                 {
                     new Dictionary<string, object>
@@ -436,7 +436,7 @@ namespace CocoroDock.Services
                     }
                 };
 
-                // 統一APIリクエストを作成
+                // APIリクエストを作成
                 var request = new UnifiedChatRequest
                 {
                     user_id = "user", // TODO: 将来 characterList.userId から取得するよう変更予定
@@ -463,7 +463,7 @@ namespace CocoroDock.Services
                 }
 
                 // 成功時のステータス更新
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "デスクトップ画面を送信しました"));
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "キャプチャ画像送信"));
             }
             catch (Exception ex)
             {
@@ -492,7 +492,7 @@ namespace CocoroDock.Services
                 await _shellClient.SendControlCommandAsync(request);
 
                 // 成功時のステータス更新
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, isUseTTS ? "TTSを有効にしました" : "TTSを無効にしました"));
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, isUseTTS ? "音声合成有効" : "音声合成無効"));
             }
             catch (Exception ex)
             {

@@ -31,22 +31,18 @@ namespace CocoroDock.Communication
 
 
         /// <summary>
-        /// CocoroCore2に統一APIでチャットメッセージを送信（新設計）
+        /// CocoroCore2にAPIでチャットメッセージを送信
         /// </summary>
-        /// <param name="request">統一チャットリクエスト</param>
+        /// <param name="request">チャットリクエスト</param>
         public async Task<UnifiedChatResponse> SendUnifiedChatMessageAsync(UnifiedChatRequest request)
         {
             try
             {
                 var json = MessageHelper.SerializeToJson(request);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                Debug.WriteLine($"CocoroCore2に統一APIでチャットメッセージを送信: {request.message}");
-
                 using var response = await _httpClient.PostAsync($"{_baseUrl}/api/chat/unified", content);
 
                 var responseBody = await response.Content.ReadAsStringAsync();
-                Debug.WriteLine($"CocoroCore2からの統一API応答: {responseBody}");
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -58,16 +54,14 @@ namespace CocoroDock.Communication
                 var unifiedResponse = MessageHelper.DeserializeFromJson<UnifiedChatResponse>(responseBody);
                 if (unifiedResponse == null)
                 {
-                    throw new InvalidOperationException("統一API応答の解析に失敗しました");
+                    throw new InvalidOperationException("API応答の解析に失敗しました");
                 }
-
-                Debug.WriteLine($"統一API応答受信: status={unifiedResponse.status}, length={unifiedResponse.response_length}");
 
                 return unifiedResponse;
             }
             catch (TaskCanceledException)
             {
-                throw new TimeoutException("CocoroCore2への統一APIリクエストがタイムアウトしました");
+                throw new TimeoutException("CocoroCore2へのAPIリクエストがタイムアウトしました");
             }
             catch (HttpRequestException)
             {
@@ -75,8 +69,8 @@ namespace CocoroDock.Communication
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"CocoroCore2への統一API送信エラー: {ex.Message}");
-                throw new InvalidOperationException($"CocoroCore2との統一API通信に失敗しました: {ex.Message}", ex);
+                Debug.WriteLine($"CocoroCore2へのAPI送信エラー: {ex.Message}");
+                throw new InvalidOperationException($"CocoroCore2とのAPI通信に失敗しました: {ex.Message}", ex);
             }
         }
 
@@ -102,7 +96,7 @@ namespace CocoroDock.Communication
                     throw new HttpRequestException($"CocoroCoreエラー: {error?.message ?? responseBody}");
                 }
 
-                return MessageHelper.DeserializeFromJson<StandardResponse>(responseBody) 
+                return MessageHelper.DeserializeFromJson<StandardResponse>(responseBody)
                        ?? new StandardResponse { status = "success", message = "Command sent successfully" };
             }
             catch (TaskCanceledException)
@@ -137,7 +131,7 @@ namespace CocoroDock.Communication
                     throw new HttpRequestException($"CocoroCoreエラー: {error?.message ?? responseBody}");
                 }
 
-                return MessageHelper.DeserializeFromJson<HealthCheckResponse>(responseBody) 
+                return MessageHelper.DeserializeFromJson<HealthCheckResponse>(responseBody)
                        ?? throw new InvalidOperationException("ヘルスチェックレスポンスのパースに失敗しました");
             }
             catch (TaskCanceledException)
@@ -173,7 +167,7 @@ namespace CocoroDock.Communication
                     throw new HttpRequestException($"CocoroCoreエラー: {error?.message ?? responseBody}");
                 }
 
-                return MessageHelper.DeserializeFromJson<McpToolRegistrationResponse>(responseBody) 
+                return MessageHelper.DeserializeFromJson<McpToolRegistrationResponse>(responseBody)
                        ?? new McpToolRegistrationResponse { status = "success", message = "ログ取得完了", logs = new List<string>() };
             }
             catch (TaskCanceledException)
