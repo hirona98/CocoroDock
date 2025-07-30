@@ -709,7 +709,7 @@ namespace CocoroDock.Controls
 
             var bubble = new Border
             {
-                Style = (Style)Resources["VoiceBubbleStyle"]
+                Style = (Style)Resources["UserBubbleStyle"]  // テキスト入力と同じスタイル
             };
 
             var messageContent = new StackPanel();
@@ -717,7 +717,7 @@ namespace CocoroDock.Controls
             var messageText = new TextBox
             {
                 Style = (Style)Resources["UserMessageTextStyle"],
-                Text = $"🎤 {text}"
+                Text = text  // 🎤アイコンを削除してテキストのみ
             };
 
             messageContent.Children.Add(messageText);

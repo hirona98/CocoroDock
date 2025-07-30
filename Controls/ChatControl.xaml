@@ -30,23 +30,6 @@
                                 Value="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ScrollViewer}}, Path=ActualWidth, Converter={StaticResource PercentageConverter}, ConverterParameter=0.9}"/>
                 </Style>
 
-                <!-- 音声メッセージバブルスタイル -->
-                <Style x:Key="VoiceBubbleStyle"
-                       TargetType="Border">
-                        <Setter Property="Background"
-                                Value="#6B8E23"/>
-                        <Setter Property="CornerRadius"
-                                Value="10,10,0,10"/>
-                        <Setter Property="Padding"
-                                Value="10"/>
-                        <Setter Property="Margin"
-                                Value="50,5,10,5"/>
-                        <Setter Property="HorizontalAlignment"
-                                Value="Right"/>
-                        <Setter Property="MaxWidth"
-                                Value="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ScrollViewer}}, Path=ActualWidth, Converter={StaticResource PercentageConverter}, ConverterParameter=0.9}"/>
-                </Style>
-
                 <Style x:Key="AiBubbleStyle"
                        TargetType="Border">
                         <Setter Property="Background"
