@@ -60,9 +60,6 @@ namespace CocoroDock.Communication
         public int outputBitrate { get; set; } = 0;
         public int outputSamplingRate { get; set; } = 16000;
         public string outputAudioChannels { get; set; } = "mono";
-        public float leadingSilenceSeconds { get; set; } = 0.0f;
-        public float trailingSilenceSeconds { get; set; } = 0.3f;
-        public float lineBreakSilenceSeconds { get; set; } = 0.3f;
     }
 
     /// <summary>
@@ -77,7 +74,7 @@ namespace CocoroDock.Communication
         public string apiKey { get; set; } = string.Empty;
         public string llmModel { get; set; } = string.Empty;
         public string localLLMBaseUrl { get; set; } = string.Empty; // ローカルLLMのベースURL
-        public string systemPrompt { get; set; } = string.Empty;
+        public string systemPromptFilePath { get; set; } = string.Empty;
         public bool isUseTTS { get; set; }
         public string ttsEndpointURL { get; set; } = string.Empty;
         public string ttsSperkerID { get; set; } = string.Empty;
@@ -93,7 +90,6 @@ namespace CocoroDock.Communication
         public string embeddedApiKey { get; set; } = string.Empty; // 埋め込みモデル用APIキー
         public string embeddedModel { get; set; } = "openai/text-embedding-3-small"; // 埋め込みモデル名
         public bool isUseSTT { get; set; } = false; // STT（音声認識）機能の有効/無効
-        public string sttModel { get; set; } = string.Empty; // STTモデル
         public string sttEngine { get; set; } = "amivoice"; // STTエンジン ("amivoice" | "openai")
         public string sttWakeWord { get; set; } = string.Empty; // STT起動ワード
         public string sttApiKey { get; set; } = string.Empty; // STT用APIキー
@@ -193,12 +189,10 @@ namespace CocoroDock.Communication
         public float windowSize { get; set; }
         public float windowPositionX { get; set; } = 0.0f;
         public float windowPositionY { get; set; } = 0.0f;
-        public int currentCharacterIndex { get; set; }
-        public int currentAnimationSettingIndex { get; set; } = 0;
-        public List<CharacterSettings> characterList { get; set; } = new List<CharacterSettings>();
-        public List<AnimationSetting> animationSettings { get; set; } = new List<AnimationSetting>();
         public ScreenshotSettings screenshotSettings { get; set; } = new ScreenshotSettings();
         public MicrophoneSettings microphoneSettings { get; set; } = new MicrophoneSettings();
+        public int currentCharacterIndex { get; set; }
+        public List<CharacterSettings> characterList { get; set; } = new List<CharacterSettings>();
     }
 
 

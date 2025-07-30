@@ -178,7 +178,11 @@ namespace CocoroDock.Services
                 }
 
                 // システムプロンプトを取得
-                string? systemPrompt = currentCharacter?.systemPrompt;
+                string? systemPrompt = null;
+                if (currentCharacter != null && !string.IsNullOrEmpty(currentCharacter.systemPromptFilePath))
+                {
+                    systemPrompt = AppSettings.Instance.LoadSystemPrompt(currentCharacter.systemPromptFilePath);
+                }
 
                 // 統一APIリクエストを作成
                 var request = new UnifiedChatRequest
@@ -345,7 +349,7 @@ namespace CocoroDock.Services
                     session_id = _currentSessionId,
                     message = notificationText,
                     character_name = currentCharacter.modelName ?? "default",
-                    system_prompt = currentCharacter.systemPrompt,
+                    system_prompt = !string.IsNullOrEmpty(currentCharacter.systemPromptFilePath) ? AppSettings.Instance.LoadSystemPrompt(currentCharacter.systemPromptFilePath) : null,
                     context_id = _currentContextId,
                     files = files,
                     metadata = new Dictionary<string, object>
@@ -439,7 +443,7 @@ namespace CocoroDock.Services
                     session_id = _currentSessionId,
                     message = "<cocoro-desktop-monitoring>",  // 特別なタグ
                     character_name = currentCharacter.modelName ?? "default",
-                    system_prompt = currentCharacter.systemPrompt,
+                    system_prompt = !string.IsNullOrEmpty(currentCharacter.systemPromptFilePath) ? AppSettings.Instance.LoadSystemPrompt(currentCharacter.systemPromptFilePath) : null,
                     context_id = _currentContextId,
                     files = files,
                     metadata = new Dictionary<string, object>

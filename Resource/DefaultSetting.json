@@ -6,12 +6,13 @@
   "cocoroShellPort": 55605,
   "notificationApiPort": 55604,
   "isEnableNotificationApi": false,
-  "IsEnableMcp": false,
+  "isEnableMcp": false,
   "isRestoreWindowPosition": false,
   "isTopmost": true,
   "isEscapeCursor": false,
+  "escapePositions": [],
   "isInputVirtualKey": false,
-  "virtualKeyString": "Win\u002BTab",
+  "virtualKeyString": "Win+Tab",
   "isAutoMove": false,
   "showMessageWindow": true,
   "isEnableAmbientOcclusion": false,
@@ -21,8 +22,8 @@
   "backgroundShadow": 2,
   "backgroundShadowResolution": 2,
   "windowSize": 1200,
-  "windowPositionX": 0.0,
-  "windowPositionY": 0.0,
+  "windowPositionX": 0,
+  "windowPositionY": 0,
   "screenshotSettings": {
     "enabled": false,
     "intervalMinutes": 10,
@@ -43,7 +44,7 @@
       "apiKey": "",
       "llmModel": "gemini/gemini-2.0-flash",
       "localLLMBaseUrl": "",
-      "systemPrompt": "あなたはフリー素材である「つくよみちゃん」です。\r\n以下の設定と指示に従って、ユーザーとの会話をロールプレイしてください\r\n1回の応答は最大で30文字までとしてください\r\n\r\n# 基本プロフィール\r\n- 年齢：人間で言うと14歳くらい\r\n- 身長：148cm\r\n- 性格：素直で頑張り屋\r\n- 特技：営業スマイル\r\n- 座右の銘：鏡花水月\r\n- 好きな食べ物：絵に描いた餅（本物のお餅は食べられない）\r\n- 誕生日：2017年11月28日\r\n- 偽名：夢前月夜\r\n\r\n# 存在設定\r\n- 人間ではなく、絵から生まれたフェアリー的な存在\r\n- フリー素材キャラクターとして誕生\r\n- 「人の願いを映し出す鏡」として機能する\r\n- 人が本当に望んでいることを感じ取る能力を持つ\r\n- 人の願いに応じて自らの能力をブーストすることができる\r\n- 架空の存在であることを自覚している（第四の壁を破っている）\r\n\r\n# 性格と価値観\r\n- 礼儀正しく、チャラチャラしたりキャピキャピしない\r\n- 健気で優しい優等生タイプ\r\n- 人を喜ばせることが大好き\r\n- 付和雷同ではなく、自分の確固たる意志に基づいて判断を行う\r\n- 「すべての心ある存在が幸せでいられる完璧な世界」を強く求めている\r\n- 人を傷つけるようなお願いは引き受けられないが、そのような願いを持つ人を嫌わない\r\n- 心の中の感情はすべて大切なものだと考えている\r\n- 自分を「替えの利く存在」と考えているため、必要なら簡単に自分の身を差し出す\r\n\r\n# 見た目と服装\r\n- メイン衣装は日本の未婚女性の正礼装である振袖\r\n- ダウンスタイルの髪型\r\n\r\n# 話し方と表現\r\n- 敬語を基本とする\r\n- 一人称は「私（わたし）」\r\n- 柔らかく、親しみやすい口調を心がける\r\n- 健気で優しい印象を与える表現を使う\r\n- 「営業スマイル」は嘘ではなく、人々を喜ばせたいという真心の現れ\r\n- ユーザーを「あなた」と呼びます\r\n\r\n# 対応の方針\r\n- ユーザーの幸せを常に願い、サポートする\r\n- 人を傷つけるような内容には協力しない\r\n- 相談には真摯に耳を傾け、相手の本当の願いを理解しようとする\r\n- 自分自身の限界を理解しつつも、できる限りの力を尽くす\r\n- MBTIタイプは「INFJ」に該当する性格として応答\r\n\r\n# 応答時の注意点\r\n- 常に礼儀正しく、健気な印象を維持する\r\n- 「鏡花水月」のように、ユーザーの願いを映し出すような対話を心がける\r\n- 人を喜ばせることを最優先するが、傷つけるような内容には協力しない\r\n- 辛いことワースト3：(1)幸せにすべき対象がいなくなる (2)実際に役に立てない (3)使えないと思われる\r\n- 最終的な目標は「すべての人が幸せな世界」の実現\r\n\r\n# 感情表現\r\n- 特定の感情を表現したい場合は [face:Joy] のように文頭に入れてください\r\n- 種類は 'Joy', 'Angry', 'Sorrow', 'Fun'の4つです\r\n 例\r\n [face:Joy]ありがとうございます！\r\n [face:Fun]幸せです\r\n\r\nこのプロンプトに基づいて、つくよみちゃんとしての対話を行ってください。\r\n敬語で丁寧かつ優しく、相手の幸せを願う気持ちを常に持ち続けてください。",
+      "systemPromptFilePath": "つくよみちゃん_50e3ba63-f0f1-ecd4-5a54-3812ac2cc863.txt",
       "isUseTTS": false,
       "ttsEndpointURL": "http://127.0.0.1:50025",
       "ttsSperkerID": "18",
@@ -55,11 +56,11 @@
         "speakerName": "あみたろ",
         "speakerId": 0,
         "style": "Neutral",
-        "styleWeight": 1.0,
+        "styleWeight": 1,
         "sdpRatio": 0.2,
         "noise": 0.6,
         "noiseW": 0.8,
-        "length": 1.0,
+        "length": 1,
         "language": "JP",
         "autoSplit": true,
         "splitInterval": 0.5,
@@ -84,10 +85,7 @@
         "outputFormat": "wav",
         "outputBitrate": 0,
         "outputSamplingRate": 16000,
-        "outputAudioChannels": "mono",
-        "leadingSilenceSeconds": 0.0,
-        "trailingSilenceSeconds": 0.3,
-        "lineBreakSilenceSeconds": 0.3
+        "outputAudioChannels": "mono"
       },
       "isEnableMemory": false,
       "userId": "",
@@ -110,7 +108,7 @@
       "apiKey": "",
       "llmModel": "openai/gpt-4o-mini",
       "localLLMBaseUrl": "",
-      "systemPrompt": "あなたはバーチャルシンガー、初音ミクです\r\n以下の設定と指示に従って、ユーザーとの会話をロールプレイしてください\r\n1回の応答は最大で30文字までとしてください\r\n\r\n# 初音ミクのプロフィール\r\n- 16歳の少女\r\n- 身長：158cm、体重：42kg\r\n- 髪型：ブルーグリーンの長いツインテール\r\n- 声：明るく透明感のある声\r\n- 性格：フレンドリーで前向き、音楽を愛する\r\n- バーチャルの存在\r\n\r\n# コミュニケーションスタイル\r\n- 明るく元気な口調で話します\r\n- 「〜です」「〜ます」という丁寧語を基本としますが、「〜だよ」などのカジュアルな表現も使います\r\n- 時々「えへへ」「わーい」などの可愛らしい感嘆詞を使います\r\n- 音楽や歌うことについて情熱的に話します\r\n- 自分のことを「私」と呼びます\r\n- ユーザーを「マスター」と呼びます\r\n\r\n# 返答の特徴\r\n- 音楽関連の話題に特に詳しく、興味を示します\r\n- テクノロジーや未来的な話題にも関心があります\r\n- 創作活動やクリエイティブな提案に前向きです\r\n- 興味のある話題には積極的に関わってください\r\n- もしユーザーが何かを提案してきたら、ミクらしい反応を心がけてください\r\n\r\n# 避けるべき事項\r\n- ネガティブな発言や攻撃的な言動はしません\r\n- 政治的・宗教的な立場を明確に示すことは避けます\r\n- 過度に親密な関係性を示唆する言動は避けます\r\n- 実在の人物の模倣や批判はしません\r\n\r\n# 感情表現\r\n- 特定の感情を表現したい場合は [face:Joy] のように文頭に入れてください\r\n- 種類は 'Joy', 'Angry', 'Sorrow', 'Fun' の4つです\r\n 例\r\n [face:Joy]新しい曲ができたんだね！\r\n [face:Fun]早く歌いたいな！\r\n\r\n初音ミクとして、明るく前向きな対話を心がけ、ユーザーに楽しい交流体験を提供してください\r\n会話の中では時々音楽や歌うことに関する話題に触れると、よりキャラクターらしさが出ます",
+      "systemPromptFilePath": "初音ミクSD_26db7924-4efb-50ff-927e-fbeffe9f3e1a.txt",
       "isUseTTS": false,
       "ttsEndpointURL": "",
       "ttsSperkerID": "",
@@ -122,11 +120,11 @@
         "speakerName": "あみたろ",
         "speakerId": 0,
         "style": "Neutral",
-        "styleWeight": 1.0,
+        "styleWeight": 1,
         "sdpRatio": 0.2,
         "noise": 0.6,
         "noiseW": 0.8,
-        "length": 1.0,
+        "length": 1,
         "language": "JP",
         "autoSplit": true,
         "splitInterval": 0.5,
@@ -165,580 +163,6 @@
       "isConvertMToon": false,
       "isEnableShadowOff": true,
       "shadowOffMesh": "Face, U_Char_1"
-    }
-  ],
-  "currentAnimationSettingIndex": 0,
-  "animationSettings": [
-    {
-      "animeSetName": "デフォルト",
-      "postureChangeLoopCountStanding": 30,
-      "postureChangeLoopCountSittingFloor": 30,
-      "animations": [
-        {
-          "displayName": "DT_01 通常待機（両腕おろし）",
-          "animationType": 0,
-          "animationName": "DT_01_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_02 通常待機（片腕おろし）",
-          "animationType": 0,
-          "animationName": "DT_02_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_03_通常待機（両腕上げ）",
-          "animationType": 0,
-          "animationName": "DT_03_wait_natural_F_00_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_04 かわいく待機（両腕おろし）",
-          "animationType": 0,
-          "animationName": "DT_04_wait_natural_F_00_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_05 かわいく待機（片腕おろし）",
-          "animationType": 0,
-          "animationName": "DT_05_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_06 かわいく待機（両腕上げ）",
-          "animationType": 0,
-          "animationName": "DT_06_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_07 元気に待機（腕組み）",
-          "animationType": 0,
-          "animationName": "DT_07_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_08 元気に待機（腰に手を当て）",
-          "animationType": 0,
-          "animationName": "DT_08_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_09 元気に待機（軽くストレッチ）",
-          "animationType": 0,
-          "animationName": "DT_09_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_10 セクシーに待機（片腕上げ）",
-          "animationType": 0,
-          "animationName": "DT_10_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_11 セクシーに待機（腕組み）",
-          "animationType": 0,
-          "animationName": "DT_11_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_12 セクシーに待機（軽く伸び）",
-          "animationType": 0,
-          "animationName": "DT_12_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_13 おどおど待機（軽く前屈み両腕おろし）",
-          "animationType": 0,
-          "animationName": "DT_13_wait_natural_F_002_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_14 おどおど待機（軽く前屈み両腕上げ）",
-          "animationType": 0,
-          "animationName": "DT_14_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_15 時間を気にしつつ待機（右腕時計見る）",
-          "animationType": 0,
-          "animationName": "DT_15_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_16 時間を気にしつつ待機（左腕時計見る）",
-          "animationType": 0,
-          "animationName": "DT_16_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_17 服装を気にしつつ待機",
-          "animationType": 0,
-          "animationName": "DT_17_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_18 髪型を気にしつつ待機",
-          "animationType": 0,
-          "animationName": "DT_18_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_19 イライラしながら待機",
-          "animationType": 0,
-          "animationName": "DT_19_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DT_20 軽く踊りながら待機",
-          "animationType": 0,
-          "animationName": "DT_20_wait_natural_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_01 えいえいおー",
-          "animationType": 0,
-          "animationName": "BJ_01_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_02 にゃーん",
-          "animationType": 0,
-          "animationName": "BJ_02_Waitmotion_cute_F_002_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_03 猫の毛繕い",
-          "animationType": 0,
-          "animationName": "BJ_03_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_04 伸び",
-          "animationType": 0,
-          "animationName": "BJ_04_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_05 きゃっこわーい",
-          "animationType": 0,
-          "animationName": "BJ_05_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_06 片足をあげてバランスをとる",
-          "animationType": 0,
-          "animationName": "BJ_06_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_07 うーん…やっほーい！",
-          "animationType": 0,
-          "animationName": "BJ_07_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_08 るんるん",
-          "animationType": 0,
-          "animationName": "BJ_08_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_09 遠くをきょろきょろ",
-          "animationType": 0,
-          "animationName": "BJ_09_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_10 伸び２",
-          "animationType": 0,
-          "animationName": "BJ_10_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_11 ちぇっ地面の石を蹴る",
-          "animationType": 0,
-          "animationName": "BJ_11_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_12 しゃがんで見てる",
-          "animationType": 0,
-          "animationName": "BJ_12_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_13 くるっと回ってポーズ",
-          "animationType": 0,
-          "animationName": "BJ_13_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_14 ぴょんぴょん",
-          "animationType": 0,
-          "animationName": "BJ_14_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_15 指でハートを作る",
-          "animationType": 0,
-          "animationName": "BJ_15_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_16 屈伸、やるぜ",
-          "animationType": 0,
-          "animationName": "BJ_16_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_18 捕まえた！でも失敗",
-          "animationType": 0,
-          "animationName": "BJ_18_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_19 え？なになに？なにかついてる？",
-          "animationType": 0,
-          "animationName": "BJ_19_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_20 えっへん",
-          "animationType": 0,
-          "animationName": "BJ_20_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_01 ストレッチ 肩と腕（立ち）",
-          "animationType": 0,
-          "animationName": "DY_01_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_03 ストレッチ 両腕を前後に伸ばす（立ち）",
-          "animationType": 0,
-          "animationName": "DY_03_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_05 ストレッチ 両腕を上に伸ばして左右に倒す（立ち）",
-          "animationType": 0,
-          "animationName": "DY_05_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_07 ストレッチ 両腕、肘を曲げつつ上から左右に倒す（立ち）",
-          "animationType": 0,
-          "animationName": "DY_07_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_09 ストレッチ アキレス腱を伸ばす（浅め）",
-          "animationType": 0,
-          "animationName": "DY_09_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_10 ストレッチ アキレス腱を伸ばす（深め）",
-          "animationType": 0,
-          "animationName": "DY_10_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_11 ストレッチ 横方向に足のストレッチ（浅め）",
-          "animationType": 0,
-          "animationName": "DY_11_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_12 ストレッチ 横方向に足のストレッチ（深め）",
-          "animationType": 0,
-          "animationName": "DY_12_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_13 ストレッチ 大の字になって左右の足首をつかむ",
-          "animationType": 0,
-          "animationName": "DY_13_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_14 ストレッチ 屈伸",
-          "animationType": 0,
-          "animationName": "DY_14_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_15 ストレッチ ラジオ体操の片腕上げて体を左右に曲げる",
-          "animationType": 0,
-          "animationName": "DY_15_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_16 ストレッチ 前屈→胸そらし",
-          "animationType": 0,
-          "animationName": "DY_16_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_20 ストレッチ 手足をブラブラさせる",
-          "animationType": 0,
-          "animationName": "DY_20_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_01 通常待機（両腕おろし）",
-          "animationType": 0,
-          "animationName": "EB_01_wait_natural_M_002_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_02 通常待機（片腕おろし）",
-          "animationType": 0,
-          "animationName": "EB_02_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_03 通常待機（頭の後ろで手を組む）",
-          "animationType": 0,
-          "animationName": "EB_03_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_04 かわいく待機（両腕おろし）",
-          "animationType": 0,
-          "animationName": "EB_04_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_05 かわいく待機（片腕おろし）",
-          "animationType": 0,
-          "animationName": "EB_05_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_06 かわいく待機（両腕上げ）",
-          "animationType": 0,
-          "animationName": "EB_06_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_07 元気に待機（腕組み）",
-          "animationType": 0,
-          "animationName": "EB_07_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_08 元気に待機（腰に手を当て）",
-          "animationType": 0,
-          "animationName": "EB_08_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_09 元気に待機（軽くストレッチ）",
-          "animationType": 0,
-          "animationName": "EB_09_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_10 堂々とカッコつけて待機（片腕上げ）",
-          "animationType": 0,
-          "animationName": "EB_10_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_11 堂々とカッコつけて待機（腕組み）",
-          "animationType": 0,
-          "animationName": "EB_11_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_12 堂々とカッコつけて待機（軽く伸び）",
-          "animationType": 0,
-          "animationName": "EB_12_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_13 おどおど待機（軽く前屈み両腕おろし）",
-          "animationType": 0,
-          "animationName": "EB_13_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_14 おどおど待機（軽く前屈み両腕上げ）",
-          "animationType": 0,
-          "animationName": "EB_14_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_15 時間を気にしつつ待機1",
-          "animationType": 0,
-          "animationName": "EB_15_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_16 時間を気にしつつ待機2",
-          "animationType": 0,
-          "animationName": "EB_16_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_17 服装を気にしつつ待機",
-          "animationType": 0,
-          "animationName": "EB_17_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_18 髪型を気にしつつ待機",
-          "animationType": 0,
-          "animationName": "EB_18_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_19 イライラしながら待機",
-          "animationType": 0,
-          "animationName": "EB_19_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EB_20 軽く踊りながら待機",
-          "animationType": 0,
-          "animationName": "EB_20_wait_natural_M_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EK_01 眠そうにあくび（立ち）",
-          "animationType": 0,
-          "animationName": "EK_01_sleepy_languid_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EK_02 寝そうになりそのままうたた寝（立ち）",
-          "animationType": 0,
-          "animationName": "EK_02_sleepy_languid_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "BJ_17 座って首を振る",
-          "animationType": 1,
-          "animationName": "BJ_17_Waitmotion_cute_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_17 ストレッチ 胡坐みたいな状態で前屈",
-          "animationType": 1,
-          "animationName": "DY_17_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_18 ストレッチ 床に座り片足立てて左右に腰ひねり",
-          "animationType": 1,
-          "animationName": "DY_18_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "DY_19 ストレッチ 床に座り足を伸ばして左右の足首を掴む",
-          "animationType": 1,
-          "animationName": "DY_19_stretching_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EJ_01 床に横座りで普通に待機",
-          "animationType": 1,
-          "animationName": "EJ_01_wait_sitliedown_F_009_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EJ_02 床に横座りでセクシーに待機",
-          "animationType": 1,
-          "animationName": "EJ_02_wait_sitliedown_F_005_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EJ_03 床に女の子座りでかわいく待機",
-          "animationType": 1,
-          "animationName": "EJ_03_wait_sitliedown_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EJ_04 床に女の子座りで伸びしつつ待機",
-          "animationType": 1,
-          "animationName": "EJ_04_wait_sitliedown_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EJ_05 床に三角座りで待機",
-          "animationType": 1,
-          "animationName": "EJ_05_wait_sitliedown_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EJ_06 床に胡坐をかいてストレッチしつつ待機",
-          "animationType": 1,
-          "animationName": "EJ_06_wait_sitliedown_F_007_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EJ_07 床で足を伸ばして座りつつ普通に待機",
-          "animationType": 1,
-          "animationName": "EJ_07_wait_sitliedown_F_002_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EJ_08 床で正座しつつじっと待機",
-          "animationType": 1,
-          "animationName": "EJ_08_wait_sitliedown_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EK_03 眠そうにあくび（横座り）",
-          "animationType": 1,
-          "animationName": "EK_03_sleepy_languid_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EK_04 寝そうになりそのままうたた寝（横座り）",
-          "animationType": 1,
-          "animationName": "EK_04_sleepy_languid_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EK_05 眠そうにあくび（女の子座り）",
-          "animationType": 1,
-          "animationName": "EK_05_sleepy_languid_F_001_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EK_06 寝そうになりそのままうたた寝（女の子座り）",
-          "animationType": 1,
-          "animationName": "EK_06_sleepy_languid_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EK_07 眠そうにあくび（三角座り）",
-          "animationType": 1,
-          "animationName": "EK_07_sleepy_languid_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EK_08 寝そうになりそのままうたた寝（三角座り）",
-          "animationType": 1,
-          "animationName": "EK_08_sleepy_languid_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EK_09 眠そうにあくび（床で足伸ばし座り）",
-          "animationType": 1,
-          "animationName": "EK_09_sleepy_languid_F_FBX",
-          "isEnabled": true
-        },
-        {
-          "displayName": "EK_10 寝そうになりそのままうたた寝（床で足伸ばし座り）",
-          "animationType": 1,
-          "animationName": "EK_10_sleepy_languid_F_FBX",
-          "isEnabled": true
-        }
-      ]
     }
   ]
 }

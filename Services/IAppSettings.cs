@@ -154,6 +154,16 @@ namespace CocoroDock.Services
         List<CharacterSettings> CharacterList { get; set; }
 
         /// <summary>
+        /// 現在のアニメーション設定インデックス
+        /// </summary>
+        int CurrentAnimationSettingIndex { get; set; }
+
+        /// <summary>
+        /// アニメーション設定リスト
+        /// </summary>
+        List<AnimationSetting> AnimationSettings { get; set; }
+
+        /// <summary>
         /// 設定が読み込まれたかどうか
         /// </summary>
         bool IsLoaded { get; set; }
@@ -189,5 +199,58 @@ namespace CocoroDock.Services
         /// 全設定をファイルに保存
         /// </summary>
         void SaveSettings();
+
+        /// <summary>
+        /// アニメーション設定をファイルから読み込む
+        /// </summary>
+        void LoadAnimationSettings();
+
+        /// <summary>
+        /// アニメーション設定をファイルに保存
+        /// </summary>
+        void SaveAnimationSettings();
+
+        /// <summary>
+        /// キャラクターのsystemPromptをファイルから読み込む
+        /// </summary>
+        /// <param name="promptFilePath">プロンプトファイルのパス</param>
+        /// <returns>プロンプトテキスト</returns>
+        string LoadSystemPrompt(string promptFilePath);
+
+        /// <summary>
+        /// キャラクターのsystemPromptをファイルに保存
+        /// </summary>
+        /// <param name="promptFilePath">プロンプトファイルのパス</param>
+        /// <param name="promptText">プロンプトテキスト</param>
+        void SaveSystemPrompt(string promptFilePath, string promptText);
+
+        /// <summary>
+        /// 新しいsystemPromptファイル用のファイルパスを生成
+        /// </summary>
+        /// <param name="modelName">キャラクターのモデル名</param>
+        /// <returns>モデル名_UUIDベースのファイルパス</returns>
+        string GenerateSystemPromptFilePath(string modelName);
+
+        /// <summary>
+        /// UUID中間一致でsystemPromptファイルを検索
+        /// </summary>
+        /// <param name="uuid">検索するUUID</param>
+        /// <returns>見つかったファイルパス、見つからない場合はnull</returns>
+        string? FindSystemPromptFileByUuid(string uuid);
+
+        /// <summary>
+        /// systemPromptファイル名からUUIDを抽出
+        /// </summary>
+        /// <param name="fileName">ファイル名</param>
+        /// <returns>抽出されたUUID、抽出できない場合はnull</returns>
+        string? ExtractUuidFromFileName(string fileName);
+
+        /// <summary>
+        /// modelName変更時にsystemPromptファイル名を更新
+        /// </summary>
+        /// <param name="oldFileName">古いファイル名</param>
+        /// <param name="newModelName">新しいモデル名</param>
+        /// <returns>新しいファイル名</returns>
+        string UpdateSystemPromptFileName(string oldFileName, string newModelName);
     }
 }
