@@ -20,10 +20,17 @@ namespace CocoroDock.Services
         private readonly int _silenceTimeoutMs;
         private const int MIN_VOICE_DURATION_MS = 200;
 
+        // マイクゲイン設定
+        private float _microphoneGain = 2.0f; // デフォルト2倍（ハードコーディング）
+
         private DateTime _lastVoiceTime = DateTime.Now;
         private bool _isRecordingVoice = false;
         private Timer? _silenceTimer;
         private bool _isDisposed = false;
+
+        // デバッグ用音声ファイル出力フラグ
+        private const bool DEBUG_SAVE_AUDIO_FILES = true; // ハードコーディングのデバッグフラグ
+        private static int _audioFileCounter = 0;
 
         // イベント
         public event Action<string>? OnRecognizedText;
@@ -135,7 +142,9 @@ namespace CocoroDock.Services
                         System.Diagnostics.Debug.WriteLine("[VoiceService] Started recording voice");
                     }
 
-                    _audioBuffer.AddRange(e.Buffer.Take(e.BytesRecorded));
+                    // マイクゲインを適用して音声データを増幅
+                    var amplifiedBuffer = ApplyMicrophoneGain(e.Buffer, e.BytesRecorded);
+                    _audioBuffer.AddRange(amplifiedBuffer);
                     _lastVoiceTime = DateTime.Now;
 
                     // 無音タイマーリセット
@@ -143,8 +152,9 @@ namespace CocoroDock.Services
                 }
                 else if (_isRecordingVoice)
                 {
-                    // 音声中の無音部分も録音に含める
-                    _audioBuffer.AddRange(e.Buffer.Take(e.BytesRecorded));
+                    // 音声中の無音部分も録音に含める（ゲインを適用）
+                    var amplifiedBuffer = ApplyMicrophoneGain(e.Buffer, e.BytesRecorded);
+                    _audioBuffer.AddRange(amplifiedBuffer);
                 }
             }
             catch (Exception ex)
@@ -196,6 +206,12 @@ namespace CocoroDock.Services
 
                 // WAVヘッダーを更新してから送信
                 UpdateWavHeader(audioData);
+
+                // デバッグ用音声ファイル保存
+                if (DEBUG_SAVE_AUDIO_FILES)
+                {
+                    SaveAudioFileForDebug(audioData);
+                }
 
                 // AmiVoice API呼び出し（並列処理でブロックしない）
                 var recognitionTask = _amiVoiceClient.RecognizeAsync(audioData);
@@ -321,6 +337,81 @@ namespace CocoroDock.Services
             // データサイズ更新
             var dataSizeBytes = BitConverter.GetBytes(dataSize);
             Array.Copy(dataSizeBytes, 0, audioData, 40, 4);
+        }
+
+        /// <summary>
+        /// デバッグ用音声ファイル保存
+        /// </summary>
+        private void SaveAudioFileForDebug(byte[] audioData)
+        {
+            try
+            {
+                // デバッグファイル保存ディレクトリ
+                string debugDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "CocoroAI_AudioDebug");
+                if (!Directory.Exists(debugDir))
+                {
+                    Directory.CreateDirectory(debugDir);
+                }
+
+                // ファイル名（タイムスタンプ + 連番）
+                var now = DateTime.Now;
+                var fileName = $"voice_{now:yyyyMMdd_HHmmss}_{Interlocked.Increment(ref _audioFileCounter):D3}.wav";
+                string filePath = Path.Combine(debugDir, fileName);
+
+                // WAVファイルとして保存
+                File.WriteAllBytes(filePath, audioData);
+
+                System.Diagnostics.Debug.WriteLine($"[VoiceService] Debug audio saved: {filePath} ({audioData.Length} bytes)");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[VoiceService] Failed to save debug audio: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// マイクゲインを適用して音声データを増幅
+        /// </summary>
+        private byte[] ApplyMicrophoneGain(byte[] buffer, int bytesRecorded)
+        {
+            if (_microphoneGain == 1.0f)
+            {
+                // ゲインが1.0の場合は何もしない（パフォーマンス向上）
+                return buffer.Take(bytesRecorded).ToArray();
+            }
+
+            var amplifiedBuffer = new byte[bytesRecorded];
+
+            for (int i = 0; i < bytesRecorded; i += 2)
+            {
+                if (i + 1 < bytesRecorded)
+                {
+                    // 16bit サンプルを取得
+                    short sample = (short)((buffer[i + 1] << 8) | buffer[i]);
+
+                    // ゲインを適用
+                    float amplifiedSample = sample * _microphoneGain;
+
+                    // クリッピング防止（-32768 ~ 32767の範囲に制限）
+                    amplifiedSample = Math.Max(-32768, Math.Min(32767, amplifiedSample));
+
+                    // バイト配列に戻す
+                    short clippedSample = (short)amplifiedSample;
+                    amplifiedBuffer[i] = (byte)(clippedSample & 0xFF);
+                    amplifiedBuffer[i + 1] = (byte)((clippedSample >> 8) & 0xFF);
+                }
+            }
+
+            return amplifiedBuffer;
+        }
+
+        /// <summary>
+        /// マイクゲインを設定
+        /// </summary>
+        public void SetMicrophoneGain(float gain)
+        {
+            _microphoneGain = Math.Max(0.1f, Math.Min(10.0f, gain)); // 0.1倍～10倍の範囲で制限
+            System.Diagnostics.Debug.WriteLine($"[VoiceService] Microphone gain set to: {_microphoneGain:F1}x");
         }
 
         public void Dispose()
