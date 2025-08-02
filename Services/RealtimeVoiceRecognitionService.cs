@@ -22,20 +22,16 @@ namespace CocoroDock.Services
 
         // マイクゲイン設定
         private float _microphoneGain = 2.0f; // デフォルト2倍（ハードコーディング）
-        
+
         // プリバッファリング（言葉の頭切れ対策）
         private readonly Queue<byte[]> _preBuffer = new();
         private const int PRE_BUFFER_MS = 500; // 0.5秒分のプリバッファ
-        private const int BUFFER_SIZE_BYTES = 1600; // 50ms分のバイト数（16kHz*2bytes*0.05秒）
 
         private DateTime _lastVoiceTime = DateTime.Now;
         private bool _isRecordingVoice = false;
         private Timer? _silenceTimer;
         private bool _isDisposed = false;
 
-        // デバッグ用音声ファイル出力フラグ
-        private const bool DEBUG_SAVE_AUDIO_FILES = true; // ハードコーディングのデバッグフラグ
-        private static int _audioFileCounter = 0;
 
         // イベント
         public event Action<string>? OnRecognizedText;
@@ -132,10 +128,10 @@ namespace CocoroDock.Services
             {
                 // マイクゲインを適用して音声データを増幅
                 var amplifiedBuffer = ApplyMicrophoneGain(e.Buffer, e.BytesRecorded);
-                
+
                 // プリバッファに常に追加（言葉の頭切れ対策）
                 _preBuffer.Enqueue(amplifiedBuffer);
-                
+
                 // プリバッファサイズを制限（0.5秒分 = 10バッファ分）
                 int maxBuffers = PRE_BUFFER_MS / 50; // 50ms間隔なので
                 while (_preBuffer.Count > maxBuffers)
@@ -158,13 +154,13 @@ namespace CocoroDock.Services
                         _isRecordingVoice = true;
                         _audioBuffer.Clear();
                         AddWavHeader();
-                        
+
                         // プリバッファの内容を録音に含める（言葉の頭切れ対策）
                         foreach (var preBufferData in _preBuffer)
                         {
                             _audioBuffer.AddRange(preBufferData);
                         }
-                        
+
                         System.Diagnostics.Debug.WriteLine($"[VoiceService] Started recording voice with {_preBuffer.Count} pre-buffers");
                     }
                     else
@@ -172,7 +168,7 @@ namespace CocoroDock.Services
                         // 既に録音中の場合は通常通り追加
                         _audioBuffer.AddRange(amplifiedBuffer);
                     }
-                    
+
                     _lastVoiceTime = DateTime.Now;
 
                     // 無音タイマーリセット
@@ -235,10 +231,7 @@ namespace CocoroDock.Services
                 UpdateWavHeader(audioData);
 
                 // デバッグ用音声ファイル保存
-                if (DEBUG_SAVE_AUDIO_FILES)
-                {
-                    SaveAudioFileForDebug(audioData);
-                }
+                // SaveAudioFileForDebug(audioData);
 
                 // AmiVoice API呼び出し（並列処理でブロックしない）
                 var recognitionTask = _amiVoiceClient.RecognizeAsync(audioData);
@@ -369,6 +362,7 @@ namespace CocoroDock.Services
         /// <summary>
         /// デバッグ用音声ファイル保存
         /// </summary>
+        private static int _audioFileCounter = 0;
         private void SaveAudioFileForDebug(byte[] audioData)
         {
             try
