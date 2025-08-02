@@ -22,6 +22,11 @@ namespace CocoroDock.Services
 
         // マイクゲイン設定
         private float _microphoneGain = 2.0f; // デフォルト2倍（ハードコーディング）
+        
+        // プリバッファリング（言葉の頭切れ対策）
+        private readonly Queue<byte[]> _preBuffer = new();
+        private const int PRE_BUFFER_MS = 500; // 0.5秒分のプリバッファ
+        private const int BUFFER_SIZE_BYTES = 1600; // 50ms分のバイト数（16kHz*2bytes*0.05秒）
 
         private DateTime _lastVoiceTime = DateTime.Now;
         private bool _isRecordingVoice = false;
@@ -108,6 +113,7 @@ namespace CocoroDock.Services
 
                 _isRecordingVoice = false;
                 _audioBuffer.Clear();
+                _preBuffer.Clear(); // プリバッファもクリア
 
                 System.Diagnostics.Debug.WriteLine("[VoiceService] Stopped listening");
             }
@@ -124,6 +130,19 @@ namespace CocoroDock.Services
 
             try
             {
+                // マイクゲインを適用して音声データを増幅
+                var amplifiedBuffer = ApplyMicrophoneGain(e.Buffer, e.BytesRecorded);
+                
+                // プリバッファに常に追加（言葉の頭切れ対策）
+                _preBuffer.Enqueue(amplifiedBuffer);
+                
+                // プリバッファサイズを制限（0.5秒分 = 10バッファ分）
+                int maxBuffers = PRE_BUFFER_MS / 50; // 50ms間隔なので
+                while (_preBuffer.Count > maxBuffers)
+                {
+                    _preBuffer.Dequeue();
+                }
+
                 // 音量バー表示用レベル計算（固定閾値）
                 float displayLevel = CalculateDisplayLevel(e.Buffer, e.BytesRecorded);
                 OnVoiceLevel?.Invoke(displayLevel);
@@ -139,12 +158,21 @@ namespace CocoroDock.Services
                         _isRecordingVoice = true;
                         _audioBuffer.Clear();
                         AddWavHeader();
-                        System.Diagnostics.Debug.WriteLine("[VoiceService] Started recording voice");
+                        
+                        // プリバッファの内容を録音に含める（言葉の頭切れ対策）
+                        foreach (var preBufferData in _preBuffer)
+                        {
+                            _audioBuffer.AddRange(preBufferData);
+                        }
+                        
+                        System.Diagnostics.Debug.WriteLine($"[VoiceService] Started recording voice with {_preBuffer.Count} pre-buffers");
                     }
-
-                    // マイクゲインを適用して音声データを増幅
-                    var amplifiedBuffer = ApplyMicrophoneGain(e.Buffer, e.BytesRecorded);
-                    _audioBuffer.AddRange(amplifiedBuffer);
+                    else
+                    {
+                        // 既に録音中の場合は通常通り追加
+                        _audioBuffer.AddRange(amplifiedBuffer);
+                    }
+                    
                     _lastVoiceTime = DateTime.Now;
 
                     // 無音タイマーリセット
@@ -152,8 +180,7 @@ namespace CocoroDock.Services
                 }
                 else if (_isRecordingVoice)
                 {
-                    // 音声中の無音部分も録音に含める（ゲインを適用）
-                    var amplifiedBuffer = ApplyMicrophoneGain(e.Buffer, e.BytesRecorded);
+                    // 音声中の無音部分も録音に含める
                     _audioBuffer.AddRange(amplifiedBuffer);
                 }
             }
