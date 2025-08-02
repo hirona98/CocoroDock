@@ -29,6 +29,11 @@ namespace CocoroDock.Services
         int CocoroMemoryDBPort { get; set; }
 
         /// <summary>
+        /// CocoroMemoryWebポート
+        /// </summary>
+        int CocoroMemoryWebPort { get; set; }
+
+        /// <summary>
         /// CocoroShellポート
         /// </summary>
         int CocoroShellPort { get; set; }

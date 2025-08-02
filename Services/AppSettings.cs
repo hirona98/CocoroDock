@@ -47,6 +47,7 @@ namespace CocoroDock.Services
         public int CocoroCorePort { get; set; } = 55601;
         public int CocoroMemoryPort { get; set; } = 55602;
         public int CocoroMemoryDBPort { get; set; } = 55603;
+        public int CocoroMemoryWebPort { get; set; } = 55606;
         public int CocoroShellPort { get; set; } = 55605;
         public int NotificationApiPort { get; set; } = 55604;
         // 通知API設定
@@ -138,6 +139,7 @@ namespace CocoroDock.Services
             CocoroCorePort = config.cocoroCorePort;
             CocoroMemoryPort = config.cocoroMemoryPort;
             CocoroMemoryDBPort = config.cocoroMemoryDBPort;
+            CocoroMemoryWebPort = config.cocoroMemoryWebPort;
             CocoroShellPort = config.cocoroShellPort;
             NotificationApiPort = config.notificationApiPort;
             IsEnableNotificationApi = config.isEnableNotificationApi;
@@ -196,6 +198,7 @@ namespace CocoroDock.Services
                 cocoroCorePort = CocoroCorePort,
                 cocoroMemoryPort = CocoroMemoryPort,
                 cocoroMemoryDBPort = CocoroMemoryDBPort,
+                cocoroMemoryWebPort = CocoroMemoryWebPort,
                 cocoroShellPort = CocoroShellPort,
                 notificationApiPort = NotificationApiPort,
                 isEnableNotificationApi = IsEnableNotificationApi,
