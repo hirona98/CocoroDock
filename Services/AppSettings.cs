@@ -73,6 +73,13 @@ namespace CocoroDock.Services
         public float WindowPositionX { get; set; } = 0.0f;
         public float WindowPositionY { get; set; } = 0.0f;
 
+        // CocoroCore2用追加設定
+        public bool EnableProMode { get; set; } = true;
+        public bool EnableInternetRetrieval { get; set; } = true;
+        public string GoogleApiKey { get; set; } = "GOOGLE_API_KEY";
+        public string GoogleSearchEngineId { get; set; } = "GOOGLE_SERCH_ENGINE_ID";
+        public int InternetMaxResults { get; set; } = 5;
+
         // キャラクター設定
         public int CurrentCharacterIndex { get; set; } = 0;
         public List<CharacterSettings> CharacterList { get; set; } = new List<CharacterSettings>();
@@ -182,6 +189,13 @@ namespace CocoroDock.Services
                 MicrophoneSettings = config.microphoneSettings;
             }
 
+            // CocoroCore2用追加設定を更新
+            EnableProMode = config.enable_pro_mode;
+            EnableInternetRetrieval = config.enable_internet_retrieval;
+            GoogleApiKey = config.googleApiKey;
+            GoogleSearchEngineId = config.googleSearchEngineId;
+            InternetMaxResults = config.internetMaxResults;
+
             // 設定読み込み完了フラグを設定
             IsLoaded = true;
         }
@@ -220,10 +234,15 @@ namespace CocoroDock.Services
                 windowSize = WindowSize,
                 windowPositionX = WindowPositionX,
                 windowPositionY = WindowPositionY,
-                currentCharacterIndex = CurrentCharacterIndex,
-                characterList = new List<CharacterSettings>(CharacterList),
                 screenshotSettings = ScreenshotSettings,
-                microphoneSettings = MicrophoneSettings
+                microphoneSettings = MicrophoneSettings,
+                enable_pro_mode = EnableProMode,
+                enable_internet_retrieval = EnableInternetRetrieval,
+                googleApiKey = GoogleApiKey,
+                googleSearchEngineId = GoogleSearchEngineId,
+                internetMaxResults = InternetMaxResults,
+                currentCharacterIndex = CurrentCharacterIndex,
+                characterList = new List<CharacterSettings>(CharacterList)
             };
         }
 

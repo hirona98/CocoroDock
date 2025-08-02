@@ -48,6 +48,13 @@ namespace CocoroDock.Controls
                 // マイク設定
                 MicThresholdSlider.Value = appSettings.MicrophoneSettings.inputThreshold;
 
+                // CocoroCore2設定
+                EnableProModeCheckBox.IsChecked = appSettings.EnableProMode;
+                EnableInternetRetrievalCheckBox.IsChecked = appSettings.EnableInternetRetrieval;
+                GoogleApiKeyTextBox.Text = appSettings.GoogleApiKey;
+                GoogleSearchEngineIdTextBox.Text = appSettings.GoogleSearchEngineId;
+                InternetMaxResultsTextBox.Text = appSettings.InternetMaxResults.ToString();
+
                 // イベントハンドラーを設定
                 SetupEventHandlers();
 
@@ -79,6 +86,15 @@ namespace CocoroDock.Controls
 
             // マイク設定
             MicThresholdSlider.ValueChanged += OnSettingsChanged;
+
+            // CocoroCore2設定
+            EnableProModeCheckBox.Checked += OnSettingsChanged;
+            EnableProModeCheckBox.Unchecked += OnSettingsChanged;
+            EnableInternetRetrievalCheckBox.Checked += OnSettingsChanged;
+            EnableInternetRetrievalCheckBox.Unchecked += OnSettingsChanged;
+            GoogleApiKeyTextBox.TextChanged += OnSettingsChanged;
+            GoogleSearchEngineIdTextBox.TextChanged += OnSettingsChanged;
+            InternetMaxResultsTextBox.TextChanged += OnSettingsChanged;
         }
 
         /// <summary>
@@ -202,6 +218,40 @@ namespace CocoroDock.Controls
         public void SetMicrophoneSettings(MicrophoneSettings settings)
         {
             MicThresholdSlider.Value = settings.inputThreshold;
+        }
+
+        /// <summary>
+        /// CocoroCore2設定を取得
+        /// </summary>
+        public (bool enableProMode, bool enableInternetRetrieval, string googleApiKey, string googleSearchEngineId, int internetMaxResults) GetCocoroCore2Settings()
+        {
+            bool enableProMode = EnableProModeCheckBox.IsChecked ?? true;
+            bool enableInternetRetrieval = EnableInternetRetrievalCheckBox.IsChecked ?? true;
+            string googleApiKey = GoogleApiKeyTextBox.Text;
+            string googleSearchEngineId = GoogleSearchEngineIdTextBox.Text;
+            int internetMaxResults = 5;
+            
+            if (int.TryParse(InternetMaxResultsTextBox.Text, out int maxResults))
+            {
+                if (maxResults >= 1 && maxResults <= 10)
+                {
+                    internetMaxResults = maxResults;
+                }
+            }
+            
+            return (enableProMode, enableInternetRetrieval, googleApiKey, googleSearchEngineId, internetMaxResults);
+        }
+
+        /// <summary>
+        /// CocoroCore2設定を設定
+        /// </summary>
+        public void SetCocoroCore2Settings(bool enableProMode, bool enableInternetRetrieval, string googleApiKey, string googleSearchEngineId, int internetMaxResults)
+        {
+            EnableProModeCheckBox.IsChecked = enableProMode;
+            EnableInternetRetrievalCheckBox.IsChecked = enableInternetRetrieval;
+            GoogleApiKeyTextBox.Text = googleApiKey;
+            GoogleSearchEngineIdTextBox.Text = googleSearchEngineId;
+            InternetMaxResultsTextBox.Text = internetMaxResults.ToString();
         }
     }
 }

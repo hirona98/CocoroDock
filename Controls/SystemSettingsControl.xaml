@@ -165,6 +165,94 @@
                         </TextBlock>
                     </StackPanel>
                 </GroupBox>
+                
+                <!-- CocoroCore2設定 -->
+                <GroupBox Header="CocoroCore2設定"
+                          Margin="0,0,20,20"
+                          Padding="10">
+                    <StackPanel>
+                        <!-- 説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="#666666"
+                                   Margin="0,0,0,10">
+                            CocoroCore2の高度な機能とインターネット検索機能の設定
+                        </TextBlock>
+                        
+                        <!-- プロモード設定 -->
+                        <CheckBox x:Name="EnableProModeCheckBox"
+                                  Content="プロモードを有効にする"
+                                  Margin="0,5,0,5"
+                                  Foreground="#FF4873CF"
+                                  ToolTip="Enable Pro Mode for advanced features"/>
+                        
+                        <!-- インターネット検索設定 -->
+                        <CheckBox x:Name="EnableInternetRetrievalCheckBox"
+                                  Content="インターネット検索を有効にする"
+                                  Margin="0,5,0,15"
+                                  Foreground="#FF4873CF"
+                                  ToolTip="Enable internet search capability"/>
+                        
+                        <!-- Google API Key -->
+                        <Grid Margin="0,5,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Google API Key:"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="GoogleApiKeyTextBox"
+                                     Foreground="#FF0078D7"
+                                     VerticalAlignment="Center"
+                                     Margin="10,0,0,0"/>
+                        </Grid>
+                        
+                        <!-- Google Search Engine ID -->
+                        <Grid Margin="0,5,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Search Engine ID:"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="GoogleSearchEngineIdTextBox"
+                                     Foreground="#FF0078D7"
+                                     VerticalAlignment="Center"
+                                     Margin="10,0,0,0"/>
+                        </Grid>
+                        
+                        <!-- 最大検索結果数 -->
+                        <Grid Margin="0,5,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="最大検索結果数:"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="InternetMaxResultsTextBox"
+                                     Foreground="#FF0078D7"
+                                     VerticalAlignment="Center"
+                                     Margin="10,0,10,0"/>
+                            <TextBlock Grid.Column="2"
+                                       Text="（1-10）"
+                                       VerticalAlignment="Center"
+                                       Foreground="#666666"/>
+                        </Grid>
+                        
+                        <!-- 説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="0,10,0,0"
+                                   Foreground="#FF4873CF">
+                            ※Google Custom Search APIを使用する場合は、APIキーとSearch Engine IDが必要です。
+                        </TextBlock>
+                    </StackPanel>
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
     </Grid>

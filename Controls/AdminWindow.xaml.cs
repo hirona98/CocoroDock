@@ -379,7 +379,12 @@ namespace CocoroDock.Controls
                 { "ScreenshotInterval", appSettings.ScreenshotSettings.intervalMinutes },
                 { "IdleTimeout", appSettings.ScreenshotSettings.idleTimeoutMinutes },
                 { "CaptureActiveWindowOnly", appSettings.ScreenshotSettings.captureActiveWindowOnly },
-                { "MicInputThreshold", appSettings.MicrophoneSettings.inputThreshold}
+                { "MicInputThreshold", appSettings.MicrophoneSettings.inputThreshold},
+                { "EnableProMode", appSettings.EnableProMode },
+                { "EnableInternetRetrieval", appSettings.EnableInternetRetrieval },
+                { "GoogleApiKey", appSettings.GoogleApiKey },
+                { "GoogleSearchEngineId", appSettings.GoogleSearchEngineId },
+                { "InternetMaxResults", appSettings.InternetMaxResults }
             };
         }
 
@@ -481,6 +486,14 @@ namespace CocoroDock.Controls
 
             var microphoneSettings = SystemSettingsControl.GetMicrophoneSettings();
             _displaySettings["MicInputThreshold"] = microphoneSettings.inputThreshold;
+
+            // CocoroCore2設定を取得
+            var cocoroCore2Settings = SystemSettingsControl.GetCocoroCore2Settings();
+            _displaySettings["EnableProMode"] = cocoroCore2Settings.enableProMode;
+            _displaySettings["EnableInternetRetrieval"] = cocoroCore2Settings.enableInternetRetrieval;
+            _displaySettings["GoogleApiKey"] = cocoroCore2Settings.googleApiKey;
+            _displaySettings["GoogleSearchEngineId"] = cocoroCore2Settings.googleSearchEngineId;
+            _displaySettings["InternetMaxResults"] = cocoroCore2Settings.internetMaxResults;
         }
 
         #endregion
@@ -907,6 +920,14 @@ namespace CocoroDock.Controls
             // マイク設定を保存
             var microphoneSettings = SystemSettingsControl.GetMicrophoneSettings();
             _displaySettings["MicInputThreshold"] = microphoneSettings.inputThreshold;
+
+            // CocoroCore2設定を保存
+            var cocoroCore2Settings = SystemSettingsControl.GetCocoroCore2Settings();
+            _displaySettings["EnableProMode"] = cocoroCore2Settings.enableProMode;
+            _displaySettings["EnableInternetRetrieval"] = cocoroCore2Settings.enableInternetRetrieval;
+            _displaySettings["GoogleApiKey"] = cocoroCore2Settings.googleApiKey;
+            _displaySettings["GoogleSearchEngineId"] = cocoroCore2Settings.googleSearchEngineId;
+            _displaySettings["InternetMaxResults"] = cocoroCore2Settings.internetMaxResults;
         }
 
         /// <summary>
@@ -954,6 +975,13 @@ namespace CocoroDock.Controls
 
             // マイク設定の更新
             appSettings.MicrophoneSettings.inputThreshold = (int)_displaySettings["MicInputThreshold"];
+
+            // CocoroCore2設定の更新
+            appSettings.EnableProMode = (bool)_displaySettings["EnableProMode"];
+            appSettings.EnableInternetRetrieval = (bool)_displaySettings["EnableInternetRetrieval"];
+            appSettings.GoogleApiKey = (string)_displaySettings["GoogleApiKey"];
+            appSettings.GoogleSearchEngineId = (string)_displaySettings["GoogleSearchEngineId"];
+            appSettings.InternetMaxResults = (int)_displaySettings["InternetMaxResults"];
 
             // キャラクター設定の更新
             appSettings.CurrentCharacterIndex = CharacterManagementControl.GetCurrentCharacterIndex();
