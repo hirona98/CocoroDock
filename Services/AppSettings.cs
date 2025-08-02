@@ -416,7 +416,7 @@ namespace CocoroDock.Services
         {
             try
             {
-                AnimationSettingsData animationData = null;
+                AnimationSettingsData? animationData = null;
 
                 // 設定ファイルが存在するか確認
                 if (File.Exists(AnimationSettingsFilePath))
