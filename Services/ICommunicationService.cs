@@ -120,11 +120,6 @@ namespace CocoroDock.Services
         /// <param name="isUseTTS">TTS使用状態</param>
         Task SendTTSStateToShellAsync(bool isUseTTS);
 
-        /// <summary>
-        /// CocoroCoreにSTT状態を送信
-        /// </summary>
-        /// <param name="isUseSTT">STT使用状態</param>
-        Task SendSTTStateToCoreAsync(bool isUseSTT);
 
         /// <summary>
         /// ログビューアーウィンドウを開く

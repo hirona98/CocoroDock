@@ -789,27 +789,8 @@ namespace CocoroDock
                     });
                 }
 
-                // CocoroCoreにSTT状態を送信
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        if (_communicationService != null)
-                        {
-                            // STT設定をCocoroCoreに送信
-                            await _communicationService.SendSTTStateToCoreAsync(currentCharacter.isUseSTT);
-
-                            UIHelper.RunOnUIThread(() =>
-                            {
-                                AddStatusMessage(currentCharacter.isUseSTT ? "STTを有効にしました" : "STTを無効にしました");
-                            });
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"STT状態の送信エラー: {ex.Message}");
-                    }
-                });
+                // STT状態変更をログに記録
+                AddStatusMessage(currentCharacter.isUseSTT ? "STTを有効にしました" : "STTを無効にしました");
             }
         }
 
