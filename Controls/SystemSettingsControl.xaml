@@ -165,9 +165,9 @@
                         </TextBlock>
                     </StackPanel>
                 </GroupBox>
-                
-                <!-- CocoroCore2設定 -->
-                <GroupBox Header="CocoroCore2設定"
+
+                <!-- インターネット検索設定 -->
+                <GroupBox Header="インターネット検索設定"
                           Margin="0,0,20,20"
                           Padding="10">
                     <StackPanel>
@@ -175,23 +175,23 @@
                         <TextBlock TextWrapping="Wrap"
                                    Foreground="#666666"
                                    Margin="0,0,0,10">
-                            CocoroCore2の高度な機能とインターネット検索機能の設定
+                            高度な機能とインターネット検索機能の設定（実装中/OFFにしてください）
                         </TextBlock>
-                        
+
                         <!-- プロモード設定 -->
                         <CheckBox x:Name="EnableProModeCheckBox"
                                   Content="プロモードを有効にする"
                                   Margin="0,5,0,5"
                                   Foreground="#FF4873CF"
                                   ToolTip="Enable Pro Mode for advanced features"/>
-                        
+
                         <!-- インターネット検索設定 -->
                         <CheckBox x:Name="EnableInternetRetrievalCheckBox"
                                   Content="インターネット検索を有効にする"
                                   Margin="0,5,0,15"
                                   Foreground="#FF4873CF"
                                   ToolTip="Enable internet search capability"/>
-                        
+
                         <!-- Google API Key -->
                         <Grid Margin="0,5,0,5">
                             <Grid.ColumnDefinitions>
@@ -207,7 +207,7 @@
                                      VerticalAlignment="Center"
                                      Margin="10,0,0,0"/>
                         </Grid>
-                        
+
                         <!-- Google Search Engine ID -->
                         <Grid Margin="0,5,0,5">
                             <Grid.ColumnDefinitions>
@@ -223,7 +223,7 @@
                                      VerticalAlignment="Center"
                                      Margin="10,0,0,0"/>
                         </Grid>
-                        
+
                         <!-- 最大検索結果数 -->
                         <Grid Margin="0,5,0,5">
                             <Grid.ColumnDefinitions>
@@ -244,7 +244,7 @@
                                        VerticalAlignment="Center"
                                        Foreground="#666666"/>
                         </Grid>
-                        
+
                         <!-- 説明テキスト -->
                         <TextBlock TextWrapping="Wrap"
                                    Margin="0,10,0,0"

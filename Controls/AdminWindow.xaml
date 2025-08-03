@@ -360,8 +360,8 @@
                     <local:SystemSettingsControl x:Name="SystemSettingsControl"/>
                 </Grid>
             </TabItem>
-
-            <TabItem Header="MCP"
+            <!-- TODO: MCP未実装 -->
+            <TabItem Header="MCP（未実装）"
                      Style="{StaticResource AdminTabItemStyle}"
                      ToolTip="Model Context Protocol">
                 <Grid Margin="20,20,0,20">

@@ -21,7 +21,8 @@
                     Content="MCPを有効にする"
                     Foreground="#FF0078D7"
                     FontSize="14"
-                    Margin="0,0,0,10"/>
+                    Margin="0,0,0,10"
+                    IsEnabled="False"/>
 
                 <!-- 接続状態表示 -->
                 <GroupBox
