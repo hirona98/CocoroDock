@@ -3,6 +3,7 @@
   "cocoroCorePort": 55601,
   "cocoroMemoryPort": 55602,
   "cocoroMemoryDBPort": 55603,
+  "cocoroMemoryWebPort": 55606,
   "cocoroShellPort": 55605,
   "notificationApiPort": 55604,
   "isEnableNotificationApi": false,
@@ -31,8 +32,13 @@
     "idleTimeoutMinutes": 10
   },
   "microphoneSettings": {
-    "inputThreshold": -45
+    "inputThreshold": -30
   },
+  "enable_pro_mode": false,
+  "enable_internet_retrieval": false,
+  "googleApiKey": "",
+  "googleSearchEngineId": "",
+  "internetMaxResults": 5,
   "currentCharacterIndex": 1,
   "characterList": [
     {
@@ -41,7 +47,7 @@
       "vrmFilePath": "",
       "isUseLLM": false,
       "apiKey": "",
-      "llmModel": "gemini/gemini-2.0-flash",
+      "llmModel": "gpt-4.1-mini",
       "localLLMBaseUrl": "",
       "systemPromptFilePath": "つくよみちゃん_50e3ba63-f0f1-ecd4-5a54-3812ac2cc863.txt",
       "isUseTTS": false,
@@ -89,7 +95,7 @@
       "isEnableMemory": false,
       "userId": "tsukuyomichan",
       "embeddedApiKey": "",
-      "embeddedModel": "ollama/nomic-embed-text",
+      "embeddedModel": "text-embedding-3-large",
       "isUseSTT": false,
       "sttEngine": "amivoice",
       "sttWakeWord": "つくよみちゃん",
@@ -105,7 +111,7 @@
       "vrmFilePath": "",
       "isUseLLM": false,
       "apiKey": "",
-      "llmModel": "gpt-4o-mini",
+      "llmModel": "gpt-4.1-mini",
       "localLLMBaseUrl": "",
       "systemPromptFilePath": "初音ミクSD_26db7924-4efb-50ff-927e-fbeffe9f3e1a.txt",
       "isUseTTS": false,
