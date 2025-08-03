@@ -21,17 +21,9 @@ https://digitalmotion.booth.pm/
 Copyright (c) naokimiku39
 https://naokimiku39.booth.pm/items/4366008
 
-◆ AIAvatarKit ◆
-Copyright (c) uezo
-https://github.com/uezo/aiavatarkit/blob/main/LICENSE
-
 ◆ ChatdollKit ◆
 Copyright (c) uezo
 https://github.com/uezo/ChatdollKit/blob/master/LICENSE
-
-◆ ChatMemory ◆
-Copyright (c) uezo
-https://github.com/uezo/chatmemory/blob/main/LICENSE
 
 ◆ UniWindowController ◆
 Copyright (c) 2020 Kirurobo
@@ -64,5 +56,4 @@ https://alice-encoder.booth.pm/
 
 
 ============================================================
-LLM関連機能ライセンス: CocoroCoreフォルダを参照願います
-長期記憶機能ライセンス: CocoroMemoryフォルダを参照願います
+LLM関連機能ライセンス: CocoroCore2フォルダを参照願います
