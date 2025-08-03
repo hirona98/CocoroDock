@@ -416,6 +416,23 @@ namespace CocoroDock.Services
                     Debug.WriteLine($"通知処理: 新しいcontext_idを取得: {_currentContextId}");
                 }
 
+                // AI応答を処理 - これが追加された部分
+                if (!string.IsNullOrEmpty(response.response))
+                {
+                    Debug.WriteLine($"通知処理: AI応答内容: {response.response}");
+
+                    // CocoroDockのUIに応答を表示するためのイベントを発火
+                    var chatRequest = new ChatRequest
+                    {
+                        userId = request.user_id,
+                        sessionId = request.session_id,
+                        message = response.response,
+                        role = "assistant",
+                        content = response.response
+                    };
+                    ChatMessageReceived?.Invoke(this, chatRequest);
+                }
+
                 // 成功時のステータス更新
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "通知実行"));
             }
