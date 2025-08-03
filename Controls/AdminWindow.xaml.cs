@@ -673,14 +673,12 @@ namespace CocoroDock.Controls
 
                         var launchCocoroCore = typeof(MainWindow).GetMethod("LaunchCocoroCore", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                         var launchCocoroShell = typeof(MainWindow).GetMethod("LaunchCocoroShell", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                        var launchCocoroMemory = typeof(MainWindow).GetMethod("LaunchCocoroMemory", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                        if (launchCocoroCore != null && launchCocoroShell != null && launchCocoroMemory != null)
+                        if (launchCocoroCore != null && launchCocoroShell != null)
                         {
                             // ProcessOperation.RestartIfRunning (デフォルト値) を引数として渡す
                             object[] parameters = new object[] { 0 }; // ProcessOperation.RestartIfRunning = 0
                             launchCocoroCore.Invoke(mainWindow, parameters);
                             launchCocoroShell.Invoke(mainWindow, parameters);
-                            launchCocoroMemory.Invoke(mainWindow, parameters);
                         }
                     }
                 }

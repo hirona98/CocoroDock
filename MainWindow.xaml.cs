@@ -174,8 +174,6 @@ namespace CocoroDock
             LaunchCocoroShell();
             // CocoroCore2.exeを起動（既に起動していれば終了してから再起動）
             LaunchCocoroCore2();
-            // CocoroMemory.exeを起動（既に起動していれば終了してから再起動）
-            LaunchCocoroMemory();
 #endif
         }
 
@@ -637,18 +635,17 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// 外部アプリケーション（CocoroCore, CocoroShell, CocoroMemory）を終了する
+        /// 外部アプリケーション（CocoroCore, CocoroShell）を終了する
         /// </summary>
         private void TerminateExternalApplications()
         {
             try
             {
-                // 3つのプロセスを並行して終了させる
+                // 2つのプロセスを並行して終了させる
                 var tasks = new[]
                 {
                     Task.Run(() => LaunchCocoroCore2(ProcessOperation.Terminate)),
-                    Task.Run(() => LaunchCocoroShell(ProcessOperation.Terminate)),
-                    Task.Run(() => LaunchCocoroMemory(ProcessOperation.Terminate))
+                    Task.Run(() => LaunchCocoroShell(ProcessOperation.Terminate))
                 };
 
                 // すべてのプロセスが終了するまで待機
@@ -933,27 +930,6 @@ namespace CocoroDock
 #endif
         }
 
-        /// <summary>
-        /// CocoroMemory.exeを起動する（既に起動している場合は終了してから再起動）
-        /// </summary>
-        /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
-        private void LaunchCocoroMemory(ProcessOperation operation = ProcessOperation.RestartIfRunning)
-        {
-#if !DEBUG
-            // 現在のキャラクターが有効で、記憶機能が有効な場合のみ起動
-            if (_appSettings.CharacterList.Count > 0 &&
-               _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count &&
-               _appSettings.CharacterList[_appSettings.CurrentCharacterIndex].isEnableMemory)
-            {
-                ProcessHelper.LaunchExternalApplication("CocoroMemory.exe", "CocoroMemory", operation);
-            }
-            else
-            {
-                // 記憶機能が無効な場合は終了
-                ProcessHelper.LaunchExternalApplication("CocoroMemory.exe", "CocoroMemory", ProcessOperation.Terminate);
-            }
-#endif
-        }
 
         /// <summary>
         /// 音声認識サービスを初期化

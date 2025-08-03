@@ -191,14 +191,14 @@ namespace CocoroDock.Communication
         public float windowPositionY { get; set; } = 0.0f;
         public ScreenshotSettings screenshotSettings { get; set; } = new ScreenshotSettings();
         public MicrophoneSettings microphoneSettings { get; set; } = new MicrophoneSettings();
-        
+
         // CocoroCore2用追加設定
         public bool enable_pro_mode { get; set; } = true;
         public bool enable_internet_retrieval { get; set; } = true;
         public string googleApiKey { get; set; } = "GOOGLE_API_KEY";
         public string googleSearchEngineId { get; set; } = "GOOGLE_SERCH_ENGINE_ID";
         public int internetMaxResults { get; set; } = 5;
-        
+
         public int currentCharacterIndex { get; set; }
         public List<CharacterSettings> characterList { get; set; } = new List<CharacterSettings>();
     }
@@ -473,7 +473,7 @@ namespace CocoroDock.Communication
     {
         public DateTime timestamp { get; set; } = DateTime.UtcNow;
         public string level { get; set; } = string.Empty; // "DEBUG", "INFO", "WARNING", "ERROR"
-        public string component { get; set; } = string.Empty; // "CocoroCore", "CocoroMemory"
+        public string component { get; set; } = string.Empty; // "CocoroCore"
         public string message { get; set; } = string.Empty;
     }
 

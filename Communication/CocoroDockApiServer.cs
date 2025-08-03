@@ -492,7 +492,7 @@ namespace CocoroDock.Communication
                     }
 
                     // コンポーネント検証
-                    var validComponents = new[] { "CocoroCore", "CocoroCore2", "CocoroMemory", "SEPARATOR" };
+                    var validComponents = new[] { "CocoroCore2", "SEPARATOR" };
                     if (!Array.Exists(validComponents, comp => comp == request.component))
                     {
                         context.Response.StatusCode = 400;
@@ -608,12 +608,12 @@ namespace CocoroDock.Communication
                                     propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(System.Collections.Generic.List<>))
                             {
                                 // List型の場合はJsonElementから直接デシリアライズ
-                                convertedValue = JsonSerializer.Deserialize(jsonElement.GetRawText(), propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType);
+                                convertedValue = JsonSerializer.Deserialize(jsonElement.GetRawText(), propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType)!;
                             }
                             else
                             {
                                 // その他の型はJsonElementから直接デシリアライズ
-                                convertedValue = JsonSerializer.Deserialize(jsonElement.GetRawText(), propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType);
+                                convertedValue = JsonSerializer.Deserialize(jsonElement.GetRawText(), propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType) ?? throw new InvalidOperationException($"Cannot create instance of type {propertyInfo.PropertyType.Name}");
                             }
                         }
                         else
@@ -636,7 +636,7 @@ namespace CocoroDock.Communication
                             {
                                 // List型の場合はJSONから直接デシリアライズ（同じオプションを使用）
                                 var json = JsonSerializer.Serialize(kvp.Value, jsonOptions);
-                                convertedValue = JsonSerializer.Deserialize(json, propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType);
+                                convertedValue = JsonSerializer.Deserialize(json, propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType)!;
                             }
                             else
                             {

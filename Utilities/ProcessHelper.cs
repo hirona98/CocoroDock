@@ -59,9 +59,7 @@ namespace CocoroDock.Utilities
                 var settings = AppSettings.Instance;
                 int? port = processName.ToLower() switch
                 {
-                    "cocorocore" => settings.CocoroCorePort,
-                    "cocorocore2" => settings.CocoroCorePort,  // CocoroCore2は同じポートを使用
-                    "cocoromemory" => settings.CocoroMemoryPort,
+                    "cocorocore2" => settings.CocoroCorePort,
                     "cocoroshell" => settings.CocoroShellPort,
                     _ => null
                 };
@@ -154,12 +152,6 @@ namespace CocoroDock.Utilities
                     WorkingDirectory = Path.GetDirectoryName(fullPath) // 環境により起動しなくなる問題の対策（この操作はユーザーによって取り消されました）
                 };
 
-                // CocoroMemoryの場合はウィンドウを非表示にする
-                if (processName.Equals("CocoroMemory", StringComparison.OrdinalIgnoreCase))
-                {
-                    startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                    startInfo.CreateNoWindow = true;
-                }
 
                 // プロセスを起動
                 Process.Start(startInfo);
@@ -183,9 +175,7 @@ namespace CocoroDock.Utilities
                 var settings = AppSettings.Instance;
                 int? port = processName.ToLower() switch
                 {
-                    "cocorocore" => settings.CocoroCorePort,
                     "cocorocore2" => settings.CocoroCorePort,
-                    "cocoromemory" => settings.CocoroMemoryPort,
                     "cocoroshell" => settings.CocoroShellPort,
                     _ => null
                 };
@@ -198,7 +188,7 @@ namespace CocoroDock.Utilities
 
                 var healthEndpoint = $"http://127.0.0.1:{port}/health";
                 var startTime = DateTime.Now;
-                
+
                 while ((DateTime.Now - startTime).TotalSeconds < timeout)
                 {
                     try
@@ -218,11 +208,11 @@ namespace CocoroDock.Utilities
                     {
                         // タイムアウトも予想される
                     }
-                    
+
                     // 500ms待機してから再試行
                     await Task.Delay(500);
                 }
-                
+
                 Debug.WriteLine($"{processName} の起動タイムアウトしました（{timeout}秒）。");
                 return false;
             }
