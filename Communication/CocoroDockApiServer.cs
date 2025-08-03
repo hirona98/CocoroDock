@@ -492,7 +492,7 @@ namespace CocoroDock.Communication
                     }
 
                     // コンポーネント検証
-                    var validComponents = new[] { "CocoroCore", "CocoroMemory", "SEPARATOR" };
+                    var validComponents = new[] { "CocoroCore", "CocoroCore2", "CocoroMemory", "SEPARATOR" };
                     if (!Array.Exists(validComponents, comp => comp == request.component))
                     {
                         context.Response.StatusCode = 400;

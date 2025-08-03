@@ -172,8 +172,8 @@ namespace CocoroDock
 #if !DEBUG
             // CocoroShell.exeを起動（既に起動していれば終了してから再起動）
             LaunchCocoroShell();
-            // CocoroCore.exeを起動（既に起動していれば終了してから再起動）
-            LaunchCocoroCore();
+            // CocoroCore2.exeを起動（既に起動していれば終了してから再起動）
+            LaunchCocoroCore2();
             // CocoroMemory.exeを起動（既に起動していれば終了してから再起動）
             LaunchCocoroMemory();
 #endif
@@ -646,7 +646,7 @@ namespace CocoroDock
                 // 3つのプロセスを並行して終了させる
                 var tasks = new[]
                 {
-                    Task.Run(() => LaunchCocoroCore(ProcessOperation.Terminate)),
+                    Task.Run(() => LaunchCocoroCore2(ProcessOperation.Terminate)),
                     Task.Run(() => LaunchCocoroShell(ProcessOperation.Terminate)),
                     Task.Run(() => LaunchCocoroMemory(ProcessOperation.Terminate))
                 };
@@ -905,21 +905,49 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// CocoroCore.exeを起動する（既に起動している場合は終了してから再起動）
+        /// CocoroCore2.exeを起動する（既に起動している場合は終了してから再起動）
         /// </summary>
         /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
-        private void LaunchCocoroCore(ProcessOperation operation = ProcessOperation.RestartIfRunning)
+        private void LaunchCocoroCore2(ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
 #if !DEBUG
             if (_appSettings.CharacterList.Count > 0 &&
                _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count &&
                _appSettings.CharacterList[_appSettings.CurrentCharacterIndex].isUseLLM)
             {
-                ProcessHelper.LaunchExternalApplication("CocoroCore.exe", "CocoroCore", operation);
+                // 起動監視を開始
+                if (operation != ProcessOperation.Terminate)
+                {
+                    AddStatusMessage("CocoroCore2 起動中...");
+                    
+                    // プロセス起動
+                    ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", operation);
+                    
+                    // 非同期で起動完了を監視
+                    _ = Task.Run(async () =>
+                    {
+                        var startupCompleted = await ProcessHelper.WaitForProcessStartupAsync("CocoroCore2", 30);
+                        UIHelper.RunOnUIThread(() =>
+                        {
+                            if (startupCompleted)
+                            {
+                                AddStatusMessage("CocoroCore2 起動完了");
+                            }
+                            else
+                            {
+                                AddStatusMessage("CocoroCore2 起動タイムアウト");
+                            }
+                        });
+                    });
+                }
+                else
+                {
+                    ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", operation);
+                }
             }
             else
             {
-                ProcessHelper.LaunchExternalApplication("CocoroCore.exe", "CocoroCore", ProcessOperation.Terminate);
+                ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", ProcessOperation.Terminate);
             }
 #endif
         }
