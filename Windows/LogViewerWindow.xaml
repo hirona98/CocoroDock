@@ -102,10 +102,8 @@
                     <ComboBoxItem Content="全て"
                             IsSelected="True"
                             Tag=""/>
-                    <ComboBoxItem Content="CocoroCore"
-                            Tag="CocoroCore"/>
-                    <ComboBoxItem Content="CocoroMemory"
-                            Tag="CocoroMemory"/>
+                    <ComboBoxItem Content="CocoroCore2"
+                            Tag="CocoroCore2"/>
                 </ComboBox>
 
                 <Button x:Name="ClearButton"
