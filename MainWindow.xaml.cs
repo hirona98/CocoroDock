@@ -15,6 +15,15 @@ using System.Windows;
 namespace CocoroDock
 {
     /// <summary>
+    /// システム状態を表す列挙型
+    /// </summary>
+    public enum SystemState
+    {
+        Normal,              // 動作中
+        CocoroCore2Starting  // CocoroCore2起動中
+    }
+
+    /// <summary>
     /// MainWindow.xaml の相互作用ロジック
     /// </summary>
     public partial class MainWindow : Window
@@ -28,6 +37,7 @@ namespace CocoroDock
         private ScreenshotService? _screenshotService;
         private bool _isScreenshotPaused = false;
         private RealtimeVoiceRecognitionService? _voiceRecognitionService;
+        private SystemState _systemState = SystemState.Normal; // システム状態
 
         private class StatusMessage
         {
@@ -96,6 +106,9 @@ namespace CocoroDock
 
                 // ボタンの初期状態を設定
                 InitializeButtonStates();
+
+                // 初期ステータス表示
+                UpdateStatusDisplay();
 
                 // APIサーバーの起動を開始
                 _ = StartApiServerAsync();
@@ -169,12 +182,10 @@ namespace CocoroDock
         /// </summary>
         private void InitializeExternalProcesses()
         {
-#if !DEBUG
             // CocoroShell.exeを起動（既に起動していれば終了してから再起動）
             LaunchCocoroShell();
             // CocoroCore2.exeを起動（既に起動していれば終了してから再起動）
             LaunchCocoroCore2();
-#endif
         }
 
         /// <summary>
@@ -301,21 +312,15 @@ namespace CocoroDock
         {
             try
             {
-                // UI更新
-                UpdateConnectionStatus(false, "サーバーを起動中...");
-
                 if (_communicationService != null && !_communicationService.IsServerRunning)
                 {
                     // APIサーバーを起動
                     await _communicationService.StartServerAsync();
-
-                    // UI更新
-                    UpdateConnectionStatus(true);
                 }
             }
             catch (Exception ex)
             {
-                UpdateConnectionStatus(false, "サーバー起動エラー");
+                AddStatusMessage("ローカルAPIサーバ起動エラー");
                 Debug.WriteLine($"APIサーバー起動エラー: {ex.Message}");
             }
         }
@@ -329,36 +334,6 @@ namespace CocoroDock
             ChatControlInstance.MessageSent += OnChatMessageSent;
         }
 
-        /// <summary>
-        /// 接続ステータス表示を更新
-        /// </summary>
-        private void UpdateConnectionStatus(bool isConnected, string? customMessage = null)
-        {
-            // UIスレッドで実行
-            UIHelper.RunOnUIThread(() =>
-            {
-                if (!string.IsNullOrEmpty(customMessage))
-                {
-                    // カスタムメッセージがある場合は履歴に追加
-                    AddStatusMessage(customMessage);
-                }
-                else
-                {
-                    // 切断状態
-                    string statusText = "停止中";
-                    lock (_statusLock)
-                    {
-                        // すべてのタイマーを破棄
-                        foreach (var msg in _statusMessages)
-                        {
-                            msg.Timer?.Dispose();
-                        }
-                        _statusMessages.Clear();
-                        ConnectionStatusText.Text = $"状態: {statusText}";
-                    }
-                }
-            });
-        }
 
         /// <summary>
         /// ステータスメッセージを履歴に追加して表示
@@ -392,8 +367,15 @@ namespace CocoroDock
                     }
                 }
 
-                // 表示を更新
-                UpdateStatusDisplay();
+                // 表示を更新（UIスレッドで実行）
+                if (Application.Current.Dispatcher.CheckAccess())
+                {
+                    UpdateStatusDisplay();
+                }
+                else
+                {
+                    Application.Current.Dispatcher.Invoke(() => UpdateStatusDisplay());
+                }
             }
         }
 
@@ -423,7 +405,16 @@ namespace CocoroDock
                 {
                     messageToRemove.Timer?.Dispose();
                     _statusMessages.Remove(messageToRemove);
-                    UpdateStatusDisplay();
+
+                    // 表示を更新（UIスレッドで実行）
+                    if (Application.Current.Dispatcher.CheckAccess())
+                    {
+                        UpdateStatusDisplay();
+                    }
+                    else
+                    {
+                        Application.Current.Dispatcher.Invoke(() => UpdateStatusDisplay());
+                    }
                 }
             }
         }
@@ -435,7 +426,14 @@ namespace CocoroDock
         {
             if (_statusMessages.Count == 0)
             {
-                ConnectionStatusText.Text = "状態: 正常動作中";
+                // システム状態に応じたデフォルト表示
+                string defaultMessage = _systemState switch
+                {
+                    SystemState.Normal => "動作中",
+                    SystemState.CocoroCore2Starting => "CocoroCore2起動待ち",
+                    _ => "動作中"
+                };
+                ConnectionStatusText.Text = $"状態: {defaultMessage}";
             }
             else
             {
@@ -475,7 +473,7 @@ namespace CocoroDock
                 return;
             }
 
-            // 添付画像を取得（あれば）
+            // UIスレッドで画像データを取得・処理（スレッドセーフな形式に変換）
             var imageSource = ChatControlInstance.GetAttachedImageSource();
             string? imageDataUrl = ChatControlInstance.GetAndClearAttachedImage();
 
@@ -587,7 +585,10 @@ namespace CocoroDock
         /// </summary>
         private void OnStatusUpdateRequested(object? sender, StatusUpdateEventArgs e)
         {
-            UpdateConnectionStatus(e.IsConnected, e.Message);
+            if (!string.IsNullOrEmpty(e.Message))
+            {
+                AddStatusMessage(e.Message);
+            }
         }
 
         #endregion
@@ -888,7 +889,6 @@ namespace CocoroDock
         /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
         private void LaunchCocoroCore2(ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
-#if !DEBUG
             if (_appSettings.CharacterList.Count > 0 &&
                _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count &&
                _appSettings.CharacterList[_appSettings.CurrentCharacterIndex].isUseLLM)
@@ -896,38 +896,32 @@ namespace CocoroDock
                 // 起動監視を開始
                 if (operation != ProcessOperation.Terminate)
                 {
-                    AddStatusMessage("CocoroCore2 起動中...");
-                    
+                    // システム状態を起動中に設定
+                    _systemState = SystemState.CocoroCore2Starting;
+                    AddStatusMessage("CocoroCore2起動待ち");
+#if !DEBUG
                     // プロセス起動
                     ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", operation);
-                    
-                    // 非同期で起動完了を監視
+#endif
+                    // 非同期でAPI通信による起動完了を監視（無限ループ）
                     _ = Task.Run(async () =>
                     {
-                        var startupCompleted = await ProcessHelper.WaitForProcessStartupAsync("CocoroCore2", 30);
-                        UIHelper.RunOnUIThread(() =>
-                        {
-                            if (startupCompleted)
-                            {
-                                AddStatusMessage("CocoroCore2 起動完了");
-                            }
-                            else
-                            {
-                                AddStatusMessage("CocoroCore2 起動タイムアウト");
-                            }
-                        });
+                        await WaitForCocoroCore2StartupAsync();
                     });
                 }
                 else
                 {
+                    // 終了操作の場合はシステム状態を正常に戻す
+                    _systemState = SystemState.Normal;
                     ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", operation);
                 }
             }
             else
             {
+                // LLMを使用しない場合はCocoroCore2を終了し、システム状態を正常に戻す
+                _systemState = SystemState.Normal;
                 ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", ProcessOperation.Terminate);
             }
-#endif
         }
 
 
@@ -1076,6 +1070,41 @@ namespace CocoroDock
             catch (Exception ex)
             {
                 Debug.WriteLine($"[MainWindow] CocoroCore2送信エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// CocoroCore2のAPI起動完了を監視（無限ループ）
+        /// </summary>
+        private async Task WaitForCocoroCore2StartupAsync()
+        {
+            var delay = TimeSpan.FromSeconds(1); // 1秒間隔でチェック
+
+            while (true)
+            {
+                try
+                {
+                    if (_communicationService != null)
+                    {
+                        // ヘルスチェックAPIで起動状態を確認
+                        var health = await _communicationService.GetCocoroCore2HealthAsync();
+                        if (health != null && health.status == "healthy")
+                        {
+                            // 起動成功時はシステム状態を正常に戻す
+                            UIHelper.RunOnUIThread(() =>
+                            {
+                                _systemState = SystemState.Normal;
+                                AddStatusMessage("CocoroCore2起動完了");
+                            });
+                            return; // 起動完了で監視終了
+                        }
+                    }
+                }
+                catch
+                {
+                    // API未応答時は継続してチェック
+                }
+                await Task.Delay(delay);
             }
         }
 

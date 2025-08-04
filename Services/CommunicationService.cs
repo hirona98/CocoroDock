@@ -584,6 +584,21 @@ namespace CocoroDock.Services
             }
         }
 
+        /// <summary>
+        /// CocoroCore2のヘルスチェックを実行
+        /// </summary>
+        public async Task<HealthCheckResponse?> GetCocoroCore2HealthAsync()
+        {
+            try
+            {
+                return await _coreClient.GetHealthAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CocoroCore2ヘルスチェックエラー: {ex.Message}");
+                return null;
+            }
+        }
 
         /// <summary>
         /// ログビューアーウィンドウを開く
