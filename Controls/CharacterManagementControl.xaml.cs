@@ -363,8 +363,10 @@ namespace CocoroDock.Controls
             // TTSパネルの表示を更新
             UpdateTTSPanelVisibility(character.ttsType);
 
-            // 読み取り専用の場合は削除ボタンを無効化
+            // 読み取り専用の場合は削除ボタン、VRMファイル欄、開くボタンを無効化
             DeleteCharacterButton.IsEnabled = !character.isReadOnly;
+            VRMFilePathTextBox.IsEnabled = !character.isReadOnly;
+            BrowseVrmFileButton.IsEnabled = !character.isReadOnly;
         }
 
         /// <summary>
