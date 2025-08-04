@@ -1145,7 +1145,6 @@ namespace CocoroDock.Controls
             }
         }
 
-
         /// <summary>
         /// デスクトップウォッチ設定の変更を適用
         /// </summary>
@@ -1175,101 +1174,6 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// 単一キャラクター設定のバリデーション（警告のみ）
-        /// </summary>
-        private void ValidateSingleCharacterSettings(int characterIndex)
-        {
-            if (characterIndex < 0 || characterIndex >= _characterSettings.Count)
-            {
-                return;
-            }
-
-            var character = _characterSettings[characterIndex];
-            string characterName = character["Name"];
-            var warnings = new List<string>();
-
-            // LLMが有効なのにLLM Modelが空欄
-            bool isUseLLM = false;
-            if (character.ContainsKey("IsUseLLM"))
-            {
-                bool.TryParse(character["IsUseLLM"], out isUseLLM);
-            }
-            if (isUseLLM && string.IsNullOrWhiteSpace(character["LLMModel"]))
-            {
-                warnings.Add($"・LLMが有効ですが、LLM Modelが空欄です");
-            }
-
-            // 記憶機能が有効なのに関連する各項目が空欄
-            bool isEnableMemory = true;
-            if (character.ContainsKey("IsEnableMemory"))
-            {
-                bool.TryParse(character["IsEnableMemory"], out isEnableMemory);
-            }
-            if (isEnableMemory && isUseLLM)
-            {
-                if (string.IsNullOrWhiteSpace(character.ContainsKey("UserId") ? character["UserId"] : ""))
-                {
-                    warnings.Add($"・記憶機能が有効ですが、ユーザーIDが空欄です");
-                }
-                if (string.IsNullOrWhiteSpace(character.ContainsKey("EmbeddedApiKey") ? character["EmbeddedApiKey"] : ""))
-                {
-                    warnings.Add($"・記憶機能が有効ですが、埋め込みAPIキーが空欄です");
-                }
-                if (string.IsNullOrWhiteSpace(character.ContainsKey("EmbeddedModel") ? character["EmbeddedModel"] : ""))
-                {
-                    warnings.Add($"・記憶機能が有効ですが、埋め込みモデルが空欄です");
-                }
-            }
-
-            // TTSが有効なのに関連する各項目が空欄
-            bool isUseTTS = false;
-            if (character.ContainsKey("IsUseTTS"))
-            {
-                bool.TryParse(character["IsUseTTS"], out isUseTTS);
-            }
-            if (isUseTTS)
-            {
-                if (string.IsNullOrWhiteSpace(character["TTSEndpointURL"]))
-                {
-                    warnings.Add($"・TTSが有効ですが、TTSエンドポイントURLが空欄です");
-                }
-                if (string.IsNullOrWhiteSpace(character["TTSSperkerID"]))
-                {
-                    warnings.Add($"・TTSが有効ですが、TTSスピーカーIDが空欄です");
-                }
-            }
-
-            // STTが有効なのに関連する各項目が空欄
-            bool isUseSTT = false;
-            if (character.ContainsKey("IsUseSTT"))
-            {
-                bool.TryParse(character["IsUseSTT"], out isUseSTT);
-            }
-            if (isUseSTT)
-            {
-                if (string.IsNullOrWhiteSpace(character.ContainsKey("STTWakeWord") ? character["STTWakeWord"] : ""))
-                {
-                    warnings.Add($"・STTが有効ですが、STT 起動ワードが空欄です");
-                }
-                if (string.IsNullOrWhiteSpace(character.ContainsKey("STTApiKey") ? character["STTApiKey"] : ""))
-                {
-                    warnings.Add($"・STTが有効ですが、STT APIキーが空欄です");
-                }
-            }
-
-            // 警告がある場合は表示
-            if (warnings.Count > 0)
-            {
-                string message = $"キャラクター「{characterName}」の設定に問題があります:\n\n" + string.Join("\n", warnings);
-                MessageBox.Show(message, "設定の警告", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-
-
-
-
-        /// <summary>
         /// ログ表示ボタンのクリックイベント
         /// </summary>
         private void LogViewerButton_Click(object sender, RoutedEventArgs e)
@@ -1287,8 +1191,5 @@ namespace CocoroDock.Controls
                                MessageBoxImage.Error);
             }
         }
-
-
-
     }
 }
