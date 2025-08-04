@@ -1205,7 +1205,7 @@ namespace CocoroDock.Controls
             {
                 bool.TryParse(character["IsEnableMemory"], out isEnableMemory);
             }
-            if (isEnableMemory)
+            if (isEnableMemory && isUseLLM)
             {
                 if (string.IsNullOrWhiteSpace(character.ContainsKey("UserId") ? character["UserId"] : ""))
                 {

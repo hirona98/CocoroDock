@@ -92,7 +92,7 @@
         "outputSamplingRate": 16000,
         "outputAudioChannels": "mono"
       },
-      "isEnableMemory": false,
+      "isEnableMemory": true,
       "userId": "tsukuyomichan",
       "embeddedApiKey": "",
       "embeddedModel": "text-embedding-3-large",
@@ -156,7 +156,7 @@
         "outputSamplingRate": 16000,
         "outputAudioChannels": "mono"
       },
-      "isEnableMemory": false,
+      "isEnableMemory": true,
       "userId": "miku",
       "embeddedApiKey": "",
       "embeddedModel": "text-embedding-3-large",
