@@ -112,7 +112,8 @@ namespace CocoroDock.Utilities
         /// <param name="exeName">アプリケーションexe名</param>
         /// <param name="relativeDir">相対ディレクトリ</param>
         /// <param name="operation">プロセス操作の種類（終了のみか再起動か）</param>
-        public static void LaunchExternalApplication(string exeName, string? relativeDir = null, ProcessOperation operation = ProcessOperation.RestartIfRunning)
+        /// <param name="createWindow">ウィンドウを作成するかどうか（デフォルトはfalse：コンソールを非表示）</param>
+        public static void LaunchExternalApplication(string exeName, string? relativeDir = null, ProcessOperation operation = ProcessOperation.RestartIfRunning, bool createWindow = false)
         {
             try
             {
@@ -149,7 +150,9 @@ namespace CocoroDock.Utilities
                 {
                     FileName = fullPath,
                     UseShellExecute = false, // 環境により起動しなくなる問題の対策（この操作はユーザーによって取り消されました）
-                    WorkingDirectory = Path.GetDirectoryName(fullPath) // 環境により起動しなくなる問題の対策（この操作はユーザーによって取り消されました）
+                    WorkingDirectory = Path.GetDirectoryName(fullPath), // 環境により起動しなくなる問題の対策（この操作はユーザーによって取り消されました）
+                    CreateNoWindow = !createWindow, // ウィンドウの作成制御
+                    WindowStyle = createWindow ? ProcessWindowStyle.Normal : ProcessWindowStyle.Hidden // ウィンドウスタイルの設定
                 };
 
 

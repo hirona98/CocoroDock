@@ -874,11 +874,11 @@ namespace CocoroDock
             if (_appSettings.CharacterList.Count > 0 &&
                _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count)
             {
-                ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", operation);
+                ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", operation, true);
             }
             else
             {
-                ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", ProcessOperation.Terminate);
+                ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", ProcessOperation.Terminate, true);
             }
 #endif
         }
@@ -901,7 +901,7 @@ namespace CocoroDock
                     AddStatusMessage("CocoroCore2起動待ち");
 #if !DEBUG
                     // プロセス起動
-                    ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", operation);
+                    ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", operation, false);
 #endif
                     // 非同期でAPI通信による起動完了を監視（無限ループ）
                     _ = Task.Run(async () =>
@@ -913,14 +913,14 @@ namespace CocoroDock
                 {
                     // 終了操作の場合はシステム状態を正常に戻す
                     _systemState = SystemState.Normal;
-                    ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", operation);
+                    ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", operation, false);
                 }
             }
             else
             {
                 // LLMを使用しない場合はCocoroCore2を終了し、システム状態を正常に戻す
                 _systemState = SystemState.Normal;
-                ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", ProcessOperation.Terminate);
+                ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", ProcessOperation.Terminate, false);
             }
         }
 
