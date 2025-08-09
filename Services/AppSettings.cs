@@ -113,7 +113,9 @@ namespace CocoroDock.Services
 
             // 探索するパスの配列
             string[] searchPaths = {
+#if !DEBUG
                 Path.Combine(baseDirectory, "UserData2"),
+#endif
                 Path.Combine(baseDirectory, "..", "UserData2"),
                 Path.Combine(baseDirectory, "..", "..", "UserData2"),
                 Path.Combine(baseDirectory, "..", "..", "..", "UserData2"),
