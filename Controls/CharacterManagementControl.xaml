@@ -145,7 +145,8 @@
                                      ToolTip="カンマ区切りでメッシュ名を入力 (例: Face, U_Char_1)"/>
                         </Grid>
                         <!-- 影設定説明テキスト -->
-                        <TextBlock TextWrapping="Wrap"
+                        <TextBlock Foreground="#666666"
+                                   TextWrapping="Wrap"
                                    Margin="100,0,0,10">
                             顔など特定のメッシュに影を落としたくない場合に使用します
                         </TextBlock>
@@ -210,7 +211,7 @@
                             <TextBox Grid.Column="1"
                                          x:Name="ApiKeyPasswordBox"
                                          Foreground="#FF4873CF"
-                                         ToolTip="Enter your API key"/>
+                                         ToolTip="Enter your API key" Width="200" HorizontalAlignment="Left"/>
                         </Grid>
 
                         <!-- Base URLの設定（ローカルLLM用） -->
@@ -267,7 +268,8 @@
                         </Grid>
 
                         <!-- Vision説明テキスト -->
-                        <TextBlock TextWrapping="Wrap"
+                        <TextBlock Foreground="#666666" 
+                                   TextWrapping="Wrap"
                                    Margin="100,0,0,0">
                             画像説明生成とそれに対するコメント生成で2回LLMを呼び出します。
                             <LineBreak/>
@@ -281,12 +283,11 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
-                                       Text="画像用API Key:"
-                                       VerticalAlignment="Center"/>
+                                       Text="画像用API Key:"/>
                             <TextBox Grid.Column="1"
                                          x:Name="VisionApiKeyPasswordBox"
                                          Foreground="#FF4873CF"
-                                         ToolTip="画像分析用のAPIキー（空の場合は上記のAPIキーを使用）"/>
+                                         ToolTip="画像分析用のAPIキー（空の場合は上記のAPIキーを使用）" Width="200" HorizontalAlignment="Left"/>
                         </Grid>
 
 
@@ -297,7 +298,6 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
                                        Text="System Prompt:"
-                                       VerticalAlignment="Top"
                                        ToolTip="Prompt"/>
                             <TextBox Grid.Column="1"
                                      x:Name="SystemPromptTextBox"
@@ -323,6 +323,7 @@
                                      Text=""/>
                         </Grid>
                         <TextBlock TextWrapping="Wrap"
+                                   Foreground="#666666"
                                    Margin="100,0,0,0">
                             あなたとキャラクターの記憶を紐づけるIDです。キャラクター毎に別の名前にすることを推奨します。
                         </TextBlock>
@@ -342,7 +343,8 @@
                                      Foreground="#FF0078D7"
                                      Text=""/>
                         </Grid>
-                        <TextBlock TextWrapping="Wrap"
+                        <TextBlock Foreground="#666666"
+                                   TextWrapping="Wrap"
                                    Margin="100,0,0,0">
                             <TextBlock.Inlines>
                                 <Run Text="OpenAIのみ対応（text-embedding-3-large推奨）"/>
@@ -375,7 +377,7 @@
                                        ToolTip="API Key"/>
                             <TextBox Grid.Column="1"
                                          x:Name="EmbeddedApiKeyPasswordBox"
-                                         Foreground="#FF0078D7"/>
+                                         Foreground="#FF0078D7" Width="200" HorizontalAlignment="Left"/>
                         </Grid>
                     </StackPanel>
                 </GroupBox>
@@ -678,7 +680,7 @@
                                 <TextBox Grid.Column="1"
                                              x:Name="AivisCloudApiKeyPasswordBox"
                                              Foreground="#FF0078D7"
-                                             ToolTip="Aivis Cloud APIキー"/>
+                                             ToolTip="Aivis Cloud APIキー" Width="200" HorizontalAlignment="Left"/>
                             </Grid>
 
                             <!-- Model UUID -->
@@ -857,7 +859,8 @@
                                      ToolTip="Wake word for STT"/>
                         </Grid>
                         <!-- STT起動ワード説明テキスト -->
-                        <TextBlock TextWrapping="Wrap"
+                        <TextBlock Foreground="#666666"
+                                   TextWrapping="Wrap"
                                    Margin="100,0,0,0">
                             音声認識を開始するキーワードです。複数設定する場合はカンマ区切りで入力してください
                             <LineBreak/>
@@ -875,7 +878,7 @@
                                        VerticalAlignment="Center"/>
                             <TextBox Grid.Column="1"
                                          x:Name="STTApiKeyPasswordBox"
-                                         Foreground="#FF0078D7"/>
+                                         Foreground="#FF0078D7" Width="200" HorizontalAlignment="Left"/>
                         </Grid>
                     </StackPanel>
                 </GroupBox>
