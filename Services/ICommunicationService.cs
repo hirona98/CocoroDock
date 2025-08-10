@@ -51,9 +51,19 @@ namespace CocoroDock.Services
         event EventHandler<StatusUpdateEventArgs>? StatusUpdateRequested;
 
         /// <summary>
+        /// CocoroCore2ステータス変更イベント
+        /// </summary>
+        event EventHandler<CocoroCore2Status>? StatusChanged;
+
+        /// <summary>
         /// APIサーバーが起動しているかどうか
         /// </summary>
         bool IsServerRunning { get; }
+
+        /// <summary>
+        /// 現在のCocoroCore2ステータス
+        /// </summary>
+        CocoroCore2Status CurrentStatus { get; }
 
         /// <summary>
         /// APIサーバーを開始
@@ -123,7 +133,7 @@ namespace CocoroDock.Services
         /// <summary>
         /// CocoroCore2のヘルスチェックを実行
         /// </summary>
-        Task<HealthCheckResponse?> GetCocoroCore2HealthAsync();
+        Task<Communication.HealthCheckResponse?> GetCocoroCore2HealthAsync();
 
 
         /// <summary>

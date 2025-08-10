@@ -17,6 +17,7 @@ namespace CocoroDock.Services
         private readonly CocoroCoreClient _coreClient;
         private readonly IAppSettings _appSettings;
         private readonly NotificationApiServer? _notificationApiServer;
+        private readonly StatusPollingService _statusPollingService;
 
         // セッション管理用
         private string? _currentSessionId;
@@ -34,8 +35,14 @@ namespace CocoroDock.Services
         public event EventHandler<ControlRequest>? ControlCommandReceived;
         public event EventHandler<string>? ErrorOccurred;
         public event EventHandler<StatusUpdateEventArgs>? StatusUpdateRequested;
+        public event EventHandler<CocoroCore2Status>? StatusChanged;
 
         public bool IsServerRunning => _apiServer.IsRunning;
+
+        /// <summary>
+        /// 現在のCocoroCore2ステータス
+        /// </summary>
+        public CocoroCore2Status CurrentStatus => _statusPollingService.CurrentStatus;
 
         /// <summary>
         /// コンストラクタ
@@ -74,6 +81,10 @@ namespace CocoroDock.Services
 
             // 設定キャッシュを初期化
             RefreshSettingsCache();
+
+            // ステータスポーリングサービスの初期化
+            _statusPollingService = new StatusPollingService($"http://localhost:{_appSettings.CocoroCorePort}");
+            _statusPollingService.StatusChanged += (sender, status) => StatusChanged?.Invoke(this, status);
 
             // AppSettingsの変更イベントを購読
             AppSettings.SettingsSaved += OnSettingsSaved;
@@ -249,6 +260,12 @@ namespace CocoroDock.Services
                     }
                 };
 
+                // 画像がある場合は画像処理中、そうでなければメッセージ処理中に設定
+                var processingStatus = files != null && files.Count > 0
+                    ? CocoroCore2Status.ProcessingImage
+                    : CocoroCore2Status.ProcessingMessage;
+                _statusPollingService.SetProcessingStatus(processingStatus);
+
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "チャットメッセージ送信"));
                 var response = await _coreClient.SendUnifiedChatMessageAsync(request);
 
@@ -277,11 +294,14 @@ namespace CocoroDock.Services
                 }
 
                 // 成功時のステータス更新
+                _statusPollingService.SetNormalStatus();
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "チャット応答受信"));
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"チャット送信エラー: {ex.Message}");
+                // エラー時は正常状態に戻す
+                _statusPollingService.SetNormalStatus();
                 // ステータスバーにエラー表示
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"通信エラー: {ex.Message}"));
             }
@@ -519,6 +539,9 @@ namespace CocoroDock.Services
                     }
                 };
 
+                // デスクトップモニタリングは画像処理中に設定
+                _statusPollingService.SetProcessingStatus(CocoroCore2Status.ProcessingImage);
+
                 var response = await _coreClient.SendUnifiedChatMessageAsync(request);
 
                 // REST応答から新しいcontext_idを保存
@@ -546,11 +569,14 @@ namespace CocoroDock.Services
                 }
 
                 // 成功時のステータス更新
+                _statusPollingService.SetNormalStatus();
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "キャプチャ画像送信"));
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"デスクトップモニタリング送信エラー: {ex.Message}");
+                // エラー時は正常状態に戻す
+                _statusPollingService.SetNormalStatus();
                 // エラーは静かに処理（モニタリング機能なのでユーザーに通知しない）
             }
         }
@@ -587,7 +613,7 @@ namespace CocoroDock.Services
         /// <summary>
         /// CocoroCore2のヘルスチェックを実行
         /// </summary>
-        public async Task<HealthCheckResponse?> GetCocoroCore2HealthAsync()
+        public async Task<Communication.HealthCheckResponse?> GetCocoroCore2HealthAsync()
         {
             try
             {
@@ -747,6 +773,7 @@ namespace CocoroDock.Services
             AppSettings.SettingsSaved -= OnSettingsSaved;
 
             _logViewerWindow?.Close();
+            _statusPollingService?.Dispose();
             _notificationApiServer?.Dispose();
             _apiServer?.Dispose();
             _shellClient?.Dispose();

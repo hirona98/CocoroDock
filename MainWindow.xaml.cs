@@ -14,14 +14,6 @@ using System.Windows;
 
 namespace CocoroDock
 {
-    /// <summary>
-    /// システム状態を表す列挙型
-    /// </summary>
-    public enum SystemState
-    {
-        Normal,              // 動作中
-        CocoroCore2Starting  // CocoroCore2起動中
-    }
 
     /// <summary>
     /// MainWindow.xaml の相互作用ロジック
@@ -30,25 +22,10 @@ namespace CocoroDock
     {
         private ICommunicationService? _communicationService;
         private readonly IAppSettings _appSettings;
-        private Timer? _statusMessageTimer;
-        private readonly List<StatusMessage> _statusMessages = new List<StatusMessage>();
-        private readonly object _statusLock = new object();
-        private const int MaxStatusMessages = 5; // 最大表示メッセージ数
         private ScreenshotService? _screenshotService;
         private bool _isScreenshotPaused = false;
         private RealtimeVoiceRecognitionService? _voiceRecognitionService;
-        private SystemState _systemState = SystemState.Normal; // システム状態
 
-        private class StatusMessage
-        {
-            public string Message { get; set; }
-            public Timer Timer { get; set; } = null!;
-
-            public StatusMessage(string message)
-            {
-                Message = message;
-            }
-        }
 
         public MainWindow()
         {
@@ -108,7 +85,10 @@ namespace CocoroDock
                 InitializeButtonStates();
 
                 // 初期ステータス表示
-                UpdateStatusDisplay();
+                if (_communicationService != null)
+                {
+                    UpdateCocoroCore2StatusDisplay(_communicationService.CurrentStatus);
+                }
 
                 // APIサーバーの起動を開始
                 _ = StartApiServerAsync();
@@ -200,6 +180,7 @@ namespace CocoroDock
             _communicationService.ControlCommandReceived += OnControlCommandReceived;
             _communicationService.ErrorOccurred += OnErrorOccurred;
             _communicationService.StatusUpdateRequested += OnStatusUpdateRequested;
+            _communicationService.StatusChanged += OnCocoroCore2StatusChanged;
         }
 
         /// <summary>
@@ -320,7 +301,6 @@ namespace CocoroDock
             }
             catch (Exception ex)
             {
-                AddStatusMessage("ローカルAPIサーバ起動エラー");
                 Debug.WriteLine($"APIサーバー起動エラー: {ex.Message}");
             }
         }
@@ -335,112 +315,25 @@ namespace CocoroDock
         }
 
 
-        /// <summary>
-        /// ステータスメッセージを履歴に追加して表示
-        /// </summary>
-        private void AddStatusMessage(string message)
-        {
-            lock (_statusLock)
-            {
-                // 既存の同じメッセージを探す
-                var existingMessage = _statusMessages.FirstOrDefault(m => m.Message == message);
 
-                if (existingMessage != null)
-                {
-                    // 既存のメッセージがある場合はタイマーをリセット
-                    existingMessage.Timer?.Dispose();
-                    existingMessage.Timer = CreateMessageTimer(message);
-                }
-                else
-                {
-                    // 新しいメッセージを追加
-                    var newMessage = new StatusMessage(message);
-                    newMessage.Timer = CreateMessageTimer(message);
-                    _statusMessages.Add(newMessage);
 
-                    // 最大数を超えたら古いメッセージを削除
-                    while (_statusMessages.Count > MaxStatusMessages)
-                    {
-                        var oldestMessage = _statusMessages[0];
-                        oldestMessage.Timer?.Dispose();
-                        _statusMessages.RemoveAt(0);
-                    }
-                }
-
-                // 表示を更新（UIスレッドで実行）
-                if (Application.Current.Dispatcher.CheckAccess())
-                {
-                    UpdateStatusDisplay();
-                }
-                else
-                {
-                    Application.Current.Dispatcher.Invoke(() => UpdateStatusDisplay());
-                }
-            }
-        }
 
         /// <summary>
-        /// メッセージ用のタイマーを作成
+        /// CocoroCore2ステータスに基づいて表示を更新
         /// </summary>
-        private Timer CreateMessageTimer(string message)
+        /// <param name="status">CocoroCore2のステータス</param>
+        private void UpdateCocoroCore2StatusDisplay(CocoroCore2Status status)
         {
-            return new Timer(_ =>
+            string statusText = status switch
             {
-                UIHelper.RunOnUIThread(() =>
-                {
-                    RemoveStatusMessage(message);
-                });
-            }, null, 3000, Timeout.Infinite); // 3秒後に削除
-        }
+                CocoroCore2Status.Disconnected => "CocoroCore2接続待機中",
+                CocoroCore2Status.Normal => "正常動作中",
+                CocoroCore2Status.ProcessingMessage => "LLMメッセージ処理中",
+                CocoroCore2Status.ProcessingImage => "LLM画像処理中",
+                _ => "不明な状態"
+            };
 
-        /// <summary>
-        /// 特定のステータスメッセージを削除
-        /// </summary>
-        private void RemoveStatusMessage(string message)
-        {
-            lock (_statusLock)
-            {
-                var messageToRemove = _statusMessages.FirstOrDefault(m => m.Message == message);
-                if (messageToRemove != null)
-                {
-                    messageToRemove.Timer?.Dispose();
-                    _statusMessages.Remove(messageToRemove);
-
-                    // 表示を更新（UIスレッドで実行）
-                    if (Application.Current.Dispatcher.CheckAccess())
-                    {
-                        UpdateStatusDisplay();
-                    }
-                    else
-                    {
-                        Application.Current.Dispatcher.Invoke(() => UpdateStatusDisplay());
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// ステータス表示を更新
-        /// </summary>
-        private void UpdateStatusDisplay()
-        {
-            if (_statusMessages.Count == 0)
-            {
-                // システム状態に応じたデフォルト表示
-                string defaultMessage = _systemState switch
-                {
-                    SystemState.Normal => "動作中",
-                    SystemState.CocoroCore2Starting => "CocoroCore2起動待ち",
-                    _ => "動作中"
-                };
-                ConnectionStatusText.Text = $"状態: {defaultMessage}";
-            }
-            else
-            {
-                // 最新のメッセージを左に、古いメッセージを右に表示
-                var messages = _statusMessages.Select(m => m.Message).Reverse().ToArray();
-                ConnectionStatusText.Text = $"状態: {string.Join(" | ", messages)}";
-            }
+            ConnectionStatusText.Text = $"状態: {statusText}";
         }
 
         /// <summary>
@@ -585,10 +478,23 @@ namespace CocoroDock
         /// </summary>
         private void OnStatusUpdateRequested(object? sender, StatusUpdateEventArgs e)
         {
+            // 新仕様では古いステータスメッセージは使用しない
+            // 必要に応じてログ出力のみ
             if (!string.IsNullOrEmpty(e.Message))
             {
-                AddStatusMessage(e.Message);
+                Debug.WriteLine($"[StatusUpdate] {e.Message}");
             }
+        }
+
+        /// <summary>
+        /// CocoroCore2ステータス変更時のハンドラ
+        /// </summary>
+        private void OnCocoroCore2StatusChanged(object? sender, CocoroCore2Status status)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                UpdateCocoroCore2StatusDisplay(status);
+            });
         }
 
         #endregion
@@ -600,19 +506,6 @@ namespace CocoroDock
         {
             try
             {
-                // タイマーのクリーンアップ
-                _statusMessageTimer?.Dispose();
-                _statusMessageTimer = null;
-
-                // すべてのステータスメッセージタイマーを破棄
-                lock (_statusLock)
-                {
-                    foreach (var msg in _statusMessages)
-                    {
-                        msg.Timer?.Dispose();
-                    }
-                    _statusMessages.Clear();
-                }
 
                 // 接続中ならリソース解放
                 if (_communicationService != null)
@@ -728,8 +621,6 @@ namespace CocoroDock
 
                 // スクリーンショットサービスの状態を更新
                 UpdateScreenshotService();
-
-                AddStatusMessage(_isScreenshotPaused ? "デスクトップウォッチを無効にしました" : "デスクトップウォッチを有効にしました");
             }
         }
 
@@ -786,9 +677,6 @@ namespace CocoroDock
                         ChatControlInstance.UpdateVoiceLevel(0);
                     });
                 }
-
-                // STT状態変更をログに記録
-                AddStatusMessage(currentCharacter.isUseSTT ? "STTを有効にしました" : "STTを無効にしました");
             }
         }
 
@@ -849,10 +737,7 @@ namespace CocoroDock
                             // TTS設定をCocoroShellに送信
                             await _communicationService.SendTTSStateToShellAsync(currentCharacter.isUseTTS);
 
-                            UIHelper.RunOnUIThread(() =>
-                            {
-                                AddStatusMessage(currentCharacter.isUseTTS ? "TTSを有効にしました" : "TTSを無効にしました");
-                            });
+                            // TTS状態変更完了（ログ出力は既にある）
                         }
                     }
                     catch (Exception ex)
@@ -896,9 +781,6 @@ namespace CocoroDock
                 // 起動監視を開始
                 if (operation != ProcessOperation.Terminate)
                 {
-                    // システム状態を起動中に設定
-                    _systemState = SystemState.CocoroCore2Starting;
-                    AddStatusMessage("CocoroCore2起動待ち");
 #if !DEBUG
                     // プロセス起動
                     ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", operation, false);
@@ -911,15 +793,12 @@ namespace CocoroDock
                 }
                 else
                 {
-                    // 終了操作の場合はシステム状態を正常に戻す
-                    _systemState = SystemState.Normal;
                     ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", operation, false);
                 }
             }
             else
             {
-                // LLMを使用しない場合はCocoroCore2を終了し、システム状態を正常に戻す
-                _systemState = SystemState.Normal;
+                // LLMを使用しない場合はCocoroCore2を終了
                 ProcessHelper.LaunchExternalApplication("CocoroCore2.exe", "CocoroCore2", ProcessOperation.Terminate, false);
             }
         }
@@ -988,13 +867,10 @@ namespace CocoroDock
 
                 // 音声認識開始
                 _voiceRecognitionService.StartListening();
-
-                AddStatusMessage("音声認識開始");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[MainWindow] 音声認識サービス初期化エラー: {ex.Message}");
-                AddStatusMessage("音声認識初期化失敗");
             }
         }
 
@@ -1025,6 +901,7 @@ namespace CocoroDock
         {
             UIHelper.RunOnUIThread(() =>
             {
+                // 音声認識状態変更はログのみ
                 string statusMessage = state switch
                 {
                     VoiceRecognitionState.SLEEPING => "ウェイクアップワード待機中",
@@ -1035,7 +912,7 @@ namespace CocoroDock
 
                 if (!string.IsNullOrEmpty(statusMessage))
                 {
-                    AddStatusMessage(statusMessage);
+                    Debug.WriteLine($"[VoiceRecognition] {statusMessage}");
                 }
             });
         }
@@ -1090,12 +967,8 @@ namespace CocoroDock
                         var health = await _communicationService.GetCocoroCore2HealthAsync();
                         if (health != null && health.status == "healthy")
                         {
-                            // 起動成功時はシステム状態を正常に戻す
-                            UIHelper.RunOnUIThread(() =>
-                            {
-                                _systemState = SystemState.Normal;
-                                AddStatusMessage("CocoroCore2起動完了");
-                            });
+                            // 起動成功時はログ出力のみ
+                            Debug.WriteLine("[MainWindow] CocoroCore2起動完了");
                             return; // 起動完了で監視終了
                         }
                     }
