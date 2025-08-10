@@ -73,6 +73,9 @@ namespace CocoroDock.Communication
         public bool isUseLLM { get; set; }
         public string apiKey { get; set; } = string.Empty;
         public string llmModel { get; set; } = string.Empty;
+        // 画像分析用設定
+        public string visionApiKey { get; set; } = string.Empty; // 画像分析用APIキー（空ならapiKeyを使用）
+        public string visionModel { get; set; } = string.Empty; // 画像分析用モデル
         public string localLLMBaseUrl { get; set; } = string.Empty; // ローカルLLMのベースURL
         public string systemPromptFilePath { get; set; } = string.Empty;
         public bool isUseTTS { get; set; }

@@ -4,8 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignHeight="800"
-             d:DesignWidth="800">
+             d:DesignHeight="1000"
+             d:DesignWidth="1000">
 
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -68,7 +68,7 @@
                           Padding="10"
                           ToolTip="Basic setting">
                     <StackPanel>
-                        <Grid Margin="0,5">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
                                 <ColumnDefinition Width="*"/>
@@ -80,13 +80,12 @@
                                        ToolTip="Name"/>
                             <TextBox Grid.Column="1"
                                      x:Name="CharacterNameTextBox"
-                                     Margin="0,5"
                                      Foreground="#FF0078D7"
                                      TextChanged="CharacterNameTextBox_TextChanged"/>
                         </Grid>
 
                         <!-- VRMFilePathの設定 -->
-                        <Grid Margin="0,5">
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
                                 <ColumnDefinition Width="*"/>
@@ -97,7 +96,6 @@
                                        VerticalAlignment="Center"/>
                             <TextBox Grid.Column="1"
                                      x:Name="VRMFilePathTextBox"
-                                     Margin="0,5,5,5"
                                      Foreground="#FF0078D7"
                                      IsReadOnly="True"/>
                             <Button Grid.Column="2"
@@ -107,7 +105,7 @@
                                     Click="BrowseVrmFileButton_Click"
                                     ToolTip="Open..."
                                     VerticalAlignment="Center"
-                                    Foreground="#FF4873CF"/>
+                                    Foreground="#FF4873CF" Margin="5,0,0,0"/>
                         </Grid>
                     </StackPanel>
                 </GroupBox>
@@ -120,21 +118,19 @@
                         <!-- MToon変換設定 -->
                         <CheckBox x:Name="ConvertMToonCheckBox"
                                   Content="UnlitをMToonに変換する（正常に表示されないときに試してください）"
-                                  Margin="0,5,0,10"
                                   Foreground="#FF4873CF"
                                   ToolTip="Convert Unlit to MToon"/>
 
                         <!-- 影オフメッシュ設定 -->
                         <CheckBox x:Name="EnableShadowOffCheckBox"
                                   Content="指定したメッシュに影を落とさない"
-                                  Margin="0,5,0,5"
                                   Foreground="#FF4873CF"
                                   ToolTip="Enable shadow off mesh"
                                   Checked="EnableShadowOffCheckBox_Checked"
-                                  Unchecked="EnableShadowOffCheckBox_Unchecked"/>
+                                  Unchecked="EnableShadowOffCheckBox_Unchecked" Margin="0,10,0,0"/>
 
                         <!-- 影オフメッシュ名設定 -->
-                        <Grid>
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
                                 <ColumnDefinition Width="*"/>
@@ -145,7 +141,6 @@
                                        Margin="20,0,0,0"/>
                             <TextBox Grid.Column="1"
                                      x:Name="ShadowOffMeshTextBox"
-                                     Margin="0,5"
                                      Foreground="#FF0078D7"
                                      ToolTip="カンマ区切りでメッシュ名を入力 (例: Face, U_Char_1)"/>
                         </Grid>
@@ -163,48 +158,29 @@
                           Padding="10">
                     <StackPanel Margin="1,0,0,0">
 
-                        <Grid Margin="0,5">
+                        <Grid>
                             <CheckBox x:Name="IsUseLLMCheckBox"
                                       Content="LLMを使用する"
                                       Foreground="#FF4873CF"
                                       ToolTip="Use LLM"/>
                         </Grid>
 
-                        <!-- APIキーの設定 -->
-                        <Grid Margin="0,5">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="API Key:"
-                                       VerticalAlignment="Center"/>
-                            <PasswordBox Grid.Column="1"
-                                         x:Name="ApiKeyPasswordBox"
-                                         Margin="0,5"
-                                         PasswordChar="●"
-                                         Foreground="#FF4873CF"
-                                         ToolTip="Enter your API key"/>
-                        </Grid>
-
                         <!-- LLMモデルの設定 -->
-                        <Grid Margin="0,5,0,0">
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
-                                       Text="LLM Model:"
+                                       Text="LLM:"
                                        VerticalAlignment="Center"/>
                             <TextBox Grid.Column="1"
                                      x:Name="LlmModelTextBox"
-                                     Margin="0,5"
                                      Foreground="#FF0078D7"
                                      Text=""/>
                         </Grid>
                         <!-- LLM説明テキスト -->
-                        <TextBlock TextWrapping="Wrap"
-                                   Margin="100,0,0,10">
+                        <TextBlock TextWrapping="Wrap" Margin="100,0,0,0">
                             <TextBlock.Inlines>
                                 <Run Text="OpenAIのみ対応"/>
                                 <!-- TODO: LiteLLM実装時復活
@@ -221,6 +197,21 @@
                                 -->
                             </TextBlock.Inlines>
                         </TextBlock>
+                        
+                        <!-- APIキーの設定 -->
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="API Key:"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                         x:Name="ApiKeyPasswordBox"
+                                         Foreground="#FF4873CF"
+                                         ToolTip="Enter your API key"/>
+                        </Grid>
 
                         <!-- Base URLの設定（ローカルLLM用） -->
                         <!-- TODO: LiteLLM実装時復活
@@ -258,44 +249,67 @@
                             </TextBlock.Inlines>
                         </TextBlock>
                         -->
-                        <Grid Margin="0,5">
+                        
+                        <!-- Vision Model -->
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
-                                       Text="Prompt:"
+                                       Text="画像用LLM:"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="VisionModelTextBox"
+                                     Foreground="#FF0078D7"
+                                     Text=""
+                                     ToolTip="画像分析用のVisionモデル"/>
+                        </Grid>
+
+                        <!-- Vision説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="100,0,0,0">
+                            画像説明生成とそれに対するコメント生成で2回LLMを呼び出します。
+                            <LineBreak/>
+                            画像のみ低コストのLLMを指定できます。
+                        </TextBlock>
+
+                        <!-- Vision API Key -->
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="画像用API Key:"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                         x:Name="VisionApiKeyPasswordBox"
+                                         Foreground="#FF4873CF"
+                                         ToolTip="画像分析用のAPIキー（空の場合は上記のAPIキーを使用）"/>
+                        </Grid>
+
+
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="System Prompt:"
                                        VerticalAlignment="Top"
                                        ToolTip="Prompt"/>
                             <TextBox Grid.Column="1"
                                      x:Name="SystemPromptTextBox"
-                                     Margin="0,5"
                                      Foreground="#FF0078D7"
-                                     Height="100"
+                                     Height="200"
                                      AcceptsReturn="True"
                                      TextWrapping="Wrap"
                                      VerticalScrollBarVisibility="Auto"/>
                         </Grid>
-                    </StackPanel>
-                </GroupBox>
 
-                <!-- 記憶機能 -->
-                <GroupBox Header="長期記憶（LLM使用時に有効）"
-                          Margin="0,0,20,20"
-                          Padding="10">
-                    <StackPanel Margin="1,0,0,0">
-                        <!-- 記憶機能の有効/無効設定 -->
-                        <Grid Margin="0,10,0,5">
-                            <CheckBox x:Name="IsEnableMemoryCheckBox"
-                                      Content="記憶を保持する（Ver4以降はON固定）"
-                                      Foreground="#FF4873CF"
-                                      ToolTip="Enable memory"
-                                      IsChecked="True"
-                                      IsEnabled="False"/>
-                        </Grid>
-
-                        <!-- ユーザーIDの設定 -->
-                        <Grid Margin="0,5,0,0">
+                        <!-- 記憶のユーザーIDの設定 -->
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
                                 <ColumnDefinition Width="*"/>
@@ -305,33 +319,16 @@
                                        VerticalAlignment="Center"/>
                             <TextBox Grid.Column="1"
                                      x:Name="UserIdTextBox"
-                                     Margin="0,5"
                                      Foreground="#FF0078D7"
                                      Text=""/>
                         </Grid>
-                        <!-- ユーザーID説明テキスト -->
                         <TextBlock TextWrapping="Wrap"
-                                   Margin="100,0,0,10">
+                                   Margin="100,0,0,0">
                             あなたとキャラクターの記憶を紐づけるIDです。キャラクター毎に別の名前にすることを推奨します。
                         </TextBlock>
 
                         <!-- 埋め込みモデル設定 -->
-                        <Grid Margin="0,10,0,5">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="API Key:"
-                                       VerticalAlignment="Center"
-                                       ToolTip="API Key"/>
-                            <PasswordBox Grid.Column="1"
-                                         x:Name="EmbeddedApiKeyPasswordBox"
-                                         Margin="0,5"
-                                         Foreground="#FF0078D7"/>
-                        </Grid>
-
-                        <Grid Margin="0,5,0,0">
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
                                 <ColumnDefinition Width="*"/>
@@ -342,14 +339,11 @@
                                        ToolTip="Embedded Model"/>
                             <TextBox Grid.Column="1"
                                      x:Name="EmbeddedModelTextBox"
-                                     Margin="0,5"
                                      Foreground="#FF0078D7"
                                      Text=""/>
                         </Grid>
-
-                        <!-- 埋め込みモデル説明テキスト -->
                         <TextBlock TextWrapping="Wrap"
-                                   Margin="100,0,0,10">
+                                   Margin="100,0,0,0">
                             <TextBlock.Inlines>
                                 <Run Text="OpenAIのみ対応（text-embedding-3-large推奨）"/>
                                 <!--
@@ -368,15 +362,30 @@
                                 -->
                             </TextBlock.Inlines>
                         </TextBlock>
+
+                        <!-- 埋め込みモデルAPIキーの設定 -->
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="API Key:"
+                                       VerticalAlignment="Center"
+                                       ToolTip="API Key"/>
+                            <TextBox Grid.Column="1"
+                                         x:Name="EmbeddedApiKeyPasswordBox"
+                                         Foreground="#FF0078D7"/>
+                        </Grid>
                     </StackPanel>
                 </GroupBox>
 
                 <!-- TTSパラメータ -->
                 <GroupBox Header="音声合成"
-                          Margin="0,0,20,20"
+                          Margin="0,0,20,0"
                           Padding="10">
                     <StackPanel>
-                        <Grid Margin="0,5">
+                        <Grid>
                             <CheckBox x:Name="IsUseTTSCheckBox"
                                       Content="TTSを使用する"
                                       Foreground="#FF4873CF"
@@ -384,7 +393,7 @@
                         </Grid>
 
                         <!-- TTSエンジンの選択 -->
-                        <Grid Margin="0,5">
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
                                 <ColumnDefinition Width="*"/>
@@ -394,7 +403,6 @@
                                        VerticalAlignment="Center"/>
                             <ComboBox Grid.Column="1"
                                       x:Name="TTSEngineComboBox"
-                                      Margin="0,5"
                                       Foreground="#FF4873CF"
                                       SelectionChanged="TTSEngineComboBox_SelectionChanged">
                                 <ComboBoxItem Content="VOICEVOX/SHAREVOX/AivisSpeech"
@@ -409,7 +417,7 @@
                         <!-- VOICEVOX用設定 -->
                         <StackPanel x:Name="VoicevoxSettingsPanel">
                             <!-- Endpoint URL -->
-                            <Grid Margin="0,5">
+                            <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="*"/>
@@ -419,13 +427,12 @@
                                            VerticalAlignment="Center"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="TTSEndpointURLTextBox"
-                                         Margin="0,5"
                                          Foreground="#FF0078D7"
                                          Text=""/>
                             </Grid>
 
                             <!-- Speaker ID -->
-                            <Grid Margin="0,5">
+                            <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="*"/>
@@ -435,7 +442,6 @@
                                            VerticalAlignment="Center"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="TTSSperkerIDTextBox"
-                                         Margin="0,5"
                                          Foreground="#FF0078D7"
                                          Text=""/>
                             </Grid>
@@ -444,7 +450,7 @@
                         <!-- Style-Bert-VITS2用設定：基本設定 -->
                         <StackPanel x:Name="StyleBertVits2BasicPanel">
                             <!-- Endpoint URL -->
-                            <Grid Margin="0,5">
+                            <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="*"/>
@@ -455,12 +461,11 @@
                                            Foreground="#FF4873CF"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="SBV2EndpointUrlTextBox"
-                                         Margin="0,5"
                                          Foreground="#FF0078D7"/>
                             </Grid>
 
                             <!-- Model Name -->
-                            <Grid Margin="0,5">
+                            <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="*"/>
@@ -471,12 +476,11 @@
                                            Foreground="#FF4873CF"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="SBV2ModelNameTextBox"
-                                         Margin="0,5"
                                          Foreground="#FF0078D7"/>
                             </Grid>
 
                             <!-- Model ID -->
-                            <Grid Margin="0,5">
+                            <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="*"/>
@@ -487,12 +491,11 @@
                                            Foreground="#FF4873CF"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="SBV2ModelIdTextBox"
-                                         Margin="0,5"
                                          Foreground="#FF0078D7"/>
                             </Grid>
 
                             <!-- Speaker Name -->
-                            <Grid Margin="0,5">
+                            <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="*"/>
@@ -503,12 +506,11 @@
                                            Foreground="#FF4873CF"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="SBV2SpeakerNameTextBox"
-                                         Margin="0,5"
                                          Foreground="#FF0078D7"/>
                             </Grid>
 
                             <!-- Speaker ID -->
-                            <Grid Margin="0,5">
+                            <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="*"/>
@@ -519,22 +521,21 @@
                                            Foreground="#FF4873CF"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="SBV2SpeakerIdTextBox"
-                                         Margin="0,5"
                                          Foreground="#FF0078D7"/>
                             </Grid>
                         </StackPanel>
 
                         <!-- Style-Bert-VITS2用設定：詳細設定 -->
                         <Expander x:Name="StyleBertVits2SettingsPanel"
-                                  Margin="0,5"
+                                  Margin="0,10,0,0"
                                   IsExpanded="False">
                             <Expander.Header>
                                 <TextBlock Text="Style-Bert-VITS2 詳細設定"
                                            Foreground="#FF4873CF"/>
                             </Expander.Header>
-                            <StackPanel Margin="10,10,0,10">
+                            <StackPanel>
                                 <!-- Style -->
-                                <Grid Margin="0,5">
+                                <Grid Margin="0,10,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="120"/>
                                         <ColumnDefinition Width="*"/>
@@ -545,12 +546,11 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2StyleTextBox"
-                                             Margin="0,5"
                                              Foreground="#FF0078D7"/>
                                 </Grid>
 
                                 <!-- Style Weight -->
-                                <Grid Margin="0,5">
+                                <Grid Margin="0,10,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="120"/>
                                         <ColumnDefinition Width="*"/>
@@ -561,12 +561,11 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2StyleWeightTextBox"
-                                             Margin="0,5"
                                              Foreground="#FF0078D7"/>
                                 </Grid>
 
                                 <!-- Language -->
-                                <Grid Margin="0,5">
+                                <Grid Margin="0,10,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="120"/>
                                         <ColumnDefinition Width="*"/>
@@ -577,12 +576,11 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2LanguageTextBox"
-                                             Margin="0,5"
                                              Foreground="#FF0078D7"/>
                                 </Grid>
 
                                 <!-- SDP Ratio -->
-                                <Grid Margin="0,5">
+                                <Grid Margin="0,10,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="120"/>
                                         <ColumnDefinition Width="*"/>
@@ -593,12 +591,11 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2SdpRatioTextBox"
-                                             Margin="0,5"
                                              Foreground="#FF0078D7"/>
                                 </Grid>
 
                                 <!-- Noise -->
-                                <Grid Margin="0,5">
+                                <Grid Margin="0,10,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="120"/>
                                         <ColumnDefinition Width="*"/>
@@ -609,12 +606,11 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2NoiseTextBox"
-                                             Margin="0,5"
                                              Foreground="#FF0078D7"/>
                                 </Grid>
 
                                 <!-- Noise W -->
-                                <Grid Margin="0,5">
+                                <Grid Margin="0,10,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="120"/>
                                         <ColumnDefinition Width="*"/>
@@ -625,12 +621,11 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2NoiseWTextBox"
-                                             Margin="0,5"
                                              Foreground="#FF0078D7"/>
                                 </Grid>
 
                                 <!-- Length -->
-                                <Grid Margin="0,5">
+                                <Grid Margin="0,10,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="120"/>
                                         <ColumnDefinition Width="*"/>
@@ -641,19 +636,18 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2LengthTextBox"
-                                             Margin="0,5"
                                              Foreground="#FF0078D7"/>
                                 </Grid>
 
                                 <!-- Auto Split -->
-                                <Grid Margin="0,5">
+                                <Grid Margin="0,10,0,0">
                                     <CheckBox x:Name="SBV2AutoSplitCheckBox"
                                               Content="Auto Split"
                                               Foreground="#FF4873CF"/>
                                 </Grid>
 
                                 <!-- Split Interval -->
-                                <Grid Margin="0,5">
+                                <Grid Margin="0,10,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="120"/>
                                         <ColumnDefinition Width="*"/>
@@ -664,7 +658,6 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2SplitIntervalTextBox"
-                                             Margin="0,5"
                                              Foreground="#FF0078D7"/>
                                 </Grid>
                             </StackPanel>
@@ -673,7 +666,7 @@
                         <!-- AivisCloud用設定 -->
                         <StackPanel x:Name="AivisCloudSettingsPanel">
                             <!-- API Key -->
-                            <Grid Margin="0,5">
+                            <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="*"/>
@@ -682,15 +675,14 @@
                                            Text="API Key:"
                                            VerticalAlignment="Center"
                                            Foreground="#FF4873CF"/>
-                                <PasswordBox Grid.Column="1"
+                                <TextBox Grid.Column="1"
                                              x:Name="AivisCloudApiKeyPasswordBox"
-                                             Margin="0,5"
                                              Foreground="#FF0078D7"
                                              ToolTip="Aivis Cloud APIキー"/>
                             </Grid>
 
                             <!-- Model UUID -->
-                            <Grid Margin="0,5">
+                            <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="*"/>
@@ -701,13 +693,12 @@
                                            Foreground="#FF4873CF"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="AivisCloudModelUuidTextBox"
-                                         Margin="0,5"
                                          Foreground="#FF0078D7"
                                          ToolTip="音声合成モデルのUUID"/>
                             </Grid>
 
                             <!-- Speaker UUID -->
-                            <Grid Margin="0,5">
+                            <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="*"/>
@@ -718,13 +709,12 @@
                                            Foreground="#FF4873CF"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="AivisCloudSpeakerUuidTextBox"
-                                         Margin="0,5"
                                          Foreground="#FF0078D7"
                                          ToolTip="スピーカーUUID（オプション）"/>
                             </Grid>
 
                             <!-- Style ID -->
-                            <Grid Margin="0,5">
+                            <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="*"/>
@@ -735,22 +725,21 @@
                                            Foreground="#FF4873CF"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="AivisCloudStyleIdTextBox"
-                                         Margin="0,5"
                                          Foreground="#FF0078D7"
                                          ToolTip="スタイルID"/>
                             </Grid>
 
                             <!-- 詳細設定 -->
                             <Expander x:Name="AivisCloudAdvancedSettingsPanel"
-                                      Margin="0,5"
+                                      Margin="0,10,0,0"
                                       IsExpanded="False">
                                 <Expander.Header>
                                     <TextBlock Text="Aivis Cloud API詳細設定"
                                                Foreground="#FF4873CF"/>
                                 </Expander.Header>
-                                <StackPanel Margin="10,10,0,10">
+                                <StackPanel>
                                     <!-- Speaking Rate -->
-                                    <Grid Margin="0,5">
+                                    <Grid Margin="0,10,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="120"/>
                                             <ColumnDefinition Width="*"/>
@@ -761,13 +750,12 @@
                                                    Foreground="#FF4873CF"/>
                                         <TextBox Grid.Column="1"
                                                  x:Name="AivisCloudSpeakingRateTextBox"
-                                                 Margin="0,5"
                                                  Foreground="#FF0078D7"
                                                  ToolTip="話速 (0.5-2.0)"/>
                                     </Grid>
 
                                     <!-- Emotional Intensity -->
-                                    <Grid Margin="0,5">
+                                    <Grid Margin="0,10,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="120"/>
                                             <ColumnDefinition Width="*"/>
@@ -778,13 +766,12 @@
                                                    Foreground="#FF4873CF"/>
                                         <TextBox Grid.Column="1"
                                                  x:Name="AivisCloudEmotionalIntensityTextBox"
-                                                 Margin="0,5"
                                                  Foreground="#FF0078D7"
                                                  ToolTip="感情表現の強さ (0.0-2.0)"/>
                                     </Grid>
 
                                     <!-- Tempo Dynamics -->
-                                    <Grid Margin="0,5">
+                                    <Grid Margin="0,10,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="120"/>
                                             <ColumnDefinition Width="*"/>
@@ -795,13 +782,12 @@
                                                    Foreground="#FF4873CF"/>
                                         <TextBox Grid.Column="1"
                                                  x:Name="AivisCloudTempoDynamicsTextBox"
-                                                 Margin="0,5"
                                                  Foreground="#FF0078D7"
                                                  ToolTip="テンポの緩急 (0.0-2.0)"/>
                                     </Grid>
 
                                     <!-- Volume -->
-                                    <Grid Margin="0,5">
+                                    <Grid Margin="0,10,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="120"/>
                                             <ColumnDefinition Width="*"/>
@@ -812,7 +798,6 @@
                                                    Foreground="#FF4873CF"/>
                                         <TextBox Grid.Column="1"
                                                  x:Name="AivisCloudVolumeTextBox"
-                                                 Margin="0,5"
                                                  Foreground="#FF0078D7"
                                                  ToolTip="音量 (0.0-2.0)"/>
                                     </Grid>
@@ -827,10 +812,9 @@
                 <GroupBox Header="音声認識 (AmiVoice/Whisper)"
                 -->
                 <GroupBox Header="音声認識 (現状AmiVoiceのみ)"
-                          Margin="0,0,20,20"
-                          Padding="10">
+                          Padding="10" Margin="0,20,20,0">
                     <StackPanel>
-                        <Grid Margin="0,5">
+                        <Grid>
                             <CheckBox x:Name="IsUseSTTCheckBox"
                                       Content="STTを使用する"
                                       Foreground="#FF4873CF"
@@ -838,7 +822,7 @@
                         </Grid>
 
                         <!-- STTエンジンの設定 -->
-                        <Grid Margin="0,5">
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
                                 <ColumnDefinition Width="*"/>
@@ -848,7 +832,6 @@
                                        VerticalAlignment="Center"/>
                             <ComboBox Grid.Column="1"
                                       x:Name="STTEngineComboBox"
-                                      Margin="0,5"
                                       Foreground="#FF4873CF">
                                 <ComboBoxItem Content="AmiVoice"
                                               Tag="amivoice"/>
@@ -860,7 +843,7 @@
                         </Grid>
 
                         <!-- STT起動ワードの設定 -->
-                        <Grid Margin="0,5,0,0">
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
                                 <ColumnDefinition Width="*"/>
@@ -870,18 +853,19 @@
                                        VerticalAlignment="Center"/>
                             <TextBox Grid.Column="1"
                                      x:Name="STTWakeWordTextBox"
-                                     Margin="0,5"
                                      Foreground="#FF0078D7"
                                      ToolTip="Wake word for STT"/>
                         </Grid>
                         <!-- STT起動ワード説明テキスト -->
                         <TextBlock TextWrapping="Wrap"
-                                   Margin="100,0,0,10">
-                            音声認識を開始するキーワードです。複数設定する場合はカンマ区切りで入力してください（例: こんにちは, ハロー, ミク）。起動直後は反応が遅くなることがあります。
+                                   Margin="100,0,0,0">
+                            音声認識を開始するキーワードです。複数設定する場合はカンマ区切りで入力してください
+                            <LineBreak/>
+                            （例: こんにちは, ハロー, ミク）。起動直後は反応が遅くなることがあります。
                         </TextBlock>
 
                         <!-- STT APIキーの設定 -->
-                        <Grid Margin="0,5">
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
                                 <ColumnDefinition Width="*"/>
@@ -889,9 +873,8 @@
                             <TextBlock Grid.Column="0"
                                        Text="STT API Key:"
                                        VerticalAlignment="Center"/>
-                            <PasswordBox Grid.Column="1"
+                            <TextBox Grid.Column="1"
                                          x:Name="STTApiKeyPasswordBox"
-                                         Margin="0,5"
                                          Foreground="#FF0078D7"/>
                         </Grid>
                     </StackPanel>

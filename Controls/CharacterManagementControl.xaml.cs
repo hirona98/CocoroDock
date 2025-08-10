@@ -3,7 +3,6 @@ using CocoroDock.Services;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -150,9 +149,12 @@ namespace CocoroDock.Controls
             character.isEnableShadowOff = EnableShadowOffCheckBox.IsChecked ?? false;
             character.shadowOffMesh = ShadowOffMeshTextBox.Text;
             character.isUseLLM = IsUseLLMCheckBox.IsChecked ?? false;
-            character.apiKey = ApiKeyPasswordBox.Password;
+            character.apiKey = ApiKeyPasswordBox.Text;
             character.llmModel = LlmModelTextBox.Text;
             // TODO: LiteLLM character.localLLMBaseUrl = BaseUrlTextBox.Text;
+            // 画像分析用設定
+            character.visionApiKey = VisionApiKeyPasswordBox.Text;
+            character.visionModel = VisionModelTextBox.Text;
             // systemPromptはOK押下時まで一時保存（ファイル生成は後で）
             _tempSystemPromptText = SystemPromptTextBox.Text;
 
@@ -167,14 +169,13 @@ namespace CocoroDock.Controls
                 var newFileName = $"{character.modelName}_{AppSettings.Instance.ExtractUuidFromFileName(character.systemPromptFilePath)}.txt";
                 character.systemPromptFilePath = newFileName;
             }
-            character.isEnableMemory = IsEnableMemoryCheckBox.IsChecked ?? false;
             character.userId = UserIdTextBox.Text;
-            character.embeddedApiKey = EmbeddedApiKeyPasswordBox.Password;
+            character.embeddedApiKey = EmbeddedApiKeyPasswordBox.Text;
             character.embeddedModel = EmbeddedModelTextBox.Text;
             character.isUseSTT = IsUseSTTCheckBox.IsChecked ?? false;
             character.sttEngine = STTEngineComboBox.SelectedItem is ComboBoxItem selectedSttEngine ? selectedSttEngine.Tag?.ToString() ?? "amivoice" : "amivoice";
             character.sttWakeWord = STTWakeWordTextBox.Text;
-            character.sttApiKey = STTApiKeyPasswordBox.Password;
+            character.sttApiKey = STTApiKeyPasswordBox.Text;
             character.isUseTTS = IsUseTTSCheckBox.IsChecked ?? false;
             character.ttsEndpointURL = TTSEndpointURLTextBox.Text;
             character.ttsSperkerID = TTSSperkerIDTextBox.Text;
@@ -208,7 +209,7 @@ namespace CocoroDock.Controls
 
             // AivisCloud設定
             character.aivisCloudConfig.endpointUrl = String.Empty; // AivisCloudのエンドポイントURLはCocoroShellで設定
-            character.aivisCloudConfig.apiKey = AivisCloudApiKeyPasswordBox.Password;
+            character.aivisCloudConfig.apiKey = AivisCloudApiKeyPasswordBox.Text;
             character.aivisCloudConfig.modelUuid = AivisCloudModelUuidTextBox.Text;
             character.aivisCloudConfig.speakerUuid = AivisCloudSpeakerUuidTextBox.Text;
             if (int.TryParse(AivisCloudStyleIdTextBox.Text, out int styleId))
@@ -275,10 +276,14 @@ namespace CocoroDock.Controls
 
             // LLM設定
             IsUseLLMCheckBox.IsChecked = character.isUseLLM;
-            ApiKeyPasswordBox.Password = character.apiKey;
+            ApiKeyPasswordBox.Text = character.apiKey;
             LlmModelTextBox.Text = character.llmModel;
             // TODO: LiteLLM/ BaseUrlTextBox.Text = character.localLLMBaseUrl;
             UpdateBaseUrlPlaceholder(); // プレースホルダー更新
+
+            // 画像分析用設定
+            VisionApiKeyPasswordBox.Text = character.visionApiKey;
+            VisionModelTextBox.Text = character.visionModel;
             // systemPromptは保存された内容があればそれを使用、なければファイルから読み込み
             string promptText;
             if (_allCharacterSystemPrompts.ContainsKey(_currentCharacterIndex))
@@ -298,9 +303,8 @@ namespace CocoroDock.Controls
             _tempSystemPromptText = promptText; // 一時保存も初期化
 
             // 記憶機能
-            IsEnableMemoryCheckBox.IsChecked = character.isEnableMemory;
             UserIdTextBox.Text = character.userId;
-            EmbeddedApiKeyPasswordBox.Password = character.embeddedApiKey;
+            EmbeddedApiKeyPasswordBox.Text = character.embeddedApiKey;
             EmbeddedModelTextBox.Text = character.embeddedModel;
 
             // STT設定
@@ -317,7 +321,7 @@ namespace CocoroDock.Controls
             }
 
             STTWakeWordTextBox.Text = character.sttWakeWord;
-            STTApiKeyPasswordBox.Password = character.sttApiKey;
+            STTApiKeyPasswordBox.Text = character.sttApiKey;
 
             // TTS設定
             IsUseTTSCheckBox.IsChecked = character.isUseTTS;
@@ -351,7 +355,7 @@ namespace CocoroDock.Controls
             SBV2SplitIntervalTextBox.Text = character.styleBertVits2Config.splitInterval.ToString("F1");
 
             // AivisCloud設定の読み込み
-            AivisCloudApiKeyPasswordBox.Password = character.aivisCloudConfig.apiKey;
+            AivisCloudApiKeyPasswordBox.Text = character.aivisCloudConfig.apiKey;
             AivisCloudModelUuidTextBox.Text = character.aivisCloudConfig.modelUuid;
             AivisCloudSpeakerUuidTextBox.Text = character.aivisCloudConfig.speakerUuid;
             AivisCloudStyleIdTextBox.Text = character.aivisCloudConfig.styleId.ToString();
