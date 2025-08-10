@@ -105,7 +105,8 @@
                                     Click="BrowseVrmFileButton_Click"
                                     ToolTip="Open..."
                                     VerticalAlignment="Center"
-                                    Foreground="#FF4873CF" Margin="5,0,0,0"/>
+                                    Foreground="#FF4873CF"
+                                    Margin="5,0,0,0"/>
                         </Grid>
                     </StackPanel>
                 </GroupBox>
@@ -127,7 +128,8 @@
                                   Foreground="#FF4873CF"
                                   ToolTip="Enable shadow off mesh"
                                   Checked="EnableShadowOffCheckBox_Checked"
-                                  Unchecked="EnableShadowOffCheckBox_Unchecked" Margin="0,10,0,0"/>
+                                  Unchecked="EnableShadowOffCheckBox_Unchecked"
+                                  Margin="0,10,0,0"/>
 
                         <!-- 影オフメッシュ名設定 -->
                         <Grid Margin="0,10,0,0">
@@ -181,7 +183,8 @@
                                      Text=""/>
                         </Grid>
                         <!-- LLM説明テキスト -->
-                        <TextBlock TextWrapping="Wrap" Margin="100,0,0,0">
+                        <TextBlock TextWrapping="Wrap"
+                                   Margin="100,0,0,0">
                             <TextBlock.Inlines>
                                 <Run Text="OpenAIのみ対応"/>
                                 <!-- TODO: LiteLLM実装時復活
@@ -198,7 +201,7 @@
                                 -->
                             </TextBlock.Inlines>
                         </TextBlock>
-                        
+
                         <!-- APIキーの設定 -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
@@ -208,10 +211,22 @@
                             <TextBlock Grid.Column="0"
                                        Text="API Key:"
                                        VerticalAlignment="Center"/>
-                            <TextBox Grid.Column="1"
-                                         x:Name="ApiKeyPasswordBox"
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <TextBox x:Name="ApiKeyPasswordBox"
                                          Foreground="#FF4873CF"
-                                         ToolTip="Enter your API key" Width="200" HorizontalAlignment="Left"/>
+                                         ToolTip="Enter your API key"
+                                         Width="200"
+                                         HorizontalAlignment="Left"/>
+                                <Button Content="上書き貼付け"
+                                        Foreground="#FF0078D7"
+                                        Margin="10,0,0,0"
+                                        Padding="10,0,10,0"
+                                        VerticalAlignment="Center"
+                                        Click="ApiKeyPasteOverrideButton_Click"
+                                        ToolTip="クリップボードのテキストで上書き"/>
+                            </StackPanel>
                         </Grid>
 
                         <!-- Base URLの設定（ローカルLLM用） -->
@@ -250,7 +265,7 @@
                             </TextBlock.Inlines>
                         </TextBlock>
                         -->
-                        
+
                         <!-- Vision Model -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
@@ -268,7 +283,7 @@
                         </Grid>
 
                         <!-- Vision説明テキスト -->
-                        <TextBlock Foreground="#666666" 
+                        <TextBlock Foreground="#666666"
                                    TextWrapping="Wrap"
                                    Margin="100,0,0,0">
                             画像説明生成とそれに対するコメント生成で2回LLMを呼び出します。
@@ -284,10 +299,22 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
                                        Text="画像用API Key:"/>
-                            <TextBox Grid.Column="1"
-                                         x:Name="VisionApiKeyPasswordBox"
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <TextBox x:Name="VisionApiKeyPasswordBox"
                                          Foreground="#FF4873CF"
-                                         ToolTip="画像分析用のAPIキー（空の場合は上記のAPIキーを使用）" Width="200" HorizontalAlignment="Left"/>
+                                         ToolTip="画像分析用のAPIキー（空の場合は上記のAPIキーを使用）"
+                                         Width="200"
+                                         HorizontalAlignment="Left"/>
+                                <Button Content="上書き貼付け"
+                                        Foreground="#FF0078D7"
+                                        Margin="10,0,0,0"
+                                        Padding="10,0,10,0"
+                                        VerticalAlignment="Center"
+                                        Click="VisionApiKeyPasteOverrideButton_Click"
+                                        ToolTip="クリップボードのテキストで上書き"/>
+                            </StackPanel>
                         </Grid>
 
 
@@ -375,9 +402,21 @@
                                        Text="API Key:"
                                        VerticalAlignment="Center"
                                        ToolTip="API Key"/>
-                            <TextBox Grid.Column="1"
-                                         x:Name="EmbeddedApiKeyPasswordBox"
-                                         Foreground="#FF0078D7" Width="200" HorizontalAlignment="Left"/>
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <TextBox x:Name="EmbeddedApiKeyPasswordBox"
+                                         Foreground="#FF0078D7"
+                                         Width="200"
+                                         HorizontalAlignment="Left"/>
+                                <Button Content="上書き貼付け"
+                                        Foreground="#FF0078D7"
+                                        Margin="10,0,0,0"
+                                        Padding="10,0,10,0"
+                                        VerticalAlignment="Center"
+                                        Click="EmbeddedApiKeyPasteOverrideButton_Click"
+                                        ToolTip="クリップボードのテキストで上書き"/>
+                            </StackPanel>
                         </Grid>
                     </StackPanel>
                 </GroupBox>
@@ -677,10 +716,22 @@
                                            Text="API Key:"
                                            VerticalAlignment="Center"
                                            Foreground="#FF4873CF"/>
-                                <TextBox Grid.Column="1"
-                                             x:Name="AivisCloudApiKeyPasswordBox"
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            VerticalAlignment="Center">
+                                    <TextBox x:Name="AivisCloudApiKeyPasswordBox"
                                              Foreground="#FF0078D7"
-                                             ToolTip="Aivis Cloud APIキー" Width="200" HorizontalAlignment="Left"/>
+                                             ToolTip="Aivis Cloud APIキー"
+                                             Width="200"
+                                             HorizontalAlignment="Left"/>
+                                    <Button Content="上書き貼付け"
+                                            Foreground="#FF0078D7"
+                                            Margin="10,0,0,0"
+                                            Padding="10,0,10,0"
+                                            VerticalAlignment="Center"
+                                            Click="AivisCloudApiKeyPasteOverrideButton_Click"
+                                            ToolTip="クリップボードのテキストで上書き"/>
+                                </StackPanel>
                             </Grid>
 
                             <!-- Model UUID -->
@@ -814,7 +865,8 @@
                 <GroupBox Header="音声認識 (AmiVoice/Whisper)"
                 -->
                 <GroupBox Header="音声認識 (現状AmiVoiceのみ)"
-                          Padding="10" Margin="0,20,20,0">
+                          Padding="10"
+                          Margin="0,20,20,0">
                     <StackPanel>
                         <Grid>
                             <CheckBox x:Name="IsUseSTTCheckBox"
@@ -876,9 +928,21 @@
                             <TextBlock Grid.Column="0"
                                        Text="STT API Key:"
                                        VerticalAlignment="Center"/>
-                            <TextBox Grid.Column="1"
-                                         x:Name="STTApiKeyPasswordBox"
-                                         Foreground="#FF0078D7" Width="200" HorizontalAlignment="Left"/>
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <TextBox x:Name="STTApiKeyPasswordBox"
+                                         Foreground="#FF0078D7"
+                                         Width="200"
+                                         HorizontalAlignment="Left"/>
+                                <Button Content="上書き貼付け"
+                                        Foreground="#FF0078D7"
+                                        Margin="10,0,0,0"
+                                        Padding="10,0,10,0"
+                                        VerticalAlignment="Center"
+                                        Click="STTApiKeyPasteOverrideButton_Click"
+                                        ToolTip="クリップボードのテキストで上書き"/>
+                            </StackPanel>
                         </Grid>
                     </StackPanel>
                 </GroupBox>

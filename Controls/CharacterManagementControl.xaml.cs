@@ -90,6 +90,53 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
+        /// APIキー欄の「上書き貼付け」ボタンクリック
+        /// </summary>
+        private void ApiKeyPasteOverrideButton_Click(object sender, RoutedEventArgs e)
+        {
+            PasteFromClipboardIntoTextBox(ApiKeyPasswordBox);
+        }
+
+        private void VisionApiKeyPasteOverrideButton_Click(object sender, RoutedEventArgs e)
+        {
+            PasteFromClipboardIntoTextBox(VisionApiKeyPasswordBox);
+        }
+
+        private void EmbeddedApiKeyPasteOverrideButton_Click(object sender, RoutedEventArgs e)
+        {
+            PasteFromClipboardIntoTextBox(EmbeddedApiKeyPasswordBox);
+        }
+
+        private void AivisCloudApiKeyPasteOverrideButton_Click(object sender, RoutedEventArgs e)
+        {
+            PasteFromClipboardIntoTextBox(AivisCloudApiKeyPasswordBox);
+        }
+
+        private void STTApiKeyPasteOverrideButton_Click(object sender, RoutedEventArgs e)
+        {
+            PasteFromClipboardIntoTextBox(STTApiKeyPasswordBox);
+        }
+
+        private void PasteFromClipboardIntoTextBox(TextBox target)
+        {
+            try
+            {
+                if (Clipboard.ContainsText())
+                {
+                    var text = Clipboard.GetText();
+                    if (!string.IsNullOrWhiteSpace(text))
+                    {
+                        target.Text = text.Trim();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Clipboard paste failed: {ex}");
+            }
+        }
+
+        /// <summary>
         /// 初期化処理
         /// </summary>
         public void Initialize()
