@@ -17,25 +17,31 @@
                     <StackPanel>
                         <!-- 説明テキスト -->
                         <TextBlock TextWrapping="Wrap"
-                                   Foreground="#666666"
-                                   Margin="0,0,0,10">
+                                   Foreground="#666666">
                             REST APIで受信した通知をキャラクターが教えてくれます
                         </TextBlock>
 
                         <!-- 通知要求を受けるチェックボックス -->
                         <CheckBox x:Name="IsEnableNotificationApiCheckBox"
                                   Content="通知要求を受ける"
-                                  Margin="0,5,0,15"
+                                  Margin="0,10,0,0"
                                   Foreground="#FF4873CF"
                                   ToolTip="Enable notification API"/>
-                        <!-- API説明 -->
-                        <TextBox x:Name="ApiDescriptionTextBox"
-                                 IsReadOnly="True"
-                                 BorderThickness="0"
-                                 VerticalScrollBarVisibility="Auto"
-                                 Foreground="#666666"
-                                 TextWrapping="Wrap"
-                                 AcceptsReturn="True"/>
+                        <!-- API詳細（エンドポイント/ボディ/レスポンス/使用例をすべて折りたたみ） -->
+                        <Expander x:Name="ApiDetailsExpander"
+                                  Header="API詳細"
+                                  Foreground="#666666"
+                                  IsExpanded="False"
+                                Margin="0,10,0,0">
+                            <TextBox x:Name="ApiDetailsTextBox"
+                                     IsReadOnly="True"
+                                     BorderThickness="0"
+                                     VerticalScrollBarVisibility="Auto"
+                                     Foreground="#666666"
+                                     TextWrapping="Wrap"
+                                     AcceptsReturn="True"
+                                    Margin="0,10,0,0"/>
+                        </Expander>
                     </StackPanel>
                 </GroupBox>
 
@@ -116,7 +122,6 @@
 
                         <!-- アイドルタイムアウト説明テキスト -->
                         <TextBlock TextWrapping="Wrap"
-                                   Margin="0,0,0,10"
                                    Foreground="#666666">
                             ※マウスやキーボードの操作がない時間が設定値を超えると、デスクトップウォッチを一時停止します。
                         </TextBlock>
@@ -161,7 +166,6 @@
 
                         <!-- しきい値説明テキスト -->
                         <TextBlock TextWrapping="Wrap"
-                                   Margin="0,0,0,10"
                                    Foreground="#666666">
                             ※値が低いほど（-50dBに近いほど）音声を拾いやすくなりますが、環境音も拾いやすくなります。
                         </TextBlock>
@@ -175,27 +179,26 @@
                     <StackPanel>
                         <!-- 説明テキスト -->
                         <TextBlock TextWrapping="Wrap"
-                                   Foreground="#666666"
-                                   Margin="0,0,0,10">
+                                   Foreground="#666666">
                             高度な機能とインターネット検索機能の設定（実装中/OFFにしてください）
                         </TextBlock>
 
                         <!-- プロモード設定 -->
                         <CheckBox x:Name="EnableProModeCheckBox"
                                   Content="プロモードを有効にする"
-                                  Margin="0,5,0,5"
+                                  Margin="0,10,0,0"
                                   Foreground="#FF4873CF"
                                   ToolTip="Enable Pro Mode for advanced features"/>
 
                         <!-- インターネット検索設定 -->
                         <CheckBox x:Name="EnableInternetRetrievalCheckBox"
                                   Content="インターネット検索を有効にする"
-                                  Margin="0,5,0,15"
+                                  Margin="0,10,0,0"
                                   Foreground="#FF4873CF"
                                   ToolTip="Enable internet search capability"/>
 
                         <!-- Google API Key -->
-                        <Grid Margin="0,5,0,5">
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
@@ -211,7 +214,7 @@
                         </Grid>
 
                         <!-- Google Search Engine ID -->
-                        <Grid Margin="0,5,0,5">
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
@@ -227,7 +230,7 @@
                         </Grid>
 
                         <!-- 最大検索結果数 -->
-                        <Grid Margin="0,5,0,5">
+                        <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="60"/>

@@ -37,7 +37,7 @@ namespace CocoroDock.Controls
 
                 // 通知API設定
                 IsEnableNotificationApiCheckBox.IsChecked = appSettings.IsEnableNotificationApi;
-                ApiDescriptionTextBox.Text = GetApiDescription();
+                ApiDetailsTextBox.Text = GetApiDetails();
 
                 // デスクトップウォッチ設定
                 ScreenshotEnabledCheckBox.IsChecked = appSettings.ScreenshotSettings.enabled;
@@ -109,9 +109,9 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// API説明テキストを取得
+        /// API詳細テキストを取得（エンドポイント/ボディ/レスポンス/使用例を含む）
         /// </summary>
-        private string GetApiDescription()
+        private string GetApiDetails()
         {
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("エンドポイント:");
@@ -230,7 +230,7 @@ namespace CocoroDock.Controls
             string googleApiKey = GoogleApiKeyTextBox.Text;
             string googleSearchEngineId = GoogleSearchEngineIdTextBox.Text;
             int internetMaxResults = 5;
-            
+
             if (int.TryParse(InternetMaxResultsTextBox.Text, out int maxResults))
             {
                 if (maxResults >= 1 && maxResults <= 10)
@@ -238,7 +238,7 @@ namespace CocoroDock.Controls
                     internetMaxResults = maxResults;
                 }
             }
-            
+
             return (enableProMode, enableInternetRetrieval, googleApiKey, googleSearchEngineId, internetMaxResults);
         }
 
