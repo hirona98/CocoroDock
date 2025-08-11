@@ -407,6 +407,12 @@ namespace CocoroDock.Services
                     }
                 }
 
+                // 処理状態を設定（通知処理開始）
+                var processingStatus = files != null && files.Count > 0
+                    ? CocoroCore2Status.ProcessingImage
+                    : CocoroCore2Status.ProcessingMessage;
+                _statusPollingService?.SetProcessingStatus(processingStatus);
+
                 var request = new UnifiedChatRequest
                 {
                     user_id = !string.IsNullOrEmpty(currentCharacter.userId) ? currentCharacter.userId : "user",
@@ -451,11 +457,14 @@ namespace CocoroDock.Services
                 }
 
                 // 成功時のステータス更新
+                _statusPollingService?.SetNormalStatus();
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "通知実行"));
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"通知処理エラー: {ex.Message}");
+                _statusPollingService?.SetNormalStatus();
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"通信エラー: {ex.Message}"));
             }
         }
 
@@ -673,31 +682,6 @@ namespace CocoroDock.Services
                 Debug.WriteLine($"CocoreCoreへのログ制御コマンド送信エラー: {ex.Message}");
             }
 
-            // CocoroMemoryにも送信
-            try
-            {
-                using var httpClient = new System.Net.Http.HttpClient();
-                httpClient.Timeout = TimeSpan.FromMilliseconds(500); // 高速化のため500msに短縮
-                var payload = new { command = command };
-                var json = System.Text.Json.JsonSerializer.Serialize(payload);
-                var content = new System.Net.Http.StringContent(json, System.Text.Encoding.UTF8, "application/json");
-
-                var memoryPort = _appSettings.CocoroMemoryPort;
-                var response = await httpClient.PostAsync($"http://127.0.0.1:{memoryPort}/api/control", content);
-                response.EnsureSuccessStatusCode();
-            }
-            catch (System.Net.Http.HttpRequestException)
-            {
-                // CocoroMemory未起動の場合は正常（サイレント処理）
-            }
-            catch (System.Threading.Tasks.TaskCanceledException)
-            {
-                // タイムアウトの場合（サイレント処理）
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"CocoroMemoryへのログ制御コマンド送信エラー: {ex.Message}");
-            }
         }
 
         /// <summary>
