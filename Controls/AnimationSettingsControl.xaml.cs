@@ -421,7 +421,7 @@ namespace CocoroDock.Controls
             try
             {
                 // 現在選択されているアニメーションセットをベースに新しいセットを作成
-                AnimationSetting sourceSet = null;
+                AnimationSetting? sourceSet = null;
                 if (AnimationSetComboBox.SelectedIndex >= 0 && AnimationSetComboBox.SelectedIndex < _animationSettings.Count)
                 {
                     sourceSet = _animationSettings[AnimationSetComboBox.SelectedIndex];

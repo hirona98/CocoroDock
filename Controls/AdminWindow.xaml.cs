@@ -394,7 +394,10 @@ namespace CocoroDock.Controls
         private void InitializeCharacterSettings()
         {
             // CharacterManagementControlの初期化
-            CharacterManagementControl.SetCommunicationService(_communicationService);
+            if (_communicationService != null)
+            {
+                CharacterManagementControl.SetCommunicationService(_communicationService);
+            }
             CharacterManagementControl.Initialize();
 
             // 設定変更イベントを登録
@@ -417,7 +420,10 @@ namespace CocoroDock.Controls
             _currentCharacterIndex = CharacterManagementControl.GetCurrentCharacterIndex();
 
             // アニメーション設定コントロールを初期化
-            AnimationSettingsControl.SetCommunicationService(_communicationService);
+            if (_communicationService != null)
+            {
+                AnimationSettingsControl.SetCommunicationService(_communicationService);
+            }
             AnimationSettingsControl.Initialize();
 
             // アニメーション設定変更イベントを登録

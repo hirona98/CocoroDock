@@ -68,7 +68,7 @@
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     <PackageReference Include="SharpVectors" Version="1.8.4" />
     <PackageReference Include="NAudio" Version="2.2.1" />
-    <PackageReference Include="System.Text.Json" Version="8.0.0" />
+    <PackageReference Include="System.Text.Json" Version="8.0.6" />
   </ItemGroup>
 
   <!-- Publish時にUserDataフォルダに設定ファイルをコピー -->
