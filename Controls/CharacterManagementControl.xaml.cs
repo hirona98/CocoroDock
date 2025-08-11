@@ -536,6 +536,8 @@ namespace CocoroDock.Controls
                     apiKey = sourceCharacter.apiKey,
                     llmModel = sourceCharacter.llmModel,
                     localLLMBaseUrl = sourceCharacter.localLLMBaseUrl,
+                    visionApiKey = sourceCharacter.visionApiKey,
+                    visionModel = sourceCharacter.visionModel,
                     // systemPromptは複製時に即座にファイル作成（複製は即座実行）
                     systemPromptFilePath = !string.IsNullOrEmpty(sourceCharacter.systemPromptFilePath)
                         ? CopySystemPromptFile(sourceCharacter.systemPromptFilePath, newName)
@@ -592,6 +594,7 @@ namespace CocoroDock.Controls
                     sttEngine = sourceCharacter.sttEngine,
                     sttWakeWord = sourceCharacter.sttWakeWord,
                     sttApiKey = sourceCharacter.sttApiKey,
+                    sttLanguage = sourceCharacter.sttLanguage,
                     isConvertMToon = sourceCharacter.isConvertMToon,
                     isEnableShadowOff = sourceCharacter.isEnableShadowOff,
                     shadowOffMesh = sourceCharacter.shadowOffMesh,
