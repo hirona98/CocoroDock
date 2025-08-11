@@ -354,6 +354,7 @@ namespace CocoroDock.Communication
         public string user_id { get; set; } = string.Empty; // ユーザーID（固定値）
         public string session_id { get; set; } = string.Empty; // セッションID
         public string message { get; set; } = string.Empty; // メッセージテキスト
+        public string message_type { get; set; } = "chat"; // メッセージ種別 ("chat", "notification", "desktop_monitoring")
         public string? character_name { get; set; } // キャラクター名
         public string? system_prompt { get; set; } // システムプロンプト
         public string? context_id { get; set; } // コンテキストID

@@ -249,6 +249,7 @@ namespace CocoroDock.Services
                     user_id = !string.IsNullOrEmpty(currentCharacter?.userId) ? currentCharacter.userId : "user",
                     session_id = _currentSessionId,
                     message = message,
+                    message_type = "chat",
                     character_name = characterName ?? currentCharacter?.modelName ?? "default",
                     system_prompt = systemPrompt,
                     context_id = _currentContextId,
@@ -384,13 +385,8 @@ namespace CocoroDock.Services
                     _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
                 }
 
-                // 通知メッセージをJSON形式で特別なタグで囲む
-                var notificationJson = System.Text.Json.JsonSerializer.Serialize(new
-                {
-                    from = notification.from,
-                    message = notification.message
-                });
-                var notificationText = $"<cocoro-notification>{notificationJson}</cocoro-notification>";
+                // 通知メッセージ（タグなし）
+                var notificationText = notification.message;
 
                 // APIリクエストを作成してCocoroCoreに転送
                 // 複数画像がある場合はファイルリストを作成
@@ -416,6 +412,7 @@ namespace CocoroDock.Services
                     user_id = !string.IsNullOrEmpty(currentCharacter.userId) ? currentCharacter.userId : "user",
                     session_id = _currentSessionId,
                     message = notificationText,
+                    message_type = "notification",
                     character_name = currentCharacter.modelName ?? "default",
                     system_prompt = GetCachedSystemPrompt(currentCharacter.systemPromptFilePath),
                     context_id = _currentContextId,
@@ -527,7 +524,8 @@ namespace CocoroDock.Services
                 {
                     user_id = !string.IsNullOrEmpty(currentCharacter.userId) ? currentCharacter.userId : "user",
                     session_id = _currentSessionId,
-                    message = "<cocoro-desktop-monitoring>",  // 特別なタグ
+                    message = "", // デスクトップモニタリングでは画像のみ
+                    message_type = "desktop_monitoring",
                     character_name = currentCharacter.modelName ?? "default",
                     system_prompt = GetCachedSystemPrompt(currentCharacter.systemPromptFilePath),
                     context_id = _currentContextId,
