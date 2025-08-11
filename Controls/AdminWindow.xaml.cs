@@ -578,7 +578,7 @@ namespace CocoroDock.Controls
         /// <summary>
         /// OKボタンのクリックイベントハンドラ
         /// </summary>
-        private async void OkButton_Click(object sender, RoutedEventArgs e)
+        private void OkButton_Click(object sender, RoutedEventArgs e)
         {
             // ボタンを無効化（処理中の重複実行防止）
             OkButton.IsEnabled = false;
@@ -586,108 +586,11 @@ namespace CocoroDock.Controls
 
             try
             {
-                // CharacterManagementControlでも設定前保持
-
-                // 設定変更前の値を保存
-                int lastSelectedIndex = AppSettings.Instance.CurrentCharacterIndex;
-                string lastVRMFilePath = string.Empty;
-                bool lastIsUseLLM = false;
-                bool lastIsEnableMemory = true;
-                bool lastIsEnableNotificationApi = false;
-                if (_originalDisplaySettings.ContainsKey("IsEnableNotificationApi"))
-                {
-                    lastIsEnableNotificationApi = (bool)_originalDisplaySettings["IsEnableNotificationApi"];
-                }
-                if (lastSelectedIndex >= 0 && lastSelectedIndex < AppSettings.Instance.CharacterList.Count)
-                {
-                    lastVRMFilePath = AppSettings.Instance.CharacterList[lastSelectedIndex].vrmFilePath ?? string.Empty;
-                    lastIsUseLLM = AppSettings.Instance.CharacterList[lastSelectedIndex].isUseLLM;
-                    lastIsEnableMemory = AppSettings.Instance.CharacterList[lastSelectedIndex].isEnableMemory;
-                }
-
-                // MCP設定の変更をチェックして適用
-                if (McpSettingsControl.GetViewModel() != null)
-                {
-                    await McpSettingsControl.GetViewModel()!.ApplyMcpSettingsAsync();
-                }
-
                 // CharacterManagementControlの設定確定処理を実行
                 CharacterManagementControl.ConfirmSettings();
 
                 // すべてのタブの設定を保存
-                SaveAllSettings(lastIsEnableNotificationApi);
-
-                // VRMFilePathかSelectedIndexが変更されたかチェック
-                bool isNeedsRestart = false;
-                int currentSelectedIndex = AppSettings.Instance.CurrentCharacterIndex;
-                // SelectedIndexが変更された場合
-                if (lastSelectedIndex != currentSelectedIndex)
-                {
-                    isNeedsRestart = true;
-                }
-
-                // キャラクター設定の変更を検出（元の設定と比較）（同じキャラクターの場合のみチェック）
-                if (lastSelectedIndex == currentSelectedIndex && _originalCharacterSettings != null)
-                {
-                    // すべてのキャラクターの設定を比較
-                    for (int i = 0; i < _characterSettings.Count && i < _originalCharacterSettings.Count; i++)
-                    {
-                        var current = _characterSettings[i];
-                        var original = _originalCharacterSettings[i];
-
-                        // 各項目を比較
-                        foreach (var key in current.Keys)
-                        {
-                            if (!original.ContainsKey(key) || current[key] != original[key])
-                            {
-                                isNeedsRestart = true;
-                                break;
-                            }
-                        }
-
-                        // originalにあってcurrentにない項目もチェック
-                        foreach (var key in original.Keys)
-                        {
-                            if (!current.ContainsKey(key))
-                            {
-                                isNeedsRestart = true;
-                                break;
-                            }
-                        }
-
-                        if (isNeedsRestart)
-                        {
-                            break;
-                        }
-                    }
-
-                    // キャラクター数が変更された場合
-                    if (_characterSettings.Count != _originalCharacterSettings.Count)
-                    {
-                        isNeedsRestart = true;
-                    }
-                }
-
-
-                // 設定が変更された場合、メッセージボックスを表示して CocoroCore と CocoroShell を再起動
-                if (isNeedsRestart)
-                {
-                    if (Owner is MainWindow mainWindow)
-                    {
-                        // チャット履歴をクリア
-                        mainWindow.ChatControlInstance.ClearChat();
-
-                        var launchCocoroCore = typeof(MainWindow).GetMethod("LaunchCocoroCore", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                        var launchCocoroShell = typeof(MainWindow).GetMethod("LaunchCocoroShell", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                        if (launchCocoroCore != null && launchCocoroShell != null)
-                        {
-                            // ProcessOperation.RestartIfRunning (デフォルト値) を引数として渡す
-                            object[] parameters = new object[] { 0 }; // ProcessOperation.RestartIfRunning = 0
-                            launchCocoroCore.Invoke(mainWindow, parameters);
-                            launchCocoroShell.Invoke(mainWindow, parameters);
-                        }
-                    }
-                }
+                SaveAllSettings();
                 // ウィンドウを閉じる
                 Close();
             }
@@ -746,8 +649,7 @@ namespace CocoroDock.Controls
         /// <summary>
         /// すべてのタブの設定を保存する
         /// </summary>
-        /// <param name="lastIsEnableNotificationApi">変更前の通知API有効フラグ</param>
-        private async void SaveAllSettings(bool lastIsEnableNotificationApi)
+        private async void SaveAllSettings()
         {
             try
             {
@@ -787,16 +689,6 @@ namespace CocoroDock.Controls
                 {
                     MessageBox.Show($"クライアントへの設定通知に失敗しました。\n\n設定自体は保存されています。\n\nエラー: {errorMessage}",
                         "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
-
-                // 通知APIサーバーの設定が変更された場合の処理
-                bool currentIsEnableNotificationApi = SystemSettingsControl.GetIsEnableNotificationApi();
-                if (lastIsEnableNotificationApi != currentIsEnableNotificationApi)
-                {
-                    // 通知APIサーバーの動的な起動/停止は現在サポートされていません
-                    // アプリケーションの再起動が必要です
-                    MessageBox.Show("通知APIサーバーの有効/無効設定が変更されました。\n変更を反映するにはアプリケーションを再起動してください。",
-                        "情報", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
 
                 // デスクトップウォッチの設定変更を反映
