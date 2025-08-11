@@ -70,7 +70,6 @@ namespace CocoroDock.Controls
         public CharacterManagementControl()
         {
             InitializeComponent();
-            _communicationService = new CommunicationService(AppSettings.Instance);
 
             // キャラクター名変更用のデバウンスタイマーを初期化
             _characterNameChangeTimer = new DispatcherTimer

@@ -52,7 +52,7 @@ namespace CocoroDock.Services
         {
             _httpClient = new HttpClient
             {
-                Timeout = TimeSpan.FromSeconds(3) // 安全マージンを持たせたタイムアウト
+                Timeout = TimeSpan.FromMilliseconds(800) // ポーリング間隔より短いタイムアウト
             };
             _healthEndpoint = $"{baseUrl.TrimEnd('/')}/health";
 
@@ -95,11 +95,10 @@ namespace CocoroDock.Services
                     UpdateStatus(CocoroCore2Status.Disconnected);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // 接続エラー時はDisconnected状態に
                 UpdateStatus(CocoroCore2Status.Disconnected);
-                Debug.WriteLine($"[StatusPollingService] ポーリングエラー: {ex.Message}");
             }
         }
 

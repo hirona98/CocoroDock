@@ -100,6 +100,10 @@ namespace CocoroDock.Controls
         public void SetCommunicationService(ICommunicationService? service)
         {
             _communicationService = service;
+            if (service != null)
+            {
+                EscapePositionControl.SetCommunicationService(service);
+            }
         }
 
         public void InitializeFromAppSettings()

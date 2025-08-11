@@ -963,9 +963,10 @@ namespace CocoroDock
                 {
                     if (_communicationService != null)
                     {
-                        // ヘルスチェックAPIで起動状態を確認
-                        var health = await _communicationService.GetCocoroCore2HealthAsync();
-                        if (health != null && health.status == "healthy")
+                        // StatusPollingServiceのステータスで起動状態を確認
+                        if (_communicationService.CurrentStatus == CocoroCore2Status.Normal ||
+                            _communicationService.CurrentStatus == CocoroCore2Status.ProcessingMessage ||
+                            _communicationService.CurrentStatus == CocoroCore2Status.ProcessingImage)
                         {
                             // 起動成功時はログ出力のみ
                             Debug.WriteLine("[MainWindow] CocoroCore2起動完了");
