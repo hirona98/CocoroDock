@@ -23,7 +23,7 @@ namespace CocoroDock.Communication
         {
             _httpClient = new HttpClient
             {
-                Timeout = TimeSpan.FromSeconds(30) // REST API用のタイムアウト
+                Timeout = TimeSpan.FromSeconds(120) // REST API用のタイムアウト
             };
             _baseUrl = $"http://127.0.0.1:{port}";
         }
