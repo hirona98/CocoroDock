@@ -81,12 +81,6 @@ namespace CocoroDock.Services
         ConfigSettings GetCurrentConfig();
 
         /// <summary>
-        /// 設定を更新して保存
-        /// </summary>
-        /// <param name="settings">更新する設定情報</param>
-        void UpdateAndSaveConfig(ConfigSettings settings);
-
-        /// <summary>
         /// CocoroCoreにAPIでチャットメッセージを送信
         /// </summary>
         /// <param name="message">送信メッセージ</param>
@@ -104,12 +98,6 @@ namespace CocoroDock.Services
         /// </summary>
         /// <param name="animationName">アニメーション名</param>
         Task SendAnimationToShellAsync(string animationName);
-
-        /// <summary>
-        /// CocoroShellに制御コマンドを送信
-        /// </summary>
-        /// <param name="command">コマンド名</param>
-        Task SendControlToShellAsync(string command);
 
         /// <summary>
         /// 通知メッセージを処理（Notification API用）

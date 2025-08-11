@@ -253,6 +253,10 @@ namespace CocoroDock.Controls
 
                 // すべてのタブの設定を保存
                 SaveAllSettings();
+
+                // CocoroShellを再起動
+                RestartCocoroShell();
+
                 // ウィンドウを閉じる
                 Close();
             }
@@ -298,6 +302,9 @@ namespace CocoroDock.Controls
                 // すべてのタブの設定を保存
                 SaveAllSettings();
 
+                // CocoroShellを再起動
+                RestartCocoroShell();
+
                 // 設定のバックアップを更新（適用後の状態を新しいベースラインとする）
                 BackupSettings();
             }
@@ -317,7 +324,7 @@ namespace CocoroDock.Controls
         /// <summary>
         /// すべてのタブの設定を保存する
         /// </summary>
-        private async void SaveAllSettings()
+        private void SaveAllSettings()
         {
             try
             {
@@ -339,33 +346,6 @@ namespace CocoroDock.Controls
 
                 // 設定をファイルに保存
                 AppSettings.Instance.SaveAppSettings();
-
-                // REST APIを通じて設定を更新（クライアントに通知）
-                bool configUpdateSuccessful = false;
-                string errorMessage = string.Empty;
-
-                if (_communicationService != null && _communicationService.IsServerRunning)
-                {
-                    try
-                    {
-                        // 設定を保存してCocoroShellに通知
-                        _communicationService.UpdateAndSaveConfig(AppSettings.Instance.GetConfigSettings());
-                        await _communicationService.SendControlToShellAsync("reloadConfig");
-                        configUpdateSuccessful = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        errorMessage = ex.Message;
-                        configUpdateSuccessful = false;
-                    }
-                }
-
-                // 処理結果に応じてメッセージを表示
-                if (!configUpdateSuccessful)
-                {
-                    MessageBox.Show($"クライアントへの設定通知に失敗しました。\n\n設定自体は保存されています。\n\nエラー: {errorMessage}",
-                        "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
 
                 // デスクトップウォッチの設定変更を反映
                 UpdateDesktopWatchSettings();
@@ -567,6 +547,39 @@ namespace CocoroDock.Controls
                                "エラー",
                                MessageBoxButton.OK,
                                MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// CocoroShellを再起動する
+        /// </summary>
+        private void RestartCocoroShell()
+        {
+            try
+            {
+                // MainWindowのインスタンスを取得
+                var mainWindow = Application.Current.MainWindow as MainWindow;
+                if (mainWindow != null)
+                {
+                    // MainWindowのLaunchCocoroShellメソッドを呼び出してCocoroShellを再起動
+                    var launchMethod = mainWindow.GetType().GetMethod("LaunchCocoroShell",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+                    if (launchMethod != null)
+                    {
+                        // ProcessOperation.RestartIfRunning を指定してCocoroShellを再起動
+                        launchMethod.Invoke(mainWindow, [ProcessOperation.RestartIfRunning]);
+                        Debug.WriteLine("CocoroShellを再起動しました");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CocoroShell再起動中にエラーが発生しました: {ex.Message}");
+                MessageBox.Show($"CocoroShellの再起動に失敗しました: {ex.Message}",
+                               "警告",
+                               MessageBoxButton.OK,
+                               MessageBoxImage.Warning);
             }
         }
     }

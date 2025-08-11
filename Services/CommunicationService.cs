@@ -146,18 +146,6 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// 設定を更新して保存
-        /// </summary>
-        /// <param name="settings">更新する設定情報</param>
-        public void UpdateAndSaveConfig(ConfigSettings settings)
-        {
-            _appSettings.UpdateSettings(settings);
-            _appSettings.SaveSettings();
-            // 設定変更後にキャッシュを更新
-            RefreshSettingsCache();
-        }
-
-        /// <summary>
         /// 設定キャッシュを更新
         /// </summary>
         public void RefreshSettingsCache()
@@ -331,32 +319,6 @@ namespace CocoroDock.Services
             {
                 Debug.WriteLine($"アニメーションコマンド送信エラー: {ex.Message}");
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"アニメーション制御エラー: {ex.Message}"));
-            }
-        }
-
-        /// <summary>
-        /// CocoroShellに制御コマンドを送信
-        /// </summary>
-        /// <param name="command">コマンド名</param>
-        public async Task SendControlToShellAsync(string command)
-        {
-            try
-            {
-                var request = new ShellControlRequest
-                {
-                    command = command,
-                    @params = new System.Collections.Generic.Dictionary<string, object>()
-                };
-
-                await _shellClient.SendControlCommandAsync(request);
-
-                // 成功時のステータス更新
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, $"コマンド '{command}' 実行"));
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"制御コマンド送信エラー: {ex.Message}");
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"制御コマンドエラー: {ex.Message}"));
             }
         }
 
