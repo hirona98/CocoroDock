@@ -193,7 +193,7 @@
                             ToolTip="デバッグログウィンドウを開きます"/>
                 </StackPanel>
 
-                <!-- 右側：OK/キャンセルボタン -->
+                <!-- 右側：OK/キャンセル/適用ボタン -->
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal">
                     <Button x:Name="OkButton"
@@ -207,8 +207,15 @@
                             Content="キャンセル"
                             Width="80"
                             Height="30"
+                            Margin="0,0,10,0"
                             Style="{StaticResource DisabledButtonStyle}"
                             Click="CancelButton_Click"/>
+                    <Button x:Name="ApplyButton"
+                            Content="適用"
+                            Width="80"
+                            Height="30"
+                            Style="{StaticResource DisabledButtonStyle}"
+                            Click="ApplyButton_Click"/>
                 </StackPanel>
             </Grid>
         </Border>

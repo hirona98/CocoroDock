@@ -281,6 +281,40 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
+        /// 適用ボタンのクリックイベントハンドラ
+        /// </summary>
+        private void ApplyButton_Click(object sender, RoutedEventArgs e)
+        {
+            // ボタンを無効化（処理中の重複実行防止）
+            OkButton.IsEnabled = false;
+            ApplyButton.IsEnabled = false;
+            CancelButton.IsEnabled = false;
+
+            try
+            {
+                // CharacterManagementControlの設定確定処理を実行
+                CharacterManagementControl.ConfirmSettings();
+
+                // すべてのタブの設定を保存
+                SaveAllSettings();
+
+                // 設定のバックアップを更新（適用後の状態を新しいベースラインとする）
+                BackupSettings();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"設定の保存中にエラーが発生しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                // ボタンを再有効化
+                OkButton.IsEnabled = true;
+                ApplyButton.IsEnabled = true;
+                CancelButton.IsEnabled = true;
+            }
+        }
+
+        /// <summary>
         /// すべてのタブの設定を保存する
         /// </summary>
         private async void SaveAllSettings()
