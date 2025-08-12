@@ -177,6 +177,7 @@
                 BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
@@ -193,8 +194,20 @@
                             ToolTip="デバッグログウィンドウを開きます"/>
                 </StackPanel>
 
-                <!-- 右側：OK/キャンセル/適用ボタン -->
+                <!-- 中央：ステータス表示 -->
                 <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                    <TextBlock x:Name="StatusText"
+                               Text="正常動作中"
+                               FontSize="12"
+                               Foreground="#666666"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- 右側：OK/キャンセル/適用ボタン -->
+                <StackPanel Grid.Column="2"
                             Orientation="Horizontal">
                     <Button x:Name="OkButton"
                             Content="OK"

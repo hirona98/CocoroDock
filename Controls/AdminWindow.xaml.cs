@@ -32,6 +32,9 @@ namespace CocoroDock.Controls
         // 通信サービス
         private ICommunicationService? _communicationService;
 
+        // CocoroCore2再起動が必要な設定の前回値を保存
+        private ConfigSettings _previousCocoroCore2Settings;
+
         public AdminWindow() : this(null)
         {
         }
@@ -65,6 +68,9 @@ namespace CocoroDock.Controls
 
             // 元の設定のバックアップを作成
             BackupSettings();
+
+            // CocoroCore2再起動チェック用に現在の設定を保存
+            _previousCocoroCore2Settings = AppSettings.Instance.GetConfigSettings();
         }
 
         /// <summary>
@@ -240,16 +246,19 @@ namespace CocoroDock.Controls
         /// <summary>
         /// OKボタンのクリックイベントハンドラ
         /// </summary>
-        private void OkButton_Click(object sender, RoutedEventArgs e)
+        private async void OkButton_Click(object sender, RoutedEventArgs e)
         {
             // ボタンを無効化（処理中の重複実行防止）
-            OkButton.IsEnabled = false;
-            CancelButton.IsEnabled = false;
+            SetButtonsEnabled(false);
 
             try
             {
                 // CharacterManagementControlの設定確定処理を実行
                 CharacterManagementControl.ConfirmSettings();
+
+                // UI上の現在の設定を取得してCocoroCore2再起動が必要かチェック
+                var currentSettings = GetCurrentUISettings();
+                bool needsCocoroCore2Restart = HasCocoroCore2RestartRequiredChanges(_previousCocoroCore2Settings, currentSettings);
 
                 // すべてのタブの設定を保存
                 SaveAllSettings();
@@ -257,14 +266,22 @@ namespace CocoroDock.Controls
                 // CocoroShellを再起動
                 RestartCocoroShell();
 
+                // CocoroCore2再起動が必要な場合は再起動
+                if (needsCocoroCore2Restart)
+                {
+                    UpdateStatusDisplay("CocoroCore2の再起動までお待ち下さい...");
+                    await RestartCocoroCore2Async();
+                    UpdateStatusDisplay("正常動作中");
+                }
+
                 // ウィンドウを閉じる
                 Close();
             }
             catch (Exception ex)
             {
                 // エラー時はボタンを再有効化
-                OkButton.IsEnabled = true;
-                CancelButton.IsEnabled = true;
+                SetButtonsEnabled(true);
+                UpdateStatusDisplay("正常動作中");
                 MessageBox.Show($"設定の保存中にエラーが発生しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -287,17 +304,19 @@ namespace CocoroDock.Controls
         /// <summary>
         /// 適用ボタンのクリックイベントハンドラ
         /// </summary>
-        private void ApplyButton_Click(object sender, RoutedEventArgs e)
+        private async void ApplyButton_Click(object sender, RoutedEventArgs e)
         {
             // ボタンを無効化（処理中の重複実行防止）
-            OkButton.IsEnabled = false;
-            ApplyButton.IsEnabled = false;
-            CancelButton.IsEnabled = false;
+            SetButtonsEnabled(false);
 
             try
             {
                 // CharacterManagementControlの設定確定処理を実行
                 CharacterManagementControl.ConfirmSettings();
+
+                // UI上の現在の設定を取得してCocoroCore2再起動が必要かチェック
+                var currentSettings = GetCurrentUISettings();
+                bool needsCocoroCore2Restart = HasCocoroCore2RestartRequiredChanges(_previousCocoroCore2Settings, currentSettings);
 
                 // すべてのタブの設定を保存
                 SaveAllSettings();
@@ -305,19 +324,27 @@ namespace CocoroDock.Controls
                 // CocoroShellを再起動
                 RestartCocoroShell();
 
+                // CocoroCore2再起動が必要な場合は再起動
+                if (needsCocoroCore2Restart)
+                {
+                    UpdateStatusDisplay("CocoroCore2の再起動までお待ち下さい...");
+                    await RestartCocoroCore2Async();
+                    UpdateStatusDisplay("正常動作中");
+                }
+
                 // 設定のバックアップを更新（適用後の状態を新しいベースラインとする）
                 BackupSettings();
+                _previousCocoroCore2Settings = AppSettings.Instance.GetConfigSettings();
             }
             catch (Exception ex)
             {
+                UpdateStatusDisplay("正常動作中");
                 MessageBox.Show($"設定の保存中にエラーが発生しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 // ボタンを再有効化
-                OkButton.IsEnabled = true;
-                ApplyButton.IsEnabled = true;
-                CancelButton.IsEnabled = true;
+                SetButtonsEnabled(true);
             }
         }
 
@@ -379,6 +406,29 @@ namespace CocoroDock.Controls
             // MCPタブのViewModelを破棄
             McpSettingsControl.GetViewModel()?.Dispose();
             base.OnClosed(e);
+        }
+
+        /// <summary>
+        /// ステータス表示を更新する
+        /// </summary>
+        /// <param name="status">表示するステータス</param>
+        private void UpdateStatusDisplay(string status)
+        {
+            if (StatusText != null)
+            {
+                StatusText.Text = status;
+            }
+        }
+
+        /// <summary>
+        /// ボタンの有効/無効状態を設定する
+        /// </summary>
+        /// <param name="enabled">有効にするかどうか</param>
+        private void SetButtonsEnabled(bool enabled)
+        {
+            OkButton.IsEnabled = enabled;
+            ApplyButton.IsEnabled = enabled;
+            CancelButton.IsEnabled = enabled;
         }
 
         /// <summary>
@@ -548,6 +598,182 @@ namespace CocoroDock.Controls
                                MessageBoxButton.OK,
                                MessageBoxImage.Error);
             }
+        }
+
+        /// <summary>
+        /// CocoroCore2を再起動する
+        /// </summary>
+        private async Task RestartCocoroCore2Async()
+        {
+            try
+            {
+                // MainWindowのインスタンスを取得
+                var mainWindow = Application.Current.MainWindow as MainWindow;
+                if (mainWindow != null)
+                {
+                    // MainWindowのLaunchCocoroCore2メソッドを呼び出してCocoroCore2を再起動
+                    var launchMethod = mainWindow.GetType().GetMethod("LaunchCocoroCore2",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+                    if (launchMethod != null)
+                    {
+                        // ProcessOperation.RestartIfRunning を指定してCocoroCore2を再起動
+                        launchMethod.Invoke(mainWindow, new object[] { ProcessOperation.RestartIfRunning });
+                        Debug.WriteLine("CocoroCore2を再起動要求をしました");
+
+                        // 再起動完了を待機
+                        await WaitForCocoroCore2RestartAsync();
+                        Debug.WriteLine("CocoroCore2の再起動が完了しました");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CocoroCore2再起動中にエラーが発生しました: {ex.Message}");
+                throw new Exception($"CocoroCore2の再起動に失敗しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// CocoroCore2の再起動完了を待機
+        /// </summary>
+        private async Task WaitForCocoroCore2RestartAsync()
+        {
+            var delay = TimeSpan.FromSeconds(1);
+            var maxWaitTime = TimeSpan.FromSeconds(30);
+            var startTime = DateTime.Now;
+
+            bool hasBeenDisconnected = false;
+
+            while (DateTime.Now - startTime < maxWaitTime)
+            {
+                try
+                {
+                    if (_communicationService != null)
+                    {
+                        var currentStatus = _communicationService.CurrentStatus;
+
+                        // まず停止（接続待機中）状態になることを確認
+                        if (!hasBeenDisconnected)
+                        {
+                            if (currentStatus == CocoroCore2Status.Disconnected)
+                            {
+                                hasBeenDisconnected = true;
+                                Debug.WriteLine("CocoroCore2停止を確認（接続待機中）");
+                            }
+                        }
+                        // 停止を確認済みの場合、再起動完了を待機
+                        else
+                        {
+                            if (currentStatus == CocoroCore2Status.Normal ||
+                                currentStatus == CocoroCore2Status.ProcessingMessage ||
+                                currentStatus == CocoroCore2Status.ProcessingImage)
+                            {
+                                Debug.WriteLine("CocoroCore2再起動完了");
+                                return;
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // API未応答時は継続してチェック
+                }
+                await Task.Delay(delay);
+            }
+
+            throw new TimeoutException("CocoroCore2の再起動がタイムアウトしました");
+        }
+
+        /// <summary>
+        /// UI上の現在の設定を取得する
+        /// </summary>
+        /// <returns>現在のUI設定から構築したConfigSettings</returns>
+        private ConfigSettings GetCurrentUISettings()
+        {
+            var config = new ConfigSettings();
+
+            // System設定の取得
+            config.isEnableNotificationApi = SystemSettingsControl.GetIsEnableNotificationApi();
+            config.isEnableMcp = McpSettingsControl.GetMcpEnabled();
+
+            var cocoroCore2Settings = SystemSettingsControl.GetCocoroCore2Settings();
+            config.enable_pro_mode = cocoroCore2Settings.enableProMode;
+            config.enable_internet_retrieval = cocoroCore2Settings.enableInternetRetrieval;
+            config.googleApiKey = cocoroCore2Settings.googleApiKey;
+            config.googleSearchEngineId = cocoroCore2Settings.googleSearchEngineId;
+            config.internetMaxResults = cocoroCore2Settings.internetMaxResults;
+
+            // Character設定の取得
+            config.currentCharacterIndex = CharacterManagementControl.GetCurrentCharacterIndex();
+            var currentCharacterSetting = CharacterManagementControl.GetCurrentCharacterSetting();
+            if (currentCharacterSetting != null)
+            {
+                // 既存のCharacterListをコピーしてから現在のキャラクターを更新
+                var appSettings = AppSettings.Instance;
+                config.characterList = new List<CharacterSettings>(appSettings.CharacterList);
+
+                if (config.currentCharacterIndex >= 0 && config.currentCharacterIndex < config.characterList.Count)
+                {
+                    config.characterList[config.currentCharacterIndex] = currentCharacterSetting;
+                }
+            }
+            else
+            {
+                config.characterList = new List<CharacterSettings>(AppSettings.Instance.CharacterList);
+            }
+
+            return config;
+        }
+
+        /// <summary>
+        /// CocoroCore2再起動が必要な設定項目が変更されたかどうかをチェック
+        /// </summary>
+        /// <param name="previousSettings">以前の設定</param>
+        /// <param name="currentSettings">現在の設定</param>
+        /// <returns>CocoroCore2再起動が必要な変更があった場合true</returns>
+        private bool HasCocoroCore2RestartRequiredChanges(ConfigSettings previousSettings, ConfigSettings currentSettings)
+        {
+            // 基本設定項目の比較
+            if (currentSettings.isEnableNotificationApi != previousSettings.isEnableNotificationApi ||
+                currentSettings.isEnableMcp != previousSettings.isEnableMcp ||
+                currentSettings.enable_pro_mode != previousSettings.enable_pro_mode ||
+                currentSettings.enable_internet_retrieval != previousSettings.enable_internet_retrieval ||
+                currentSettings.googleApiKey != previousSettings.googleApiKey ||
+                currentSettings.googleSearchEngineId != previousSettings.googleSearchEngineId ||
+                currentSettings.internetMaxResults != previousSettings.internetMaxResults ||
+                currentSettings.currentCharacterIndex != previousSettings.currentCharacterIndex)
+            {
+                return true;
+            }
+
+            // キャラクターリストの比較
+            if (currentSettings.characterList.Count != previousSettings.characterList.Count)
+            {
+                return true;
+            }
+
+            for (int i = 0; i < currentSettings.characterList.Count; i++)
+            {
+                var current = currentSettings.characterList[i];
+                var previous = previousSettings.characterList[i];
+
+                if (current.isUseLLM != previous.isUseLLM ||
+                    current.apiKey != previous.apiKey ||
+                    current.llmModel != previous.llmModel ||
+                    current.visionApiKey != previous.visionApiKey ||
+                    current.visionModel != previous.visionModel ||
+                    current.localLLMBaseUrl != previous.localLLMBaseUrl ||
+                    current.isEnableMemory != previous.isEnableMemory ||
+                    current.userId != previous.userId ||
+                    current.embeddedApiKey != previous.embeddedApiKey ||
+                    current.embeddedModel != previous.embeddedModel)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
