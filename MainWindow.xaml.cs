@@ -1018,6 +1018,68 @@ namespace CocoroDock
         }
 
         /// <summary>
+        /// 指定されたポート番号を使用しているプロセスIDを取得します
+        /// </summary>
+        /// <param name="port">ポート番号</param>
+        /// <returns>プロセスID（見つからない場合はnull）</returns>
+        private static int? GetProcessIdByPort(int port)
+        {
+            try
+            {
+                var processInfo = new ProcessStartInfo("netstat", "-ano")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                };
+
+                using var process = Process.Start(processInfo);
+                if (process == null) return null;
+
+                using var reader = process.StandardOutput;
+                string? line;
+
+                while ((line = reader.ReadLine()) != null)
+                {
+                    // ポート番号を含む行でLISTENING状態のものを探す
+                    if (line.Contains($":{port} ") && line.Contains("LISTENING"))
+                    {
+                        // 行の最後の数字（PID）を抽出
+                        var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length > 0 && int.TryParse(parts[^1], out int pid))
+                        {
+                            return pid;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"プロセスID取得中にエラーが発生しました: {ex.Message}");
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 指定されたプロセスIDのプロセスが実行中かどうかを確認します
+        /// </summary>
+        /// <param name="processId">プロセスID</param>
+        /// <returns>実行中の場合true、終了している場合false</returns>
+        private static bool IsProcessRunning(int processId)
+        {
+            try
+            {
+                Process.GetProcessById(processId);
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                // プロセスが見つからない（終了している）場合
+                return false;
+            }
+        }
+
+        /// <summary>
         /// 正常なシャットダウン処理を実行
         /// </summary>
         public async Task PerformGracefulShutdownAsync()
@@ -1035,6 +1097,10 @@ namespace CocoroDock
 
                 // シャットダウンオーバーレイを表示
                 ShutdownOverlay.Visibility = Visibility.Visible;
+
+                // CocoroCore2のプロセスIDを事前に取得
+                int? cocoroCore2ProcessId = GetProcessIdByPort(_appSettings.CocoroCorePort);
+                Debug.WriteLine($"CocoroCore2プロセスID: {cocoroCore2ProcessId?.ToString() ?? "見つかりません"}");
 
                 // CocoroShellとCocoroCore2にシャットダウン要求を送信
                 Debug.WriteLine("CocoroShellとCocoroCore2に終了要求を送信中...");
@@ -1056,22 +1122,47 @@ namespace CocoroDock
                     Debug.WriteLine("一部のシャットダウン要求がタイムアウトしました。");
                 }
 
-                // CocoroCore2が動作していないことを確認
-                var maxWaitTime = TimeSpan.FromSeconds(120);
-                var startTime = DateTime.Now;
-
-                while (_communicationService != null && _communicationService.CurrentStatus != CocoroCore2Status.Disconnected)
+                // CocoroCore2プロセスの確実な終了を待機
+                if (cocoroCore2ProcessId.HasValue)
                 {
-                    if (DateTime.Now - startTime > maxWaitTime)
+                    Debug.WriteLine("CocoroCore2プロセスの終了を監視中...");
+                    var maxWaitTime = TimeSpan.FromSeconds(120);
+                    var startTime = DateTime.Now;
+
+                    while (IsProcessRunning(cocoroCore2ProcessId.Value))
                     {
-                        Debug.WriteLine("CocoroCore2の終了待機がタイムアウトしました。");
-                        break;
+                        if (DateTime.Now - startTime > maxWaitTime)
+                        {
+                            Debug.WriteLine("CocoroCore2の終了待機がタイムアウトしました。");
+                            break;
+                        }
+
+                        await Task.Delay(500); // 0.5秒間隔でチェック
                     }
 
-                    await Task.Delay(100);
+                    Debug.WriteLine("CocoroCore2プロセスの終了を確認しました。");
                 }
+                else
+                {
+                    Debug.WriteLine("CocoroCore2プロセスが見つからなかったため、通常の監視を実行します。");
 
-                Debug.WriteLine("CocoroCore2の動作停止を確認しました。");
+                    // プロセスIDが取得できない場合は疎通確認で監視
+                    var maxWaitTime = TimeSpan.FromSeconds(120);
+                    var startTime = DateTime.Now;
+
+                    while (_communicationService != null && _communicationService.CurrentStatus != CocoroCore2Status.Disconnected)
+                    {
+                        if (DateTime.Now - startTime > maxWaitTime)
+                        {
+                            Debug.WriteLine("CocoroCore2の終了待機がタイムアウトしました。");
+                            break;
+                        }
+
+                        await Task.Delay(100);
+                    }
+
+                    Debug.WriteLine("CocoroCore2の動作停止を確認しました。");
+                }
 
                 // オーバーレイを非表示
                 ShutdownOverlay.Visibility = Visibility.Collapsed;
