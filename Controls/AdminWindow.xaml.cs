@@ -640,7 +640,7 @@ namespace CocoroDock.Controls
         private async Task WaitForCocoroCore2RestartAsync()
         {
             var delay = TimeSpan.FromSeconds(1);
-            var maxWaitTime = TimeSpan.FromSeconds(30);
+            var maxWaitTime = TimeSpan.FromSeconds(120);
             var startTime = DateTime.Now;
 
             bool hasBeenDisconnected = false;
