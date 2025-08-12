@@ -700,6 +700,15 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
+        /// 送信ボタンの有効/無効を設定
+        /// </summary>
+        /// <param name="isEnabled">ボタンを有効にするかどうか</param>
+        public void UpdateSendButtonEnabled(bool isEnabled)
+        {
+            SendButton.IsEnabled = isEnabled;
+        }
+
+        /// <summary>
         /// 音声認識結果をチャットに追加
         /// </summary>
         /// <param name="text">認識されたテキスト</param>

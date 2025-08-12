@@ -334,6 +334,10 @@ namespace CocoroDock
             };
 
             ConnectionStatusText.Text = $"状態: {statusText}";
+
+            // 送信ボタンの有効/無効を制御
+            bool isSendEnabled = status != CocoroCore2Status.Disconnected;
+            ChatControlInstance.UpdateSendButtonEnabled(isSendEnabled);
         }
 
         /// <summary>
