@@ -1029,6 +1029,9 @@ namespace CocoroDock
                 this.Topmost = true;
                 this.Activate();
 
+                // シャットダウンオーバーレイを表示
+                ShutdownOverlay.Visibility = Visibility.Visible;
+
                 // CocoroCore2が動作していないことを確認
                 var maxWaitTime = TimeSpan.FromSeconds(30);
                 var startTime = DateTime.Now;
@@ -1046,12 +1049,19 @@ namespace CocoroDock
 
                 Debug.WriteLine("CocoroCore2の動作停止を確認しました。");
 
+                // オーバーレイを非表示
+                ShutdownOverlay.Visibility = Visibility.Collapsed;
+
                 // アプリケーションを終了
                 Application.Current.Shutdown();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"シャットダウン処理中にエラーが発生しました: {ex.Message}");
+
+                // エラーが発生してもオーバーレイを非表示
+                ShutdownOverlay.Visibility = Visibility.Collapsed;
+
                 Application.Current.Shutdown();
             }
         }
