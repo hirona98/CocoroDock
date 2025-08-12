@@ -36,7 +36,7 @@ namespace CocoroDock.Services
         // イベント
         public event Action<string>? OnRecognizedText;
         public event Action<VoiceRecognitionState>? OnStateChanged;
-        public event Action<float>? OnVoiceLevel;
+        public event Action<float, bool>? OnVoiceLevel;  // level, isAboveThreshold
 
         public VoiceRecognitionState CurrentState => _stateMachine.CurrentState;
         public bool IsListening { get; private set; }
@@ -141,10 +141,13 @@ namespace CocoroDock.Services
 
                 // 音量バー表示用レベル計算（固定閾値）
                 float displayLevel = CalculateDisplayLevel(e.Buffer, e.BytesRecorded);
-                OnVoiceLevel?.Invoke(displayLevel);
 
                 // 無音区間判定用レベル計算
                 float voiceLevel = CalculateVoiceLevel(e.Buffer, e.BytesRecorded);
+
+                // しきい値を超えているかどうかの情報も一緒に渡す
+                bool isAboveThreshold = voiceLevel > _voiceThreshold;
+                OnVoiceLevel?.Invoke(displayLevel, isAboveThreshold);
 
                 if (voiceLevel > _voiceThreshold)
                 {

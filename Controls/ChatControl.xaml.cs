@@ -692,11 +692,24 @@ namespace CocoroDock.Controls
         /// 音声レベルを更新
         /// </summary>
         /// <param name="level">音声レベル (0.0-1.0)</param>
-        public void UpdateVoiceLevel(float level)
+        /// <param name="isAboveThreshold">しきい値を超えているかどうか</param>
+        public void UpdateVoiceLevel(float level, bool isAboveThreshold)
         {
-            // 0-1の値を0-55ピクセルにマッピング（下から上に伸びる）
-            double height = Math.Max(0, Math.Min(1, level)) * 55;
-            VoiceLevelBar.Height = height;
+            // 常にボーダーは表示（マイクOFF時と同じ見た目）
+            VoiceLevelBorder.Visibility = Visibility.Visible;
+
+            if (isAboveThreshold)
+            {
+                // しきい値を超えた場合はレベルバーを表示
+                // 0-1の値を0-55ピクセルにマッピング（下から上に伸びる）
+                double height = Math.Max(0, Math.Min(1, level)) * 55;
+                VoiceLevelBar.Height = height;
+            }
+            else
+            {
+                // しきい値以下の場合はレベルバーを0（背景だけ表示）
+                VoiceLevelBar.Height = 0;
+            }
         }
 
         /// <summary>

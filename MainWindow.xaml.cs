@@ -312,6 +312,9 @@ namespace CocoroDock
         {
             // チャットコントロールのイベント登録
             ChatControlInstance.MessageSent += OnChatMessageSent;
+
+            // 設定保存イベントの登録
+            AppSettings.SettingsSaved += OnSettingsSaved;
         }
 
 
@@ -414,6 +417,30 @@ namespace CocoroDock
             });
         }
 
+        /// <summary>
+        /// 設定保存時のイベントハンドラ
+        /// </summary>
+        private void OnSettingsSaved(object? sender, EventArgs e)
+        {
+            // マイク関連設定が変更された可能性があるので、音声認識サービスを再初期化
+            if (_voiceRecognitionService != null)
+            {
+                bool wasListening = _voiceRecognitionService.IsListening;
+                var currentState = _voiceRecognitionService.CurrentState;
+
+                // 現在のサービスを停止・破棄
+                _voiceRecognitionService.StopListening();
+                _voiceRecognitionService.Dispose();
+                _voiceRecognitionService = null;
+
+                // 新しい設定で再初期化（必要に応じて開始状態を復元）
+                bool startActive = currentState == VoiceRecognitionState.ACTIVE;
+                InitializeVoiceRecognitionService(startActive);
+
+                Debug.WriteLine("[MainWindow] 設定変更により音声認識サービスを再初期化しました");
+            }
+        }
+
         #endregion
 
         #region 通信サービスイベントハンドラ
@@ -511,6 +538,8 @@ namespace CocoroDock
         {
             try
             {
+                // イベントハンドラの購読解除
+                AppSettings.SettingsSaved -= OnSettingsSaved;
 
                 // 接続中ならリソース解放
                 if (_communicationService != null)
@@ -679,7 +708,7 @@ namespace CocoroDock
                     // 音量バーを0にリセット（UIスレッドで確実に実行）
                     UIHelper.RunOnUIThread(() =>
                     {
-                        ChatControlInstance.UpdateVoiceLevel(0);
+                        ChatControlInstance.UpdateVoiceLevel(0, false);
                     });
                 }
             }
@@ -832,7 +861,7 @@ namespace CocoroDock
                     // 音量バーを0にリセット（UIスレッドで確実に実行）
                     UIHelper.RunOnUIThread(() =>
                     {
-                        ChatControlInstance.UpdateVoiceLevel(0);
+                        ChatControlInstance.UpdateVoiceLevel(0, false);
                     });
                     return;
                 }
@@ -843,7 +872,7 @@ namespace CocoroDock
                     // 音量バーを0にリセット（UIスレッドで確実に実行）
                     UIHelper.RunOnUIThread(() =>
                     {
-                        ChatControlInstance.UpdateVoiceLevel(0);
+                        ChatControlInstance.UpdateVoiceLevel(0, false);
                     });
                     return;
                 }
@@ -925,11 +954,11 @@ namespace CocoroDock
         /// <summary>
         /// 音声レベル変更を処理
         /// </summary>
-        private void OnVoiceLevelChanged(float level)
+        private void OnVoiceLevelChanged(float level, bool isAboveThreshold)
         {
             UIHelper.RunOnUIThread(() =>
             {
-                ChatControlInstance.UpdateVoiceLevel(level);
+                ChatControlInstance.UpdateVoiceLevel(level, isAboveThreshold);
             });
         }
 

@@ -298,7 +298,8 @@
                                 </Border>
 
                                 <!-- 音声レベルバー（縦向き） -->
-                                <Border Grid.Column="1"
+                                <Border x:Name="VoiceLevelBorder"
+                                        Grid.Column="1"
                                         Width="10"
                                         Height="55"
                                         Margin="5,0,5,0"
