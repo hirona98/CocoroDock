@@ -1020,7 +1020,7 @@ namespace CocoroDock
         /// <summary>
         /// 正常なシャットダウン処理を実行
         /// </summary>
-        private async Task PerformGracefulShutdownAsync()
+        public async Task PerformGracefulShutdownAsync()
         {
             try
             {
@@ -1036,8 +1036,28 @@ namespace CocoroDock
                 // シャットダウンオーバーレイを表示
                 ShutdownOverlay.Visibility = Visibility.Visible;
 
+                // CocoroShellとCocoroCore2にシャットダウン要求を送信
+                Debug.WriteLine("CocoroShellとCocoroCore2に終了要求を送信中...");
+
+                // CocoroShellとCocoroCore2に並行してシャットダウン要求を送信
+                var shutdownTasks = new[]
+                {
+                    Task.Run(() => ProcessHelper.ExitProcess("CocoroShell", ProcessOperation.Terminate)),
+                    Task.Run(() => ProcessHelper.ExitProcess("CocoroCore2", ProcessOperation.Terminate))
+                };
+
+                // すべてのシャットダウン要求の完了を待つ（最大5秒）
+                try
+                {
+                    await Task.WhenAll(shutdownTasks).WaitAsync(TimeSpan.FromSeconds(5));
+                }
+                catch (TimeoutException)
+                {
+                    Debug.WriteLine("一部のシャットダウン要求がタイムアウトしました。");
+                }
+
                 // CocoroCore2が動作していないことを確認
-                var maxWaitTime = TimeSpan.FromSeconds(30);
+                var maxWaitTime = TimeSpan.FromSeconds(120);
                 var startTime = DateTime.Now;
 
                 while (_communicationService != null && _communicationService.CurrentStatus != CocoroCore2Status.Disconnected)
