@@ -246,11 +246,8 @@ namespace CocoroDock.Controls
         /// <summary>
         /// OKボタンのクリックイベントハンドラ
         /// </summary>
-        private async void OkButton_Click(object sender, RoutedEventArgs e)
+        private void OkButton_Click(object sender, RoutedEventArgs e)
         {
-            // ボタンを無効化（処理中の重複実行防止）
-            SetButtonsEnabled(false);
-
             try
             {
                 // CharacterManagementControlの設定確定処理を実行
@@ -266,12 +263,10 @@ namespace CocoroDock.Controls
                 // CocoroShellを再起動
                 RestartCocoroShell();
 
-                // CocoroCore2再起動が必要な場合は再起動
+                // CocoroCore2の設定変更があった場合は通知
                 if (needsCocoroCore2Restart)
                 {
-                    UpdateStatusDisplay("CocoroCore2の再起動までお待ち下さい...");
-                    await RestartCocoroCore2Async();
-                    UpdateStatusDisplay("正常動作中");
+                    ShowCocoroCore2RestartNotificationDialog();
                 }
 
                 // ウィンドウを閉じる
@@ -279,9 +274,6 @@ namespace CocoroDock.Controls
             }
             catch (Exception ex)
             {
-                // エラー時はボタンを再有効化
-                SetButtonsEnabled(true);
-                UpdateStatusDisplay("正常動作中");
                 MessageBox.Show($"設定の保存中にエラーが発生しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -304,11 +296,8 @@ namespace CocoroDock.Controls
         /// <summary>
         /// 適用ボタンのクリックイベントハンドラ
         /// </summary>
-        private async void ApplyButton_Click(object sender, RoutedEventArgs e)
+        private void ApplyButton_Click(object sender, RoutedEventArgs e)
         {
-            // ボタンを無効化（処理中の重複実行防止）
-            SetButtonsEnabled(false);
-
             try
             {
                 // CharacterManagementControlの設定確定処理を実行
@@ -324,12 +313,10 @@ namespace CocoroDock.Controls
                 // CocoroShellを再起動
                 RestartCocoroShell();
 
-                // CocoroCore2再起動が必要な場合は再起動
+                // CocoroCore2の設定変更があった場合は通知
                 if (needsCocoroCore2Restart)
                 {
-                    UpdateStatusDisplay("CocoroCore2の再起動までお待ち下さい...");
-                    await RestartCocoroCore2Async();
-                    UpdateStatusDisplay("正常動作中");
+                    ShowCocoroCore2RestartNotificationDialog();
                 }
 
                 // 設定のバックアップを更新（適用後の状態を新しいベースラインとする）
@@ -338,13 +325,7 @@ namespace CocoroDock.Controls
             }
             catch (Exception ex)
             {
-                UpdateStatusDisplay("正常動作中");
                 MessageBox.Show($"設定の保存中にエラーが発生しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                // ボタンを再有効化
-                SetButtonsEnabled(true);
             }
         }
 
@@ -429,6 +410,18 @@ namespace CocoroDock.Controls
             OkButton.IsEnabled = enabled;
             ApplyButton.IsEnabled = enabled;
             CancelButton.IsEnabled = enabled;
+        }
+
+        /// <summary>
+        /// 再起動が必要な場合にダイアログで通知
+        /// </summary>
+        /// <param name="needsCocoroCore2Restart">CocoroCore2の再起動が必要か</param>
+        private void ShowCocoroCore2RestartNotificationDialog()
+        {
+            MessageBox.Show("VRMモデル以外の設定は次回起動時に有効になります",
+                          "設定変更完了",
+                          MessageBoxButton.OK,
+                          MessageBoxImage.Information);
         }
 
         /// <summary>
