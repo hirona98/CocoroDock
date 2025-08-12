@@ -450,14 +450,15 @@ namespace CocoroDock
         /// </summary>
         private void OnControlCommandReceived(object? sender, ControlRequest request)
         {
-            UIHelper.RunOnUIThread(() =>
+            UIHelper.RunOnUIThread(async () =>
             {
                 switch (request.command)
                 {
                     case "shutdown":
                         // シャットダウン理由をログに記録
                         Debug.WriteLine($"シャットダウン要求を受信しました: {request.reason}");
-                        Application.Current.Shutdown();
+                        // 非同期でシャットダウン処理を実行
+                        await PerformGracefulShutdownAsync();
                         break;
 
                     default:
@@ -1009,6 +1010,49 @@ namespace CocoroDock
                 }
 
                 base.OnClosing(e);
+            }
+        }
+
+        /// <summary>
+        /// 正常なシャットダウン処理を実行
+        /// </summary>
+        private async Task PerformGracefulShutdownAsync()
+        {
+            try
+            {
+                // ウィンドウを最前面に表示
+                this.Show();
+                if (WindowState == WindowState.Minimized)
+                {
+                    WindowState = WindowState.Normal;
+                }
+                this.Topmost = true;
+                this.Activate();
+
+                // CocoroCore2が動作していないことを確認
+                var maxWaitTime = TimeSpan.FromSeconds(30);
+                var startTime = DateTime.Now;
+
+                while (_communicationService != null && _communicationService.CurrentStatus != CocoroCore2Status.Disconnected)
+                {
+                    if (DateTime.Now - startTime > maxWaitTime)
+                    {
+                        Debug.WriteLine("CocoroCore2の終了待機がタイムアウトしました。");
+                        break;
+                    }
+
+                    await Task.Delay(100);
+                }
+
+                Debug.WriteLine("CocoroCore2の動作停止を確認しました。");
+
+                // アプリケーションを終了
+                Application.Current.Shutdown();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"シャットダウン処理中にエラーが発生しました: {ex.Message}");
+                Application.Current.Shutdown();
             }
         }
     }
