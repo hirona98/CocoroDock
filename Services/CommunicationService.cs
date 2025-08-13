@@ -3,6 +3,7 @@ using CocoroDock.Windows;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace CocoroDock.Services
@@ -31,6 +32,7 @@ namespace CocoroDock.Services
         private readonly Dictionary<string, string> _cachedSystemPrompts = new Dictionary<string, string>();
 
         public event EventHandler<ChatRequest>? ChatMessageReceived;
+        public event EventHandler<StreamingChatEventArgs>? StreamingChatReceived;
         public event Action<ChatMessagePayload, List<System.Windows.Media.Imaging.BitmapSource>?>? NotificationMessageReceived;
         public event EventHandler<ControlRequest>? ControlCommandReceived;
         public event EventHandler<string>? ErrorOccurred;
@@ -196,7 +198,7 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// CocoroCore2にAPIでチャットメッセージを送信
+        /// CocoroCore2にMemOSストリーミングチャットメッセージを送信
         /// </summary>
         /// <param name="message">送信メッセージ</param>
         /// <param name="characterName">キャラクター名（オプション）</param>
@@ -214,81 +216,99 @@ namespace CocoroDock.Services
                     _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
                 }
 
-                // 画像データがある場合はfilesリストを作成
-                List<Dictionary<string, object>>? files = null;
-                if (!string.IsNullOrEmpty(imageDataUrl))
-                {
-                    files = new List<Dictionary<string, object>>
-                    {
-                        new Dictionary<string, object>
-                        {
-                            { "type", "image" },
-                            { "url", imageDataUrl }
-                        }
-                    };
-                }
-
                 // システムプロンプトを取得（キャッシュ使用）
                 string? systemPrompt = GetCachedSystemPrompt(currentCharacter?.systemPromptFilePath);
 
-                // APIリクエストを作成
-                var request = new UnifiedChatRequest
+                // MemOSチャットリクエストを作成
+                var context = new Dictionary<string, object>
                 {
+                    { "source", "CocoroDock" },
+                    { "timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") },
+                    { "character_name", characterName ?? currentCharacter?.modelName ?? "default" },
+                    { "session_id", _currentSessionId }
+                };
+
+                // システムプロンプトがある場合はcontextに追加
+                if (!string.IsNullOrEmpty(systemPrompt))
+                {
+                    context["system_prompt"] = systemPrompt;
+                }
+
+                // 画像データがある場合はcontextに追加
+                if (!string.IsNullOrEmpty(imageDataUrl))
+                {
+                    context["image_url"] = imageDataUrl;
+                }
+
+                var request = new MemOSChatRequest
+                {
+                    query = message,
                     user_id = !string.IsNullOrEmpty(currentCharacter?.userId) ? currentCharacter.userId : "user",
-                    session_id = _currentSessionId,
-                    message = message,
-                    message_type = "chat",
-                    character_name = characterName ?? currentCharacter?.modelName ?? "default",
-                    system_prompt = systemPrompt,
-                    context_id = _currentContextId,
-                    files = files,
-                    metadata = new Dictionary<string, object>
-                    {
-                        { "source", "CocoroDock" },
-                        { "timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") }
-                    }
+                    context = context
                 };
 
                 // 画像がある場合は画像処理中、そうでなければメッセージ処理中に設定
-                var processingStatus = files != null && files.Count > 0
+                var processingStatus = !string.IsNullOrEmpty(imageDataUrl)
                     ? CocoroCore2Status.ProcessingImage
                     : CocoroCore2Status.ProcessingMessage;
                 _statusPollingService.SetProcessingStatus(processingStatus);
 
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "チャットメッセージ送信"));
-                var response = await _coreClient.SendUnifiedChatMessageAsync(request);
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "ストリーミングチャット開始"));
 
-                // 新しいcontext_idを保存
-                if (!string.IsNullOrEmpty(response.context_id))
+                // ストリーミングチャットレスポンスの蓄積用
+                var fullResponse = new System.Text.StringBuilder();
+                var userId = request.user_id;
+                var sessionId = _currentSessionId;
+
+                // ストリーミングチャットを送信
+                await _coreClient.SendMemOSStreamingChatAsync(request, (streamingEvent) =>
                 {
-                    _currentContextId = response.context_id;
-                    Debug.WriteLine($"API: 新しいcontext_idを取得: {_currentContextId}");
-                }
-
-                // AI応答を処理
-                if (!string.IsNullOrEmpty(response.response))
-                {
-                    Debug.WriteLine($"API: AI応答内容: {response.response}");
-
-                    // CocoroDockのUIに応答を表示するためのイベントを発火
-                    var chatRequest = new ChatRequest
+                    if (streamingEvent.IsError)
                     {
-                        userId = request.user_id,
-                        sessionId = request.session_id,
-                        message = response.response,
-                        role = "assistant",
-                        content = response.response
-                    };
-                    ChatMessageReceived?.Invoke(this, chatRequest);
-                }
+                        Debug.WriteLine($"[STREAMING Error] {streamingEvent.ErrorMessage}");
+                        
+                        // エラー時は正常状態に戻す
+                        _statusPollingService.SetNormalStatus();
+                        StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"ストリーミングエラー: {streamingEvent.ErrorMessage}"));
+                    }
+                    else if (streamingEvent.IsFinished)
+                    {
+                        Debug.WriteLine($"[STREAMING Completed] Total response: {fullResponse.Length} characters");
+                        
+                        // ストリーミング完了時に最終レスポンスをChatMessageReceivedで送信
+                        if (fullResponse.Length > 0)
+                        {
+                            var chatRequest = new ChatRequest
+                            {
+                                userId = userId,
+                                sessionId = sessionId,
+                                message = fullResponse.ToString(),
+                                role = "assistant",
+                                content = fullResponse.ToString()
+                            };
+                            ChatMessageReceived?.Invoke(this, chatRequest);
+                        }
 
-                // 成功時のステータス更新
-                _statusPollingService.SetNormalStatus();
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "チャット応答受信"));
+                        // 成功時のステータス更新
+                        _statusPollingService.SetNormalStatus();
+                        StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "ストリーミングチャット完了"));
+                    }
+                    else
+                    {
+                        // ストリーミング中のコンテンツ
+                        if (!string.IsNullOrEmpty(streamingEvent.Content))
+                        {
+                            fullResponse.Append(streamingEvent.Content);
+                            
+                            // ストリーミングイベントを発火
+                            StreamingChatReceived?.Invoke(this, streamingEvent);
+                        }
+                    }
+                });
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"チャット送信エラー: {ex.Message}");
+                Debug.WriteLine($"ストリーミングチャット送信エラー: {ex.Message}");
                 // エラー時は正常状態に戻す
                 _statusPollingService.SetNormalStatus();
                 // ステータスバーにエラー表示
@@ -350,81 +370,105 @@ namespace CocoroDock.Services
                 // 通知メッセージ（タグなし）
                 var notificationText = notification.message;
 
-                // APIリクエストを作成してCocoroCoreに転送
-                // 複数画像がある場合はファイルリストを作成
-                List<Dictionary<string, object>>? files = null;
+                // システムプロンプトを取得（キャッシュ使用）
+                string? systemPrompt = GetCachedSystemPrompt(currentCharacter.systemPromptFilePath);
+
+                // MemOSチャットリクエストを作成
+                var context = new Dictionary<string, object>
+                {
+                    { "source", "notification" },
+                    { "notification_from", notification.from },
+                    { "timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") },
+                    { "character_name", currentCharacter.modelName ?? "default" },
+                    { "session_id", _currentSessionId },
+                    { "message_type", "notification" }
+                };
+
+                // システムプロンプトがある場合はcontextに追加
+                if (!string.IsNullOrEmpty(systemPrompt))
+                {
+                    context["system_prompt"] = systemPrompt;
+                }
+
+                // 画像データがある場合はcontextに追加
                 if (imageDataUrls != null && imageDataUrls.Length > 0)
                 {
-                    files = new List<Dictionary<string, object>>();
-                    foreach (var imageDataUrl in imageDataUrls)
+                    var imageUrls = imageDataUrls.Where(url => !string.IsNullOrEmpty(url)).ToArray();
+                    if (imageUrls.Length > 0)
                     {
-                        if (!string.IsNullOrEmpty(imageDataUrl))
-                        {
-                            files.Add(new Dictionary<string, object>
-                            {
-                                { "type", "image" },
-                                { "url", imageDataUrl }
-                            });
-                        }
+                        context["image_urls"] = imageUrls;
                     }
                 }
 
+                var request = new MemOSChatRequest
+                {
+                    query = notificationText,
+                    user_id = !string.IsNullOrEmpty(currentCharacter.userId) ? currentCharacter.userId : "user",
+                    context = context
+                };
+
                 // 処理状態を設定（通知処理開始）
-                var processingStatus = files != null && files.Count > 0
+                var processingStatus = (imageDataUrls != null && imageDataUrls.Length > 0)
                     ? CocoroCore2Status.ProcessingImage
                     : CocoroCore2Status.ProcessingMessage;
                 _statusPollingService?.SetProcessingStatus(processingStatus);
 
-                var request = new UnifiedChatRequest
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "通知ストリーミング処理開始"));
+
+                // ストリーミングチャットレスポンスの蓄積用
+                var fullResponse = new System.Text.StringBuilder();
+                var userId = request.user_id;
+                var sessionId = _currentSessionId;
+
+                // ストリーミングチャットを送信
+                await _coreClient.SendMemOSStreamingChatAsync(request, (streamingEvent) =>
                 {
-                    user_id = !string.IsNullOrEmpty(currentCharacter.userId) ? currentCharacter.userId : "user",
-                    session_id = _currentSessionId,
-                    message = notificationText,
-                    message_type = "notification",
-                    character_name = currentCharacter.modelName ?? "default",
-                    system_prompt = GetCachedSystemPrompt(currentCharacter.systemPromptFilePath),
-                    context_id = _currentContextId,
-                    files = files,
-                    metadata = new Dictionary<string, object>
+                    if (streamingEvent.IsError)
                     {
-                        { "source", "notification" },
-                        { "notification_from", notification.from }
+                        Debug.WriteLine($"[NOTIFICATION STREAMING Error] {streamingEvent.ErrorMessage}");
+                        
+                        // エラー時は正常状態に戻す
+                        _statusPollingService?.SetNormalStatus();
+                        StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"通知ストリーミングエラー: {streamingEvent.ErrorMessage}"));
                     }
-                };
-
-                var response = await _coreClient.SendUnifiedChatMessageAsync(request);
-
-                // REST応答から新しいcontext_idを保存
-                if (!string.IsNullOrEmpty(response.context_id))
-                {
-                    _currentContextId = response.context_id;
-                    Debug.WriteLine($"通知処理: 新しいcontext_idを取得: {_currentContextId}");
-                }
-
-                // AI応答を処理 - これが追加された部分
-                if (!string.IsNullOrEmpty(response.response))
-                {
-                    Debug.WriteLine($"通知処理: AI応答内容: {response.response}");
-
-                    // CocoroDockのUIに応答を表示するためのイベントを発火
-                    var chatRequest = new ChatRequest
+                    else if (streamingEvent.IsFinished)
                     {
-                        userId = request.user_id,
-                        sessionId = request.session_id,
-                        message = response.response,
-                        role = "assistant",
-                        content = response.response
-                    };
-                    ChatMessageReceived?.Invoke(this, chatRequest);
-                }
+                        Debug.WriteLine($"[NOTIFICATION STREAMING Completed] Total response: {fullResponse.Length} characters");
+                        
+                        // ストリーミング完了時に最終レスポンスをChatMessageReceivedで送信
+                        if (fullResponse.Length > 0)
+                        {
+                            var chatRequest = new ChatRequest
+                            {
+                                userId = userId,
+                                sessionId = sessionId,
+                                message = fullResponse.ToString(),
+                                role = "assistant",
+                                content = fullResponse.ToString()
+                            };
+                            ChatMessageReceived?.Invoke(this, chatRequest);
+                        }
 
-                // 成功時のステータス更新
-                _statusPollingService?.SetNormalStatus();
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "通知実行"));
+                        // 成功時のステータス更新
+                        _statusPollingService?.SetNormalStatus();
+                        StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "通知ストリーミング完了"));
+                    }
+                    else
+                    {
+                        // ストリーミング中のコンテンツ
+                        if (!string.IsNullOrEmpty(streamingEvent.Content))
+                        {
+                            fullResponse.Append(streamingEvent.Content);
+                            
+                            // ストリーミングイベントを発火
+                            StreamingChatReceived?.Invoke(this, streamingEvent);
+                        }
+                    }
+                });
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"通知処理エラー: {ex.Message}");
+                Debug.WriteLine($"通知ストリーミング処理エラー: {ex.Message}");
                 _statusPollingService?.SetNormalStatus();
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"通信エラー: {ex.Message}"));
             }
@@ -457,7 +501,7 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// デスクトップモニタリング画像をCocoroCoreに送信
+        /// デスクトップモニタリング画像をMemOSストリーミングでCocoroCoreに送信
         /// </summary>
         /// <param name="imageBase64">Base64エンコードされた画像データ</param>
         public async Task SendDesktopMonitoringToCoreAsync(string imageBase64)
@@ -480,70 +524,89 @@ namespace CocoroDock.Services
                     _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
                 }
 
-                // API用のfilesリストを作成
-                var files = new List<Dictionary<string, object>>
+                // システムプロンプトを取得（キャッシュ使用）
+                string? systemPrompt = GetCachedSystemPrompt(currentCharacter.systemPromptFilePath);
+
+                // MemOSチャットリクエストを作成
+                var context = new Dictionary<string, object>
                 {
-                    new Dictionary<string, object>
-                    {
-                        { "type", "image" },
-                        { "url", $"data:image/png;base64,{imageBase64}" }
-                    }
+                    { "source", "CocoroDock" },
+                    { "monitoring_type", "desktop" },
+                    { "timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") },
+                    { "character_name", currentCharacter.modelName ?? "default" },
+                    { "session_id", _currentSessionId },
+                    { "message_type", "desktop_monitoring" },
+                    { "image_url", $"data:image/png;base64,{imageBase64}" }
                 };
 
-                // APIリクエストを作成
-                var request = new UnifiedChatRequest
+                // システムプロンプトがある場合はcontextに追加
+                if (!string.IsNullOrEmpty(systemPrompt))
                 {
+                    context["system_prompt"] = systemPrompt;
+                }
+
+                var request = new MemOSChatRequest
+                {
+                    query = "デスクトップ画像を分析してください", // デスクトップモニタリング用メッセージ
                     user_id = !string.IsNullOrEmpty(currentCharacter.userId) ? currentCharacter.userId : "user",
-                    session_id = _currentSessionId,
-                    message = "", // デスクトップモニタリングでは画像のみ
-                    message_type = "desktop_monitoring",
-                    character_name = currentCharacter.modelName ?? "default",
-                    system_prompt = GetCachedSystemPrompt(currentCharacter.systemPromptFilePath),
-                    context_id = _currentContextId,
-                    files = files,
-                    metadata = new Dictionary<string, object>
-                    {
-                        { "source", "CocoroDock" },
-                        { "monitoring_type", "desktop" }
-                    }
+                    context = context
                 };
 
                 // デスクトップモニタリングは画像処理中に設定
                 _statusPollingService.SetProcessingStatus(CocoroCore2Status.ProcessingImage);
 
-                var response = await _coreClient.SendUnifiedChatMessageAsync(request);
+                // ストリーミングチャットレスポンスの蓄積用
+                var fullResponse = new System.Text.StringBuilder();
+                var userId = request.user_id;
+                var sessionId = _currentSessionId;
 
-                // REST応答から新しいcontext_idを保存
-                if (!string.IsNullOrEmpty(response.context_id))
+                // ストリーミングチャットを送信
+                await _coreClient.SendMemOSStreamingChatAsync(request, (streamingEvent) =>
                 {
-                    _currentContextId = response.context_id;
-                    Debug.WriteLine($"デスクトップモニタリング: 新しいcontext_idを取得: {_currentContextId}");
-                }
-
-                // AI応答を処理 - これが追加された部分
-                if (!string.IsNullOrEmpty(response.response))
-                {
-                    Debug.WriteLine($"デスクトップモニタリング: AI応答内容: {response.response}");
-
-                    // CocoroDockのUIに応答を表示するためのイベントを発火
-                    var chatRequest = new ChatRequest
+                    if (streamingEvent.IsError)
                     {
-                        userId = request.user_id,
-                        sessionId = request.session_id,
-                        message = response.response,
-                        role = "assistant",
-                        content = response.response
-                    };
-                    ChatMessageReceived?.Invoke(this, chatRequest);
-                }
+                        Debug.WriteLine($"[DESKTOP MONITORING STREAMING Error] {streamingEvent.ErrorMessage}");
+                        
+                        // エラー時は正常状態に戻す
+                        _statusPollingService.SetNormalStatus();
+                    }
+                    else if (streamingEvent.IsFinished)
+                    {
+                        Debug.WriteLine($"[DESKTOP MONITORING STREAMING Completed] Total response: {fullResponse.Length} characters");
+                        
+                        // ストリーミング完了時に最終レスポンスをChatMessageReceivedで送信
+                        if (fullResponse.Length > 0)
+                        {
+                            var chatRequest = new ChatRequest
+                            {
+                                userId = userId,
+                                sessionId = sessionId,
+                                message = fullResponse.ToString(),
+                                role = "assistant",
+                                content = fullResponse.ToString()
+                            };
+                            ChatMessageReceived?.Invoke(this, chatRequest);
+                        }
 
-                // 成功時のステータス更新
-                _statusPollingService.SetNormalStatus();
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "キャプチャ画像送信"));
+                        // 成功時のステータス更新
+                        _statusPollingService.SetNormalStatus();
+                        StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "デスクトップモニタリング完了"));
+                    }
+                    else
+                    {
+                        // ストリーミング中のコンテンツ
+                        if (!string.IsNullOrEmpty(streamingEvent.Content))
+                        {
+                            fullResponse.Append(streamingEvent.Content);
+                            
+                            // デスクトップモニタリングではStreamingChatReceivedは発火しない（ユーザーに表示しない）
+                        }
+                    }
+                });
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"デスクトップモニタリング送信エラー: {ex.Message}");
+                Debug.WriteLine($"デスクトップモニタリングストリーミング送信エラー: {ex.Message}");
                 // エラー時は正常状態に戻す
                 _statusPollingService.SetNormalStatus();
                 // エラーは静かに処理（モニタリング機能なのでユーザーに通知しない）

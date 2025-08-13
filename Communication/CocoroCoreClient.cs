@@ -30,49 +30,6 @@ namespace CocoroDock.Communication
 
 
 
-        /// <summary>
-        /// CocoroCore2にAPIでチャットメッセージを送信
-        /// </summary>
-        /// <param name="request">チャットリクエスト</param>
-        public async Task<UnifiedChatResponse> SendUnifiedChatMessageAsync(UnifiedChatRequest request)
-        {
-            try
-            {
-                var json = MessageHelper.SerializeToJson(request);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                using var response = await _httpClient.PostAsync($"{_baseUrl}/api/chat/unified", content);
-
-                var responseBody = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var error = MessageHelper.DeserializeFromJson<ErrorResponse>(responseBody);
-                    throw new HttpRequestException($"CocoroCore2エラー: {error?.message ?? responseBody}");
-                }
-
-                // JSON形式のレスポンスを解析
-                var unifiedResponse = MessageHelper.DeserializeFromJson<UnifiedChatResponse>(responseBody);
-                if (unifiedResponse == null)
-                {
-                    throw new InvalidOperationException("API応答の解析に失敗しました");
-                }
-
-                return unifiedResponse;
-            }
-            catch (TaskCanceledException)
-            {
-                throw new TimeoutException("CocoroCore2へのAPIリクエストがタイムアウトしました");
-            }
-            catch (HttpRequestException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"CocoroCore2へのAPI送信エラー: {ex.Message}");
-                throw new InvalidOperationException($"CocoroCore2とのAPI通信に失敗しました: {ex.Message}", ex);
-            }
-        }
 
 
         /// <summary>
@@ -360,6 +317,206 @@ namespace CocoroDock.Communication
             {
                 Debug.WriteLine("[API Error] 記憶削除リクエストがタイムアウトしました");
                 throw new TimeoutException("記憶削除リクエストがタイムアウトしました");
+            }
+        }
+
+        /// <summary>
+        /// MemOSストリーミングチャット送信
+        /// </summary>
+        /// <param name="request">MemOSチャットリクエスト</param>
+        /// <param name="onStreamReceived">ストリーミングデータ受信時のコールバック</param>
+        public async Task SendMemOSStreamingChatAsync(MemOSChatRequest request, Action<StreamingChatEventArgs> onStreamReceived)
+        {
+            try
+            {
+                var requestUrl = $"{_baseUrl}/api/memos/chat/stream";
+                Debug.WriteLine($"[STREAMING API Request] POST {requestUrl}");
+                Debug.WriteLine($"[STREAMING API Param] Query: {request.query}");
+                Debug.WriteLine($"[STREAMING API Param] UserId: {request.user_id}");
+                Debug.WriteLine($"[STREAMING API Param] Context: {request.context?.Count ?? 0} items");
+
+                var json = MessageHelper.SerializeToJson(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                using var httpRequest = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+                {
+                    Content = content
+                };
+
+                // text/event-streamを受信するためのヘッダー設定
+                httpRequest.Headers.Add("Accept", "text/event-stream");
+                httpRequest.Headers.Add("Cache-Control", "no-cache");
+
+                using var response = await _httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead);
+
+                Debug.WriteLine($"[STREAMING API Response] Status: {(int)response.StatusCode} {response.StatusCode}");
+                Debug.WriteLine($"[STREAMING API Response] ContentType: {response.Content.Headers.ContentType?.MediaType}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    Debug.WriteLine($"[STREAMING API Error] Body: {errorBody}");
+
+                    var errorEvent = new StreamingChatEventArgs
+                    {
+                        IsError = true,
+                        ErrorMessage = $"ストリーミングチャットエラー (HTTP {(int)response.StatusCode}): {errorBody}",
+                        IsFinished = true
+                    };
+                    onStreamReceived(errorEvent);
+                    return;
+                }
+
+                // ストリーミングレスポンスを読み取り
+                using var stream = await response.Content.ReadAsStreamAsync();
+                using var reader = new StreamReader(stream, Encoding.UTF8);
+
+                var fullResponse = new StringBuilder();
+                string? line;
+                while ((line = await reader.ReadLineAsync()) != null)
+                {
+                    Debug.WriteLine($"[STREAMING] Received line: {line}");
+
+                    // Server-Sent Events形式の解析
+                    if (line.StartsWith("data: "))
+                    {
+                        var dataContent = line.Substring(6); // "data: "を除去
+
+                        if (string.IsNullOrWhiteSpace(dataContent))
+                        {
+                            continue; // 空のデータ行をスキップ
+                        }
+
+                        try
+                        {
+                            // JSON形式のデータを解析
+                            using var jsonDoc = JsonDocument.Parse(dataContent);
+                            var root = jsonDoc.RootElement;
+
+                            if (root.TryGetProperty("type", out var typeElement))
+                            {
+                                var dataType = typeElement.GetString();
+
+                                if (dataType == "error")
+                                {
+                                    // エラーメッセージ
+                                    var errorMsg = root.TryGetProperty("data", out var dataElement)
+                                        ? dataElement.GetString()
+                                        : "Unknown streaming error";
+
+                                    Debug.WriteLine($"[STREAMING Error] {errorMsg}");
+
+                                    var errorEvent = new StreamingChatEventArgs
+                                    {
+                                        IsError = true,
+                                        ErrorMessage = errorMsg,
+                                        IsFinished = true
+                                    };
+                                    onStreamReceived(errorEvent);
+                                    return;
+                                }
+                                else if (dataType == "data" || dataType == "response")
+                                {
+                                    // 通常の応答データ
+                                    var responseData = root.TryGetProperty("data", out var dataElement)
+                                        ? dataElement.GetString()
+                                        : "";
+
+                                    if (!string.IsNullOrEmpty(responseData))
+                                    {
+                                        fullResponse.Append(responseData);
+
+                                        var contentEvent = new StreamingChatEventArgs
+                                        {
+                                            Content = responseData,
+                                            IsFinished = false,
+                                            IsError = false
+                                        };
+                                        onStreamReceived(contentEvent);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // JSON構造でない場合は直接内容として扱う
+                                var textContent = root.GetString() ?? dataContent;
+
+                                if (!string.IsNullOrWhiteSpace(textContent))
+                                {
+                                    fullResponse.Append(textContent);
+
+                                    var contentEvent = new StreamingChatEventArgs
+                                    {
+                                        Content = textContent,
+                                        IsFinished = false,
+                                        IsError = false
+                                    };
+                                    onStreamReceived(contentEvent);
+                                }
+                            }
+                        }
+                        catch (JsonException)
+                        {
+                            // JSON解析に失敗した場合は文字列として扱う
+                            if (!string.IsNullOrWhiteSpace(dataContent))
+                            {
+                                fullResponse.Append(dataContent);
+
+                                var contentEvent = new StreamingChatEventArgs
+                                {
+                                    Content = dataContent,
+                                    IsFinished = false,
+                                    IsError = false
+                                };
+                                onStreamReceived(contentEvent);
+                            }
+                        }
+                    }
+                }
+
+                // ストリーミング完了
+                Debug.WriteLine($"[STREAMING Completed] Total response length: {fullResponse.Length}");
+
+                var finishedEvent = new StreamingChatEventArgs
+                {
+                    Content = "", // 最終イベントでは追加コンテンツなし
+                    IsFinished = true,
+                    IsError = false
+                };
+                onStreamReceived(finishedEvent);
+            }
+            catch (TaskCanceledException)
+            {
+                Debug.WriteLine("[STREAMING Error] ストリーミングリクエストがタイムアウトしました");
+                var timeoutEvent = new StreamingChatEventArgs
+                {
+                    IsError = true,
+                    ErrorMessage = "ストリーミングリクエストがタイムアウトしました",
+                    IsFinished = true
+                };
+                onStreamReceived(timeoutEvent);
+            }
+            catch (HttpRequestException ex)
+            {
+                Debug.WriteLine($"[STREAMING Error] HTTP通信エラー: {ex.Message}");
+                var httpErrorEvent = new StreamingChatEventArgs
+                {
+                    IsError = true,
+                    ErrorMessage = $"HTTP通信エラー: {ex.Message}",
+                    IsFinished = true
+                };
+                onStreamReceived(httpErrorEvent);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[STREAMING Error] 予期しないエラー: {ex.Message}");
+                var generalErrorEvent = new StreamingChatEventArgs
+                {
+                    IsError = true,
+                    ErrorMessage = $"予期しないエラー: {ex.Message}",
+                    IsFinished = true
+                };
+                onStreamReceived(generalErrorEvent);
             }
         }
 

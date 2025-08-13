@@ -346,35 +346,6 @@ namespace CocoroDock.Communication
         public Dictionary<string, object>? metadata { get; set; } // メタデータ
     }
 
-    /// <summary>
-    /// CocoroCore2 API: チャットリクエスト
-    /// </summary>
-    public class UnifiedChatRequest
-    {
-        public string user_id { get; set; } = string.Empty; // ユーザーID（固定値）
-        public string session_id { get; set; } = string.Empty; // セッションID
-        public string message { get; set; } = string.Empty; // メッセージテキスト
-        public string message_type { get; set; } = "chat"; // メッセージ種別 ("chat", "notification", "desktop_monitoring")
-        public string? character_name { get; set; } // キャラクター名
-        public string? system_prompt { get; set; } // システムプロンプト
-        public string? context_id { get; set; } // コンテキストID
-        public List<Dictionary<string, object>>? files { get; set; } // 添付ファイル
-        public Dictionary<string, object>? metadata { get; set; } // メタデータ
-    }
-
-    /// <summary>
-    /// CocoroCore2 API: チャットレスポンス
-    /// </summary>
-    public class UnifiedChatResponse
-    {
-        public string status { get; set; } = string.Empty; // 処理状態
-        public string message { get; set; } = string.Empty; // 処理結果メッセージ
-        public string? response { get; set; } // AIの応答
-        public string? context_id { get; set; } // 新しいコンテキストID
-        public string? session_id { get; set; } // セッションID
-        public int? response_length { get; set; } // レスポンス文字数
-        public DateTime timestamp { get; set; } // タイムスタンプ
-    }
 
     /// <summary>
     /// CocoroCore API: 制御コマンドリクエスト
@@ -553,6 +524,32 @@ namespace CocoroDock.Communication
         public string user_name { get; set; } = string.Empty;
         public string role { get; set; } = string.Empty;
         public bool created { get; set; }
+    }
+
+    // ========================================
+    // MemOSストリーミングチャット関連モデル
+    // ========================================
+
+    /// <summary>
+    /// MemOSストリーミングチャットリクエスト
+    /// </summary>
+    public class MemOSChatRequest
+    {
+        public string query { get; set; } = string.Empty; // 質問・メッセージ
+        public string user_id { get; set; } = string.Empty; // ユーザーID
+        public Dictionary<string, object>? context { get; set; } // 追加コンテキスト
+    }
+
+
+    /// <summary>
+    /// ストリーミングチャットイベントデータ
+    /// </summary>
+    public class StreamingChatEventArgs : EventArgs
+    {
+        public string Content { get; set; } = string.Empty; // ストリーミングコンテンツ
+        public bool IsFinished { get; set; } // 完了フラグ
+        public string? ErrorMessage { get; set; } // エラーメッセージ（エラー時のみ）
+        public bool IsError { get; set; } // エラーフラグ
     }
 
     #endregion
