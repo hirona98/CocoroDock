@@ -481,5 +481,79 @@ namespace CocoroDock.Communication
         public string message { get; set; } = string.Empty;
     }
 
+    // ========================================
+    // 記憶削除関連モデル
+    // ========================================
+
+    /// <summary>
+    /// 記憶削除詳細情報
+    /// </summary>
+    public class MemoryDeleteDetails
+    {
+        public int text_memories { get; set; }
+        public int activation_memories { get; set; }
+        public int parametric_memories { get; set; }
+    }
+
+    /// <summary>
+    /// 記憶削除レスポンス
+    /// </summary>
+    public class MemoryDeleteResponse
+    {
+        public string status { get; set; } = string.Empty;
+        public string message { get; set; } = string.Empty;
+        public int deleted_count { get; set; }
+        public MemoryDeleteDetails details { get; set; } = new MemoryDeleteDetails();
+        public DateTime timestamp { get; set; }
+    }
+
+    /// <summary>
+    /// 記憶統計情報レスポンス
+    /// </summary>
+    public class MemoryStatsResponse
+    {
+        public string user_id { get; set; } = string.Empty;
+        public int total_memories { get; set; }
+        public int text_memories { get; set; }
+        public int activation_memories { get; set; }
+        public int parametric_memories { get; set; }
+        public DateTime? last_updated { get; set; }
+        public string cube_id { get; set; } = string.Empty;
+        public DateTime timestamp { get; set; }
+    }
+
+    /// <summary>
+    /// ユーザー統計情報レスポンス
+    /// </summary>
+    public class UserStatistics
+    {
+        public string user_id { get; set; } = string.Empty;
+        public int total_memories { get; set; }
+        public int textual_memories { get; set; }
+        public int activation_memories { get; set; }
+        public int parametric_memories { get; set; }
+    }
+
+    /// <summary>
+    /// ユーザー一覧取得レスポンス
+    /// </summary>
+    public class UsersListResponse
+    {
+        public string status { get; set; } = string.Empty;
+        public string message { get; set; } = string.Empty;
+        public List<UserInfo>? data { get; set; }
+    }
+
+    /// <summary>
+    /// ユーザー情報
+    /// </summary>
+    public class UserInfo
+    {
+        public string user_id { get; set; } = string.Empty;
+        public string user_name { get; set; } = string.Empty;
+        public string role { get; set; } = string.Empty;
+        public bool created { get; set; }
+    }
+
     #endregion
 }

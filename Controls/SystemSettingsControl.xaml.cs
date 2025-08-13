@@ -1,11 +1,27 @@
 using CocoroDock.Communication;
 using CocoroDock.Services;
+using CocoroDock.Windows;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
 namespace CocoroDock.Controls
 {
+    /// <summary>
+    /// 表示用ユーザー情報
+    /// </summary>
+    public class DisplayUserInfo
+    {
+        public string UserId { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+    }
+
     /// <summary>
     /// SystemSettingsControl.xaml の相互作用ロジック
     /// </summary>
@@ -20,6 +36,11 @@ namespace CocoroDock.Controls
         /// 読み込み完了フラグ
         /// </summary>
         private bool _isInitialized = false;
+
+        /// <summary>
+        /// 現在の記憶統計情報
+        /// </summary>
+        private MemoryStatsResponse? _currentMemoryStats;
 
         public SystemSettingsControl()
         {
@@ -54,6 +75,9 @@ namespace CocoroDock.Controls
                 GoogleApiKeyTextBox.Text = appSettings.GoogleApiKey;
                 GoogleSearchEngineIdTextBox.Text = appSettings.GoogleSearchEngineId;
                 InternetMaxResultsTextBox.Text = appSettings.InternetMaxResults.ToString();
+
+                // 記憶管理の初期化
+                LoadMemoryManagementSettings();
 
                 // イベントハンドラーを設定
                 SetupEventHandlers();
@@ -252,6 +276,292 @@ namespace CocoroDock.Controls
             GoogleApiKeyTextBox.Text = googleApiKey;
             GoogleSearchEngineIdTextBox.Text = googleSearchEngineId;
             InternetMaxResultsTextBox.Text = internetMaxResults.ToString();
+        }
+
+        // ========================================
+        // 記憶管理機能
+        // ========================================
+
+        /// <summary>
+        /// 記憶管理設定の読み込み
+        /// </summary>
+        private async void LoadMemoryManagementSettings()
+        {
+            try
+            {
+                await LoadRegisteredUsers();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"記憶管理設定の読み込みエラー: {ex.Message}");
+                SelectedCharacterText.Text = "記憶管理の初期化に失敗しました";
+                DeleteMemoryButton.IsEnabled = false;
+            }
+        }
+
+        /// <summary>
+        /// CocoroCore2に登録されているユーザー一覧を取得
+        /// </summary>
+        private async Task LoadRegisteredUsers()
+        {
+            try
+            {
+                var appSettings = AppSettings.Instance;
+                using var coreClient = new CocoroCoreClient(appSettings.CocoroCorePort);
+
+                // CocoroCore2からユーザー一覧を取得
+                var usersResponse = await coreClient.GetUsersListAsync();
+
+                if (usersResponse.data?.Any() == true)
+                {
+                    // 表示用のユーザー情報リストを作成
+                    var displayUsers = usersResponse.data.Select(u => new DisplayUserInfo
+                    {
+                        UserId = u.user_id,
+                        DisplayName = !string.IsNullOrEmpty(u.user_name) ? u.user_name : u.user_id,
+                        Role = u.role
+                    }).ToList();
+
+                    MemoryCharacterComboBox.ItemsSource = displayUsers;
+
+                    // 最初のユーザーを選択
+                    if (displayUsers.Any())
+                    {
+                        MemoryCharacterComboBox.SelectedIndex = 0;
+                    }
+                }
+                else
+                {
+                    SelectedCharacterText.Text = "CocoroCore2にユーザーが登録されていません";
+                    DeleteMemoryButton.IsEnabled = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ユーザー一覧取得エラー: {ex.Message}");
+                SelectedCharacterText.Text = "ユーザー一覧の取得に失敗しました";
+                DeleteMemoryButton.IsEnabled = false;
+            }
+        }
+
+        /// <summary>
+        /// キャラクター選択変更時
+        /// </summary>
+        private async void MemoryCharacterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var selectedUser = MemoryCharacterComboBox.SelectedItem as DisplayUserInfo;
+            if (selectedUser == null)
+            {
+                DeleteMemoryButton.IsEnabled = false;
+                return;
+            }
+
+            await LoadMemoryStats(selectedUser);
+        }
+
+        /// <summary>
+        /// 更新ボタンクリック時
+        /// </summary>
+        private async void RefreshMemoryStatsButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 現在選択中のユーザーIDを保存
+            var currentSelectedUserId = (MemoryCharacterComboBox.SelectedItem as DisplayUserInfo)?.UserId;
+
+            // ユーザー一覧を再取得
+            await LoadRegisteredUsers();
+
+            // 前回選択していたユーザーを再選択（存在する場合）
+            if (!string.IsNullOrEmpty(currentSelectedUserId))
+            {
+                var itemsSource = MemoryCharacterComboBox.ItemsSource as List<DisplayUserInfo>;
+                if (itemsSource != null)
+                {
+                    var userToSelect = itemsSource.FirstOrDefault(u => u.UserId == currentSelectedUserId);
+                    if (userToSelect != null)
+                    {
+                        MemoryCharacterComboBox.SelectedItem = userToSelect;
+                    }
+                    else
+                    {
+                        // 削除されたユーザーの場合は最初のユーザーを選択
+                        if (itemsSource.Any())
+                        {
+                            MemoryCharacterComboBox.SelectedIndex = 0;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 記憶統計情報の読み込み
+        /// </summary>
+        private async Task LoadMemoryStats(DisplayUserInfo user)
+        {
+            try
+            {
+                RefreshMemoryStatsButton.IsEnabled = false;
+                SelectedCharacterText.Text = $"{user.DisplayName} を読み込み中...";
+
+                var appSettings = AppSettings.Instance;
+                using var coreClient = new CocoroCoreClient(appSettings.CocoroCorePort);
+                _currentMemoryStats = await coreClient.GetUserMemoryStatsAsync(user.UserId);
+
+                // UI更新
+                SelectedCharacterText.Text = user.DisplayName;
+                TotalMemoriesText.Text = $"{_currentMemoryStats.total_memories:N0}件";
+                MemoryDetailsText.Text = $"テキスト: {_currentMemoryStats.text_memories:N0}件 / " +
+                                        $"アクティベーション: {_currentMemoryStats.activation_memories:N0}件 / " +
+                                        $"パラメトリック: {_currentMemoryStats.parametric_memories:N0}件";
+
+                if (_currentMemoryStats.last_updated.HasValue)
+                {
+                    LastUpdatedText.Text = _currentMemoryStats.last_updated.Value.ToString("yyyy/MM/dd HH:mm:ss");
+                }
+                else
+                {
+                    LastUpdatedText.Text = "不明";
+                }
+
+                // 削除ボタンの有効化（記憶が1件以上ある場合）
+                DeleteMemoryButton.IsEnabled = _currentMemoryStats.total_memories > 0;
+            }
+            catch (Exception ex)
+            {
+                SelectedCharacterText.Text = user.DisplayName;
+                TotalMemoriesText.Text = "エラー";
+                MemoryDetailsText.Text = ex.Message;
+                LastUpdatedText.Text = "-";
+                DeleteMemoryButton.IsEnabled = false;
+
+                Debug.WriteLine($"記憶統計情報の読み込みエラー: {ex.Message}");
+            }
+            finally
+            {
+                RefreshMemoryStatsButton.IsEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// 記憶削除ボタンクリック時
+        /// </summary>
+        private async void DeleteMemoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedUser = MemoryCharacterComboBox.SelectedItem as DisplayUserInfo;
+            if (selectedUser == null || _currentMemoryStats == null) return;
+
+            // 確認ダイアログ
+            var result = MessageBox.Show(
+                Window.GetWindow(this),
+                $"「{selectedUser.DisplayName}」の記憶（{_currentMemoryStats.total_memories:N0}件）を\n" +
+                "すべて削除します。\n\n" +
+                "内訳:\n" +
+                $"  ・テキスト記憶: {_currentMemoryStats.text_memories:N0}件\n" +
+                $"  ・アクティベーション記憶: {_currentMemoryStats.activation_memories:N0}件\n" +
+                $"  ・パラメトリック記憶: {_currentMemoryStats.parametric_memories:N0}件\n\n" +
+                "この操作は取り消すことができません。\n" +
+                "本当に続行しますか？",
+                "警告: 記憶の初期化",
+                MessageBoxButton.OKCancel,
+                MessageBoxImage.Warning,
+                MessageBoxResult.Cancel
+            );
+
+            if (result != MessageBoxResult.OK) return;
+
+            // 二重確認
+            var confirmResult = MessageBox.Show(
+                Window.GetWindow(this),
+                $"最終確認\n\n「{selectedUser.DisplayName}」の記憶をすべて削除します。\n" +
+                "よろしいですか？",
+                "最終確認",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question,
+                MessageBoxResult.No
+            );
+
+            if (confirmResult != MessageBoxResult.Yes) return;
+
+            await ExecuteMemoryDeletion(selectedUser);
+        }
+
+        /// <summary>
+        /// 記憶削除の実行
+        /// </summary>
+        private async Task ExecuteMemoryDeletion(DisplayUserInfo user)
+        {
+            var progressDialog = new MemoryDeleteProgressDialog
+            {
+                Owner = Window.GetWindow(this),
+                CharacterName = user.DisplayName,
+                TotalMemories = _currentMemoryStats?.total_memories ?? 0
+            };
+
+            try
+            {
+                // プログレスダイアログを表示（非モーダル）
+                progressDialog.Show();
+
+                var appSettings = AppSettings.Instance;
+                using var coreClient = new CocoroCoreClient(appSettings.CocoroCorePort);
+
+                // 削除実行
+                var response = await coreClient.DeleteUserMemoriesAsync(user.UserId);
+
+                progressDialog.Close();
+
+                // 完了通知
+                MessageBox.Show(
+                    Window.GetWindow(this),
+                    $"記憶の削除が完了しました。\n\n" +
+                    $"削除された記憶: {response.deleted_count:N0}件\n" +
+                    $"  ・テキスト記憶: {response.details.text_memories:N0}件\n" +
+                    $"  ・アクティベーション記憶: {response.details.activation_memories:N0}件\n" +
+                    $"  ・パラメトリック記憶: {response.details.parametric_memories:N0}件",
+                    "完了",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information
+                );
+
+                // 統計情報を再読み込み
+                await LoadMemoryStats(user);
+            }
+            catch (Exception ex)
+            {
+                progressDialog.Close();
+
+                string errorMessage = ex switch
+                {
+                    TimeoutException => "処理がタイムアウトしました。\nCocoroCore2の応答に時間がかかっています。",
+                    HttpRequestException => "通信エラーが発生しました。\nCocoroCore2が起動していることを確認してください。",
+                    InvalidOperationException => ex.Message,
+                    _ => $"予期しないエラーが発生しました。\n\n詳細: {ex.Message}"
+                };
+
+                MessageBox.Show(
+                    Window.GetWindow(this),
+                    $"記憶の削除に失敗しました。\n\n{errorMessage}",
+                    "エラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
+                );
+
+                Debug.WriteLine($"Memory deletion failed: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// 詳細表示ボタンクリック時（未実装）
+        /// </summary>
+        private void ShowMemoryDetailsButton_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show(
+                Window.GetWindow(this),
+                "記憶の詳細表示機能は今後実装予定です。",
+                "未実装",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information
+            );
         }
     }
 }
