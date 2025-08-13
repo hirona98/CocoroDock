@@ -458,7 +458,18 @@ namespace CocoroDock
                 }
                 else if (request.role == "assistant")
                 {
-                    ChatControlInstance.AddAiMessage(request.content);
+                    // ストリーミングでの追記チェック
+                    if (request.content.StartsWith("[COCORO_APPEND]"))
+                    {
+                        // 先頭の[COCORO_APPEND]を削除して最後のAIメッセージに追記
+                        var appendText = request.content.Substring("[COCORO_APPEND]".Length);
+                        ChatControlInstance.AppendToLastAiMessage(appendText);
+                    }
+                    else
+                    {
+                        // 通常の新しいAIメッセージとして追加
+                        ChatControlInstance.AddAiMessage(request.content);
+                    }
                 }
             });
         }

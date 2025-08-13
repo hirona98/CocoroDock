@@ -161,6 +161,39 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
+        /// 最後のAIメッセージにテキストを追記
+        /// </summary>
+        /// <param name="additionalText">追記するテキスト</param>
+        public void AppendToLastAiMessage(string additionalText)
+        {
+            if (ChatMessagesPanel.Children.Count == 0)
+                return;
+
+            // 最後のメッセージコンテナを取得
+            var lastContainer = ChatMessagesPanel.Children[ChatMessagesPanel.Children.Count - 1] as StackPanel;
+            if (lastContainer == null) return;
+
+            // バブルを取得
+            var bubble = lastContainer.Children.OfType<Border>().FirstOrDefault(b => b.Style == (Style)Resources["AiBubbleStyle"]);
+            if (bubble == null) return;
+
+            // メッセージコンテンツを取得
+            var messageContent = bubble.Child as StackPanel;
+            if (messageContent == null) return;
+
+            // テキストボックスを取得
+            var messageTextBox = messageContent.Children.OfType<TextBox>().FirstOrDefault(tb => tb.Style == (Style)Resources["AiMessageTextStyle"]);
+            if (messageTextBox == null) return;
+
+            // 表情タグを削除してからテキストを追記
+            var cleanAdditionalText = RemoveFaceTags(additionalText);
+            messageTextBox.Text += cleanAdditionalText;
+
+            // 自動スクロール
+            ChatScrollViewer.ScrollToEnd();
+        }
+
+        /// <summary>
         /// 表情タグを削除
         /// </summary>
         /// <param name="message">元のメッセージ</param>

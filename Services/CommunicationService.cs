@@ -301,7 +301,7 @@ namespace CocoroDock.Services
                             else
                             {
                                 // 追加のメッセージとして送信（UI側で同じメッセージに追記）
-                                partialChatRequest.content = "[APPEND]" + partialChatRequest.content;
+                                partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
                                 ChatMessageReceived?.Invoke(this, partialChatRequest);
                             }
                         }
@@ -340,7 +340,7 @@ namespace CocoroDock.Services
                                 else
                                 {
                                     // 追加のメッセージとして送信（UI側で同じメッセージに追記）
-                                    partialChatRequest.content = "[APPEND]" + partialChatRequest.content;
+                                    partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
                                     ChatMessageReceived?.Invoke(this, partialChatRequest);
                                 }
 
@@ -505,7 +505,7 @@ namespace CocoroDock.Services
                             }
                             else
                             {
-                                partialChatRequest.content = "[APPEND]" + partialChatRequest.content;
+                                partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
                                 ChatMessageReceived?.Invoke(this, partialChatRequest);
                             }
                         }
@@ -542,7 +542,7 @@ namespace CocoroDock.Services
                                 }
                                 else
                                 {
-                                    partialChatRequest.content = "[APPEND]" + partialChatRequest.content;
+                                    partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
                                     ChatMessageReceived?.Invoke(this, partialChatRequest);
                                 }
 
@@ -716,7 +716,7 @@ namespace CocoroDock.Services
                             }
                             else
                             {
-                                partialChatRequest.content = "[APPEND]" + partialChatRequest.content;
+                                partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
                                 ChatMessageReceived?.Invoke(this, partialChatRequest);
                             }
                         }
@@ -753,7 +753,7 @@ namespace CocoroDock.Services
                                 }
                                 else
                                 {
-                                    partialChatRequest.content = "[APPEND]" + partialChatRequest.content;
+                                    partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
                                     ChatMessageReceived?.Invoke(this, partialChatRequest);
                                 }
 

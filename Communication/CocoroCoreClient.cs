@@ -415,7 +415,7 @@ namespace CocoroDock.Communication
                                     onStreamReceived(errorEvent);
                                     return;
                                 }
-                                else if (dataType == "data" || dataType == "response")
+                                else if (dataType == "data" || dataType == "response" || dataType == "text")
                                 {
                                     // 通常の応答データ
                                     var responseData = root.TryGetProperty("data", out var dataElement)
