@@ -13,6 +13,9 @@ namespace CocoroDock.Services
     /// </summary>
     public class CommunicationService : ICommunicationService
     {
+        // リアルタイムストリーミング設定
+        private const int MIN_PARTIAL_RESPONSE_LENGTH = 20; // 部分送信の最小文字数
+
         private readonly CocoroDockApiServer _apiServer;
         private readonly CocoroShellClient _shellClient;
         private readonly CocoroCoreClient _coreClient;
@@ -255,10 +258,12 @@ namespace CocoroDock.Services
 
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "ストリーミングチャット開始"));
 
-                // ストリーミングチャットレスポンスの蓄積用
+                // リアルタイム部分送信用の変数
+                var partialResponse = new System.Text.StringBuilder();
                 var fullResponse = new System.Text.StringBuilder();
                 var userId = request.user_id;
                 var sessionId = _currentSessionId;
+                var isFirstPartialMessage = true;
 
                 // ストリーミングチャットを送信
                 await _coreClient.SendMemOSStreamingChatAsync(request, (streamingEvent) =>
@@ -266,7 +271,7 @@ namespace CocoroDock.Services
                     if (streamingEvent.IsError)
                     {
                         Debug.WriteLine($"[STREAMING Error] {streamingEvent.ErrorMessage}");
-                        
+
                         // エラー時は正常状態に戻す
                         _statusPollingService.SetNormalStatus();
                         StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"ストリーミングエラー: {streamingEvent.ErrorMessage}"));
@@ -274,19 +279,31 @@ namespace CocoroDock.Services
                     else if (streamingEvent.IsFinished)
                     {
                         Debug.WriteLine($"[STREAMING Completed] Total response: {fullResponse.Length} characters");
-                        
-                        // ストリーミング完了時に最終レスポンスをChatMessageReceivedで送信
-                        if (fullResponse.Length > 0)
+
+                        // 最後の部分的レスポンスを送信（残りがある場合）
+                        if (partialResponse.Length > 0)
                         {
-                            var chatRequest = new ChatRequest
+                            var partialChatRequest = new ChatRequest
                             {
                                 userId = userId,
                                 sessionId = sessionId,
-                                message = fullResponse.ToString(),
+                                message = partialResponse.ToString(),
                                 role = "assistant",
-                                content = fullResponse.ToString()
+                                content = partialResponse.ToString()
                             };
-                            ChatMessageReceived?.Invoke(this, chatRequest);
+
+                            if (isFirstPartialMessage)
+                            {
+                                // 初回メッセージとして送信
+                                ChatMessageReceived?.Invoke(this, partialChatRequest);
+                                isFirstPartialMessage = false;
+                            }
+                            else
+                            {
+                                // 追加のメッセージとして送信（UI側で同じメッセージに追記）
+                                partialChatRequest.content = "[APPEND]" + partialChatRequest.content;
+                                ChatMessageReceived?.Invoke(this, partialChatRequest);
+                            }
                         }
 
                         // 成功時のステータス更新
@@ -298,8 +315,41 @@ namespace CocoroDock.Services
                         // ストリーミング中のコンテンツ
                         if (!string.IsNullOrEmpty(streamingEvent.Content))
                         {
+                            partialResponse.Append(streamingEvent.Content);
                             fullResponse.Append(streamingEvent.Content);
-                            
+
+                            // 20文字以上 + 句読点・文章切れ目での部分送信判定
+                            if (ShouldSendPartialResponse(partialResponse.ToString()))
+                            {
+                                var partialText = partialResponse.ToString();
+                                var partialChatRequest = new ChatRequest
+                                {
+                                    userId = userId,
+                                    sessionId = sessionId,
+                                    message = partialText,
+                                    role = "assistant",
+                                    content = partialText
+                                };
+
+                                if (isFirstPartialMessage)
+                                {
+                                    // 初回メッセージとして送信
+                                    ChatMessageReceived?.Invoke(this, partialChatRequest);
+                                    isFirstPartialMessage = false;
+                                }
+                                else
+                                {
+                                    // 追加のメッセージとして送信（UI側で同じメッセージに追記）
+                                    partialChatRequest.content = "[APPEND]" + partialChatRequest.content;
+                                    ChatMessageReceived?.Invoke(this, partialChatRequest);
+                                }
+
+                                // 部分レスポンスをリセット
+                                partialResponse.Clear();
+
+                                Debug.WriteLine($"[PARTIAL SENT] Length: {partialText.Length}, Content: {partialText.Substring(0, Math.Min(50, partialText.Length))}...");
+                            }
+
                             // ストリーミングイベントを発火
                             StreamingChatReceived?.Invoke(this, streamingEvent);
                         }
@@ -415,10 +465,12 @@ namespace CocoroDock.Services
 
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "通知ストリーミング処理開始"));
 
-                // ストリーミングチャットレスポンスの蓄積用
+                // リアルタイム部分送信用の変数
+                var partialResponse = new System.Text.StringBuilder();
                 var fullResponse = new System.Text.StringBuilder();
                 var userId = request.user_id;
                 var sessionId = _currentSessionId;
+                var isFirstPartialMessage = true;
 
                 // ストリーミングチャットを送信
                 await _coreClient.SendMemOSStreamingChatAsync(request, (streamingEvent) =>
@@ -426,7 +478,7 @@ namespace CocoroDock.Services
                     if (streamingEvent.IsError)
                     {
                         Debug.WriteLine($"[NOTIFICATION STREAMING Error] {streamingEvent.ErrorMessage}");
-                        
+
                         // エラー時は正常状態に戻す
                         _statusPollingService?.SetNormalStatus();
                         StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"通知ストリーミングエラー: {streamingEvent.ErrorMessage}"));
@@ -434,19 +486,28 @@ namespace CocoroDock.Services
                     else if (streamingEvent.IsFinished)
                     {
                         Debug.WriteLine($"[NOTIFICATION STREAMING Completed] Total response: {fullResponse.Length} characters");
-                        
-                        // ストリーミング完了時に最終レスポンスをChatMessageReceivedで送信
-                        if (fullResponse.Length > 0)
+
+                        // 最後の部分的レスポンスを送信（残りがある場合）
+                        if (partialResponse.Length > 0)
                         {
-                            var chatRequest = new ChatRequest
+                            var partialChatRequest = new ChatRequest
                             {
                                 userId = userId,
                                 sessionId = sessionId,
-                                message = fullResponse.ToString(),
+                                message = partialResponse.ToString(),
                                 role = "assistant",
-                                content = fullResponse.ToString()
+                                content = partialResponse.ToString()
                             };
-                            ChatMessageReceived?.Invoke(this, chatRequest);
+
+                            if (isFirstPartialMessage)
+                            {
+                                ChatMessageReceived?.Invoke(this, partialChatRequest);
+                            }
+                            else
+                            {
+                                partialChatRequest.content = "[APPEND]" + partialChatRequest.content;
+                                ChatMessageReceived?.Invoke(this, partialChatRequest);
+                            }
                         }
 
                         // 成功時のステータス更新
@@ -458,8 +519,37 @@ namespace CocoroDock.Services
                         // ストリーミング中のコンテンツ
                         if (!string.IsNullOrEmpty(streamingEvent.Content))
                         {
+                            partialResponse.Append(streamingEvent.Content);
                             fullResponse.Append(streamingEvent.Content);
-                            
+
+                            // 20文字以上 + 句読点・文章切れ目での部分送信判定
+                            if (ShouldSendPartialResponse(partialResponse.ToString()))
+                            {
+                                var partialText = partialResponse.ToString();
+                                var partialChatRequest = new ChatRequest
+                                {
+                                    userId = userId,
+                                    sessionId = sessionId,
+                                    message = partialText,
+                                    role = "assistant",
+                                    content = partialText
+                                };
+
+                                if (isFirstPartialMessage)
+                                {
+                                    ChatMessageReceived?.Invoke(this, partialChatRequest);
+                                    isFirstPartialMessage = false;
+                                }
+                                else
+                                {
+                                    partialChatRequest.content = "[APPEND]" + partialChatRequest.content;
+                                    ChatMessageReceived?.Invoke(this, partialChatRequest);
+                                }
+
+                                partialResponse.Clear();
+                                Debug.WriteLine($"[NOTIFICATION PARTIAL SENT] Length: {partialText.Length}");
+                            }
+
                             // ストリーミングイベントを発火
                             StreamingChatReceived?.Invoke(this, streamingEvent);
                         }
@@ -488,6 +578,38 @@ namespace CocoroDock.Services
                 return config.characterList[config.currentCharacterIndex];
             }
             return null;
+        }
+
+        /// <summary>
+        /// 部分レスポンスを送信すべきかどうかを判定（20文字以上 + 句読点・文章切れ目）
+        /// </summary>
+        /// <param name="text">判定対象のテキスト</param>
+        /// <returns>送信すべき場合はtrue</returns>
+        private bool ShouldSendPartialResponse(string text)
+        {
+            if (string.IsNullOrEmpty(text) || text.Length < MIN_PARTIAL_RESPONSE_LENGTH)
+            {
+                return false;
+            }
+
+            // 句読点・文章切れ目の文字一覧
+            var punctuationMarks = new char[] { '。', '、', '！', '？', '\n', '\r', '…', '～', '：', '；', '.', ',', '!', '?', ':', ';' };
+
+            // 末尾から句読点・切れ目を検索（最新の追加分をチェック）
+            for (int i = text.Length - 1; i >= Math.Max(0, text.Length - 10); i--)
+            {
+                if (punctuationMarks.Contains(text[i]))
+                {
+                    // 句読点・切れ目が見つかった場合、最小文字数以上かつその位置が適切かチェック
+                    if (i >= MIN_PARTIAL_RESPONSE_LENGTH - 1) // 0ベースなので-1
+                    {
+                        Debug.WriteLine($"[PARTIAL CHECK] Found punctuation '{text[i]}' at position {i}, text length: {text.Length}");
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -555,10 +677,12 @@ namespace CocoroDock.Services
                 // デスクトップモニタリングは画像処理中に設定
                 _statusPollingService.SetProcessingStatus(CocoroCore2Status.ProcessingImage);
 
-                // ストリーミングチャットレスポンスの蓄積用
+                // リアルタイム部分送信用の変数
+                var partialResponse = new System.Text.StringBuilder();
                 var fullResponse = new System.Text.StringBuilder();
                 var userId = request.user_id;
                 var sessionId = _currentSessionId;
+                var isFirstPartialMessage = true;
 
                 // ストリーミングチャットを送信
                 await _coreClient.SendMemOSStreamingChatAsync(request, (streamingEvent) =>
@@ -566,26 +690,35 @@ namespace CocoroDock.Services
                     if (streamingEvent.IsError)
                     {
                         Debug.WriteLine($"[DESKTOP MONITORING STREAMING Error] {streamingEvent.ErrorMessage}");
-                        
+
                         // エラー時は正常状態に戻す
                         _statusPollingService.SetNormalStatus();
                     }
                     else if (streamingEvent.IsFinished)
                     {
                         Debug.WriteLine($"[DESKTOP MONITORING STREAMING Completed] Total response: {fullResponse.Length} characters");
-                        
-                        // ストリーミング完了時に最終レスポンスをChatMessageReceivedで送信
-                        if (fullResponse.Length > 0)
+
+                        // 最後の部分的レスポンスを送信（残りがある場合）
+                        if (partialResponse.Length > 0)
                         {
-                            var chatRequest = new ChatRequest
+                            var partialChatRequest = new ChatRequest
                             {
                                 userId = userId,
                                 sessionId = sessionId,
-                                message = fullResponse.ToString(),
+                                message = partialResponse.ToString(),
                                 role = "assistant",
-                                content = fullResponse.ToString()
+                                content = partialResponse.ToString()
                             };
-                            ChatMessageReceived?.Invoke(this, chatRequest);
+
+                            if (isFirstPartialMessage)
+                            {
+                                ChatMessageReceived?.Invoke(this, partialChatRequest);
+                            }
+                            else
+                            {
+                                partialChatRequest.content = "[APPEND]" + partialChatRequest.content;
+                                ChatMessageReceived?.Invoke(this, partialChatRequest);
+                            }
                         }
 
                         // 成功時のステータス更新
@@ -597,9 +730,38 @@ namespace CocoroDock.Services
                         // ストリーミング中のコンテンツ
                         if (!string.IsNullOrEmpty(streamingEvent.Content))
                         {
+                            partialResponse.Append(streamingEvent.Content);
                             fullResponse.Append(streamingEvent.Content);
-                            
-                            // デスクトップモニタリングではStreamingChatReceivedは発火しない（ユーザーに表示しない）
+
+                            // 20文字以上 + 句読点・文章切れ目での部分送信判定
+                            if (ShouldSendPartialResponse(partialResponse.ToString()))
+                            {
+                                var partialText = partialResponse.ToString();
+                                var partialChatRequest = new ChatRequest
+                                {
+                                    userId = userId,
+                                    sessionId = sessionId,
+                                    message = partialText,
+                                    role = "assistant",
+                                    content = partialText
+                                };
+
+                                if (isFirstPartialMessage)
+                                {
+                                    ChatMessageReceived?.Invoke(this, partialChatRequest);
+                                    isFirstPartialMessage = false;
+                                }
+                                else
+                                {
+                                    partialChatRequest.content = "[APPEND]" + partialChatRequest.content;
+                                    ChatMessageReceived?.Invoke(this, partialChatRequest);
+                                }
+
+                                partialResponse.Clear();
+                                Debug.WriteLine($"[DESKTOP PARTIAL SENT] Length: {partialText.Length}");
+                            }
+
+                            // デスクトップモニタリングでは文字単位のStreamingChatReceivedは発火しない（部分送信は実行）
                         }
                     }
                 });
