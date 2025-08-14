@@ -186,43 +186,6 @@ namespace CocoroDock.Communication
         }
 
         /// <summary>
-        /// ユーザー統計情報を取得
-        /// </summary>
-        public async Task<UserStatistics> GetUserStatisticsAsync(string userId)
-        {
-            try
-            {
-                var requestUrl = $"{_baseUrl}/api/users/{Uri.EscapeDataString(userId)}/statistics";
-                Debug.WriteLine($"[API Request] GET {requestUrl}");
-                Debug.WriteLine($"[API Param] UserId: {userId}");
-
-                using var response = await _httpClient.GetAsync(requestUrl);
-
-                var responseBody = await response.Content.ReadAsStringAsync();
-                Debug.WriteLine($"[API Response] Status: {(int)response.StatusCode} {response.StatusCode}");
-                Debug.WriteLine($"[API Response] Body: {responseBody}");
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var error = MessageHelper.DeserializeFromJson<ErrorResponse>(responseBody);
-                    throw new HttpRequestException($"ユーザー統計情報取得エラー: {error?.message ?? responseBody}");
-                }
-
-                var result = MessageHelper.DeserializeFromJson<UserStatistics>(responseBody)
-                       ?? throw new InvalidOperationException("ユーザー統計情報の解析に失敗しました");
-
-                Debug.WriteLine($"[API Parsed] UserStats - Total: {result.total_memories}, Text: {result.textual_memories}, Act: {result.activation_memories}, Para: {result.parametric_memories}");
-
-                return result;
-            }
-            catch (TaskCanceledException)
-            {
-                Debug.WriteLine("[API Error] ユーザー統計情報取得がタイムアウトしました");
-                throw new TimeoutException("ユーザー統計情報取得がタイムアウトしました");
-            }
-        }
-
-        /// <summary>
         /// ユーザーの記憶統計情報を取得
         /// </summary>
         public async Task<MemoryStatsResponse> GetUserMemoryStatsAsync(string userId)
