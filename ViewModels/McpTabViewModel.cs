@@ -320,7 +320,7 @@ namespace CocoroDock.ViewModels
             try
             {
                 // ヘルスチェックでMCPステータスを取得
-                var health = await _cocoroCoreClient.GetHealthAsync();
+                var health = await _cocoroCoreClient.GetDetailedHealthAsync();
                 McpStatus = health.mcp_status;
 
                 if (McpStatus?.error != null)

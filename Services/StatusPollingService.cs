@@ -54,7 +54,7 @@ namespace CocoroDock.Services
             {
                 Timeout = TimeSpan.FromMilliseconds(800) // ポーリング間隔より短いタイムアウト
             };
-            _healthEndpoint = $"{baseUrl.TrimEnd('/')}/health";
+            _healthEndpoint = $"{baseUrl.TrimEnd('/')}/api/health";
 
             // 1秒間隔でポーリングを開始（シンプルなブロッキング実装）
             _pollingTimer = new Timer(_ => PollHealthStatus(), null, TimeSpan.Zero, TimeSpan.FromSeconds(1));

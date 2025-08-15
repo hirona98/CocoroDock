@@ -857,7 +857,7 @@ namespace CocoroDock.Services
             // CocoroCoreに送信
             try
             {
-                var controlRequest = new CoreControlRequest { command = command };
+                var controlRequest = new CoreControlRequest { action = command };
                 await _coreClient.SendControlCommandAsync(controlRequest);
             }
             catch (System.Net.Http.HttpRequestException)

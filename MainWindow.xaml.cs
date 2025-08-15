@@ -494,17 +494,27 @@ namespace CocoroDock
         {
             UIHelper.RunOnUIThread(async () =>
             {
-                switch (request.command)
+                // パラメータ情報をログ出力
+                var paramsInfo = request.@params?.Count > 0 ? $" パラメータ: {request.@params.Count}個" : "";
+                Debug.WriteLine($"制御コマンド受信: {request.action}, 理由: {request.reason}{paramsInfo}");
+                
+                switch (request.action)
                 {
                     case "shutdown":
-                        // シャットダウン理由をログに記録
-                        Debug.WriteLine($"シャットダウン要求を受信しました: {request.reason}");
                         // 非同期でシャットダウン処理を実行
                         await PerformGracefulShutdownAsync();
                         break;
+                        
+                    case "restart":
+                        Debug.WriteLine("restart コマンドは現在未実装です");
+                        break;
+                        
+                    case "reloadConfig":
+                        Debug.WriteLine("reloadConfig コマンドは現在未実装です");
+                        break;
 
                     default:
-                        Debug.WriteLine($"未知の制御コマンド: {request.command}");
+                        Debug.WriteLine($"未知の制御コマンド: {request.action}");
                         break;
                 }
             });

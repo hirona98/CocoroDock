@@ -348,25 +348,28 @@ namespace CocoroDock.Communication
                     }
 
                     // コマンド検証
-                    var validCommands = new[] { "shutdown", "restart", "reloadConfig" };
-                    if (!Array.Exists(validCommands, cmd => cmd == request.command))
+                    var validAction = new[] { "shutdown", "restart", "reloadConfig" };
+                    if (!Array.Exists(validAction, cmd => cmd == request.action))
                     {
                         context.Response.StatusCode = 400;
                         await context.Response.WriteAsJsonAsync(new ErrorResponse
                         {
-                            message = $"Invalid command. Must be one of: {string.Join(", ", validCommands)}",
-                            errorCode = "INVALID_COMMAND"
+                            message = $"Invalid action. Must be one of: {string.Join(", ", validAction)}",
+                            errorCode = "INVALID_ACTION"
                         });
                         return;
                     }
 
+                    // パラメータとログを出力
+                    Debug.WriteLine($"制御コマンド受信: action={request.action}, reason={request.reason}, params={request.@params?.Count ?? 0}個");
+                    
                     // イベント発火
                     ControlCommandReceived?.Invoke(this, request);
 
                     await context.Response.WriteAsJsonAsync(new StandardResponse
                     {
                         status = "success",
-                        message = "Command executed"
+                        message = $"制御アクション '{request.action}' を実行しました"
                     });
                 }
                 catch (System.Text.Json.JsonException)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -70,8 +71,13 @@ namespace CocoroDock.Utilities
                     return false;
                 }
 
-                // shutdownコマンドをJSONで作成
-                var json = "{\"command\":\"shutdown\",\"params\":{}}";
+                // shutdownコマンドをJSONで作成（API仕様書準拠）
+                var shutdownRequest = new
+                {
+                    action = "shutdown",
+                    reason = "CocoroDockからの終了要求"
+                };
+                var json = System.Text.Json.JsonSerializer.Serialize(shutdownRequest);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 // /api/control エンドポイントにPOSTリクエストを送信

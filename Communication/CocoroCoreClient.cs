@@ -72,13 +72,13 @@ namespace CocoroDock.Communication
         }
 
         /// <summary>
-        /// CocoroCoreのヘルスチェックを実行（MCP状態を含む）
+        /// CocoroCoreのヘルスチェックを実行
         /// </summary>
         public async Task<HealthCheckResponse> GetHealthAsync()
         {
             try
             {
-                using var response = await _httpClient.GetAsync($"{_baseUrl}/health");
+                using var response = await _httpClient.GetAsync($"{_baseUrl}/api/health");
 
                 var responseBody = await response.Content.ReadAsStringAsync();
 
@@ -103,6 +103,39 @@ namespace CocoroDock.Communication
             {
                 Debug.WriteLine($"CocoroCoreのヘルスチェックエラー: {ex.Message}");
                 throw new InvalidOperationException($"CocoroCoreとの通信に失敗しました: {ex.Message}", ex);
+            }
+        }
+
+        // TODO:
+        /// <summary>
+        /// CocoroCoreの詳細ヘルスチェックを実行（MCP状態を含む）
+        /// </summary>
+        public async Task<DetailedHealthCheckResponse> GetDetailedHealthAsync()
+        {
+            try
+            {
+                // 一時的に空のDetailedHealthCheckResponseを返す（MCPは未実装のため）
+                return new DetailedHealthCheckResponse
+                {
+                    status = "healthy",
+                    version = "1.0.0",
+                    character = "CocoroAI",
+                    memory_enabled = true,
+                    llm_model = "unknown",
+                    active_sessions = 0,
+                    mcp_status = new McpStatus
+                    {
+                        total_servers = 0,
+                        connected_servers = 0,
+                        total_tools = 0,
+                        error = "MCPは現在実装されていません"
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"CocoroCoreの詳細ヘルスチェックエラー: {ex.Message}");
+                throw new InvalidOperationException($"CocoroCoreの詳細ヘルスチェックに失敗しました: {ex.Message}", ex);
             }
         }
 

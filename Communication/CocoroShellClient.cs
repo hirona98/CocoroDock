@@ -158,30 +158,6 @@ namespace CocoroDock.Communication
         }
 
         /// <summary>
-        /// ヘルスチェック（接続確認）
-        /// </summary>
-        public async Task<bool> CheckHealthAsync()
-        {
-            try
-            {
-                // CocoroShellにヘルスチェックエンドポイントがない場合は、
-                // 軽量なコマンドで代用する
-                var request = new ShellControlRequest
-                {
-                    command = "ping",
-                    @params = new System.Collections.Generic.Dictionary<string, object>()
-                };
-
-                var response = await _httpClient.PostAsJsonAsync("/api/control", request);
-                return response.IsSuccessStatusCode;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
         /// 現在のキャラクター位置を取得
         /// </summary>
         public async Task<PositionResponse> GetPositionAsync()

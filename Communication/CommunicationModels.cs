@@ -249,7 +249,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ControlRequest
     {
-        public string command { get; set; } = string.Empty; // "shutdown" | "restart" | "reloadConfig"
+        public string action { get; set; } = string.Empty; // "shutdown" | "restart" | "reloadConfig"
         public Dictionary<string, object>? @params { get; set; }
         public string? reason { get; set; }
     }
@@ -352,7 +352,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class CoreControlRequest
     {
-        public string command { get; set; } = string.Empty;
+        public string action { get; set; } = string.Empty;
         public Dictionary<string, object>? @params { get; set; }
     }
 
@@ -367,9 +367,18 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// CocoroCore: ヘルスチェックレスポンス
+    /// ヘルスチェックレスポンス
     /// </summary>
     public class HealthCheckResponse
+    {
+        public string status { get; set; } = "healthy";
+    }
+
+    // TODO: 
+    /// <summary>
+    /// CocoroCore: 詳細ヘルスチェックレスポンス（旧仕様）
+    /// </summary>
+    public class DetailedHealthCheckResponse
     {
         public string status { get; set; } = string.Empty;
         public string version { get; set; } = string.Empty;
@@ -378,6 +387,7 @@ namespace CocoroDock.Communication
         public string llm_model { get; set; } = string.Empty;
         public int active_sessions { get; set; }
         public McpStatus? mcp_status { get; set; }
+        public Dictionary<string, object>? neo4j_status { get; set; }
     }
 
     /// <summary>
