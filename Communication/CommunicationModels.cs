@@ -537,17 +537,61 @@ namespace CocoroDock.Communication
     }
 
     // ========================================
-    // MemOSストリーミングチャット関連モデル
+    // CocoroCore2 チャットAPI関連モデル
     // ========================================
 
     /// <summary>
-    /// MemOSストリーミングチャットリクエスト
+    /// CocoroCore2 画像データ
     /// </summary>
-    public class MemOSChatRequest
+    public class ImageData
     {
-        public string query { get; set; } = string.Empty; // 質問・メッセージ
-        public string user_id { get; set; } = string.Empty; // ユーザーID
-        public Dictionary<string, object>? context { get; set; } // 追加コンテキスト
+        public string data { get; set; } = string.Empty; // Base64 data URL形式の画像データ
+    }
+
+    /// <summary>
+    /// CocoroCore2 通知データ
+    /// </summary>
+    public class NotificationData
+    {
+        public string from { get; set; } = string.Empty; // 通知送信元
+        public string original_message { get; set; } = string.Empty; // 元の通知メッセージ
+    }
+
+    /// <summary>
+    /// CocoroCore2 デスクトップ監視コンテキスト
+    /// </summary>
+    public class DesktopContext
+    {
+        public string window_title { get; set; } = string.Empty; // ウィンドウタイトル
+        public string application { get; set; } = string.Empty; // アプリケーション名
+        public string capture_type { get; set; } = string.Empty; // "active" | "full"
+        public string timestamp { get; set; } = string.Empty; // キャプチャ時刻（ISO形式）
+    }
+
+    /// <summary>
+    /// CocoroCore2 会話履歴メッセージ
+    /// </summary>
+    public class HistoryMessage
+    {
+        public string role { get; set; } = string.Empty; // "user" | "assistant"
+        public string content { get; set; } = string.Empty; // メッセージ内容
+        public string timestamp { get; set; } = string.Empty; // メッセージ時刻（ISO形式）
+    }
+
+    /// <summary>
+    /// CocoroCore2 チャットAPIリクエスト
+    /// </summary>
+    public class CocoroCore2ChatRequest
+    {
+        public string query { get; set; } = string.Empty; // ユーザークエリ（必須）
+        public string cube_id { get; set; } = string.Empty; // メモリキューブID（必須）
+        public string chat_type { get; set; } = "text"; // "text" | "text_image" | "notification" | "desktop_watch"
+        public List<ImageData>? images { get; set; } // 画像データ配列（オプション）
+        public NotificationData? notification { get; set; } // 通知データ（オプション）
+        public DesktopContext? desktop_context { get; set; } // デスクトップコンテキスト（オプション）
+        public List<HistoryMessage>? history { get; set; } // 会話履歴（オプション）
+        public bool? internet_search { get; set; } // インターネット検索有効化（オプション）
+        public string? request_id { get; set; } // リクエスト識別ID（オプション）
     }
 
 

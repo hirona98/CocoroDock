@@ -317,19 +317,20 @@ namespace CocoroDock.Communication
         }
 
         /// <summary>
-        /// MemOSストリーミングチャット送信
+        /// CocoroCore2 チャットストリーミング送信
         /// </summary>
-        /// <param name="request">MemOSチャットリクエスト</param>
+        /// <param name="request">CocoroCore2 チャットリクエスト</param>
         /// <param name="onStreamReceived">ストリーミングデータ受信時のコールバック</param>
-        public async Task SendMemOSStreamingChatAsync(MemOSChatRequest request, Action<StreamingChatEventArgs> onStreamReceived)
+        public async Task SendChatStreamAsync(CocoroCore2ChatRequest request, Action<StreamingChatEventArgs> onStreamReceived)
         {
             try
             {
-                var requestUrl = $"{_baseUrl}/api/memos/chat/stream";
+                var requestUrl = $"{_baseUrl}/api/chat/stream";
                 Debug.WriteLine($"[STREAMING API Request] POST {requestUrl}");
                 Debug.WriteLine($"[STREAMING API Param] Query: {request.query}");
-                Debug.WriteLine($"[STREAMING API Param] UserId: {request.user_id}");
-                Debug.WriteLine($"[STREAMING API Param] Context: {request.context?.Count ?? 0} items");
+                Debug.WriteLine($"[STREAMING API Param] CubeId: {request.cube_id}");
+                Debug.WriteLine($"[STREAMING API Param] ChatType: {request.chat_type}");
+                Debug.WriteLine($"[STREAMING API Param] Images: {request.images?.Count ?? 0} items");
 
                 var json = MessageHelper.SerializeToJson(request);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");

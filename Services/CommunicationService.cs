@@ -222,32 +222,32 @@ namespace CocoroDock.Services
                 // システムプロンプトを取得（キャッシュ使用）
                 string? systemPrompt = GetCachedSystemPrompt(currentCharacter?.systemPromptFilePath);
 
-                // MemOSチャットリクエストを作成
-                var context = new Dictionary<string, object>
-                {
-                    { "source", "CocoroDock" },
-                    { "timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") },
-                    { "character_name", characterName ?? currentCharacter?.modelName ?? "default" },
-                    { "session_id", _currentSessionId }
-                };
+                // cube_idを生成（user_id + "_cube"形式）
+                var userId = !string.IsNullOrEmpty(currentCharacter?.userId) ? currentCharacter.userId : "user";
+                var cubeId = $"{userId}_cube";
 
-                // システムプロンプトがある場合はcontextに追加
-                if (!string.IsNullOrEmpty(systemPrompt))
-                {
-                    context["system_prompt"] = systemPrompt;
-                }
-
-                // 画像データがある場合はcontextに追加
+                // 画像データを変換
+                List<ImageData>? images = null;
                 if (!string.IsNullOrEmpty(imageDataUrl))
                 {
-                    context["image_url"] = imageDataUrl;
+                    images = new List<ImageData>
+                    {
+                        new ImageData { data = imageDataUrl }
+                    };
                 }
 
-                var request = new MemOSChatRequest
+                // チャットタイプを決定
+                var chatType = !string.IsNullOrEmpty(imageDataUrl) ? "text_image" : "text";
+
+                // CocoroCore2チャットリクエストを作成
+                var request = new CocoroCore2ChatRequest
                 {
                     query = message,
-                    user_id = !string.IsNullOrEmpty(currentCharacter?.userId) ? currentCharacter.userId : "user",
-                    context = context
+                    cube_id = cubeId,
+                    chat_type = chatType,
+                    images = images,
+                    internet_search = true, // インターネット検索を有効化
+                    request_id = _currentSessionId
                 };
 
                 // 画像がある場合は画像処理中、そうでなければメッセージ処理中に設定
@@ -261,12 +261,12 @@ namespace CocoroDock.Services
                 // リアルタイム部分送信用の変数
                 var partialResponse = new System.Text.StringBuilder();
                 var fullResponse = new System.Text.StringBuilder();
-                var userId = request.user_id;
+                // userIdは上で既に定義済み
                 var sessionId = _currentSessionId;
                 var isFirstPartialMessage = true;
 
                 // ストリーミングチャットを送信
-                await _coreClient.SendMemOSStreamingChatAsync(request, (streamingEvent) =>
+                await _coreClient.SendChatStreamAsync(request, (streamingEvent) =>
                 {
                     if (streamingEvent.IsError)
                     {
@@ -423,38 +423,41 @@ namespace CocoroDock.Services
                 // システムプロンプトを取得（キャッシュ使用）
                 string? systemPrompt = GetCachedSystemPrompt(currentCharacter.systemPromptFilePath);
 
-                // MemOSチャットリクエストを作成
-                var context = new Dictionary<string, object>
-                {
-                    { "source", "notification" },
-                    { "notification_from", notification.from },
-                    { "timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") },
-                    { "character_name", currentCharacter.modelName ?? "default" },
-                    { "session_id", _currentSessionId },
-                    { "message_type", "notification" }
-                };
+                // cube_idを生成（user_id + "_cube"形式）
+                var userId = !string.IsNullOrEmpty(currentCharacter.userId) ? currentCharacter.userId : "user";
+                var cubeId = $"{userId}_cube";
 
-                // システムプロンプトがある場合はcontextに追加
-                if (!string.IsNullOrEmpty(systemPrompt))
-                {
-                    context["system_prompt"] = systemPrompt;
-                }
-
-                // 画像データがある場合はcontextに追加
+                // 画像データを変換
+                List<ImageData>? images = null;
                 if (imageDataUrls != null && imageDataUrls.Length > 0)
                 {
                     var imageUrls = imageDataUrls.Where(url => !string.IsNullOrEmpty(url)).ToArray();
                     if (imageUrls.Length > 0)
                     {
-                        context["image_urls"] = imageUrls;
+                        images = imageUrls.Select(url => new ImageData { data = url }).ToList();
                     }
                 }
 
-                var request = new MemOSChatRequest
+                // 通知データを作成
+                var notificationData = new NotificationData
                 {
-                    query = notificationText,
-                    user_id = !string.IsNullOrEmpty(currentCharacter.userId) ? currentCharacter.userId : "user",
-                    context = context
+                    from = notification.from,
+                    original_message = notificationText
+                };
+
+                // チャットタイプを決定
+                var chatType = "notification";
+
+                // CocoroCore2チャットリクエストを作成
+                var request = new CocoroCore2ChatRequest
+                {
+                    query = "通知への反応をお願いします", // 通知機能用メッセージ
+                    cube_id = cubeId,
+                    chat_type = chatType,
+                    images = images,
+                    notification = notificationData,
+                    internet_search = false, // 通知ではインターネット検索は無効
+                    request_id = _currentSessionId
                 };
 
                 // 処理状態を設定（通知処理開始）
@@ -468,12 +471,12 @@ namespace CocoroDock.Services
                 // リアルタイム部分送信用の変数
                 var partialResponse = new System.Text.StringBuilder();
                 var fullResponse = new System.Text.StringBuilder();
-                var userId = request.user_id;
+                // userIdは上で既に定義済み
                 var sessionId = _currentSessionId;
                 var isFirstPartialMessage = true;
 
                 // ストリーミングチャットを送信
-                await _coreClient.SendMemOSStreamingChatAsync(request, (streamingEvent) =>
+                await _coreClient.SendChatStreamAsync(request, (streamingEvent) =>
                 {
                     if (streamingEvent.IsError)
                     {
@@ -649,29 +652,36 @@ namespace CocoroDock.Services
                 // システムプロンプトを取得（キャッシュ使用）
                 string? systemPrompt = GetCachedSystemPrompt(currentCharacter.systemPromptFilePath);
 
-                // MemOSチャットリクエストを作成
-                var context = new Dictionary<string, object>
+                // cube_idを生成（user_id + "_cube"形式）
+                var userId = !string.IsNullOrEmpty(currentCharacter.userId) ? currentCharacter.userId : "user";
+                var cubeId = $"{userId}_cube";
+
+                // 画像データを変換（Base64データをdata URL形式に）
+                var imageDataUrl = $"data:image/png;base64,{imageBase64}";
+                var images = new List<ImageData>
                 {
-                    { "source", "CocoroDock" },
-                    { "monitoring_type", "desktop" },
-                    { "timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") },
-                    { "character_name", currentCharacter.modelName ?? "default" },
-                    { "session_id", _currentSessionId },
-                    { "message_type", "desktop_monitoring" },
-                    { "image_url", $"data:image/png;base64,{imageBase64}" }
+                    new ImageData { data = imageDataUrl }
                 };
 
-                // システムプロンプトがある場合はcontextに追加
-                if (!string.IsNullOrEmpty(systemPrompt))
+                // デスクトップコンテキストを作成
+                var desktopContext = new DesktopContext
                 {
-                    context["system_prompt"] = systemPrompt;
-                }
+                    window_title = "Unknown", // 実際のウィンドウ情報が必要な場合は取得
+                    application = "Desktop",
+                    capture_type = "full", // デスクトップモニタリングは全画面
+                    timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+                };
 
-                var request = new MemOSChatRequest
+                // CocoroCore2チャットリクエストを作成
+                var request = new CocoroCore2ChatRequest
                 {
-                    query = "デスクトップ画像を分析してください", // デスクトップモニタリング用メッセージ
-                    user_id = !string.IsNullOrEmpty(currentCharacter.userId) ? currentCharacter.userId : "user",
-                    context = context
+                    query = "", // デスクトップウォッチでは空文字（自動生成）
+                    cube_id = cubeId,
+                    chat_type = "desktop_watch",
+                    images = images,
+                    desktop_context = desktopContext,
+                    internet_search = false, // デスクトップモニタリングではインターネット検索は無効
+                    request_id = _currentSessionId
                 };
 
                 // デスクトップモニタリングは画像処理中に設定
@@ -680,12 +690,12 @@ namespace CocoroDock.Services
                 // リアルタイム部分送信用の変数
                 var partialResponse = new System.Text.StringBuilder();
                 var fullResponse = new System.Text.StringBuilder();
-                var userId = request.user_id;
+                // userIdは上で既に定義済み
                 var sessionId = _currentSessionId;
                 var isFirstPartialMessage = true;
 
                 // ストリーミングチャットを送信
-                await _coreClient.SendMemOSStreamingChatAsync(request, (streamingEvent) =>
+                await _coreClient.SendChatStreamAsync(request, (streamingEvent) =>
                 {
                     if (streamingEvent.IsError)
                     {
