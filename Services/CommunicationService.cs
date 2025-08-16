@@ -32,8 +32,6 @@ namespace CocoroDock.Services
         private readonly Dictionary<string, System.Text.StringBuilder> _fullResponses = new Dictionary<string, System.Text.StringBuilder>();
         private readonly Dictionary<string, bool> _isFirstPartialMessage = new Dictionary<string, bool>();
 
-        // ログビューアー管理用
-        private LogViewerWindow? _logViewerWindow;
 
         // 設定キャッシュ用
         private ConfigSettings? _cachedConfigSettings;
@@ -70,11 +68,6 @@ namespace CocoroDock.Services
             {
                 // ステータス更新イベントを発火
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, request.message));
-            };
-            _apiServer.LogMessageReceived += (sender, logMessage) =>
-            {
-                // ログビューアーが開いている場合のみログを転送
-                _logViewerWindow?.AddLogMessage(logMessage);
             };
 
             // CocoroShellクライアントの初期化
@@ -450,66 +443,11 @@ namespace CocoroDock.Services
         /// </summary>
         public void OpenLogViewer()
         {
-            // 既にウィンドウが開いている場合は前面に表示
-            if (_logViewerWindow != null)
-            {
-                _logViewerWindow.Activate();
-                _logViewerWindow.WindowState = System.Windows.WindowState.Normal;
-                return;
-            }
-
-            // 新しいログビューアーウィンドウを作成
-            _logViewerWindow = new LogViewerWindow();
-
-            // ウィンドウクローズ時のイベントハンドラー
-            _logViewerWindow.LogForwardingStopped += async (sender, e) =>
-            {
-                // ログ送信停止を通知
-                await SendLogForwardingControlAsync(false);
-                _logViewerWindow = null;
-            };
-
-            // ログ送信開始を通知（バックグラウンドで実行）
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await SendLogForwardingControlAsync(true);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"ログ送信開始通知エラー: {ex.Message}");
-                }
-            });
-
-            // ウィンドウを表示
-            _logViewerWindow.Show();
+            // TODO: ファイルベースのログビューアー実装に変更予定
+            var logViewerWindow = new LogViewerWindow();
+            logViewerWindow.Show();
         }
 
-        /// <summary>
-        /// ログ送信制御コマンドを送信
-        /// </summary>
-        /// <param name="enabled">ログ送信を有効にするかどうか</param>
-        private async Task SendLogForwardingControlAsync(bool enabled)
-        {
-            var command = enabled ? "start_log_forwarding" : "stop_log_forwarding";
-
-            // CocoroCoreに送信
-            try
-            {
-                var controlRequest = new CoreControlRequest { action = command };
-                await _coreClient.SendControlCommandAsync(controlRequest);
-            }
-            catch (System.Net.Http.HttpRequestException)
-            {
-                // CocoroCore未起動の場合は正常（サイレント処理）
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"CocoreCoreへのログ制御コマンド送信エラー: {ex.Message}");
-            }
-
-        }
 
         /// <summary>
         /// CocoroShellから現在のキャラクター位置を取得
@@ -824,7 +762,6 @@ namespace CocoroDock.Services
             // イベント購読解除
             AppSettings.SettingsSaved -= OnSettingsSaved;
 
-            _logViewerWindow?.Close();
             _statusPollingService?.Dispose();
             _notificationApiServer?.Dispose();
             _apiServer?.Dispose();

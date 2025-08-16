@@ -27,7 +27,6 @@ namespace CocoroDock.Communication
         public event EventHandler<ChatRequest>? ChatMessageReceived;
         public event EventHandler<ControlRequest>? ControlCommandReceived;
         public event EventHandler<StatusUpdateRequest>? StatusUpdateReceived;
-        public event EventHandler<LogMessage>? LogMessageReceived;
 
         public bool IsRunning => _host != null;
 
@@ -452,91 +451,6 @@ namespace CocoroDock.Communication
                 }
             });
 
-            // POST /api/logs - ログメッセージ受信
-            app.MapPost("/api/logs", async (HttpContext context) =>
-            {
-                try
-                {
-                    var request = await context.Request.ReadFromJsonAsync<LogMessage>();
-                    if (request == null)
-                    {
-                        context.Response.StatusCode = 400;
-                        await context.Response.WriteAsJsonAsync(new ErrorResponse
-                        {
-                            message = "Request body is required",
-                            errorCode = "INVALID_REQUEST"
-                        });
-                        return;
-                    }
-
-                    // 検証
-                    if (string.IsNullOrWhiteSpace(request.message))
-                    {
-                        context.Response.StatusCode = 400;
-                        await context.Response.WriteAsJsonAsync(new ErrorResponse
-                        {
-                            message = "Field 'message' is required and cannot be empty",
-                            errorCode = "VALIDATION_ERROR"
-                        });
-                        return;
-                    }
-
-                    // ログレベル検証
-                    var validLevels = new[] { "DEBUG", "INFO", "WARNING", "ERROR" };
-                    if (!Array.Exists(validLevels, level => level == request.level))
-                    {
-                        context.Response.StatusCode = 400;
-                        await context.Response.WriteAsJsonAsync(new ErrorResponse
-                        {
-                            message = $"Invalid log level. Must be one of: {string.Join(", ", validLevels)}",
-                            errorCode = "VALIDATION_ERROR"
-                        });
-                        return;
-                    }
-
-                    // コンポーネント検証
-                    var validComponents = new[] { "CocoroCore2", "SEPARATOR" };
-                    if (!Array.Exists(validComponents, comp => comp == request.component))
-                    {
-                        context.Response.StatusCode = 400;
-                        await context.Response.WriteAsJsonAsync(new ErrorResponse
-                        {
-                            message = $"Invalid component. Must be one of: {string.Join(", ", validComponents)}",
-                            errorCode = "VALIDATION_ERROR"
-                        });
-                        return;
-                    }
-
-                    // イベント発火
-                    LogMessageReceived?.Invoke(this, request);
-
-                    // 成功レスポンス
-                    await context.Response.WriteAsJsonAsync(new StandardResponse
-                    {
-                        status = "success",
-                        message = "Log message received"
-                    });
-                }
-                catch (System.Text.Json.JsonException)
-                {
-                    context.Response.StatusCode = 400;
-                    await context.Response.WriteAsJsonAsync(new ErrorResponse
-                    {
-                        message = "Invalid JSON format",
-                        errorCode = "JSON_ERROR"
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"ログ受信処理エラー: {ex.Message}");
-                    context.Response.StatusCode = 500;
-                    await context.Response.WriteAsJsonAsync(new ErrorResponse
-                    {
-                        message = "Internal server error",
-                        errorCode = "INTERNAL_ERROR"
-                    });
-                }
-            });
         }
 
         /// <summary>

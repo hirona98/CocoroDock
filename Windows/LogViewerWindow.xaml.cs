@@ -150,19 +150,6 @@ namespace CocoroDock.Windows
             UpdateStatus("ログクリア");
         }
 
-        /// <summary>
-        /// ウィンドウクローズイベント
-        /// </summary>
-        protected override void OnClosing(CancelEventArgs e)
-        {
-            // ウィンドウを閉じる前にログ送信停止をイベント発火
-            LogForwardingStopped?.Invoke(this, EventArgs.Empty);
-            base.OnClosing(e);
-        }
 
-        /// <summary>
-        /// ログ送信停止イベント
-        /// </summary>
-        public event EventHandler? LogForwardingStopped;
     }
 }
