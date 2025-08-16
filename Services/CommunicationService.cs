@@ -19,6 +19,7 @@ namespace CocoroDock.Services
         private readonly CocoroDockApiServer _apiServer;
         private readonly CocoroShellClient _shellClient;
         private readonly CocoroCoreClient _coreClient;
+        private readonly WebSocketChatClient _webSocketClient;
         private readonly IAppSettings _appSettings;
         private readonly NotificationApiServer? _notificationApiServer;
         private readonly StatusPollingService _statusPollingService;
@@ -26,6 +27,11 @@ namespace CocoroDock.Services
         // セッション管理用
         private string? _currentSessionId;
         private string? _currentContextId;
+
+        // WebSocket部分レスポンス管理用
+        private readonly Dictionary<string, System.Text.StringBuilder> _partialResponses = new Dictionary<string, System.Text.StringBuilder>();
+        private readonly Dictionary<string, System.Text.StringBuilder> _fullResponses = new Dictionary<string, System.Text.StringBuilder>();
+        private readonly Dictionary<string, bool> _isFirstPartialMessage = new Dictionary<string, bool>();
 
         // ログビューアー管理用
         private LogViewerWindow? _logViewerWindow;
@@ -77,6 +83,12 @@ namespace CocoroDock.Services
 
             // CocoroCoreクライアントの初期化
             _coreClient = new CocoroCoreClient(_appSettings.CocoroCorePort);
+
+            // WebSocketクライアントの初期化
+            _webSocketClient = new WebSocketChatClient(_appSettings.CocoroCorePort, $"dock_{Environment.MachineName}_{DateTime.Now:yyyyMMddHHmmss}");
+            _webSocketClient.MessageReceived += OnWebSocketMessageReceived;
+            _webSocketClient.ConnectionStateChanged += OnWebSocketConnectionStateChanged;
+            _webSocketClient.ErrorOccurred += OnWebSocketErrorOccurred;
 
             // 通知APIサーバーの初期化（有効な場合のみ）
             if (_appSettings.IsEnableNotificationApi)
@@ -201,7 +213,7 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// CocoroCore2にMemOSストリーミングチャットメッセージを送信
+        /// CocoroCore2にWebSocketチャットメッセージを送信
         /// </summary>
         /// <param name="message">送信メッセージ</param>
         /// <param name="characterName">キャラクター名（オプション）</param>
@@ -219,9 +231,16 @@ namespace CocoroDock.Services
                     _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
                 }
 
-                // システムプロンプトを取得（キャッシュ使用）
-                string? systemPrompt = GetCachedSystemPrompt(currentCharacter?.systemPromptFilePath);
-                var memoryId = !string.IsNullOrEmpty(currentCharacter?.memoryId) ? currentCharacter.memoryId : "memory";
+                // WebSocket接続確認
+                if (!_webSocketClient.IsConnected)
+                {
+                    Debug.WriteLine("[WebSocket] 接続を開始します...");
+                    var connected = await _webSocketClient.ConnectAsync();
+                    if (!connected)
+                    {
+                        throw new Exception("WebSocket接続に失敗しました");
+                    }
+                }
 
                 // 画像データを変換
                 List<ImageData>? images = null;
@@ -236,14 +255,13 @@ namespace CocoroDock.Services
                 // チャットタイプを決定
                 var chatType = !string.IsNullOrEmpty(imageDataUrl) ? "text_image" : "text";
 
-                // CocoroCore2チャットリクエストを作成
-                var request = new CocoroCore2ChatRequest
+                // WebSocketチャットリクエストを作成
+                var request = new WebSocketChatRequest
                 {
                     query = message,
                     chat_type = chatType,
                     images = images,
-                    internet_search = true, // インターネット検索を有効化
-                    request_id = _currentSessionId
+                    internet_search = false // WebSocketバージョンでは無効化
                 };
 
                 // 画像がある場合は画像処理中、そうでなければメッセージ処理中に設定
@@ -252,113 +270,26 @@ namespace CocoroDock.Services
                     : CocoroCore2Status.ProcessingMessage;
                 _statusPollingService.SetProcessingStatus(processingStatus);
 
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "ストリーミングチャット開始"));
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "WebSocketチャット開始"));
 
-                // リアルタイム部分送信用の変数
-                var partialResponse = new System.Text.StringBuilder();
-                var fullResponse = new System.Text.StringBuilder();
-                // memoryIdは上で既に定義済み
-                var sessionId = _currentSessionId;
-                var isFirstPartialMessage = true;
+                Debug.WriteLine($"[WebSocket] チャット送信: session_id={_currentSessionId}, query={message.Substring(0, Math.Min(50, message.Length))}...");
 
-                // ストリーミングチャットを送信
-                await _coreClient.SendChatStreamAsync(request, (streamingEvent) =>
+                // WebSocketでチャットを送信
+                var success = await _webSocketClient.SendChatAsync(_currentSessionId, request);
+                if (!success)
                 {
-                    if (streamingEvent.IsError)
-                    {
-                        Debug.WriteLine($"[STREAMING Error] {streamingEvent.ErrorMessage}");
+                    throw new Exception("WebSocketメッセージ送信に失敗しました");
+                }
 
-                        // エラー時は正常状態に戻す
-                        _statusPollingService.SetNormalStatus();
-                        StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"ストリーミングエラー: {streamingEvent.ErrorMessage}"));
-                    }
-                    else if (streamingEvent.IsFinished)
-                    {
-                        Debug.WriteLine($"[STREAMING Completed] Total response: {fullResponse.Length} characters");
-
-                        // 最後の部分的レスポンスを送信（残りがある場合）
-                        if (partialResponse.Length > 0)
-                        {
-                            var partialChatRequest = new ChatRequest
-                            {
-                                memoryId = memoryId,
-                                sessionId = sessionId,
-                                message = partialResponse.ToString(),
-                                role = "assistant",
-                                content = partialResponse.ToString()
-                            };
-
-                            if (isFirstPartialMessage)
-                            {
-                                // 初回メッセージとして送信
-                                ChatMessageReceived?.Invoke(this, partialChatRequest);
-                                isFirstPartialMessage = false;
-                            }
-                            else
-                            {
-                                // 追加のメッセージとして送信（UI側で同じメッセージに追記）
-                                partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
-                                ChatMessageReceived?.Invoke(this, partialChatRequest);
-                            }
-                        }
-
-                        // 成功時のステータス更新
-                        _statusPollingService.SetNormalStatus();
-                        StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "ストリーミングチャット完了"));
-                    }
-                    else
-                    {
-                        // ストリーミング中のコンテンツ
-                        if (!string.IsNullOrEmpty(streamingEvent.Content))
-                        {
-                            partialResponse.Append(streamingEvent.Content);
-                            fullResponse.Append(streamingEvent.Content);
-
-                            // 20文字以上 + 句読点・文章切れ目での部分送信判定
-                            if (ShouldSendPartialResponse(partialResponse.ToString()))
-                            {
-                                var partialText = partialResponse.ToString();
-                                var partialChatRequest = new ChatRequest
-                                {
-                                    memoryId = memoryId,
-                                    sessionId = sessionId,
-                                    message = partialText,
-                                    role = "assistant",
-                                    content = partialText
-                                };
-
-                                if (isFirstPartialMessage)
-                                {
-                                    // 初回メッセージとして送信
-                                    ChatMessageReceived?.Invoke(this, partialChatRequest);
-                                    isFirstPartialMessage = false;
-                                }
-                                else
-                                {
-                                    // 追加のメッセージとして送信（UI側で同じメッセージに追記）
-                                    partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
-                                    ChatMessageReceived?.Invoke(this, partialChatRequest);
-                                }
-
-                                // 部分レスポンスをリセット
-                                partialResponse.Clear();
-
-                                Debug.WriteLine($"[PARTIAL SENT] Length: {partialText.Length}, Content: {partialText.Substring(0, Math.Min(50, partialText.Length))}...");
-                            }
-
-                            // ストリーミングイベントを発火
-                            StreamingChatReceived?.Invoke(this, streamingEvent);
-                        }
-                    }
-                });
+                Debug.WriteLine("[WebSocket] チャット送信完了、レスポンス待機中...");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"ストリーミングチャット送信エラー: {ex.Message}");
+                Debug.WriteLine($"WebSocketチャット送信エラー: {ex.Message}");
                 // エラー時は正常状態に戻す
                 _statusPollingService.SetNormalStatus();
                 // ステータスバーにエラー表示
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"通信エラー: {ex.Message}"));
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"WebSocket通信エラー: {ex.Message}"));
             }
         }
 
@@ -922,6 +853,264 @@ namespace CocoroDock.Services
             }
         }
 
+        #region WebSocket イベントハンドラー
+
+        /// <summary>
+        /// WebSocketメッセージ受信ハンドラー
+        /// </summary>
+        private void OnWebSocketMessageReceived(object? sender, WebSocketResponseMessage message)
+        {
+            try
+            {
+                switch (message.type)
+                {
+                    case "status":
+                        HandleWebSocketStatusMessage(message);
+                        break;
+
+                    case "text":
+                        HandleWebSocketTextMessage(message);
+                        break;
+
+                    case "reference":
+                        HandleWebSocketReferenceMessage(message);
+                        break;
+
+                    case "time":
+                        HandleWebSocketTimeMessage(message);
+                        break;
+
+                    case "end":
+                        HandleWebSocketEndMessage(message);
+                        break;
+
+                    case "error":
+                        HandleWebSocketErrorMessage(message);
+                        break;
+
+                    default:
+                        Debug.WriteLine($"[WebSocket] 未知のメッセージタイプ: {message.type}");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[WebSocket] メッセージ処理エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// WebSocket接続状態変更ハンドラー
+        /// </summary>
+        private void OnWebSocketConnectionStateChanged(object? sender, bool isConnected)
+        {
+            Debug.WriteLine($"[WebSocket] 接続状態変更: {(isConnected ? "接続" : "切断")}");
+            StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(isConnected, 
+                isConnected ? "WebSocket接続確立" : "WebSocket接続切断"));
+        }
+
+        /// <summary>
+        /// WebSocketエラーハンドラー
+        /// </summary>
+        private void OnWebSocketErrorOccurred(object? sender, string errorMessage)
+        {
+            Debug.WriteLine($"[WebSocket] エラー: {errorMessage}");
+            ErrorOccurred?.Invoke(this, errorMessage);
+        }
+
+        /// <summary>
+        /// WebSocketステータスメッセージ処理
+        /// </summary>
+        private void HandleWebSocketStatusMessage(WebSocketResponseMessage message)
+        {
+            // ステータス情報の処理（必要に応じて実装）
+            Debug.WriteLine($"[WebSocket] ステータス: {message.data}");
+        }
+
+        /// <summary>
+        /// WebSocketテキストメッセージ処理
+        /// </summary>
+        private void HandleWebSocketTextMessage(WebSocketResponseMessage message)
+        {
+            if (message.data is System.Text.Json.JsonElement jsonElement)
+            {
+                if (jsonElement.TryGetProperty("content", out var contentElement))
+                {
+                    var content = contentElement.GetString() ?? "";
+                    var sessionId = message.session_id;
+                    
+                    // セッション初期化
+                    if (!_partialResponses.ContainsKey(sessionId))
+                    {
+                        _partialResponses[sessionId] = new System.Text.StringBuilder();
+                        _fullResponses[sessionId] = new System.Text.StringBuilder();
+                        _isFirstPartialMessage[sessionId] = true;
+                    }
+                    
+                    // コンテンツを追加
+                    _partialResponses[sessionId].Append(content);
+                    _fullResponses[sessionId].Append(content);
+                    
+                    // 20文字以上 + 句読点・文章切れ目での部分送信判定
+                    if (ShouldSendPartialResponse(_partialResponses[sessionId].ToString()))
+                    {
+                        var partialText = _partialResponses[sessionId].ToString();
+                        var currentCharacter = GetCurrentCharacterSettings();
+                        var memoryId = !string.IsNullOrEmpty(currentCharacter?.memoryId) ? currentCharacter.memoryId : "memory";
+                        
+                        var partialChatRequest = new ChatRequest
+                        {
+                            memoryId = memoryId,
+                            sessionId = sessionId,
+                            message = partialText,
+                            role = "assistant",
+                            content = partialText
+                        };
+                        
+                        if (_isFirstPartialMessage[sessionId])
+                        {
+                            // 初回メッセージとして送信
+                            ChatMessageReceived?.Invoke(this, partialChatRequest);
+                            _isFirstPartialMessage[sessionId] = false;
+                        }
+                        else
+                        {
+                            // 追加のメッセージとして送信（UI側で同じメッセージに追記）
+                            partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
+                            ChatMessageReceived?.Invoke(this, partialChatRequest);
+                        }
+                        
+                        // 部分レスポンスをリセット
+                        _partialResponses[sessionId].Clear();
+                        
+                        Debug.WriteLine($"[WebSocket PARTIAL SENT] Length: {partialText.Length}, Content: {partialText.Substring(0, Math.Min(50, partialText.Length))}...");
+                    }
+                    
+                    // StreamingChatEventArgs形式で既存ロジックに統合
+                    var streamingEvent = new StreamingChatEventArgs
+                    {
+                        Content = content,
+                        IsFinished = false,
+                        IsError = false
+                    };
+                    
+                    StreamingChatReceived?.Invoke(this, streamingEvent);
+                }
+            }
+        }
+
+        /// <summary>
+        /// WebSocket参照メッセージ処理
+        /// </summary>
+        private void HandleWebSocketReferenceMessage(WebSocketResponseMessage message)
+        {
+            // 参照情報の処理（必要に応じて実装）
+            Debug.WriteLine($"[WebSocket] 参照情報受信");
+        }
+
+        /// <summary>
+        /// WebSocket時間メッセージ処理
+        /// </summary>
+        private void HandleWebSocketTimeMessage(WebSocketResponseMessage message)
+        {
+            // 時間情報の処理（必要に応じて実装）
+            Debug.WriteLine($"[WebSocket] 処理時間情報受信");
+        }
+
+        /// <summary>
+        /// WebSocket完了メッセージ処理
+        /// </summary>
+        private void HandleWebSocketEndMessage(WebSocketResponseMessage message)
+        {
+            var sessionId = message.session_id;
+            Debug.WriteLine($"[WebSocket] ストリーミング完了: session_id={sessionId}");
+            
+            // 最後の部分的レスポンスを送信（残りがある場合）
+            if (_partialResponses.ContainsKey(sessionId) && _partialResponses[sessionId].Length > 0)
+            {
+                var partialText = _partialResponses[sessionId].ToString();
+                var currentCharacter = GetCurrentCharacterSettings();
+                var memoryId = !string.IsNullOrEmpty(currentCharacter?.memoryId) ? currentCharacter.memoryId : "memory";
+                
+                var partialChatRequest = new ChatRequest
+                {
+                    memoryId = memoryId,
+                    sessionId = sessionId,
+                    message = partialText,
+                    role = "assistant",
+                    content = partialText
+                };
+                
+                if (_isFirstPartialMessage.ContainsKey(sessionId) && _isFirstPartialMessage[sessionId])
+                {
+                    // 初回メッセージとして送信
+                    ChatMessageReceived?.Invoke(this, partialChatRequest);
+                }
+                else
+                {
+                    // 追加のメッセージとして送信（UI側で同じメッセージに追記）
+                    partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
+                    ChatMessageReceived?.Invoke(this, partialChatRequest);
+                }
+                
+                Debug.WriteLine($"[WebSocket FINAL SENT] Length: {partialText.Length}, Content: {partialText.Substring(0, Math.Min(50, partialText.Length))}...");
+            }
+            
+            // セッションデータクリーンアップ
+            _partialResponses.Remove(sessionId);
+            _fullResponses.Remove(sessionId);
+            _isFirstPartialMessage.Remove(sessionId);
+            
+            // 完了イベントを発火
+            var finishedEvent = new StreamingChatEventArgs
+            {
+                Content = "",
+                IsFinished = true,
+                IsError = false
+            };
+            
+            StreamingChatReceived?.Invoke(this, finishedEvent);
+            
+            // 正常状態に戻す
+            _statusPollingService.SetNormalStatus();
+            StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "WebSocketチャット完了"));
+        }
+
+        /// <summary>
+        /// WebSocketエラーメッセージ処理
+        /// </summary>
+        private void HandleWebSocketErrorMessage(WebSocketResponseMessage message)
+        {
+            string errorMessage = "WebSocketエラーが発生しました";
+            
+            if (message.data is System.Text.Json.JsonElement jsonElement)
+            {
+                if (jsonElement.TryGetProperty("message", out var messageElement))
+                {
+                    errorMessage = messageElement.GetString() ?? errorMessage;
+                }
+            }
+            
+            Debug.WriteLine($"[WebSocket] エラーメッセージ: {errorMessage}");
+            
+            // エラーイベントを発火
+            var errorEvent = new StreamingChatEventArgs
+            {
+                Content = "",
+                IsFinished = true,
+                IsError = true,
+                ErrorMessage = errorMessage
+            };
+            
+            StreamingChatReceived?.Invoke(this, errorEvent);
+            
+            // 正常状態に戻す
+            _statusPollingService.SetNormalStatus();
+            StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"チャットエラー: {errorMessage}"));
+        }
+
+        #endregion
+
         /// <summary>
         /// リソースの解放
         /// </summary>
@@ -936,6 +1125,7 @@ namespace CocoroDock.Services
             _apiServer?.Dispose();
             _shellClient?.Dispose();
             _coreClient?.Dispose();
+            _webSocketClient?.Dispose();
         }
     }
 }
