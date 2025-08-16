@@ -106,40 +106,6 @@ namespace CocoroDock.Communication
             }
         }
 
-        // TODO:
-        /// <summary>
-        /// CocoroCoreの詳細ヘルスチェックを実行（MCP状態を含む）
-        /// </summary>
-        public async Task<DetailedHealthCheckResponse> GetDetailedHealthAsync()
-        {
-            try
-            {
-                // 一時的に空のDetailedHealthCheckResponseを返す（MCPは未実装のため）
-                return new DetailedHealthCheckResponse
-                {
-                    status = "healthy",
-                    version = "1.0.0",
-                    character = "CocoroAI",
-                    memory_enabled = true,
-                    llm_model = "unknown",
-                    active_sessions = 0,
-                    mcp_status = new McpStatus
-                    {
-                        total_servers = 0,
-                        connected_servers = 0,
-                        total_tools = 0,
-                        error = "MCPは現在実装されていません"
-                    }
-                };
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"CocoroCoreの詳細ヘルスチェックエラー: {ex.Message}");
-                throw new InvalidOperationException($"CocoroCoreの詳細ヘルスチェックに失敗しました: {ex.Message}", ex);
-            }
-        }
-
-
         /// <summary>
         /// MCPツール登録ログを取得
         /// </summary>
@@ -178,7 +144,7 @@ namespace CocoroDock.Communication
         /// <summary>
         /// ユーザー一覧を取得
         /// </summary>
-        public async Task<UsersListResponse> GetUsersListAsync()
+        public async Task<MemoryListResponse> GetMemoryListAsync()
         {
             try
             {
@@ -197,7 +163,7 @@ namespace CocoroDock.Communication
                     throw new HttpRequestException($"ユーザー一覧取得エラー: {error?.message ?? responseBody}");
                 }
 
-                var result = MessageHelper.DeserializeFromJson<UsersListResponse>(responseBody)
+                var result = MessageHelper.DeserializeFromJson<MemoryListResponse>(responseBody)
                        ?? throw new InvalidOperationException("ユーザー一覧の解析に失敗しました");
 
                 Debug.WriteLine($"[API Parsed] Users count: {result.data?.Count ?? 0}");
@@ -205,7 +171,7 @@ namespace CocoroDock.Communication
                 {
                     foreach (var user in result.data)
                     {
-                        Debug.WriteLine($"[API User] ID: {user.user_id}, Name: {user.user_name}, Role: {user.role}");
+                        Debug.WriteLine($"[API User] ID: {user.memory_id}, Name: {user.memory_name}, Role: {user.role}");
                     }
                 }
 
@@ -221,13 +187,13 @@ namespace CocoroDock.Communication
         /// <summary>
         /// ユーザーの記憶統計情報を取得
         /// </summary>
-        public async Task<MemoryStatsResponse> GetUserMemoryStatsAsync(string userId)
+        public async Task<MemoryStatsResponse> GetMemoryStatsAsync(string memoryId)
         {
             try
             {
-                var requestUrl = $"{_baseUrl}/api/memory/user/{Uri.EscapeDataString(userId)}/stats";
+                var requestUrl = $"{_baseUrl}/api/memory/user/{Uri.EscapeDataString(memoryId)}/stats";
                 Debug.WriteLine($"[API Request] GET {requestUrl}");
-                Debug.WriteLine($"[API Param] UserId: {userId}");
+                Debug.WriteLine($"[API Param] MemoryId: {memoryId}");
 
                 using var response = await _httpClient.GetAsync(requestUrl);
 
@@ -239,11 +205,11 @@ namespace CocoroDock.Communication
                 {
                     if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     {
-                        Debug.WriteLine("[API Fallback] User not found, returning empty stats");
+                        Debug.WriteLine("[API Fallback] Memory not found, returning empty stats");
                         // ユーザーが存在しない場合は空の統計を返す
                         return new MemoryStatsResponse
                         {
-                            user_id = userId,
+                            memory_id = memoryId,
                             total_memories = 0,
                             text_memories = 0,
                             activation_memories = 0,
@@ -273,13 +239,13 @@ namespace CocoroDock.Communication
         /// <summary>
         /// ユーザーの全記憶を削除
         /// </summary>
-        public async Task<MemoryDeleteResponse> DeleteUserMemoriesAsync(string userId)
+        public async Task<MemoryDeleteResponse> DeleteUserMemoriesAsync(string memoryId)
         {
             try
             {
-                var requestUrl = $"{_baseUrl}/api/memory/user/{Uri.EscapeDataString(userId)}/all";
+                var requestUrl = $"{_baseUrl}/api/memory/user/{Uri.EscapeDataString(memoryId)}/all";
                 Debug.WriteLine($"[API Request] DELETE {requestUrl}");
-                Debug.WriteLine($"[API Param] UserId: {userId}");
+                Debug.WriteLine($"[API Param] MemoryId: {memoryId}");
 
                 using var response = await _httpClient.DeleteAsync(requestUrl);
 
@@ -294,7 +260,7 @@ namespace CocoroDock.Communication
                     if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     {
                         Debug.WriteLine("[API Error] ユーザーが見つかりません");
-                        throw new InvalidOperationException($"ユーザーが見つかりません: {userId}");
+                        throw new InvalidOperationException($"ユーザーが見つかりません: {memoryId}");
                     }
 
                     Debug.WriteLine($"[API Error] 記憶削除に失敗: {error?.message ?? responseBody}");
@@ -328,7 +294,6 @@ namespace CocoroDock.Communication
                 var requestUrl = $"{_baseUrl}/api/chat/stream";
                 Debug.WriteLine($"[STREAMING API Request] POST {requestUrl}");
                 Debug.WriteLine($"[STREAMING API Param] Query: {request.query}");
-                Debug.WriteLine($"[STREAMING API Param] CubeId: {request.cube_id}");
                 Debug.WriteLine($"[STREAMING API Param] ChatType: {request.chat_type}");
                 Debug.WriteLine($"[STREAMING API Param] Images: {request.images?.Count ?? 0} items");
 

@@ -82,14 +82,10 @@ namespace CocoroDock.Communication
         public string ttsEndpointURL { get; set; } = string.Empty;
         public string ttsSperkerID { get; set; } = string.Empty;
         public string ttsType { get; set; } = "voicevox"; // "voicevox" or "style-bert-vits2" or "aivis-cloud"
-
-        // Style-Bert-VITS2用設定
         public StyleBertVits2Config styleBertVits2Config { get; set; } = new StyleBertVits2Config();
-
-        // AivisCloud用設定
         public AivisCloudConfig aivisCloudConfig { get; set; } = new AivisCloudConfig();
         public bool isEnableMemory { get; set; } = true; // メモリ機能の有効/無効
-        public string userId { get; set; } = "";
+        public string memoryId { get; set; } = "";
         public string embeddedApiKey { get; set; } = string.Empty; // 埋め込みモデル用APIキー
         public string embeddedModel { get; set; } = "text-embedding-3-small"; // 埋め込みモデル名
         public bool isUseSTT { get; set; } = false; // STT（音声認識）機能の有効/無効
@@ -236,7 +232,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ChatRequest
     {
-        public string userId { get; set; } = string.Empty;
+        public string memoryId { get; set; } = string.Empty;
         public string sessionId { get; set; } = string.Empty;
         public string message { get; set; } = string.Empty;
         public string role { get; set; } = string.Empty; // "user" | "assistant"
@@ -334,20 +330,6 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// CocoroCore API: 通知リクエスト (AIAvatarKit仕様準拠)
-    /// </summary>
-    public class CoreNotificationRequest
-    {
-        public string type { get; set; } = "invoke"; // AIAvatarKit: リクエストタイプ
-        public string session_id { get; set; } = string.Empty; // セッションID
-        public string user_id { get; set; } = string.Empty; // ユーザーID（送信者）
-        public string? context_id { get; set; } // コンテキストID
-        public string text { get; set; } = string.Empty; // 通知メッセージ
-        public Dictionary<string, object>? metadata { get; set; } // メタデータ
-    }
-
-
-    /// <summary>
     /// CocoroCore API: 制御コマンドリクエスト
     /// </summary>
     public class CoreControlRequest
@@ -374,22 +356,6 @@ namespace CocoroDock.Communication
         public string status { get; set; } = "healthy";
     }
 
-    // TODO: 
-    /// <summary>
-    /// CocoroCore: 詳細ヘルスチェックレスポンス（旧仕様）
-    /// </summary>
-    public class DetailedHealthCheckResponse
-    {
-        public string status { get; set; } = string.Empty;
-        public string version { get; set; } = string.Empty;
-        public string character { get; set; } = string.Empty;
-        public bool memory_enabled { get; set; }
-        public string llm_model { get; set; } = string.Empty;
-        public int active_sessions { get; set; }
-        public McpStatus? mcp_status { get; set; }
-        public Dictionary<string, object>? neo4j_status { get; set; }
-    }
-
     /// <summary>
     /// MCPステータス情報
     /// </summary>
@@ -410,37 +376,6 @@ namespace CocoroDock.Communication
         public bool connected { get; set; }
         public int tool_count { get; set; }
         public string connection_type { get; set; } = string.Empty;
-    }
-
-    /// <summary>
-    /// MCP診断結果
-    /// </summary>
-    public class McpDiagnosticResult
-    {
-        public List<McpServerDiagnostic>? servers { get; set; }
-        public string summary { get; set; } = string.Empty;
-        public string? error { get; set; }
-    }
-
-    /// <summary>
-    /// MCPサーバー診断詳細
-    /// </summary>
-    public class McpServerDiagnostic
-    {
-        public string name { get; set; } = string.Empty;
-        public string command { get; set; } = string.Empty;
-        public List<string>? args { get; set; }
-        public Dictionary<string, object>? env { get; set; }
-        public List<string>? issues { get; set; }
-        public List<string>? checks { get; set; }
-    }
-
-    /// <summary>
-    /// MCP診断レスポンス
-    /// </summary>
-    public class McpDiagnosticResponse : StandardResponse
-    {
-        public McpDiagnosticResult? diagnostic_result { get; set; }
     }
 
     /// <summary>
@@ -493,7 +428,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class MemoryStatsResponse
     {
-        public string user_id { get; set; } = string.Empty;
+        public string memory_id { get; set; } = string.Empty;
         public int total_memories { get; set; }
         public int text_memories { get; set; }
         public int activation_memories { get; set; }
@@ -504,11 +439,11 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// ユーザー統計情報レスポンス
+    /// メモリ統計情報レスポンス
     /// </summary>
-    public class UserStatistics
+    public class MemoryStatistics
     {
-        public string user_id { get; set; } = string.Empty;
+        public string memory_id { get; set; } = string.Empty;
         public int total_memories { get; set; }
         public int textual_memories { get; set; }
         public int activation_memories { get; set; }
@@ -516,22 +451,22 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// ユーザー一覧取得レスポンス
+    /// メモリ一覧取得レスポンス
     /// </summary>
-    public class UsersListResponse
+    public class MemoryListResponse
     {
         public string status { get; set; } = string.Empty;
         public string message { get; set; } = string.Empty;
-        public List<UserInfo>? data { get; set; }
+        public List<MemoryInfo>? data { get; set; }
     }
 
     /// <summary>
-    /// ユーザー情報
+    /// メモリ情報
     /// </summary>
-    public class UserInfo
+    public class MemoryInfo
     {
-        public string user_id { get; set; } = string.Empty;
-        public string user_name { get; set; } = string.Empty;
+        public string memory_id { get; set; } = string.Empty;
+        public string memory_name { get; set; } = string.Empty;
         public string role { get; set; } = string.Empty;
         public bool created { get; set; }
     }
@@ -584,7 +519,6 @@ namespace CocoroDock.Communication
     public class CocoroCore2ChatRequest
     {
         public string query { get; set; } = string.Empty; // ユーザークエリ（必須）
-        public string cube_id { get; set; } = string.Empty; // メモリキューブID（必須）
         public string chat_type { get; set; } = "text"; // "text" | "text_image" | "notification" | "desktop_watch"
         public List<ImageData>? images { get; set; } // 画像データ配列（オプション）
         public NotificationData? notification { get; set; } // 通知データ（オプション）

@@ -284,10 +284,10 @@
                                        VerticalAlignment="Center"/>
 
                             <ComboBox Grid.Column="1"
-                                      x:Name="MemoryCharacterComboBox"
+                                      x:Name="MemoryComboBox"
                                       Margin="10,0,10,0"
                                       DisplayMemberPath="DisplayName"
-                                      SelectionChanged="MemoryCharacterComboBox_SelectionChanged"/>
+                                      SelectionChanged="MemoryComboBox_SelectionChanged"/>
 
                             <Button Grid.Column="2"
                                     x:Name="RefreshMemoryStatsButton"

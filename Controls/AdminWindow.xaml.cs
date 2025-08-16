@@ -45,14 +45,12 @@ namespace CocoroDock.Controls
 
             _communicationService = communicationService;
 
-            // Display タブ初期化（UserControlに委譲）
+            // Display タブ初期化
             DisplaySettingsControl.SetCommunicationService(_communicationService);
             DisplaySettingsControl.InitializeFromAppSettings();
 
             // キャラクター設定の初期化
             InitializeCharacterSettings();
-
-            // Display タブで必要なイベントは UserControl 内で処理
 
             // MCPタブの初期化
             McpSettingsControl.Initialize();
@@ -145,7 +143,7 @@ namespace CocoroDock.Controls
         /// </summary>
         private void BackupSettings()
         {
-            // 表示設定のバックアップ（UserControlのスナップショット）
+            // 表示設定のバックアップ
             DisplaySettingsControl.SaveToSnapshot();
             _originalDisplaySettings = DisplaySettingsControl.GetSnapshot();
         }
@@ -758,7 +756,7 @@ namespace CocoroDock.Controls
                     current.visionModel != previous.visionModel ||
                     current.localLLMBaseUrl != previous.localLLMBaseUrl ||
                     current.isEnableMemory != previous.isEnableMemory ||
-                    current.userId != previous.userId ||
+                    current.memoryId != previous.memoryId ||
                     current.embeddedApiKey != previous.embeddedApiKey ||
                     current.embeddedModel != previous.embeddedModel)
                 {

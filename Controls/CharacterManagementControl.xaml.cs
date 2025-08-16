@@ -215,7 +215,7 @@ namespace CocoroDock.Controls
                 var newFileName = $"{character.modelName}_{AppSettings.Instance.ExtractUuidFromFileName(character.systemPromptFilePath)}.txt";
                 character.systemPromptFilePath = newFileName;
             }
-            character.userId = UserIdTextBox.Text;
+            character.memoryId = MemoryIdTextBox.Text;
             character.embeddedApiKey = EmbeddedApiKeyPasswordBox.Text;
             character.embeddedModel = EmbeddedModelTextBox.Text;
             character.isUseSTT = IsUseSTTCheckBox.IsChecked ?? false;
@@ -349,7 +349,7 @@ namespace CocoroDock.Controls
             _tempSystemPromptText = promptText; // 一時保存も初期化
 
             // 記憶機能
-            UserIdTextBox.Text = character.userId;
+            MemoryIdTextBox.Text = character.memoryId;
             EmbeddedApiKeyPasswordBox.Text = character.embeddedApiKey;
             EmbeddedModelTextBox.Text = character.embeddedModel;
 
@@ -587,7 +587,7 @@ namespace CocoroDock.Controls
                         outputAudioChannels = sourceCharacter.aivisCloudConfig.outputAudioChannels,
                     },
                     isEnableMemory = sourceCharacter.isEnableMemory,
-                    userId = sourceCharacter.userId,
+                    memoryId = sourceCharacter.memoryId,
                     embeddedApiKey = sourceCharacter.embeddedApiKey,
                     embeddedModel = sourceCharacter.embeddedModel,
                     isUseSTT = sourceCharacter.isUseSTT,

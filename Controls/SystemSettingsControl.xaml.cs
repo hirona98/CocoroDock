@@ -13,11 +13,11 @@ using System.Windows.Controls;
 namespace CocoroDock.Controls
 {
     /// <summary>
-    /// 表示用ユーザー情報
+    /// 表示用記憶情報
     /// </summary>
-    public class DisplayUserInfo
+    public class DisplayMemoryInfo
     {
-        public string UserId { get; set; } = string.Empty;
+        public string MemoryId { get; set; } = string.Empty;
         public string DisplayName { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
     }
@@ -289,7 +289,7 @@ namespace CocoroDock.Controls
         {
             try
             {
-                await LoadRegisteredUsers();
+                await LoadRegisteredMemories();
             }
             catch (Exception ex)
             {
@@ -300,63 +300,63 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// CocoroCore2に登録されているユーザー一覧を取得
+        /// CocoroCore2に登録されているメモリー一覧を取得
         /// </summary>
-        private async Task LoadRegisteredUsers()
+        private async Task LoadRegisteredMemories()
         {
             try
             {
                 var appSettings = AppSettings.Instance;
                 using var coreClient = new CocoroCoreClient(appSettings.CocoroCorePort);
 
-                // CocoroCore2からユーザー一覧を取得
-                var usersResponse = await coreClient.GetUsersListAsync();
+                // CocoroCore2からメモリー一覧を取得
+                var memoriesResponse = await coreClient.GetMemoryListAsync();
 
-                if (usersResponse.data?.Any() == true)
+                if (memoriesResponse.data?.Any() == true)
                 {
-                    // 表示用のユーザー情報リストを作成
-                    var displayUsers = usersResponse.data.Select(u => new DisplayUserInfo
+                    // 表示用のメモリー情報リストを作成
+                    var displayMemories = memoriesResponse.data.Select(u => new DisplayMemoryInfo
                     {
-                        UserId = u.user_id,
-                        DisplayName = !string.IsNullOrEmpty(u.user_name) ? u.user_name : u.user_id,
+                        MemoryId = u.memory_id,
+                        DisplayName = !string.IsNullOrEmpty(u.memory_name) ? u.memory_name : u.memory_id,
                         Role = u.role
                     }).ToList();
 
-                    MemoryCharacterComboBox.ItemsSource = displayUsers;
+                    MemoryComboBox.ItemsSource = displayMemories;
 
-                    // 最初のユーザーを選択
-                    if (displayUsers.Any())
+                    // 最初のメモリーを選択
+                    if (displayMemories.Any())
                     {
-                        MemoryCharacterComboBox.SelectedIndex = 0;
+                        MemoryComboBox.SelectedIndex = 0;
                     }
                 }
                 else
                 {
-                    SelectedCharacterText.Text = "CocoroCore2にユーザーが登録されていません";
+                    SelectedCharacterText.Text = "CocoroCore2にメモリーが登録されていません";
                     DeleteMemoryButton.IsEnabled = false;
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"ユーザー一覧取得エラー: {ex.Message}");
-                SelectedCharacterText.Text = "ユーザー一覧の取得に失敗しました";
+                Debug.WriteLine($"メモリー一覧取得エラー: {ex.Message}");
+                SelectedCharacterText.Text = "メモリー一覧の取得に失敗しました";
                 DeleteMemoryButton.IsEnabled = false;
             }
         }
 
         /// <summary>
-        /// キャラクター選択変更時
+        /// メモリー選択変更時
         /// </summary>
-        private async void MemoryCharacterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void MemoryComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var selectedUser = MemoryCharacterComboBox.SelectedItem as DisplayUserInfo;
-            if (selectedUser == null)
+            var selectedMemory = MemoryComboBox.SelectedItem as DisplayMemoryInfo;
+            if (selectedMemory == null)
             {
                 DeleteMemoryButton.IsEnabled = false;
                 return;
             }
 
-            await LoadMemoryStats(selectedUser);
+            await LoadMemoryStats(selectedMemory);
         }
 
         /// <summary>
@@ -364,29 +364,29 @@ namespace CocoroDock.Controls
         /// </summary>
         private async void RefreshMemoryStatsButton_Click(object sender, RoutedEventArgs e)
         {
-            // 現在選択中のユーザーIDを保存
-            var currentSelectedUserId = (MemoryCharacterComboBox.SelectedItem as DisplayUserInfo)?.UserId;
+            // 現在選択中のメモリーIDを保存
+            var currentSelectedMemoryId = (MemoryComboBox.SelectedItem as DisplayMemoryInfo)?.MemoryId;
 
-            // ユーザー一覧を再取得
-            await LoadRegisteredUsers();
+            // メモリー一覧を再取得
+            await LoadRegisteredMemories();
 
-            // 前回選択していたユーザーを再選択（存在する場合）
-            if (!string.IsNullOrEmpty(currentSelectedUserId))
+            // 前回選択していたメモリーを再選択（存在する場合）
+            if (!string.IsNullOrEmpty(currentSelectedMemoryId))
             {
-                var itemsSource = MemoryCharacterComboBox.ItemsSource as List<DisplayUserInfo>;
+                var itemsSource = MemoryComboBox.ItemsSource as List<DisplayMemoryInfo>;
                 if (itemsSource != null)
                 {
-                    var userToSelect = itemsSource.FirstOrDefault(u => u.UserId == currentSelectedUserId);
-                    if (userToSelect != null)
+                    var memoryToSelect = itemsSource.FirstOrDefault(u => u.MemoryId == currentSelectedMemoryId);
+                    if (memoryToSelect != null)
                     {
-                        MemoryCharacterComboBox.SelectedItem = userToSelect;
+                        MemoryComboBox.SelectedItem = memoryToSelect;
                     }
                     else
                     {
-                        // 削除されたユーザーの場合は最初のユーザーを選択
+                        // 削除されたメモリーの場合は最初のメモリーを選択
                         if (itemsSource.Any())
                         {
-                            MemoryCharacterComboBox.SelectedIndex = 0;
+                            MemoryComboBox.SelectedIndex = 0;
                         }
                     }
                 }
@@ -396,19 +396,19 @@ namespace CocoroDock.Controls
         /// <summary>
         /// 記憶統計情報の読み込み
         /// </summary>
-        private async Task LoadMemoryStats(DisplayUserInfo user)
+        private async Task LoadMemoryStats(DisplayMemoryInfo memory)
         {
             try
             {
                 RefreshMemoryStatsButton.IsEnabled = false;
-                SelectedCharacterText.Text = $"{user.DisplayName} を読み込み中...";
+                SelectedCharacterText.Text = $"{memory.DisplayName} を読み込み中...";
 
                 var appSettings = AppSettings.Instance;
                 using var coreClient = new CocoroCoreClient(appSettings.CocoroCorePort);
-                _currentMemoryStats = await coreClient.GetUserMemoryStatsAsync(user.UserId);
+                _currentMemoryStats = await coreClient.GetMemoryStatsAsync(memory.MemoryId);
 
                 // UI更新
-                SelectedCharacterText.Text = user.DisplayName;
+                SelectedCharacterText.Text = memory.DisplayName;
                 TotalMemoriesText.Text = $"{_currentMemoryStats.total_memories:N0}件";
                 MemoryDetailsText.Text = $"テキスト: {_currentMemoryStats.text_memories:N0}件 / " +
                                         $"アクティベーション: {_currentMemoryStats.activation_memories:N0}件 / " +
@@ -428,7 +428,7 @@ namespace CocoroDock.Controls
             }
             catch (Exception ex)
             {
-                SelectedCharacterText.Text = user.DisplayName;
+                SelectedCharacterText.Text = memory.DisplayName;
                 TotalMemoriesText.Text = "エラー";
                 MemoryDetailsText.Text = ex.Message;
                 LastUpdatedText.Text = "-";
@@ -447,13 +447,13 @@ namespace CocoroDock.Controls
         /// </summary>
         private async void DeleteMemoryButton_Click(object sender, RoutedEventArgs e)
         {
-            var selectedUser = MemoryCharacterComboBox.SelectedItem as DisplayUserInfo;
-            if (selectedUser == null || _currentMemoryStats == null) return;
+            var selectedMemory = MemoryComboBox.SelectedItem as DisplayMemoryInfo;
+            if (selectedMemory == null || _currentMemoryStats == null) return;
 
             // 確認ダイアログ
             var result = MessageBox.Show(
                 Window.GetWindow(this),
-                $"「{selectedUser.DisplayName}」の記憶（{_currentMemoryStats.total_memories:N0}件）を\n" +
+                $"「{selectedMemory.DisplayName}」の記憶（{_currentMemoryStats.total_memories:N0}件）を\n" +
                 "すべて削除します。\n\n" +
                 "内訳:\n" +
                 $"  ・テキスト記憶: {_currentMemoryStats.text_memories:N0}件\n" +
@@ -472,7 +472,7 @@ namespace CocoroDock.Controls
             // 二重確認
             var confirmResult = MessageBox.Show(
                 Window.GetWindow(this),
-                $"最終確認\n\n「{selectedUser.DisplayName}」の記憶をすべて削除します。\n" +
+                $"最終確認\n\n「{selectedMemory.DisplayName}」の記憶をすべて削除します。\n" +
                 "よろしいですか？",
                 "最終確認",
                 MessageBoxButton.YesNo,
@@ -482,18 +482,18 @@ namespace CocoroDock.Controls
 
             if (confirmResult != MessageBoxResult.Yes) return;
 
-            await ExecuteMemoryDeletion(selectedUser);
+            await ExecuteMemoryDeletion(selectedMemory);
         }
 
         /// <summary>
         /// 記憶削除の実行
         /// </summary>
-        private async Task ExecuteMemoryDeletion(DisplayUserInfo user)
+        private async Task ExecuteMemoryDeletion(DisplayMemoryInfo memory)
         {
             var progressDialog = new MemoryDeleteProgressDialog
             {
                 Owner = Window.GetWindow(this),
-                CharacterName = user.DisplayName,
+                CharacterName = memory.DisplayName,
                 TotalMemories = _currentMemoryStats?.total_memories ?? 0
             };
 
@@ -506,7 +506,7 @@ namespace CocoroDock.Controls
                 using var coreClient = new CocoroCoreClient(appSettings.CocoroCorePort);
 
                 // 削除実行
-                var response = await coreClient.DeleteUserMemoriesAsync(user.UserId);
+                var response = await coreClient.DeleteUserMemoriesAsync(memory.MemoryId);
 
                 progressDialog.Close();
 
@@ -524,7 +524,7 @@ namespace CocoroDock.Controls
                 );
 
                 // 統計情報を再読み込み
-                await LoadMemoryStats(user);
+                await LoadMemoryStats(memory);
             }
             catch (Exception ex)
             {

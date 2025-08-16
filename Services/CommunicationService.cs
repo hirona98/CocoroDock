@@ -221,10 +221,7 @@ namespace CocoroDock.Services
 
                 // システムプロンプトを取得（キャッシュ使用）
                 string? systemPrompt = GetCachedSystemPrompt(currentCharacter?.systemPromptFilePath);
-
-                // cube_idを生成（user_id + "_cube"形式）
-                var userId = !string.IsNullOrEmpty(currentCharacter?.userId) ? currentCharacter.userId : "user";
-                var cubeId = $"{userId}_cube";
+                var memoryId = !string.IsNullOrEmpty(currentCharacter?.memoryId) ? currentCharacter.memoryId : "memory";
 
                 // 画像データを変換
                 List<ImageData>? images = null;
@@ -243,7 +240,6 @@ namespace CocoroDock.Services
                 var request = new CocoroCore2ChatRequest
                 {
                     query = message,
-                    cube_id = cubeId,
                     chat_type = chatType,
                     images = images,
                     internet_search = true, // インターネット検索を有効化
@@ -261,7 +257,7 @@ namespace CocoroDock.Services
                 // リアルタイム部分送信用の変数
                 var partialResponse = new System.Text.StringBuilder();
                 var fullResponse = new System.Text.StringBuilder();
-                // userIdは上で既に定義済み
+                // memoryIdは上で既に定義済み
                 var sessionId = _currentSessionId;
                 var isFirstPartialMessage = true;
 
@@ -285,7 +281,7 @@ namespace CocoroDock.Services
                         {
                             var partialChatRequest = new ChatRequest
                             {
-                                userId = userId,
+                                memoryId = memoryId,
                                 sessionId = sessionId,
                                 message = partialResponse.ToString(),
                                 role = "assistant",
@@ -324,7 +320,7 @@ namespace CocoroDock.Services
                                 var partialText = partialResponse.ToString();
                                 var partialChatRequest = new ChatRequest
                                 {
-                                    userId = userId,
+                                    memoryId = memoryId,
                                     sessionId = sessionId,
                                     message = partialText,
                                     role = "assistant",
@@ -423,9 +419,9 @@ namespace CocoroDock.Services
                 // システムプロンプトを取得（キャッシュ使用）
                 string? systemPrompt = GetCachedSystemPrompt(currentCharacter.systemPromptFilePath);
 
-                // cube_idを生成（user_id + "_cube"形式）
-                var userId = !string.IsNullOrEmpty(currentCharacter.userId) ? currentCharacter.userId : "user";
-                var cubeId = $"{userId}_cube";
+                // cube_idを生成
+                var memoryId = !string.IsNullOrEmpty(currentCharacter.memoryId) ? currentCharacter.memoryId : "memory";
+                var cubeId = $"user_user_{memoryId}_cube";
 
                 // 画像データを変換
                 List<ImageData>? images = null;
@@ -451,8 +447,7 @@ namespace CocoroDock.Services
                 // CocoroCore2チャットリクエストを作成
                 var request = new CocoroCore2ChatRequest
                 {
-                    query = "通知への反応をお願いします", // 通知機能用メッセージ
-                    cube_id = cubeId,
+                    query = "通知", // 通知機能用メッセージ（使わない）
                     chat_type = chatType,
                     images = images,
                     notification = notificationData,
@@ -471,7 +466,7 @@ namespace CocoroDock.Services
                 // リアルタイム部分送信用の変数
                 var partialResponse = new System.Text.StringBuilder();
                 var fullResponse = new System.Text.StringBuilder();
-                // userIdは上で既に定義済み
+                // memoryIdは上で既に定義済み
                 var sessionId = _currentSessionId;
                 var isFirstPartialMessage = true;
 
@@ -495,7 +490,7 @@ namespace CocoroDock.Services
                         {
                             var partialChatRequest = new ChatRequest
                             {
-                                userId = userId,
+                                memoryId = memoryId,
                                 sessionId = sessionId,
                                 message = partialResponse.ToString(),
                                 role = "assistant",
@@ -531,7 +526,7 @@ namespace CocoroDock.Services
                                 var partialText = partialResponse.ToString();
                                 var partialChatRequest = new ChatRequest
                                 {
-                                    userId = userId,
+                                    memoryId = memoryId,
                                     sessionId = sessionId,
                                     message = partialText,
                                     role = "assistant",
@@ -652,9 +647,9 @@ namespace CocoroDock.Services
                 // システムプロンプトを取得（キャッシュ使用）
                 string? systemPrompt = GetCachedSystemPrompt(currentCharacter.systemPromptFilePath);
 
-                // cube_idを生成（user_id + "_cube"形式）
-                var userId = !string.IsNullOrEmpty(currentCharacter.userId) ? currentCharacter.userId : "user";
-                var cubeId = $"{userId}_cube";
+                // cube_idを生成
+                var memoryId = !string.IsNullOrEmpty(currentCharacter.memoryId) ? currentCharacter.memoryId : "memory";
+                var cubeId = $"user_user_{memoryId}_cube";
 
                 // 画像データを変換（Base64データをdata URL形式に）
                 var imageDataUrl = $"data:image/png;base64,{imageBase64}";
@@ -676,7 +671,6 @@ namespace CocoroDock.Services
                 var request = new CocoroCore2ChatRequest
                 {
                     query = "", // デスクトップウォッチでは空文字（自動生成）
-                    cube_id = cubeId,
                     chat_type = "desktop_watch",
                     images = images,
                     desktop_context = desktopContext,
@@ -690,7 +684,7 @@ namespace CocoroDock.Services
                 // リアルタイム部分送信用の変数
                 var partialResponse = new System.Text.StringBuilder();
                 var fullResponse = new System.Text.StringBuilder();
-                // userIdは上で既に定義済み
+                // memoryIdは上で既に定義済み
                 var sessionId = _currentSessionId;
                 var isFirstPartialMessage = true;
 
@@ -713,7 +707,7 @@ namespace CocoroDock.Services
                         {
                             var partialChatRequest = new ChatRequest
                             {
-                                userId = userId,
+                                memoryId = memoryId,
                                 sessionId = sessionId,
                                 message = partialResponse.ToString(),
                                 role = "assistant",
@@ -749,7 +743,7 @@ namespace CocoroDock.Services
                                 var partialText = partialResponse.ToString();
                                 var partialChatRequest = new ChatRequest
                                 {
-                                    userId = userId,
+                                    memoryId = memoryId,
                                     sessionId = sessionId,
                                     message = partialText,
                                     role = "assistant",

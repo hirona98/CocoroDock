@@ -95,7 +95,7 @@
         "outputAudioChannels": "mono"
       },
       "isEnableMemory": true,
-      "userId": "tsukuyomichan",
+      "memoryId": "tsukuyomichan",
       "embeddedApiKey": "",
       "embeddedModel": "text-embedding-3-small",
       "isUseSTT": false,
@@ -161,7 +161,7 @@
         "outputAudioChannels": "mono"
       },
       "isEnableMemory": true,
-      "userId": "miku",
+      "memoryId": "miku",
       "embeddedApiKey": "",
       "embeddedModel": "text-embedding-3-small",
       "isUseSTT": false,
