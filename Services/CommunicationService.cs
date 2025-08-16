@@ -26,7 +26,6 @@ namespace CocoroDock.Services
 
         // セッション管理用
         private string? _currentSessionId;
-        private string? _currentContextId;
 
         // WebSocket部分レスポンス管理用
         private readonly Dictionary<string, System.Text.StringBuilder> _partialResponses = new Dictionary<string, System.Text.StringBuilder>();
@@ -208,7 +207,6 @@ namespace CocoroDock.Services
         public void StartNewConversation()
         {
             _currentSessionId = null;
-            _currentContextId = null;
             Debug.WriteLine("新しい会話セッションを開始しました");
         }
 
@@ -320,7 +318,7 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// 通知メッセージを処理（Notification API用）
+        /// 通知メッセージを処理（Notification API用）- WebSocket版
         /// </summary>
         /// <param name="notification">通知メッセージ</param>
         /// <param name="imageDataUrls">画像データURL配列（オプション）</param>
@@ -338,158 +336,23 @@ namespace CocoroDock.Services
                     return;
                 }
 
-                // セッションIDを生成または既存のものを使用
-                if (string.IsNullOrEmpty(_currentSessionId))
-                {
-                    _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
-                }
+                // 通知メッセージを構築
+                var notificationMessage = $"【{notification.from}からの通知】{notification.message}";
 
-                // 通知メッセージ（タグなし）
-                var notificationText = notification.message;
-
-                // システムプロンプトを取得（キャッシュ使用）
-                string? systemPrompt = GetCachedSystemPrompt(currentCharacter.systemPromptFilePath);
-
-                // cube_idを生成
-                var memoryId = !string.IsNullOrEmpty(currentCharacter.memoryId) ? currentCharacter.memoryId : "memory";
-                var cubeId = $"user_user_{memoryId}_cube";
-
-                // 画像データを変換
-                List<ImageData>? images = null;
+                // 画像がある場合は最初の画像のみ使用（WebSocket統一API）
+                string? imageDataUrl = null;
                 if (imageDataUrls != null && imageDataUrls.Length > 0)
                 {
-                    var imageUrls = imageDataUrls.Where(url => !string.IsNullOrEmpty(url)).ToArray();
-                    if (imageUrls.Length > 0)
-                    {
-                        images = imageUrls.Select(url => new ImageData { data = url }).ToList();
-                    }
+                    imageDataUrl = imageDataUrls.FirstOrDefault(url => !string.IsNullOrEmpty(url));
                 }
 
-                // 通知データを作成
-                var notificationData = new NotificationData
-                {
-                    from = notification.from,
-                    original_message = notificationText
-                };
-
-                // チャットタイプを決定
-                var chatType = "notification";
-
-                // CocoroCore2チャットリクエストを作成
-                var request = new CocoroCore2ChatRequest
-                {
-                    query = "通知", // 通知機能用メッセージ（使わない）
-                    chat_type = chatType,
-                    images = images,
-                    notification = notificationData,
-                    internet_search = false, // 通知ではインターネット検索は無効
-                    request_id = _currentSessionId
-                };
-
-                // 処理状態を設定（通知処理開始）
-                var processingStatus = (imageDataUrls != null && imageDataUrls.Length > 0)
-                    ? CocoroCore2Status.ProcessingImage
-                    : CocoroCore2Status.ProcessingMessage;
-                _statusPollingService?.SetProcessingStatus(processingStatus);
-
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "通知ストリーミング処理開始"));
-
-                // リアルタイム部分送信用の変数
-                var partialResponse = new System.Text.StringBuilder();
-                var fullResponse = new System.Text.StringBuilder();
-                // memoryIdは上で既に定義済み
-                var sessionId = _currentSessionId;
-                var isFirstPartialMessage = true;
-
-                // ストリーミングチャットを送信
-                await _coreClient.SendChatStreamAsync(request, (streamingEvent) =>
-                {
-                    if (streamingEvent.IsError)
-                    {
-                        Debug.WriteLine($"[NOTIFICATION STREAMING Error] {streamingEvent.ErrorMessage}");
-
-                        // エラー時は正常状態に戻す
-                        _statusPollingService?.SetNormalStatus();
-                        StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"通知ストリーミングエラー: {streamingEvent.ErrorMessage}"));
-                    }
-                    else if (streamingEvent.IsFinished)
-                    {
-                        Debug.WriteLine($"[NOTIFICATION STREAMING Completed] Total response: {fullResponse.Length} characters");
-
-                        // 最後の部分的レスポンスを送信（残りがある場合）
-                        if (partialResponse.Length > 0)
-                        {
-                            var partialChatRequest = new ChatRequest
-                            {
-                                memoryId = memoryId,
-                                sessionId = sessionId,
-                                message = partialResponse.ToString(),
-                                role = "assistant",
-                                content = partialResponse.ToString()
-                            };
-
-                            if (isFirstPartialMessage)
-                            {
-                                ChatMessageReceived?.Invoke(this, partialChatRequest);
-                            }
-                            else
-                            {
-                                partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
-                                ChatMessageReceived?.Invoke(this, partialChatRequest);
-                            }
-                        }
-
-                        // 成功時のステータス更新
-                        _statusPollingService?.SetNormalStatus();
-                        StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "通知ストリーミング完了"));
-                    }
-                    else
-                    {
-                        // ストリーミング中のコンテンツ
-                        if (!string.IsNullOrEmpty(streamingEvent.Content))
-                        {
-                            partialResponse.Append(streamingEvent.Content);
-                            fullResponse.Append(streamingEvent.Content);
-
-                            // 20文字以上 + 句読点・文章切れ目での部分送信判定
-                            if (ShouldSendPartialResponse(partialResponse.ToString()))
-                            {
-                                var partialText = partialResponse.ToString();
-                                var partialChatRequest = new ChatRequest
-                                {
-                                    memoryId = memoryId,
-                                    sessionId = sessionId,
-                                    message = partialText,
-                                    role = "assistant",
-                                    content = partialText
-                                };
-
-                                if (isFirstPartialMessage)
-                                {
-                                    ChatMessageReceived?.Invoke(this, partialChatRequest);
-                                    isFirstPartialMessage = false;
-                                }
-                                else
-                                {
-                                    partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
-                                    ChatMessageReceived?.Invoke(this, partialChatRequest);
-                                }
-
-                                partialResponse.Clear();
-                                Debug.WriteLine($"[NOTIFICATION PARTIAL SENT] Length: {partialText.Length}");
-                            }
-
-                            // ストリーミングイベントを発火
-                            StreamingChatReceived?.Invoke(this, streamingEvent);
-                        }
-                    }
-                });
+                // WebSocket統一APIを使用して通知処理
+                await SendChatToCoreUnifiedAsync(notificationMessage, null, imageDataUrl);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"通知ストリーミング処理エラー: {ex.Message}");
-                _statusPollingService?.SetNormalStatus();
-                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"通信エラー: {ex.Message}"));
+                Debug.WriteLine($"通知処理エラー: {ex.Message}");
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"通知処理エラー: {ex.Message}"));
             }
         }
 
@@ -551,164 +414,6 @@ namespace CocoroDock.Services
             NotificationMessageReceived?.Invoke(notification, imageSources);
         }
 
-        /// <summary>
-        /// デスクトップモニタリング画像をMemOSストリーミングでCocoroCoreに送信
-        /// </summary>
-        /// <param name="imageBase64">Base64エンコードされた画像データ</param>
-        public async Task SendDesktopMonitoringToCoreAsync(string imageBase64)
-        {
-            try
-            {
-                // 現在のキャラクター設定を取得
-                var currentCharacter = GetCurrentCharacterSettings();
-
-                // LLMが有効でない場合は処理しない
-                if (currentCharacter == null || !currentCharacter.isUseLLM)
-                {
-                    Debug.WriteLine("デスクトップモニタリング: LLMが無効のためスキップ");
-                    return;
-                }
-
-                // セッションIDを生成または既存のものを使用
-                if (string.IsNullOrEmpty(_currentSessionId))
-                {
-                    _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
-                }
-
-                // システムプロンプトを取得（キャッシュ使用）
-                string? systemPrompt = GetCachedSystemPrompt(currentCharacter.systemPromptFilePath);
-
-                // cube_idを生成
-                var memoryId = !string.IsNullOrEmpty(currentCharacter.memoryId) ? currentCharacter.memoryId : "memory";
-                var cubeId = $"user_user_{memoryId}_cube";
-
-                // 画像データを変換（Base64データをdata URL形式に）
-                var imageDataUrl = $"data:image/png;base64,{imageBase64}";
-                var images = new List<ImageData>
-                {
-                    new ImageData { data = imageDataUrl }
-                };
-
-                // デスクトップコンテキストを作成
-                var desktopContext = new DesktopContext
-                {
-                    window_title = "Unknown", // 実際のウィンドウ情報が必要な場合は取得
-                    application = "Desktop",
-                    capture_type = "full", // デスクトップモニタリングは全画面
-                    timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
-                };
-
-                // CocoroCore2チャットリクエストを作成
-                var request = new CocoroCore2ChatRequest
-                {
-                    query = "", // デスクトップウォッチでは空文字（自動生成）
-                    chat_type = "desktop_watch",
-                    images = images,
-                    desktop_context = desktopContext,
-                    internet_search = false, // デスクトップモニタリングではインターネット検索は無効
-                    request_id = _currentSessionId
-                };
-
-                // デスクトップモニタリングは画像処理中に設定
-                _statusPollingService.SetProcessingStatus(CocoroCore2Status.ProcessingImage);
-
-                // リアルタイム部分送信用の変数
-                var partialResponse = new System.Text.StringBuilder();
-                var fullResponse = new System.Text.StringBuilder();
-                // memoryIdは上で既に定義済み
-                var sessionId = _currentSessionId;
-                var isFirstPartialMessage = true;
-
-                // ストリーミングチャットを送信
-                await _coreClient.SendChatStreamAsync(request, (streamingEvent) =>
-                {
-                    if (streamingEvent.IsError)
-                    {
-                        Debug.WriteLine($"[DESKTOP MONITORING STREAMING Error] {streamingEvent.ErrorMessage}");
-
-                        // エラー時は正常状態に戻す
-                        _statusPollingService.SetNormalStatus();
-                    }
-                    else if (streamingEvent.IsFinished)
-                    {
-                        Debug.WriteLine($"[DESKTOP MONITORING STREAMING Completed] Total response: {fullResponse.Length} characters");
-
-                        // 最後の部分的レスポンスを送信（残りがある場合）
-                        if (partialResponse.Length > 0)
-                        {
-                            var partialChatRequest = new ChatRequest
-                            {
-                                memoryId = memoryId,
-                                sessionId = sessionId,
-                                message = partialResponse.ToString(),
-                                role = "assistant",
-                                content = partialResponse.ToString()
-                            };
-
-                            if (isFirstPartialMessage)
-                            {
-                                ChatMessageReceived?.Invoke(this, partialChatRequest);
-                            }
-                            else
-                            {
-                                partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
-                                ChatMessageReceived?.Invoke(this, partialChatRequest);
-                            }
-                        }
-
-                        // 成功時のステータス更新
-                        _statusPollingService.SetNormalStatus();
-                        StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "デスクトップモニタリング完了"));
-                    }
-                    else
-                    {
-                        // ストリーミング中のコンテンツ
-                        if (!string.IsNullOrEmpty(streamingEvent.Content))
-                        {
-                            partialResponse.Append(streamingEvent.Content);
-                            fullResponse.Append(streamingEvent.Content);
-
-                            // 20文字以上 + 句読点・文章切れ目での部分送信判定
-                            if (ShouldSendPartialResponse(partialResponse.ToString()))
-                            {
-                                var partialText = partialResponse.ToString();
-                                var partialChatRequest = new ChatRequest
-                                {
-                                    memoryId = memoryId,
-                                    sessionId = sessionId,
-                                    message = partialText,
-                                    role = "assistant",
-                                    content = partialText
-                                };
-
-                                if (isFirstPartialMessage)
-                                {
-                                    ChatMessageReceived?.Invoke(this, partialChatRequest);
-                                    isFirstPartialMessage = false;
-                                }
-                                else
-                                {
-                                    partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
-                                    ChatMessageReceived?.Invoke(this, partialChatRequest);
-                                }
-
-                                partialResponse.Clear();
-                                Debug.WriteLine($"[DESKTOP PARTIAL SENT] Length: {partialText.Length}");
-                            }
-
-                            // デスクトップモニタリングでは文字単位のStreamingChatReceivedは発火しない（部分送信は実行）
-                        }
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"デスクトップモニタリングストリーミング送信エラー: {ex.Message}");
-                // エラー時は正常状態に戻す
-                _statusPollingService.SetNormalStatus();
-                // エラーは静かに処理（モニタリング機能なのでユーザーに通知しない）
-            }
-        }
 
         /// <summary>
         /// CocoroShellにTTS状態を送信

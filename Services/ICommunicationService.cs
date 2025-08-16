@@ -106,11 +106,6 @@ namespace CocoroDock.Services
         /// <param name="imageDataUrls">画像データURL配列（オプション）</param>
         Task ProcessNotificationAsync(ChatMessagePayload notification, string[]? imageDataUrls = null);
 
-        /// <summary>
-        /// デスクトップモニタリング画像をCocoroCoreに送信
-        /// </summary>
-        /// <param name="imageBase64">Base64エンコードされた画像データ</param>
-        Task SendDesktopMonitoringToCoreAsync(string imageBase64);
 
         /// <summary>
         /// CocoroShellにTTS状態を送信
