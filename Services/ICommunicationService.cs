@@ -89,6 +89,14 @@ namespace CocoroDock.Services
         Task SendChatToCoreUnifiedAsync(string message, string? characterName = null, string? imageDataUrl = null);
 
         /// <summary>
+        /// CocoroCoreへメッセージを送信（複数画像対応）
+        /// </summary>
+        /// <param name="message">送信メッセージ</param>
+        /// <param name="characterName">キャラクター名（オプション）</param>
+        /// <param name="imageDataUrls">画像データURLリスト（オプション）</param>
+        Task SendChatToCoreUnifiedAsync(string message, string? characterName = null, List<string>? imageDataUrls = null);
+
+        /// <summary>
         /// 新しい会話セッションを開始
         /// </summary>
         void StartNewConversation();

@@ -207,6 +207,19 @@ namespace CocoroDock.Services
         /// <param name="imageDataUrl">画像データURL（オプション）</param>
         public async Task SendChatToCoreUnifiedAsync(string message, string? characterName = null, string? imageDataUrl = null)
         {
+            // 単一画像を配列に変換して複数画像対応版を呼び出し
+            var imageDataUrls = imageDataUrl != null ? new List<string> { imageDataUrl } : null;
+            await SendChatToCoreUnifiedAsync(message, characterName, imageDataUrls);
+        }
+
+        /// <summary>
+        /// CocoroCoreへメッセージを送信（複数画像対応）
+        /// </summary>
+        /// <param name="message">送信メッセージ</param>
+        /// <param name="characterName">キャラクター名（オプション）</param>
+        /// <param name="imageDataUrls">画像データURLリスト（オプション）</param>
+        public async Task SendChatToCoreUnifiedAsync(string message, string? characterName = null, List<string>? imageDataUrls = null)
+        {
             try
             {
                 // 現在のキャラクター設定を取得
@@ -231,16 +244,13 @@ namespace CocoroDock.Services
 
                 // 画像データを変換
                 List<ImageData>? images = null;
-                if (!string.IsNullOrEmpty(imageDataUrl))
+                if (imageDataUrls != null && imageDataUrls.Count > 0)
                 {
-                    images = new List<ImageData>
-                    {
-                        new ImageData { data = imageDataUrl }
-                    };
+                    images = imageDataUrls.Select(url => new ImageData { data = url }).ToList();
                 }
 
                 // チャットタイプを決定
-                var chatType = !string.IsNullOrEmpty(imageDataUrl) ? "text_image" : "text";
+                var chatType = (images != null && images.Count > 0) ? "text_image" : "text";
 
                 // WebSocketチャットリクエストを作成
                 var request = new WebSocketChatRequest
@@ -252,7 +262,7 @@ namespace CocoroDock.Services
                 };
 
                 // 画像がある場合は画像処理中、そうでなければメッセージ処理中に設定
-                var processingStatus = !string.IsNullOrEmpty(imageDataUrl)
+                var processingStatus = (images != null && images.Count > 0)
                     ? CocoroCore2Status.ProcessingImage
                     : CocoroCore2Status.ProcessingMessage;
                 _statusPollingService.SetProcessingStatus(processingStatus);

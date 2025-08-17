@@ -211,36 +211,19 @@
                                 Background="#F0F0F0"
                                 Visibility="Collapsed">
                                 <Grid>
-                                        <TextBlock Text="画像をドラッグ&amp;ドロップまたはクリップボードから貼り付け"
+                                        <TextBlock Text="画像をドラッグ&amp;ドロップまたはクリップボードから貼り付け（最大5枚）"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
                                                    Foreground="#999999"
                                                    x:Name="ImagePlaceholderText"/>
-                                        <Image x:Name="PreviewImage"
-                                               Margin="5"
-                                               Stretch="Uniform"
-                                               Visibility="Collapsed"/>
-                                        <Button x:Name="RemoveImageButton"
-                                                Content="✕"
-                                                Width="25"
-                                                Height="25"
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Top"
-                                                Margin="5"
-                                                Background="#7F7F7F"
-                                                Foreground="White"
-                                                BorderThickness="0"
-                                                FontSize="12"
-                                                FontWeight="Bold"
-                                                Visibility="Collapsed"
-                                                Click="RemoveImageButton_Click">
-                                                <Button.Resources>
-                                                        <Style TargetType="Border">
-                                                                <Setter Property="CornerRadius"
-                                                                        Value="10"/>
-                                                        </Style>
-                                                </Button.Resources>
-                                        </Button>
+                                        <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                                     VerticalScrollBarVisibility="Disabled"
+                                                     x:Name="ImagePreviewScrollViewer"
+                                                     Margin="5"
+                                                     Visibility="Collapsed">
+                                                <WrapPanel x:Name="ImagePreviewPanel"
+                                                          Orientation="Horizontal"/>
+                                        </ScrollViewer>
                                 </Grid>
                         </Border>
 

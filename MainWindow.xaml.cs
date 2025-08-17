@@ -376,11 +376,11 @@ namespace CocoroDock
             }
 
             // UIスレッドで画像データを取得・処理（スレッドセーフな形式に変換）
-            var imageSource = ChatControlInstance.GetAttachedImageSource();
-            string? imageDataUrl = ChatControlInstance.GetAndClearAttachedImage();
+            var imageSources = ChatControlInstance.GetAttachedImageSources();
+            var imageDataUrls = ChatControlInstance.GetAndClearAttachedImages();
 
             // ユーザーメッセージとしてチャットウィンドウに表示（送信前に表示）
-            ChatControlInstance.AddUserMessage(message, imageSource);
+            ChatControlInstance.AddUserMessage(message, imageSources);
 
             // 非同期でCocoroCoreにメッセージを送信（UIをブロックしない）
             _ = Task.Run(async () =>
@@ -388,7 +388,7 @@ namespace CocoroDock
                 try
                 {
                     // CocoroCoreにメッセージを送信（API使用、画像付きの場合は画像データも送信）
-                    await _communicationService.SendChatToCoreUnifiedAsync(message, null, imageDataUrl);
+                    await _communicationService.SendChatToCoreUnifiedAsync(message, null, imageDataUrls);
                 }
                 catch (TimeoutException)
                 {
