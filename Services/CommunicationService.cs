@@ -13,8 +13,7 @@ namespace CocoroDock.Services
     /// </summary>
     public class CommunicationService : ICommunicationService
     {
-        // リアルタイムストリーミング設定
-        private const int MIN_PARTIAL_RESPONSE_LENGTH = 20; // 部分送信の最小文字数
+        // リアルタイムストリーミング設定（即座表示方式）
 
         private readonly CocoroDockApiServer _apiServer;
         private readonly CocoroShellClient _shellClient;
@@ -27,10 +26,8 @@ namespace CocoroDock.Services
         // セッション管理用
         private string? _currentSessionId;
 
-        // WebSocket部分レスポンス管理用
-        private readonly Dictionary<string, System.Text.StringBuilder> _partialResponses = new Dictionary<string, System.Text.StringBuilder>();
-        private readonly Dictionary<string, System.Text.StringBuilder> _fullResponses = new Dictionary<string, System.Text.StringBuilder>();
-        private readonly Dictionary<string, bool> _isFirstPartialMessage = new Dictionary<string, bool>();
+        // WebSocket即座表示用（初回メッセージ判定のみ）
+        private readonly Dictionary<string, bool> _isFirstMessage = new Dictionary<string, bool>();
 
 
         // 設定キャッシュ用
@@ -365,37 +362,6 @@ namespace CocoroDock.Services
             return null;
         }
 
-        /// <summary>
-        /// 部分レスポンスを送信すべきかどうかを判定（20文字以上 + 句読点・文章切れ目）
-        /// </summary>
-        /// <param name="text">判定対象のテキスト</param>
-        /// <returns>送信すべき場合はtrue</returns>
-        private bool ShouldSendPartialResponse(string text)
-        {
-            if (string.IsNullOrEmpty(text) || text.Length < MIN_PARTIAL_RESPONSE_LENGTH)
-            {
-                return false;
-            }
-
-            // 句読点・文章切れ目の文字一覧
-            var punctuationMarks = new char[] { '。', '、', '！', '？', '\n', '\r', '…', '～', '：', '；', '.', ',', '!', '?', ':', ';' };
-
-            // 末尾から句読点・切れ目を検索（最新の追加分をチェック）
-            for (int i = text.Length - 1; i >= Math.Max(0, text.Length - 10); i--)
-            {
-                if (punctuationMarks.Contains(text[i]))
-                {
-                    // 句読点・切れ目が見つかった場合、最小文字数以上かつその位置が適切かチェック
-                    if (i >= MIN_PARTIAL_RESPONSE_LENGTH - 1) // 0ベースなので-1
-                    {
-                        Debug.WriteLine($"[PARTIAL CHECK] Found punctuation '{text[i]}' at position {i}, text length: {text.Length}");
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
 
         /// <summary>
         /// 通知メッセージ受信イベントを発火（内部使用）
@@ -571,7 +537,7 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// WebSocketテキストメッセージ処理
+        /// WebSocketテキストメッセージ処理（即座表示方式）
         /// </summary>
         private void HandleWebSocketTextMessage(WebSocketResponseMessage message)
         {
@@ -583,51 +549,30 @@ namespace CocoroDock.Services
                     var sessionId = message.session_id;
                     
                     // セッション初期化
-                    if (!_partialResponses.ContainsKey(sessionId))
+                    if (!_isFirstMessage.ContainsKey(sessionId))
                     {
-                        _partialResponses[sessionId] = new System.Text.StringBuilder();
-                        _fullResponses[sessionId] = new System.Text.StringBuilder();
-                        _isFirstPartialMessage[sessionId] = true;
+                        _isFirstMessage[sessionId] = true;
                     }
                     
-                    // コンテンツを追加
-                    _partialResponses[sessionId].Append(content);
-                    _fullResponses[sessionId].Append(content);
+                    var currentCharacter = GetCurrentCharacterSettings();
+                    var memoryId = !string.IsNullOrEmpty(currentCharacter?.memoryId) ? currentCharacter.memoryId : "memory";
                     
-                    // 20文字以上 + 句読点・文章切れ目での部分送信判定
-                    if (ShouldSendPartialResponse(_partialResponses[sessionId].ToString()))
+                    var chatRequest = new ChatRequest
                     {
-                        var partialText = _partialResponses[sessionId].ToString();
-                        var currentCharacter = GetCurrentCharacterSettings();
-                        var memoryId = !string.IsNullOrEmpty(currentCharacter?.memoryId) ? currentCharacter.memoryId : "memory";
-                        
-                        var partialChatRequest = new ChatRequest
-                        {
-                            memoryId = memoryId,
-                            sessionId = sessionId,
-                            message = partialText,
-                            role = "assistant",
-                            content = partialText
-                        };
-                        
-                        if (_isFirstPartialMessage[sessionId])
-                        {
-                            // 初回メッセージとして送信
-                            ChatMessageReceived?.Invoke(this, partialChatRequest);
-                            _isFirstPartialMessage[sessionId] = false;
-                        }
-                        else
-                        {
-                            // 追加のメッセージとして送信（UI側で同じメッセージに追記）
-                            partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
-                            ChatMessageReceived?.Invoke(this, partialChatRequest);
-                        }
-                        
-                        // 部分レスポンスをリセット
-                        _partialResponses[sessionId].Clear();
-                        
-                        Debug.WriteLine($"[WebSocket PARTIAL SENT] Length: {partialText.Length}, Content: {partialText.Substring(0, Math.Min(50, partialText.Length))}...");
-                    }
+                        memoryId = memoryId,
+                        sessionId = sessionId,
+                        message = content,
+                        role = "assistant",
+                        content = _isFirstMessage[sessionId] ? content : "[COCORO_APPEND]" + content
+                    };
+                    
+                    // 即座にイベント発火
+                    ChatMessageReceived?.Invoke(this, chatRequest);
+                    
+                    // 初回フラグを更新
+                    _isFirstMessage[sessionId] = false;
+                    
+                    Debug.WriteLine($"[WebSocket IMMEDIATE SENT] Length: {content.Length}, Content: {content.Substring(0, Math.Min(50, content.Length))}...");
                     
                     // StreamingChatEventArgs形式で既存ロジックに統合
                     var streamingEvent = new StreamingChatEventArgs
@@ -661,48 +606,15 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// WebSocket完了メッセージ処理
+        /// WebSocket完了メッセージ処理（簡略化）
         /// </summary>
         private void HandleWebSocketEndMessage(WebSocketResponseMessage message)
         {
             var sessionId = message.session_id;
             Debug.WriteLine($"[WebSocket] ストリーミング完了: session_id={sessionId}");
             
-            // 最後の部分的レスポンスを送信（残りがある場合）
-            if (_partialResponses.ContainsKey(sessionId) && _partialResponses[sessionId].Length > 0)
-            {
-                var partialText = _partialResponses[sessionId].ToString();
-                var currentCharacter = GetCurrentCharacterSettings();
-                var memoryId = !string.IsNullOrEmpty(currentCharacter?.memoryId) ? currentCharacter.memoryId : "memory";
-                
-                var partialChatRequest = new ChatRequest
-                {
-                    memoryId = memoryId,
-                    sessionId = sessionId,
-                    message = partialText,
-                    role = "assistant",
-                    content = partialText
-                };
-                
-                if (_isFirstPartialMessage.ContainsKey(sessionId) && _isFirstPartialMessage[sessionId])
-                {
-                    // 初回メッセージとして送信
-                    ChatMessageReceived?.Invoke(this, partialChatRequest);
-                }
-                else
-                {
-                    // 追加のメッセージとして送信（UI側で同じメッセージに追記）
-                    partialChatRequest.content = "[COCORO_APPEND]" + partialChatRequest.content;
-                    ChatMessageReceived?.Invoke(this, partialChatRequest);
-                }
-                
-                Debug.WriteLine($"[WebSocket FINAL SENT] Length: {partialText.Length}, Content: {partialText.Substring(0, Math.Min(50, partialText.Length))}...");
-            }
-            
             // セッションデータクリーンアップ
-            _partialResponses.Remove(sessionId);
-            _fullResponses.Remove(sessionId);
-            _isFirstPartialMessage.Remove(sessionId);
+            _isFirstMessage.Remove(sessionId);
             
             // 完了イベントを発火
             var finishedEvent = new StreamingChatEventArgs

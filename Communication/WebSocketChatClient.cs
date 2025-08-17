@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -222,11 +224,11 @@ namespace CocoroDock.Communication
         }
 
         /// <summary>
-        /// 受信ループ
+        /// 受信ループ（完全メッセージ受信対応）
         /// </summary>
         private async Task ReceiveLoopAsync()
         {
-            var buffer = new byte[1024 * 8]; // 8KB バッファ
+            var buffer = new byte[1024 * 8]; // 8KB バッファ（フレーム単位）
 
             try
             {
@@ -234,20 +236,44 @@ namespace CocoroDock.Communication
                        _webSocket?.State == WebSocketState.Open && 
                        !(_cancellationTokenSource?.Token.IsCancellationRequested ?? true))
                 {
-                    var result = await _webSocket.ReceiveAsync(
-                        new ArraySegment<byte>(buffer),
-                        _cancellationTokenSource?.Token ?? CancellationToken.None
-                    );
+                    var messageBuffer = new List<byte>();
+                    WebSocketReceiveResult result;
 
-                    if (result.MessageType == WebSocketMessageType.Text)
+                    // 完全なメッセージを受信するまでループ
+                    do
                     {
-                        var json = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                        ProcessReceivedMessage(json);
-                    }
-                    else if (result.MessageType == WebSocketMessageType.Close)
+                        result = await _webSocket.ReceiveAsync(
+                            new ArraySegment<byte>(buffer),
+                            _cancellationTokenSource?.Token ?? CancellationToken.None
+                        );
+
+                        if (result.MessageType == WebSocketMessageType.Text)
+                        {
+                            // 受信したデータをメッセージバッファに追加
+                            messageBuffer.AddRange(buffer.Take(result.Count));
+                        }
+                        else if (result.MessageType == WebSocketMessageType.Close)
+                        {
+                            Debug.WriteLine("[WebSocket] サーバーから切断要求を受信");
+                            return;
+                        }
+
+                    } while (!result.EndOfMessage && result.MessageType == WebSocketMessageType.Text);
+
+                    // 完全なメッセージを受信したら処理
+                    if (result.MessageType == WebSocketMessageType.Text && messageBuffer.Count > 0)
                     {
-                        Debug.WriteLine("[WebSocket] サーバーから切断要求を受信");
-                        break;
+                        try
+                        {
+                            var json = Encoding.UTF8.GetString(messageBuffer.ToArray());
+                            Debug.WriteLine($"[WebSocket] 完全メッセージ受信: Size={messageBuffer.Count} bytes");
+                            ProcessReceivedMessage(json);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"[WebSocket] メッセージ処理エラー: {ex.Message}");
+                            // JSONパースエラーの場合は続行（エラーイベントは ProcessReceivedMessage 内で発火）
+                        }
                     }
                 }
             }
