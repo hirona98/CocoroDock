@@ -73,7 +73,7 @@ namespace CocoroDock.Services
             _coreClient = new CocoroCoreClient(_appSettings.CocoroCorePort);
 
             // WebSocketクライアントの初期化
-            _webSocketClient = new WebSocketChatClient(_appSettings.CocoroCorePort, $"dock_{Environment.MachineName}_{DateTime.Now:yyyyMMddHHmmss}");
+            _webSocketClient = new WebSocketChatClient(_appSettings.CocoroCorePort, $"dock_{DateTime.Now:yyyyMMddHHmmssfff}");
             _webSocketClient.MessageReceived += OnWebSocketMessageReceived;
             _webSocketClient.ConnectionStateChanged += OnWebSocketConnectionStateChanged;
             _webSocketClient.ErrorOccurred += OnWebSocketErrorOccurred;
