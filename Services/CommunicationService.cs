@@ -26,8 +26,7 @@ namespace CocoroDock.Services
         // セッション管理用
         private string? _currentSessionId;
 
-        // WebSocket即座表示用（初回メッセージ判定のみ）
-        private readonly Dictionary<string, bool> _isFirstMessage = new Dictionary<string, bool>();
+        // WebSocket即座表示用
 
 
         // 設定キャッシュ用
@@ -514,7 +513,7 @@ namespace CocoroDock.Services
         private void OnWebSocketConnectionStateChanged(object? sender, bool isConnected)
         {
             Debug.WriteLine($"[WebSocket] 接続状態変更: {(isConnected ? "接続" : "切断")}");
-            StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(isConnected, 
+            StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(isConnected,
                 isConnected ? "WebSocket接続確立" : "WebSocket接続切断"));
         }
 
@@ -537,7 +536,7 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// WebSocketテキストメッセージ処理（即座表示方式）
+        /// WebSocketテキストメッセージ処理
         /// </summary>
         private void HandleWebSocketTextMessage(WebSocketResponseMessage message)
         {
@@ -547,33 +546,24 @@ namespace CocoroDock.Services
                 {
                     var content = contentElement.GetString() ?? "";
                     var sessionId = message.session_id;
-                    
-                    // セッション初期化
-                    if (!_isFirstMessage.ContainsKey(sessionId))
-                    {
-                        _isFirstMessage[sessionId] = true;
-                    }
-                    
+
                     var currentCharacter = GetCurrentCharacterSettings();
                     var memoryId = !string.IsNullOrEmpty(currentCharacter?.memoryId) ? currentCharacter.memoryId : "memory";
-                    
+
                     var chatRequest = new ChatRequest
                     {
                         memoryId = memoryId,
                         sessionId = sessionId,
                         message = content,
                         role = "assistant",
-                        content = _isFirstMessage[sessionId] ? content : "[COCORO_APPEND]" + content
+                        content = content
                     };
-                    
-                    // 即座にイベント発火
+
+                    // サーバー側でチャンク処理されたメッセージをそのまま表示
                     ChatMessageReceived?.Invoke(this, chatRequest);
-                    
-                    // 初回フラグを更新
-                    _isFirstMessage[sessionId] = false;
-                    
-                    Debug.WriteLine($"[WebSocket IMMEDIATE SENT] Length: {content.Length}, Content: {content.Substring(0, Math.Min(50, content.Length))}...");
-                    
+
+                    Debug.WriteLine($"[WebSocket DIRECT] Length: {content.Length}, Content: {content.Substring(0, Math.Min(50, content.Length))}...");
+
                     // StreamingChatEventArgs形式で既存ロジックに統合
                     var streamingEvent = new StreamingChatEventArgs
                     {
@@ -581,7 +571,7 @@ namespace CocoroDock.Services
                         IsFinished = false,
                         IsError = false
                     };
-                    
+
                     StreamingChatReceived?.Invoke(this, streamingEvent);
                 }
             }
@@ -606,16 +596,13 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// WebSocket完了メッセージ処理（簡略化）
+        /// WebSocket完了メッセージ処理
         /// </summary>
         private void HandleWebSocketEndMessage(WebSocketResponseMessage message)
         {
             var sessionId = message.session_id;
             Debug.WriteLine($"[WebSocket] ストリーミング完了: session_id={sessionId}");
-            
-            // セッションデータクリーンアップ
-            _isFirstMessage.Remove(sessionId);
-            
+
             // 完了イベントを発火
             var finishedEvent = new StreamingChatEventArgs
             {
@@ -623,9 +610,9 @@ namespace CocoroDock.Services
                 IsFinished = true,
                 IsError = false
             };
-            
+
             StreamingChatReceived?.Invoke(this, finishedEvent);
-            
+
             // 正常状態に戻す
             _statusPollingService.SetNormalStatus();
             StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "WebSocketチャット完了"));
@@ -637,7 +624,7 @@ namespace CocoroDock.Services
         private void HandleWebSocketErrorMessage(WebSocketResponseMessage message)
         {
             string errorMessage = "WebSocketエラーが発生しました";
-            
+
             if (message.data is System.Text.Json.JsonElement jsonElement)
             {
                 if (jsonElement.TryGetProperty("message", out var messageElement))
@@ -645,9 +632,9 @@ namespace CocoroDock.Services
                     errorMessage = messageElement.GetString() ?? errorMessage;
                 }
             }
-            
+
             Debug.WriteLine($"[WebSocket] エラーメッセージ: {errorMessage}");
-            
+
             // エラーイベントを発火
             var errorEvent = new StreamingChatEventArgs
             {
@@ -656,9 +643,9 @@ namespace CocoroDock.Services
                 IsError = true,
                 ErrorMessage = errorMessage
             };
-            
+
             StreamingChatReceived?.Invoke(this, errorEvent);
-            
+
             // 正常状態に戻す
             _statusPollingService.SetNormalStatus();
             StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"チャットエラー: {errorMessage}"));
