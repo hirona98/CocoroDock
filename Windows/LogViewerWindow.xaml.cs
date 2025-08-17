@@ -1,8 +1,10 @@
 using CocoroDock.Communication;
+using CocoroDock.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,11 +21,20 @@ namespace CocoroDock.Windows
         private ICollectionView? _filteredLogs;
         private string _levelFilter = "";
         private string _componentFilter = "";
+        private LogFileWatcherService? _logWatcher;
+        private const int MaxDisplayedLogs = 1000;
 
         public LogViewerWindow()
         {
             InitializeComponent();
             InitializeLogView();
+            
+            // 初期UI状態を設定
+            Cursor = System.Windows.Input.Cursors.Arrow;
+            LogDataGrid.IsEnabled = true;
+            
+            // 非同期でログ監視開始
+            StartLogWatching();
         }
 
         /// <summary>
@@ -40,14 +51,21 @@ namespace CocoroDock.Windows
         }
 
         /// <summary>
-        /// ログメッセージを追加
+        /// ログメッセージを追加（最大1000件まで）
         /// </summary>
         /// <param name="logMessage">ログメッセージ</param>
         public void AddLogMessage(LogMessage logMessage)
         {
-            Dispatcher.Invoke(() =>
+            Dispatcher.BeginInvoke(() =>
             {
                 _allLogs.Add(logMessage);
+                
+                // 最大件数を超えた場合、古いログを削除
+                while (_allLogs.Count > MaxDisplayedLogs)
+                {
+                    _allLogs.RemoveAt(0);
+                }
+                
                 UpdateLogCount();
                 UpdateStatus($"最新ログ: {logMessage.timestamp:HH:mm:ss} [{logMessage.level}] {logMessage.component}");
 
@@ -57,6 +75,40 @@ namespace CocoroDock.Windows
                     LogDataGrid.ScrollIntoView(LogDataGrid.Items[LogDataGrid.Items.Count - 1]);
                 }
             });
+        }
+
+        /// <summary>
+        /// 初期ログリストを一括で追加（UIスレッドで実行）
+        /// </summary>
+        /// <param name="logMessages">初期ログメッセージのリスト</param>
+        public void LoadInitialLogs(List<LogMessage> logMessages)
+        {
+            // 既にUIスレッドで呼ばれることを前提とした処理
+            _allLogs.Clear();
+            
+            foreach (var logMessage in logMessages)
+            {
+                _allLogs.Add(logMessage);
+            }
+            
+            UpdateLogCount();
+            
+            // 最後のメッセージでステータス更新
+            if (logMessages.Count > 0)
+            {
+                var lastMessage = logMessages.Last();
+                UpdateStatus($"初期ログ読み込み完了: {logMessages.Count}件 - 最新: {lastMessage.timestamp:HH:mm:ss}");
+            }
+            else
+            {
+                UpdateStatus("ログファイルは空です");
+            }
+
+            // 自動スクロール
+            if (AutoScrollCheckBox.IsChecked == true && LogDataGrid.Items.Count > 0)
+            {
+                LogDataGrid.ScrollIntoView(LogDataGrid.Items[LogDataGrid.Items.Count - 1]);
+            }
         }
 
         /// <summary>
@@ -150,6 +202,152 @@ namespace CocoroDock.Windows
             UpdateStatus("ログクリア");
         }
 
+        /// <summary>
+        /// ログファイルの監視を開始する（非同期）
+        /// </summary>
+        private async void StartLogWatching()
+        {
+            try
+            {
+                _logWatcher = new LogFileWatcherService();
+                _logWatcher.LogMessageReceived += OnLogMessageReceived;
+                _logWatcher.ErrorOccurred += OnWatcherError;
+                _logWatcher.LoadingStarted += OnLoadingStarted;
+                _logWatcher.LoadingCompleted += OnLoadingCompleted;
+                _logWatcher.ProgressUpdated += OnProgressUpdated;
+
+                // ログファイルパスを環境に応じて決定
+                var logPath = GetLogFilePath();
+                if (File.Exists(logPath))
+                {
+                    UpdateStatus($"ログファイル監視を開始しています...");
+                    await _logWatcher.StartWatchingAsync(logPath);
+                    UpdateStatus($"ログファイル監視開始: {Path.GetFileName(logPath)}");
+                }
+                else
+                {
+                    UpdateStatus($"ログファイルが見つかりません: {logPath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                UpdateStatus($"ログ監視の開始に失敗: {ex.Message}");
+                // 例外時もUI状態をリセット
+                Cursor = System.Windows.Input.Cursors.Arrow;
+                LogDataGrid.IsEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// 環境に応じてログファイルパスを取得する
+        /// </summary>
+        /// <returns>ログファイルの絶対パス</returns>
+        private string GetLogFilePath()
+        {
+            // リリースバイナリ実行時のパス
+            var releasePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, 
+                "CocoroCore2", "logs", "cocoro_core2.log");
+            if (File.Exists(releasePath))
+                return releasePath;
+
+            // デバッグ時のパス（CocoroDockからCocoroCore2への相対パス）
+            var debugPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, 
+                "..", "CocoroCore2", "logs", "cocoro_core2.log");
+            var fullDebugPath = Path.GetFullPath(debugPath);
+            if (File.Exists(fullDebugPath))
+                return fullDebugPath;
+
+            // さらに上のディレクトリから探す場合のパス
+            var alternativeDebugPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, 
+                "..", "..", "..", "..", "CocoroCore2", "logs", "cocoro_core2.log");
+            return Path.GetFullPath(alternativeDebugPath);
+        }
+
+        /// <summary>
+        /// ログメッセージ受信イベントハンドラー
+        /// </summary>
+        /// <param name="logMessage">受信したログメッセージ</param>
+        private void OnLogMessageReceived(LogMessage logMessage)
+        {
+            // UIスレッドで実行されるようにマーシャリング
+            Dispatcher.BeginInvoke(new Action(() => AddLogMessage(logMessage)));
+        }
+
+
+        /// <summary>
+        /// ファイル監視エラーイベントハンドラー
+        /// </summary>
+        /// <param name="errorMessage">エラーメッセージ</param>
+        private void OnWatcherError(string errorMessage)
+        {
+            Dispatcher.BeginInvoke(new Action(() => 
+            {
+                UpdateStatus($"エラー: {errorMessage}");
+                // エラー時もUI状態をリセット
+                Cursor = System.Windows.Input.Cursors.Arrow;
+                LogDataGrid.IsEnabled = true;
+            }));
+        }
+
+        /// <summary>
+        /// 初期読み込み開始イベントハンドラー
+        /// </summary>
+        private void OnLoadingStarted()
+        {
+            Dispatcher.BeginInvoke(new Action(() => 
+            {
+                UpdateStatus("既存ログを読み込み中...");
+                Cursor = System.Windows.Input.Cursors.Wait;
+                // LogDataGridを無効化（操作不可にする）
+                LogDataGrid.IsEnabled = false;
+            }));
+        }
+
+        /// <summary>
+        /// 初期読み込み完了イベントハンドラー
+        /// </summary>
+        /// <param name="logMessages">読み込まれたログリスト</param>
+        private void OnLoadingCompleted(List<LogMessage> logMessages)
+        {
+            Dispatcher.BeginInvoke(new Action(() => 
+            {
+                // 一括でログを追加
+                LoadInitialLogs(logMessages);
+                
+                // UI状態を通常に戻す
+                Cursor = System.Windows.Input.Cursors.Arrow;
+                LogDataGrid.IsEnabled = true;
+            }));
+        }
+
+        /// <summary>
+        /// 進行状況更新イベントハンドラー
+        /// </summary>
+        /// <param name="current">現在の処理数</param>
+        /// <param name="total">総処理数</param>
+        private void OnProgressUpdated(int current, int total)
+        {
+            Dispatcher.BeginInvoke(new Action(() => 
+            {
+                var percentage = (int)((double)current / total * 100);
+                UpdateStatus($"既存ログを読み込み中... ({current}/{total} - {percentage}%)");
+            }));
+        }
+
+        /// <summary>
+        /// ウィンドウが閉じられた時の処理
+        /// </summary>
+        /// <param name="e">イベント引数</param>
+        protected override void OnClosed(EventArgs e)
+        {
+            // UI状態をリセット
+            Cursor = System.Windows.Input.Cursors.Arrow;
+            LogDataGrid.IsEnabled = true;
+
+            // リソースの解放
+            _logWatcher?.Dispose();
+            base.OnClosed(e);
+        }
 
     }
 }
