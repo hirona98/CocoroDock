@@ -14,7 +14,6 @@ namespace CocoroDock.Communication
     public class CocoroShellClient : IDisposable
     {
         private readonly HttpClient _httpClient;
-        private readonly string _baseUrl;
         private bool _disposed;
 
         /// <summary>
@@ -23,7 +22,6 @@ namespace CocoroDock.Communication
         /// <param name="baseUrl">ベースURL（例: http://127.0.0.1:55605）</param>
         public CocoroShellClient(string baseUrl)
         {
-            _baseUrl = baseUrl;
             _httpClient = new HttpClient
             {
                 BaseAddress = new Uri(baseUrl),
@@ -41,7 +39,7 @@ namespace CocoroDock.Communication
         }
 
         /// <summary>
-        /// チャットメッセージを送信（音声合成付き）
+        /// チャットメッセージを送信
         /// </summary>
         public async Task<StandardResponse> SendChatMessageAsync(ShellChatRequest request)
         {

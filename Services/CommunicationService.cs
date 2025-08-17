@@ -630,6 +630,9 @@ namespace CocoroDock.Services
 
                     Debug.WriteLine($"[WebSocket DIRECT] Length: {content.Length}, Content: {content.Substring(0, Math.Min(50, content.Length))}...");
 
+                    // CocoroShellにメッセージを転送（ノンブロッキング）
+                    ForwardMessageToShellAsync(content, currentCharacter);
+
                     // StreamingChatEventArgs形式で既存ロジックに統合
                     var streamingEvent = new StreamingChatEventArgs
                     {
@@ -715,6 +718,42 @@ namespace CocoroDock.Services
             // 正常状態に戻す
             _statusPollingService.SetNormalStatus();
             StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"チャットエラー: {errorMessage}"));
+        }
+
+        /// <summary>
+        /// CocoroShellにメッセージを転送（ノンブロッキング）
+        /// </summary>
+        /// <param name="content">転送するメッセージ内容</param>
+        /// <param name="currentCharacter">現在のキャラクター設定</param>
+        private async void ForwardMessageToShellAsync(string content, CharacterSettings? currentCharacter)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(content))
+                {
+                    return;
+                }
+
+                Debug.WriteLine($"[Shell Forward] CocoroShellにメッセージを転送中: {content.Substring(0, Math.Min(50, content.Length))}...");
+
+                // ShellChatRequestを作成
+                var shellRequest = new ShellChatRequest
+                {
+                    content = content,
+                    animation = "talk", // 話すアニメーション
+                    characterName = currentCharacter?.modelName
+                };
+
+                // CocoroShellにメッセージを送信（既に非同期なのでそのまま呼び出し）
+                await _shellClient.SendChatMessageAsync(shellRequest);
+
+                Debug.WriteLine($"[Shell Forward] 転送完了: Length={content.Length}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Shell Forward] CocoroShellへの転送エラー: {ex.Message}");
+                // エラーログは出力するが、メインの処理は継続させる
+            }
         }
 
         #endregion
