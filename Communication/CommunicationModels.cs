@@ -488,7 +488,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class NotificationData
     {
-        public string from { get; set; } = string.Empty; // 通知送信元
+        public string original_source { get; set; } = string.Empty; // 通知送信元
         public string original_message { get; set; } = string.Empty; // 元の通知メッセージ
     }
 

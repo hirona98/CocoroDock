@@ -12,8 +12,8 @@ namespace CocoroDock.Services
     /// </summary>
     public enum CocoroCore2Status
     {
-        /// <summary>CocoroCore2接続待機中</summary>
-        Disconnected,
+        /// <summary>CocoroCore2起動待ち</summary>
+        WaitingForStartup,
         /// <summary>正常動作中（CocoroCore2とのポーリングが正常なとき）</summary>
         Normal,
         /// <summary>LLMメッセージ処理中</summary>
@@ -31,7 +31,7 @@ namespace CocoroDock.Services
         private readonly HttpClient _httpClient;
         private readonly string _healthEndpoint;
         private readonly Timer _pollingTimer;
-        private CocoroCore2Status _currentStatus = CocoroCore2Status.Disconnected;
+        private CocoroCore2Status _currentStatus = CocoroCore2Status.WaitingForStartup;
         private volatile bool _disposed = false;
 
         /// <summary>
@@ -80,25 +80,25 @@ namespace CocoroDock.Services
                     if (healthCheck != null && healthCheck.status == "healthy")
                     {
                         // 接続成功時は現在の処理状態を維持（Disconnected以外）
-                        if (_currentStatus == CocoroCore2Status.Disconnected)
+                        if (_currentStatus == CocoroCore2Status.WaitingForStartup)
                         {
                             UpdateStatus(CocoroCore2Status.Normal);
                         }
                     }
                     else
                     {
-                        UpdateStatus(CocoroCore2Status.Disconnected);
+                        UpdateStatus(CocoroCore2Status.WaitingForStartup);
                     }
                 }
                 else
                 {
-                    UpdateStatus(CocoroCore2Status.Disconnected);
+                    UpdateStatus(CocoroCore2Status.WaitingForStartup);
                 }
             }
             catch (Exception)
             {
                 // 接続エラー時はDisconnected状態に
-                UpdateStatus(CocoroCore2Status.Disconnected);
+                UpdateStatus(CocoroCore2Status.WaitingForStartup);
             }
         }
 

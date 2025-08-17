@@ -228,7 +228,7 @@ namespace CocoroDock.Services
                 // セッションIDを生成または既存のものを使用
                 if (string.IsNullOrEmpty(_currentSessionId))
                 {
-                    _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
+                    _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmssfff}";
                 }
 
                 // WebSocket接続確認
@@ -317,7 +317,7 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// 通知メッセージを処理（Notification API用）- WebSocket版
+        /// 通知メッセージを処理（Notification API用）
         /// </summary>
         /// <param name="notification">通知メッセージ</param>
         /// <param name="imageDataUrls">画像データURL配列（オプション）</param>
@@ -335,23 +335,79 @@ namespace CocoroDock.Services
                     return;
                 }
 
-                // 通知メッセージを構築
-                var notificationMessage = $"【{notification.from}からの通知】{notification.message}";
-
-                // 画像がある場合は最初の画像のみ使用（WebSocket統一API）
-                string? imageDataUrl = null;
+                // 画像データを変換
+                List<ImageData>? images = null;
                 if (imageDataUrls != null && imageDataUrls.Length > 0)
                 {
-                    imageDataUrl = imageDataUrls.FirstOrDefault(url => !string.IsNullOrEmpty(url));
+                    images = imageDataUrls
+                        .Where(url => !string.IsNullOrEmpty(url))
+                        .Select(url => new ImageData { data = url })
+                        .ToList();
                 }
-
-                // WebSocket統一APIを使用して通知処理
-                await SendChatToCoreUnifiedAsync(notificationMessage, null, imageDataUrl);
+                await SendNotificationToCoreAsync(notification.from, notification.message, images);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"通知処理エラー: {ex.Message}");
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"通知処理エラー: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// CocoroCore2に通知メッセージを送信
+        /// </summary>
+        /// <param name="originalSource">通知送信元</param>
+        /// <param name="originalMessage">元の通知メッセージ</param>
+        /// <param name="images">画像データリスト（オプション）</param>
+        public async Task SendNotificationToCoreAsync(string originalSource, string originalMessage, List<ImageData>? images = null)
+        {
+            try
+            {
+                // セッションIDを生成または既存のものを使用
+                if (string.IsNullOrEmpty(_currentSessionId))
+                {
+                    _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmssfff}";
+                }
+
+                // WebSocket接続確認
+                if (!_webSocketClient.IsConnected)
+                {
+                    Debug.WriteLine("[WebSocket] 通知送信のため接続を開始します...");
+                    var connected = await _webSocketClient.ConnectAsync();
+                    if (!connected)
+                    {
+                        throw new Exception("WebSocket接続に失敗しました");
+                    }
+                }
+
+                // 通知専用のWebSocketチャットリクエストを作成
+                var request = new WebSocketChatRequest
+                {
+                    query = originalMessage, // 元のメッセージをそのまま送信
+                    chat_type = "notification", // 通知タイプ
+                    images = images,
+                    notification = new NotificationData
+                    {
+                        original_source = originalSource,
+                        original_message = originalMessage
+                    },
+                    internet_search = false // 通知では無効化
+                };
+
+                // 処理中ステータスを設定
+                _statusPollingService.SetProcessingStatus(CocoroCore2Status.ProcessingMessage);
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "通知処理開始"));
+
+                // WebSocketメッセージを送信
+                await _webSocketClient.SendChatAsync(_currentSessionId, request);
+
+                Debug.WriteLine($"[WebSocket] 通知送信完了: source={originalSource}, message={originalMessage}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"通知送信エラー: {ex.Message}");
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"通知送信エラー: {ex.Message}"));
+                throw;
             }
         }
 

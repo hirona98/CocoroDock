@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 namespace CocoroDock.Communication
 {
     /// <summary>
-    /// WebSocketチャットリクエスト
+    /// WebSocketチャットリクエスト（最新仕様対応）
     /// </summary>
     public class WebSocketChatRequest
     {
@@ -13,16 +13,25 @@ namespace CocoroDock.Communication
         public string query { get; set; } = "";
 
         [JsonPropertyName("chat_type")]
-        public string chat_type { get; set; } = "text";
+        public string chat_type { get; set; } = "text"; // "text" | "text_image" | "notification" | "desktop_watch"
 
         [JsonPropertyName("images")]
         public List<ImageData>? images { get; set; }
+
+        [JsonPropertyName("notification")]
+        public NotificationData? notification { get; set; }
+
+        [JsonPropertyName("desktop_context")]
+        public DesktopContext? desktop_context { get; set; }
 
         [JsonPropertyName("history")]
         public List<HistoryMessage>? history { get; set; }
 
         [JsonPropertyName("internet_search")]
         public bool internet_search { get; set; } = false;
+
+        [JsonPropertyName("request_id")]
+        public string? request_id { get; set; }
     }
 
     /// <summary>

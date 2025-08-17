@@ -331,7 +331,7 @@ namespace CocoroDock
         {
             string statusText = status switch
             {
-                CocoroCore2Status.Disconnected => "CocoroCore2接続待機中",
+                CocoroCore2Status.WaitingForStartup => "CocoroCore2起動待ち",
                 CocoroCore2Status.Normal => "正常動作中",
                 CocoroCore2Status.ProcessingMessage => "LLMメッセージ処理中",
                 CocoroCore2Status.ProcessingImage => "LLM画像処理中",
@@ -341,7 +341,7 @@ namespace CocoroDock
             ConnectionStatusText.Text = $"状態: {statusText}";
 
             // 送信ボタンの有効/無効を制御
-            bool isSendEnabled = status != CocoroCore2Status.Disconnected;
+            bool isSendEnabled = status != CocoroCore2Status.WaitingForStartup;
             ChatControlInstance.UpdateSendButtonEnabled(isSendEnabled);
         }
 
@@ -489,18 +489,18 @@ namespace CocoroDock
                 // パラメータ情報をログ出力
                 var paramsInfo = request.@params?.Count > 0 ? $" パラメータ: {request.@params.Count}個" : "";
                 Debug.WriteLine($"制御コマンド受信: {request.action}, 理由: {request.reason}{paramsInfo}");
-                
+
                 switch (request.action)
                 {
                     case "shutdown":
                         // 非同期でシャットダウン処理を実行
                         await PerformGracefulShutdownAsync();
                         break;
-                        
+
                     case "restart":
                         Debug.WriteLine("restart コマンドは現在未実装です");
                         break;
-                        
+
                     case "reloadConfig":
                         Debug.WriteLine("reloadConfig コマンドは現在未実装です");
                         break;
@@ -1192,7 +1192,7 @@ namespace CocoroDock
                     var maxWaitTime = TimeSpan.FromSeconds(120);
                     var startTime = DateTime.Now;
 
-                    while (_communicationService != null && _communicationService.CurrentStatus != CocoroCore2Status.Disconnected)
+                    while (_communicationService != null && _communicationService.CurrentStatus != CocoroCore2Status.WaitingForStartup)
                     {
                         if (DateTime.Now - startTime > maxWaitTime)
                         {

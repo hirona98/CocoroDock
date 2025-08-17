@@ -644,13 +644,13 @@ namespace CocoroDock.Controls
                     {
                         var currentStatus = _communicationService.CurrentStatus;
 
-                        // まず停止（接続待機中）状態になることを確認
+                        // まず停止（起動待ち）状態になることを確認
                         if (!hasBeenDisconnected)
                         {
-                            if (currentStatus == CocoroCore2Status.Disconnected)
+                            if (currentStatus == CocoroCore2Status.WaitingForStartup)
                             {
                                 hasBeenDisconnected = true;
-                                Debug.WriteLine("CocoroCore2停止を確認（接続待機中）");
+                                Debug.WriteLine("CocoroCore2停止を確認（起動待ち）");
                             }
                         }
                         // 停止を確認済みの場合、再起動完了を待機
