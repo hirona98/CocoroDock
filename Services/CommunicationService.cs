@@ -632,16 +632,6 @@ namespace CocoroDock.Services
 
                     // CocoroShellにメッセージを転送（ノンブロッキング）
                     ForwardMessageToShellAsync(content, currentCharacter);
-
-                    // StreamingChatEventArgs形式で既存ロジックに統合
-                    var streamingEvent = new StreamingChatEventArgs
-                    {
-                        Content = content,
-                        IsFinished = false,
-                        IsError = false
-                    };
-
-                    StreamingChatReceived?.Invoke(this, streamingEvent);
                 }
             }
         }
