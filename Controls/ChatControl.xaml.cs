@@ -276,27 +276,45 @@ namespace CocoroDock.Controls
             // 複数画像がある場合は追加
             if (imageSources != null && imageSources.Count > 0)
             {
+                // 画像を横並びで表示するためのWrapPanel
+                var imagePanel = new WrapPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Margin = new Thickness(0, 10, 0, 0)
+                };
+
                 foreach (var imageSource in imageSources)
                 {
-                    var image = new Image
+                    var imageBorder = new Border
                     {
-                        Source = imageSource,
-                        MaxWidth = 200,
-                        MaxHeight = 200,
-                        HorizontalAlignment = HorizontalAlignment.Left,
-                        Margin = new Thickness(0, 10, 0, 0),
+                        BorderBrush = new SolidColorBrush(Colors.LightGray),
+                        BorderThickness = new Thickness(1),
+                        CornerRadius = new CornerRadius(3),
+                        Margin = new Thickness(0, 0, 5, 0),
                         Cursor = Cursors.Hand
                     };
 
-                    // 画像をクリックした時の拡大表示
-                    image.MouseLeftButtonDown += (sender, e) =>
+                    var image = new Image
+                    {
+                        Source = imageSource,
+                        MaxHeight = 120,
+                        MaxWidth = 160,
+                        Stretch = Stretch.Uniform
+                    };
+
+                    imageBorder.Child = image;
+
+                    // クリックイベントで拡大表示
+                    imageBorder.MouseLeftButtonUp += (s, e) =>
                     {
                         var previewWindow = new ImagePreviewWindow(imageSource);
                         previewWindow.Show();
                     };
 
-                    messageContent.Children.Add(image);
+                    imagePanel.Children.Add(imageBorder);
                 }
+
+                messageContent.Children.Add(imagePanel);
             }
 
             bubble.Child = messageContent;
