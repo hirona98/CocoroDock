@@ -21,7 +21,7 @@ namespace CocoroDock.ViewModels
     {
         private readonly IAppSettings _appSettings;
         private readonly CocoroCoreClient _cocoroCoreClient;
-        private readonly DispatcherTimer _statusUpdateTimer;
+        private readonly DispatcherTimer? _statusUpdateTimer;
         private readonly string _mcpConfigPath;
 
         private bool _isMcpEnabled;
@@ -43,14 +43,19 @@ namespace CocoroDock.ViewModels
             _mcpConfigPath = Path.Combine(userDataDir, "cocoroAiMcp.json");
 
             // タイマーの初期化（データがない時のみ再取得用）
+            // TODO: MCP関連のポーリング処理を一時的にコメントアウト
+            /*
             _statusUpdateTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(1)
             };
             _statusUpdateTimer.Tick += async (s, e) => await RetryUpdateIfDataMissing();
+            */
+            _statusUpdateTimer = null;
 
             // コマンドの初期化
-            SaveConfigCommand = new RelayCommand(async () => await SaveMcpConfigAsync(), () => !IsLoading && !_statusUpdateTimer.IsEnabled);
+            // TODO: MCP関連のポーリング処理を一時的にコメントアウト
+            SaveConfigCommand = new RelayCommand(async () => await SaveMcpConfigAsync(), () => !IsLoading /* && !_statusUpdateTimer.IsEnabled */);
 
             // 初期化
             LoadMcpConfig();
@@ -62,7 +67,8 @@ namespace CocoroDock.ViewModels
             StatusMessage = "接続状態を確認中...";
 
             // 設定ダイアログ開始時にデータ取得
-            _ = InitialMcpStatusUpdateAsync();
+            // MCP関連のポーリングをコメントアウト
+            // _ = InitialMcpStatusUpdateAsync();
         }
 
         #region Properties
@@ -259,6 +265,8 @@ namespace CocoroDock.ViewModels
             }
         }
 
+        // TODO: MCP関連のポーリング処理をコメントアウト
+        /*
         private async Task InitialMcpStatusUpdateAsync()
         {
             try
@@ -290,7 +298,10 @@ namespace CocoroDock.ViewModels
                 CommandManager.InvalidateRequerySuggested();
             }
         }
+        */
 
+        // TODO: MCP関連のポーリング処理をコメントアウト
+        /*
         private async Task RetryUpdateIfDataMissing()
         {
             // 常にポーリングを実行（接続できるまで継続）
@@ -314,6 +325,7 @@ namespace CocoroDock.ViewModels
                 DiagnosticDetails = "";
             }
         }
+        */
 
         private async Task UpdateMcpStatusAsync()
         {
@@ -336,14 +348,16 @@ namespace CocoroDock.ViewModels
                         {
                             DiagnosticDetails = string.Join("\n", logResponse.logs);
                             // ログが正常に取得できた場合はポーリングを停止
-                            _statusUpdateTimer.Stop();
+                            // TODO: MCP関連のポーリング処理を一時的にコメントアウト
+                            // _statusUpdateTimer?.Stop();
                             CommandManager.InvalidateRequerySuggested();
                         }
                         else
                         {
                             DiagnosticDetails = "ツール登録ログがありません";
                             // ログがない場合もポーリングを停止（正常な状態として扱う）
-                            _statusUpdateTimer.Stop();
+                            // TODO: MCP関連のポーリング処理を一時的にコメントアウト
+                            // _statusUpdateTimer?.Stop();
                             CommandManager.InvalidateRequerySuggested();
                         }
                     }
@@ -382,7 +396,8 @@ namespace CocoroDock.ViewModels
                 await Task.Delay(5000);
 
                 // ポーリングを再開
-                _statusUpdateTimer.Start();
+                // TODO: MCP関連のポーリング処理を一時的にコメントアウト
+                // _statusUpdateTimer?.Start();
                 CommandManager.InvalidateRequerySuggested();
             }
             catch (Exception ex)
@@ -443,11 +458,15 @@ namespace CocoroDock.ViewModels
                 if (disposing)
                 {
                     // タイマーを停止して破棄
+                    // TODO: MCP関連のポーリング処理を一時的にコメントアウト
+                    // MCP関連のポーリングタイマーはコメントアウト中
+                    /*
                     if (_statusUpdateTimer != null)
                     {
                         _statusUpdateTimer.Stop();
                         _statusUpdateTimer.Tick -= async (s, e) => await RetryUpdateIfDataMissing();
                     }
+                    */
                     Debug.WriteLine("MCPタブのタイマーを停止しました");
                 }
                 _disposed = true;
