@@ -148,7 +148,7 @@ namespace CocoroDock.Communication
         {
             try
             {
-                var requestUrl = $"{_baseUrl}/api/users";
+                var requestUrl = $"{_baseUrl}/api/memory/characters";
                 Debug.WriteLine($"[API Request] GET {requestUrl}");
 
                 using var response = await _httpClient.GetAsync(requestUrl);
@@ -191,7 +191,7 @@ namespace CocoroDock.Communication
         {
             try
             {
-                var requestUrl = $"{_baseUrl}/api/memory/user/{Uri.EscapeDataString(memoryId)}/stats";
+                var requestUrl = $"{_baseUrl}/api/memory/character/{Uri.EscapeDataString(memoryId)}/stats";
                 Debug.WriteLine($"[API Request] GET {requestUrl}");
                 Debug.WriteLine($"[API Param] MemoryId: {memoryId}");
 
@@ -243,7 +243,7 @@ namespace CocoroDock.Communication
         {
             try
             {
-                var requestUrl = $"{_baseUrl}/api/memory/user/{Uri.EscapeDataString(memoryId)}/all";
+                var requestUrl = $"{_baseUrl}/api/memory/character/{Uri.EscapeDataString(memoryId)}/all";
                 Debug.WriteLine($"[API Request] DELETE {requestUrl}");
                 Debug.WriteLine($"[API Param] MemoryId: {memoryId}");
 
