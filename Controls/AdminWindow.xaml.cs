@@ -388,18 +388,6 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// ステータス表示を更新する
-        /// </summary>
-        /// <param name="status">表示するステータス</param>
-        private void UpdateStatusDisplay(string status)
-        {
-            if (StatusText != null)
-            {
-                StatusText.Text = status;
-            }
-        }
-
-        /// <summary>
         /// ボタンの有効/無効状態を設定する
         /// </summary>
         /// <param name="enabled">有効にするかどうか</param>
