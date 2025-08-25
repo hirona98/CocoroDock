@@ -184,62 +184,11 @@ namespace CocoroDock.Communication
             }
         }
 
-        /// <summary>
-        /// ユーザーの記憶統計情報を取得
-        /// </summary>
-        public async Task<MemoryStatsResponse> GetMemoryStatsAsync(string memoryId)
-        {
-            try
-            {
-                var requestUrl = $"{_baseUrl}/api/memory/character/{Uri.EscapeDataString(memoryId)}/stats";
-                Debug.WriteLine($"[API Request] GET {requestUrl}");
-                Debug.WriteLine($"[API Param] MemoryId: {memoryId}");
-
-                using var response = await _httpClient.GetAsync(requestUrl);
-
-                var responseBody = await response.Content.ReadAsStringAsync();
-                Debug.WriteLine($"[API Response] Status: {(int)response.StatusCode} {response.StatusCode}");
-                Debug.WriteLine($"[API Response] Body: {responseBody}");
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                    {
-                        Debug.WriteLine("[API Fallback] Memory not found, returning empty stats");
-                        // ユーザーが存在しない場合は空の統計を返す
-                        return new MemoryStatsResponse
-                        {
-                            memory_id = memoryId,
-                            total_memories = 0,
-                            text_memories = 0,
-                            activation_memories = 0,
-                            parametric_memories = 0
-                        };
-                    }
-
-                    var error = MessageHelper.DeserializeFromJson<ErrorResponse>(responseBody);
-                    throw new HttpRequestException($"統計情報取得エラー: {error?.message ?? responseBody}");
-                }
-
-                var result = MessageHelper.DeserializeFromJson<MemoryStatsResponse>(responseBody)
-                       ?? throw new InvalidOperationException("統計情報の解析に失敗しました");
-
-                Debug.WriteLine($"[API Parsed] MemoryStats - Total: {result.total_memories}, Text: {result.text_memories}, Act: {result.activation_memories}, Para: {result.parametric_memories}");
-                Debug.WriteLine($"[API Parsed] LastUpdated: {result.last_updated}, CubeId: {result.cube_id}");
-
-                return result;
-            }
-            catch (TaskCanceledException)
-            {
-                Debug.WriteLine("[API Error] 統計情報取得がタイムアウトしました");
-                throw new TimeoutException("統計情報取得がタイムアウトしました");
-            }
-        }
 
         /// <summary>
         /// ユーザーの全記憶を削除
         /// </summary>
-        public async Task<MemoryDeleteResponse> DeleteUserMemoriesAsync(string memoryId)
+        public async Task<StandardResponse> DeleteUserMemoriesAsync(string memoryId)
         {
             try
             {
@@ -267,11 +216,10 @@ namespace CocoroDock.Communication
                     throw new HttpRequestException($"記憶削除エラー: {error?.message ?? responseBody}");
                 }
 
-                var result = MessageHelper.DeserializeFromJson<MemoryDeleteResponse>(responseBody)
+                var result = MessageHelper.DeserializeFromJson<StandardResponse>(responseBody)
                        ?? throw new InvalidOperationException("削除結果の解析に失敗しました");
 
-                Debug.WriteLine($"[API Parsed] DeleteResult - Status: {result.status}, DeletedCount: {result.deleted_count}");
-                Debug.WriteLine($"[API Parsed] Details - Text: {result.details.text_memories}, Act: {result.details.activation_memories}, Para: {result.details.parametric_memories}");
+                Debug.WriteLine($"[API Parsed] DeleteResult - Status: {result.status}, Message: {result.message}");
 
                 return result;
             }

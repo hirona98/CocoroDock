@@ -305,69 +305,21 @@
                                 Margin="0,10,0,10"
                                 Background="#F9F9F9">
                             <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="120"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
                                 <!-- 選択中のキャラクター -->
-                                <TextBlock Grid.Row="0"
-                                           Grid.Column="0"
+                                <TextBlock Grid.Column="0"
                                            Text="選択中:"
                                            Foreground="#666666"/>
-                                <TextBlock Grid.Row="0"
-                                           Grid.Column="1"
+                                <TextBlock Grid.Column="1"
                                            x:Name="SelectedCharacterText"
                                            Text="未選択"
                                            FontWeight="Bold"
                                            Foreground="#4873CF"/>
 
-                                <!-- 記憶数 -->
-                                <TextBlock Grid.Row="1"
-                                           Grid.Column="0"
-                                           Text="記憶数:"
-                                           Foreground="#666666"
-                                           Margin="0,5,0,0"/>
-                                <TextBlock Grid.Row="1"
-                                           Grid.Column="1"
-                                           x:Name="TotalMemoriesText"
-                                           Text="0件"
-                                           Margin="0,5,0,0"/>
-
-                                <!-- 内訳 -->
-                                <TextBlock Grid.Row="2"
-                                           Grid.Column="0"
-                                           Text="内訳:"
-                                           Foreground="#666666"
-                                           Margin="0,5,0,0"/>
-                                <TextBlock Grid.Row="2"
-                                           Grid.Column="1"
-                                           x:Name="MemoryDetailsText"
-                                           Text="テキスト: 0件 / アクティベーション: 0件 / パラメトリック: 0件"
-                                           Foreground="#888888"
-                                           Margin="0,5,0,0"
-                                           FontSize="11"/>
-
-                                <!-- 最終更新 -->
-                                <TextBlock Grid.Row="3"
-                                           Grid.Column="0"
-                                           Text="最終更新:"
-                                           Foreground="#666666"
-                                           Margin="0,5,0,0"/>
-                                <TextBlock Grid.Row="3"
-                                           Grid.Column="1"
-                                           x:Name="LastUpdatedText"
-                                           Text="不明"
-                                           Foreground="#888888"
-                                           Margin="0,5,0,0"
-                                           FontSize="11"/>
                             </Grid>
                         </Border>
 

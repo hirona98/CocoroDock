@@ -401,54 +401,8 @@ namespace CocoroDock.Communication
     // 記憶削除関連モデル
     // ========================================
 
-    /// <summary>
-    /// 記憶削除詳細情報
-    /// </summary>
-    public class MemoryDeleteDetails
-    {
-        public int text_memories { get; set; }
-        public int activation_memories { get; set; }
-        public int parametric_memories { get; set; }
-    }
 
-    /// <summary>
-    /// 記憶削除レスポンス
-    /// </summary>
-    public class MemoryDeleteResponse
-    {
-        public string status { get; set; } = string.Empty;
-        public string message { get; set; } = string.Empty;
-        public int deleted_count { get; set; }
-        public MemoryDeleteDetails details { get; set; } = new MemoryDeleteDetails();
-        public DateTime timestamp { get; set; }
-    }
 
-    /// <summary>
-    /// 記憶統計情報レスポンス
-    /// </summary>
-    public class MemoryStatsResponse
-    {
-        public string memory_id { get; set; } = string.Empty;
-        public int total_memories { get; set; }
-        public int text_memories { get; set; }
-        public int activation_memories { get; set; }
-        public int parametric_memories { get; set; }
-        public DateTime? last_updated { get; set; }
-        public string cube_id { get; set; } = string.Empty;
-        public DateTime timestamp { get; set; }
-    }
-
-    /// <summary>
-    /// メモリ統計情報レスポンス
-    /// </summary>
-    public class MemoryStatistics
-    {
-        public string memory_id { get; set; } = string.Empty;
-        public int total_memories { get; set; }
-        public int textual_memories { get; set; }
-        public int activation_memories { get; set; }
-        public int parametric_memories { get; set; }
-    }
 
     /// <summary>
     /// メモリ一覧取得レスポンス

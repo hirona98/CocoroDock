@@ -37,10 +37,6 @@ namespace CocoroDock.Controls
         /// </summary>
         private bool _isInitialized = false;
 
-        /// <summary>
-        /// 現在の記憶統計情報
-        /// </summary>
-        private MemoryStatsResponse? _currentMemoryStats;
 
         public SystemSettingsControl()
         {
@@ -347,7 +343,7 @@ namespace CocoroDock.Controls
         /// <summary>
         /// メモリー選択変更時
         /// </summary>
-        private async void MemoryComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void MemoryComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var selectedMemory = MemoryComboBox.SelectedItem as DisplayMemoryInfo;
             if (selectedMemory == null)
@@ -356,7 +352,7 @@ namespace CocoroDock.Controls
                 return;
             }
 
-            await LoadMemoryStats(selectedMemory);
+            UpdateSelectedCharacterDisplay(selectedMemory);
         }
 
         /// <summary>
@@ -394,52 +390,12 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// 記憶統計情報の読み込み
+        /// キャラクター選択時の表示更新
         /// </summary>
-        private async Task LoadMemoryStats(DisplayMemoryInfo memory)
+        private void UpdateSelectedCharacterDisplay(DisplayMemoryInfo memory)
         {
-            try
-            {
-                RefreshMemoryStatsButton.IsEnabled = false;
-                SelectedCharacterText.Text = $"{memory.DisplayName} を読み込み中...";
-
-                var appSettings = AppSettings.Instance;
-                using var coreClient = new CocoroCoreClient(appSettings.CocoroCorePort);
-                _currentMemoryStats = await coreClient.GetMemoryStatsAsync(memory.MemoryId);
-
-                // UI更新
-                SelectedCharacterText.Text = memory.DisplayName;
-                TotalMemoriesText.Text = $"{_currentMemoryStats.total_memories:N0}件";
-                MemoryDetailsText.Text = $"テキスト: {_currentMemoryStats.text_memories:N0}件 / " +
-                                        $"アクティベーション: {_currentMemoryStats.activation_memories:N0}件 / " +
-                                        $"パラメトリック: {_currentMemoryStats.parametric_memories:N0}件";
-
-                if (_currentMemoryStats.last_updated.HasValue)
-                {
-                    LastUpdatedText.Text = _currentMemoryStats.last_updated.Value.ToString("yyyy/MM/dd HH:mm:ss");
-                }
-                else
-                {
-                    LastUpdatedText.Text = "不明";
-                }
-
-                // 削除ボタンの有効化（記憶が1件以上ある場合）
-                DeleteMemoryButton.IsEnabled = _currentMemoryStats.total_memories > 0;
-            }
-            catch (Exception ex)
-            {
-                SelectedCharacterText.Text = memory.DisplayName;
-                TotalMemoriesText.Text = "エラー";
-                MemoryDetailsText.Text = ex.Message;
-                LastUpdatedText.Text = "-";
-                DeleteMemoryButton.IsEnabled = false;
-
-                Debug.WriteLine($"記憶統計情報の読み込みエラー: {ex.Message}");
-            }
-            finally
-            {
-                RefreshMemoryStatsButton.IsEnabled = true;
-            }
+            SelectedCharacterText.Text = memory.DisplayName;
+            DeleteMemoryButton.IsEnabled = true;
         }
 
         /// <summary>
@@ -448,17 +404,12 @@ namespace CocoroDock.Controls
         private async void DeleteMemoryButton_Click(object sender, RoutedEventArgs e)
         {
             var selectedMemory = MemoryComboBox.SelectedItem as DisplayMemoryInfo;
-            if (selectedMemory == null || _currentMemoryStats == null) return;
+            if (selectedMemory == null) return;
 
             // 確認ダイアログ
             var result = MessageBox.Show(
                 Window.GetWindow(this),
-                $"「{selectedMemory.DisplayName}」の記憶（{_currentMemoryStats.total_memories:N0}件）を\n" +
-                "すべて削除します。\n\n" +
-                "内訳:\n" +
-                $"  ・テキスト記憶: {_currentMemoryStats.text_memories:N0}件\n" +
-                $"  ・アクティベーション記憶: {_currentMemoryStats.activation_memories:N0}件\n" +
-                $"  ・パラメトリック記憶: {_currentMemoryStats.parametric_memories:N0}件\n\n" +
+                $"「{selectedMemory.DisplayName}」の記憶をすべて削除します。\n\n" +
                 "この操作は取り消すことができません。\n" +
                 "本当に続行しますか？",
                 "警告: 記憶の初期化",
@@ -493,8 +444,7 @@ namespace CocoroDock.Controls
             var progressDialog = new MemoryDeleteProgressDialog
             {
                 Owner = Window.GetWindow(this),
-                CharacterName = memory.DisplayName,
-                TotalMemories = _currentMemoryStats?.total_memories ?? 0
+                CharacterName = memory.DisplayName
             };
 
             try
@@ -506,25 +456,18 @@ namespace CocoroDock.Controls
                 using var coreClient = new CocoroCoreClient(appSettings.CocoroCorePort);
 
                 // 削除実行
-                var response = await coreClient.DeleteUserMemoriesAsync(memory.MemoryId);
+                await coreClient.DeleteUserMemoriesAsync(memory.MemoryId);
 
                 progressDialog.Close();
 
                 // 完了通知
                 MessageBox.Show(
                     Window.GetWindow(this),
-                    $"記憶の削除が完了しました。\n\n" +
-                    $"削除された記憶: {response.deleted_count:N0}件\n" +
-                    $"  ・テキスト記憶: {response.details.text_memories:N0}件\n" +
-                    $"  ・アクティベーション記憶: {response.details.activation_memories:N0}件\n" +
-                    $"  ・パラメトリック記憶: {response.details.parametric_memories:N0}件",
+                    "記憶の削除が完了しました。",
                     "完了",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information
                 );
-
-                // 統計情報を再読み込み
-                await LoadMemoryStats(memory);
             }
             catch (Exception ex)
             {
