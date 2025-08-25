@@ -290,7 +290,6 @@ namespace CocoroDock.Controls
             catch (Exception ex)
             {
                 Debug.WriteLine($"記憶管理設定の読み込みエラー: {ex.Message}");
-                SelectedCharacterText.Text = "記憶管理の初期化に失敗しました";
                 DeleteMemoryButton.IsEnabled = false;
             }
         }
@@ -328,14 +327,12 @@ namespace CocoroDock.Controls
                 }
                 else
                 {
-                    SelectedCharacterText.Text = "CocoroCore2にメモリーが登録されていません";
                     DeleteMemoryButton.IsEnabled = false;
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"メモリー一覧取得エラー: {ex.Message}");
-                SelectedCharacterText.Text = "メモリー一覧の取得に失敗しました";
                 DeleteMemoryButton.IsEnabled = false;
             }
         }
@@ -355,46 +352,12 @@ namespace CocoroDock.Controls
             UpdateSelectedCharacterDisplay(selectedMemory);
         }
 
-        /// <summary>
-        /// 更新ボタンクリック時
-        /// </summary>
-        private async void RefreshMemoryStatsButton_Click(object sender, RoutedEventArgs e)
-        {
-            // 現在選択中のメモリーIDを保存
-            var currentSelectedMemoryId = (MemoryComboBox.SelectedItem as DisplayMemoryInfo)?.MemoryId;
-
-            // メモリー一覧を再取得
-            await LoadRegisteredMemories();
-
-            // 前回選択していたメモリーを再選択（存在する場合）
-            if (!string.IsNullOrEmpty(currentSelectedMemoryId))
-            {
-                var itemsSource = MemoryComboBox.ItemsSource as List<DisplayMemoryInfo>;
-                if (itemsSource != null)
-                {
-                    var memoryToSelect = itemsSource.FirstOrDefault(u => u.MemoryId == currentSelectedMemoryId);
-                    if (memoryToSelect != null)
-                    {
-                        MemoryComboBox.SelectedItem = memoryToSelect;
-                    }
-                    else
-                    {
-                        // 削除されたメモリーの場合は最初のメモリーを選択
-                        if (itemsSource.Any())
-                        {
-                            MemoryComboBox.SelectedIndex = 0;
-                        }
-                    }
-                }
-            }
-        }
 
         /// <summary>
         /// キャラクター選択時の表示更新
         /// </summary>
         private void UpdateSelectedCharacterDisplay(DisplayMemoryInfo memory)
         {
-            SelectedCharacterText.Text = memory.DisplayName;
             DeleteMemoryButton.IsEnabled = true;
         }
 
@@ -493,18 +456,5 @@ namespace CocoroDock.Controls
             }
         }
 
-        /// <summary>
-        /// 詳細表示ボタンクリック時（未実装）
-        /// </summary>
-        private void ShowMemoryDetailsButton_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show(
-                Window.GetWindow(this),
-                "記憶の詳細表示機能は今後実装予定です。",
-                "未実装",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information
-            );
-        }
     }
 }
