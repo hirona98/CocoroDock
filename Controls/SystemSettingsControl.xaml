@@ -280,7 +280,7 @@
                             </Grid.ColumnDefinitions>
 
                             <TextBlock Grid.Column="0"
-                                       Text="キャラクター:"
+                                       Text="Memory ID:"
                                        VerticalAlignment="Center"/>
 
                             <ComboBox Grid.Column="1"
@@ -299,7 +299,7 @@
                                     Style="{StaticResource DeleteButtonStyle}"
                                     IsEnabled="False"
                                     Click="DeleteMemoryButton_Click"
-                                    ToolTip="選択中のキャラクターの記憶をすべて削除"/>
+                                    ToolTip="選択中の Memory ID を使用している全キャラクターの全記憶を削除"/>
                         </Grid>
 
 
