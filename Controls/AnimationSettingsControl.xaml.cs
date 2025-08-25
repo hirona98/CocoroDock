@@ -205,8 +205,7 @@ namespace CocoroDock.Controls
                         Margin = new Thickness(0, 0, 10, 0),
                         Padding = new Thickness(10, 5, 10, 5),
                         Tag = animation,
-                        VerticalAlignment = VerticalAlignment.Center,
-                        Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x48, 0x73, 0xCF))
+                        VerticalAlignment = VerticalAlignment.Center
                     };
                     playButton.Click += PlayAnimationButton_Click;
                     Grid.SetColumn(playButton, 0);

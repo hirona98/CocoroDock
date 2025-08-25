@@ -154,13 +154,11 @@
                         Content="現在位置を追加"
                         Padding="10,5"
                         Margin="0,0,10,0"
-                        Foreground="#FF4873CF"
                         Click="AddEscapePositionButton_Click"
                         ToolTip="現在のキャラクター位置を逃げ先座標として追加"/>
                 <Button x:Name="ClearEscapePositionsButton"
                         Content="全削除"
                         Padding="10,5"
-                        Foreground="#FF4873CF"
                         Click="ClearEscapePositionsButton_Click"
                         ToolTip="すべての逃げ先座標を削除"/>
             </StackPanel>

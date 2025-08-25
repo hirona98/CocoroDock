@@ -296,8 +296,7 @@
                                     Width="100"
                                     Margin="5,5,0,5"
                                     Padding="10,5"
-                                    Background="#DC3545"
-                                    Foreground="White"
+                                    Style="{StaticResource DeleteButtonStyle}"
                                     IsEnabled="False"
                                     Click="DeleteMemoryButton_Click"
                                     ToolTip="選択中のキャラクターの記憶をすべて削除"/>

@@ -41,7 +41,6 @@
                                 Content="追加"
                                 Margin="0,5,0,5"
                                 Padding="10,5"
-                                Foreground="#FF4873CF"
                                 Click="AddAnimationSetButton_Click"
                                 ToolTip="Add animation set"/>
 
@@ -50,7 +49,6 @@
                                 Content="複製"
                                 Margin="5,5,0,5"
                                 Padding="10,5"
-                                Foreground="#FF4873CF"
                                 Click="DuplicateAnimationSetButton_Click"
                                 ToolTip="Duplicate current animation set"/>
 
@@ -59,8 +57,7 @@
                                 Content="削除"
                                 Margin="5,5,0,5"
                                 Padding="10,5"
-                                Background="#d32f2f"
-                                Foreground="WhiteSmoke"
+                                Style="{StaticResource DeleteButtonStyle}"
                                 Click="DeleteAnimationSetButton_Click"
                                 ToolTip="Delete this animation set"/>
                     </Grid>

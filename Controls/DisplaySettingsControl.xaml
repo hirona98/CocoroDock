@@ -33,7 +33,6 @@
                             Content="位置リセット"
                             Margin="10,0,0,0"
                             Padding="8,2"
-                            Foreground="#FF4873CF"
                             ToolTip="キャラクターの位置を初期位置にリセットします"
                             VerticalAlignment="Center"
                             Click="ResetCharacterPositionButton_Click"/>
@@ -78,7 +77,6 @@
                             Grid.Column="2"
                             Content="Capture Key"
                             Padding="10,0"
-                            Foreground="#FF4873CF"
                             ToolTip="Capture key"
                             VerticalAlignment="Center"
                             HorizontalAlignment="Left"

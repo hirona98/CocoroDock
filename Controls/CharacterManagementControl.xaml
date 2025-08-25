@@ -37,7 +37,6 @@
                                 Margin="0,5,0,5"
                                 Padding="10,5"
                                 Click="AddCharacterButton_Click"
-                                Foreground="#FF4873CF"
                                 ToolTip="Add character"/>
 
                         <Button x:Name="DuplicateCharacterButton"
@@ -46,7 +45,6 @@
                                 Margin="5,5,0,5"
                                 Padding="10,5"
                                 Click="DuplicateCharacterButton_Click"
-                                Foreground="#FF4873CF"
                                 ToolTip="Duplicate current character"/>
 
                         <Button x:Name="DeleteCharacterButton"
@@ -54,8 +52,7 @@
                                 Content="削除"
                                 Margin="5,5,0,5"
                                 Padding="10,5"
-                                Background="#d32f2f"
-                                Foreground="WhiteSmoke"
+                                Style="{StaticResource DeleteButtonStyle}"
                                 Click="DeleteCharacterButton_Click"
                                 ToolTip="Delete this character"/>
                     </Grid>
@@ -104,7 +101,6 @@
                                     Click="BrowseVrmFileButton_Click"
                                     ToolTip="Open..."
                                     VerticalAlignment="Center"
-                                    Foreground="#FF4873CF"
                                     Margin="5,0,0,0"/>
                         </Grid>
                     </StackPanel>
@@ -219,7 +215,6 @@
                                          Width="200"
                                          HorizontalAlignment="Left"/>
                                 <Button Content="上書き貼付け"
-                                        Foreground="#FF0078D7"
                                         Margin="10,0,0,0"
                                         Padding="10,0,10,0"
                                         VerticalAlignment="Center"
@@ -307,7 +302,6 @@
                                          Width="200"
                                          HorizontalAlignment="Left"/>
                                 <Button Content="上書き貼付け"
-                                        Foreground="#FF0078D7"
                                         Margin="10,0,0,0"
                                         Padding="10,0,10,0"
                                         VerticalAlignment="Center"
@@ -409,7 +403,6 @@
                                          Width="200"
                                          HorizontalAlignment="Left"/>
                                 <Button Content="上書き貼付け"
-                                        Foreground="#FF0078D7"
                                         Margin="10,0,0,0"
                                         Padding="10,0,10,0"
                                         VerticalAlignment="Center"
@@ -723,7 +716,6 @@
                                              Width="200"
                                              HorizontalAlignment="Left"/>
                                     <Button Content="上書き貼付け"
-                                            Foreground="#FF0078D7"
                                             Margin="10,0,0,0"
                                             Padding="10,0,10,0"
                                             VerticalAlignment="Center"
@@ -934,7 +926,6 @@
                                          Width="200"
                                          HorizontalAlignment="Left"/>
                                 <Button Content="上書き貼付け"
-                                        Foreground="#FF0078D7"
                                         Margin="10,0,0,0"
                                         Padding="10,0,10,0"
                                         VerticalAlignment="Center"
