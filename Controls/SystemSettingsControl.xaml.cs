@@ -66,7 +66,6 @@ namespace CocoroDock.Controls
                 MicThresholdSlider.Value = appSettings.MicrophoneSettings.inputThreshold;
 
                 // CocoroCore2設定
-                EnableProModeCheckBox.IsChecked = appSettings.EnableProMode;
                 EnableInternetRetrievalCheckBox.IsChecked = appSettings.EnableInternetRetrieval;
                 GoogleApiKeyTextBox.Text = appSettings.GoogleApiKey;
                 GoogleSearchEngineIdTextBox.Text = appSettings.GoogleSearchEngineId;
@@ -108,8 +107,6 @@ namespace CocoroDock.Controls
             MicThresholdSlider.ValueChanged += OnSettingsChanged;
 
             // CocoroCore2設定
-            EnableProModeCheckBox.Checked += OnSettingsChanged;
-            EnableProModeCheckBox.Unchecked += OnSettingsChanged;
             EnableInternetRetrievalCheckBox.Checked += OnSettingsChanged;
             EnableInternetRetrievalCheckBox.Unchecked += OnSettingsChanged;
             GoogleApiKeyTextBox.TextChanged += OnSettingsChanged;
@@ -245,7 +242,7 @@ namespace CocoroDock.Controls
         /// </summary>
         public (bool enableProMode, bool enableInternetRetrieval, string googleApiKey, string googleSearchEngineId, int internetMaxResults) GetCocoroCore2Settings()
         {
-            bool enableProMode = EnableProModeCheckBox.IsChecked ?? true;
+            bool enableProMode = true; // 設定ファイルのみで制御
             bool enableInternetRetrieval = EnableInternetRetrievalCheckBox.IsChecked ?? true;
             string googleApiKey = GoogleApiKeyTextBox.Text;
             string googleSearchEngineId = GoogleSearchEngineIdTextBox.Text;
@@ -267,7 +264,7 @@ namespace CocoroDock.Controls
         /// </summary>
         public void SetCocoroCore2Settings(bool enableProMode, bool enableInternetRetrieval, string googleApiKey, string googleSearchEngineId, int internetMaxResults)
         {
-            EnableProModeCheckBox.IsChecked = enableProMode;
+            // enableProModeはコメントアウト（設定ファイルでのみ制御）
             EnableInternetRetrievalCheckBox.IsChecked = enableInternetRetrieval;
             GoogleApiKeyTextBox.Text = googleApiKey;
             GoogleSearchEngineIdTextBox.Text = googleSearchEngineId;
