@@ -27,7 +27,6 @@
                                   Grid.Column="0"
                                   Margin="0,5,10,5"
                                   SelectionChanged="CharacterSelectComboBox_SelectionChanged"
-                                  Foreground="#FF4873CF"
                                   DisplayMemberPath="modelName"
                                   SelectedValuePath="modelName">
                         </ComboBox>
@@ -444,7 +443,6 @@
                                        VerticalAlignment="Center"/>
                             <ComboBox Grid.Column="1"
                                       x:Name="TTSEngineComboBox"
-                                      Foreground="#FF4873CF"
                                       SelectionChanged="TTSEngineComboBox_SelectionChanged">
                                 <ComboBoxItem Content="VOICEVOX/SHAREVOX/AivisSpeech"
                                               Tag="voicevox"/>
