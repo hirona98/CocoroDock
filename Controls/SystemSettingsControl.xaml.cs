@@ -310,7 +310,7 @@ namespace CocoroDock.Controls
                     var displayMemories = memoriesResponse.data.Select(u => new DisplayMemoryInfo
                     {
                         MemoryId = u.memory_id,
-                        DisplayName = !string.IsNullOrEmpty(u.memory_name) ? u.memory_name : u.memory_id,
+                        DisplayName = u.memory_id,  // MemoryIDを表示
                         Role = u.role
                     }).ToList();
 
@@ -324,12 +324,18 @@ namespace CocoroDock.Controls
                 }
                 else
                 {
+                    // データが空の場合はComboBoxをクリア
+                    MemoryComboBox.ItemsSource = null;
+                    MemoryComboBox.SelectedItem = null;
                     DeleteMemoryButton.IsEnabled = false;
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"メモリー一覧取得エラー: {ex.Message}");
+                // エラー時もComboBoxをクリア
+                MemoryComboBox.ItemsSource = null;
+                MemoryComboBox.SelectedItem = null;
                 DeleteMemoryButton.IsEnabled = false;
             }
         }
@@ -419,6 +425,9 @@ namespace CocoroDock.Controls
                 await coreClient.DeleteUserMemoriesAsync(memory.MemoryId);
 
                 progressDialog.Close();
+
+                // ComboBoxの内容を再読み込み
+                await LoadRegisteredMemories();
 
                 // 完了通知
                 MessageBox.Show(
