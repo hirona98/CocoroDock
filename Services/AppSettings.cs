@@ -25,7 +25,7 @@ namespace CocoroDock.Services
         /// </summary>
         public static event EventHandler? SettingsSaved;
 
-        // UserData2ディレクトリのパスを取得
+        // UserDataMディレクトリのパスを取得
         private string UserDataDirectory => FindUserDataDirectory();
 
         // アプリケーション設定ファイルのパス
@@ -104,9 +104,9 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// UserData2ディレクトリを探索して見つける
+        /// UserDataMディレクトリを探索して見つける
         /// </summary>
-        /// <returns>UserData2ディレクトリのパス</returns>
+        /// <returns>UserDataMディレクトリのパス</returns>
         private string FindUserDataDirectory()
         {
             var baseDirectory = AppContext.BaseDirectory;
@@ -114,12 +114,12 @@ namespace CocoroDock.Services
             // 探索するパスの配列
             string[] searchPaths = {
 #if !DEBUG
-                Path.Combine(baseDirectory, "UserData2"),
+                Path.Combine(baseDirectory, "UserDataM"),
 #endif
-                Path.Combine(baseDirectory, "..", "UserData2"),
-                Path.Combine(baseDirectory, "..", "..", "UserData2"),
-                Path.Combine(baseDirectory, "..", "..", "..", "UserData2"),
-                Path.Combine(baseDirectory, "..", "..", "..", "..", "UserData2")
+                Path.Combine(baseDirectory, "..", "UserDataM"),
+                Path.Combine(baseDirectory, "..", "..", "UserDataM"),
+                Path.Combine(baseDirectory, "..", "..", "..", "UserDataM"),
+                Path.Combine(baseDirectory, "..", "..", "..", "..", "UserDataM")
             };
 
             foreach (var path in searchPaths)
@@ -127,14 +127,14 @@ namespace CocoroDock.Services
                 var fullPath = Path.GetFullPath(path);
                 if (Directory.Exists(fullPath))
                 {
-                    Debug.WriteLine($"UserData2ディレクトリ: {fullPath}");
+                    Debug.WriteLine($"UserDataMディレクトリ: {fullPath}");
                     return fullPath;
                 }
             }
 
             // 見つからない場合は、最初のパスを使用してディレクトリを作成
             var defaultPath = Path.GetFullPath(searchPaths[0]);
-            Debug.WriteLine($"UserData2が見つからないため作成: {defaultPath}");
+            Debug.WriteLine($"UserDataMが見つからないため作成: {defaultPath}");
             Directory.CreateDirectory(defaultPath);
             return defaultPath;
         }

@@ -24,13 +24,13 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <PublishItemType>None</PublishItemType>
-      <TargetPath>UserData2\DefaultSetting.json</TargetPath>
+      <TargetPath>UserDataM\DefaultSetting.json</TargetPath>
     </None>
     <None Include="Resource\Sample_CocoroAiMcp.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <PublishItemType>None</PublishItemType>
-      <TargetPath>UserData2\Sample_CocoroAiMcp.json</TargetPath>
+      <TargetPath>UserDataM\Sample_CocoroAiMcp.json</TargetPath>
     </None>
     <EmbeddedResource Include="Resource\License.txt" />
   </ItemGroup>
@@ -73,9 +73,9 @@
 
   <!-- Publish時にUserDataフォルダに設定ファイルをコピー -->
   <Target Name="CopyUserDataFiles" AfterTargets="Publish">
-    <MakeDir Directories="$(PublishDir)UserData2" Condition="!Exists('$(PublishDir)UserData2')" />
-    <Copy SourceFiles="$(PublishDir)DefaultSetting.json" DestinationFiles="$(PublishDir)UserData2\DefaultSetting.json" Condition="Exists('$(PublishDir)DefaultSetting.json')" />
-    <Copy SourceFiles="$(PublishDir)Sample_CocoroAiMcp.json" DestinationFiles="$(PublishDir)UserData2\Sample_CocoroAiMcp.json" Condition="Exists('$(PublishDir)Sample_CocoroAiMcp.json')" />
+    <MakeDir Directories="$(PublishDir)UserDataM" Condition="!Exists('$(PublishDir)UserDataM')" />
+    <Copy SourceFiles="$(PublishDir)DefaultSetting.json" DestinationFiles="$(PublishDir)UserDataM\DefaultSetting.json" Condition="Exists('$(PublishDir)DefaultSetting.json')" />
+    <Copy SourceFiles="$(PublishDir)Sample_CocoroAiMcp.json" DestinationFiles="$(PublishDir)UserDataM\Sample_CocoroAiMcp.json" Condition="Exists('$(PublishDir)Sample_CocoroAiMcp.json')" />
     <!-- 元のファイルを削除（UserDataフォルダにのみ存在させるため） -->
     <Delete Files="$(PublishDir)DefaultSetting.json" Condition="Exists('$(PublishDir)DefaultSetting.json')" />
     <Delete Files="$(PublishDir)Sample_CocoroAiMcp.json" Condition="Exists('$(PublishDir)Sample_CocoroAiMcp.json')" />

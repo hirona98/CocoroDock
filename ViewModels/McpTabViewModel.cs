@@ -39,7 +39,7 @@ namespace CocoroDock.ViewModels
 
             // MCPファイルのパス設定（設定ファイルと同じディレクトリのUserDataフォルダ）
             var execDir = AppContext.BaseDirectory;
-            var userDataDir = Path.Combine(execDir, "UserData2");
+            var userDataDir = Path.Combine(execDir, "UserDataM");
             _mcpConfigPath = Path.Combine(userDataDir, "cocoroAiMcp.json");
 
             // タイマーの初期化（データがない時のみ再取得用）
