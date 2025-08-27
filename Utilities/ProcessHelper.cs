@@ -60,7 +60,7 @@ namespace CocoroDock.Utilities
                 var settings = AppSettings.Instance;
                 int? port = processName.ToLower() switch
                 {
-                    "cocorocore2" => settings.CocoroCorePort,
+                    "CocoroCoreM" => settings.CocoroCorePort,
                     "cocoroshell" => settings.CocoroShellPort,
                     _ => null
                 };

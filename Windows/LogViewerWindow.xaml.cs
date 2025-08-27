@@ -28,11 +28,11 @@ namespace CocoroDock.Windows
         {
             InitializeComponent();
             InitializeLogView();
-            
+
             // 初期UI状態を設定
             Cursor = System.Windows.Input.Cursors.Arrow;
             LogDataGrid.IsEnabled = true;
-            
+
             // 非同期でログ監視開始
             StartLogWatching();
         }
@@ -59,13 +59,13 @@ namespace CocoroDock.Windows
             Dispatcher.BeginInvoke(() =>
             {
                 _allLogs.Add(logMessage);
-                
+
                 // 最大件数を超えた場合、古いログを削除
                 while (_allLogs.Count > MaxDisplayedLogs)
                 {
                     _allLogs.RemoveAt(0);
                 }
-                
+
                 UpdateLogCount();
                 UpdateStatus($"最新ログ: {logMessage.timestamp:HH:mm:ss} [{logMessage.level}] {logMessage.component}");
 
@@ -85,14 +85,14 @@ namespace CocoroDock.Windows
         {
             // 既にUIスレッドで呼ばれることを前提とした処理
             _allLogs.Clear();
-            
+
             foreach (var logMessage in logMessages)
             {
                 _allLogs.Add(logMessage);
             }
-            
+
             UpdateLogCount();
-            
+
             // 最後のメッセージでステータス更新
             if (logMessages.Count > 0)
             {
@@ -245,21 +245,21 @@ namespace CocoroDock.Windows
         private string GetLogFilePath()
         {
             // リリースバイナリ実行時のパス
-            var releasePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, 
-                "CocoroCore2", "logs", "cocoro_core2.log");
+            var releasePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+                "CocoroCoreM", "logs", "cocoro_core2.log");
             if (File.Exists(releasePath))
                 return releasePath;
 
-            // デバッグ時のパス（CocoroDockからCocoroCore2への相対パス）
-            var debugPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, 
-                "..", "CocoroCore2", "logs", "cocoro_core2.log");
+            // デバッグ時のパス（CocoroDockからCocoroCoreMへの相対パス）
+            var debugPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+                "..", "CocoroCoreM", "logs", "cocoro_core2.log");
             var fullDebugPath = Path.GetFullPath(debugPath);
             if (File.Exists(fullDebugPath))
                 return fullDebugPath;
 
             // さらに上のディレクトリから探す場合のパス
-            var alternativeDebugPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, 
-                "..", "..", "..", "..", "CocoroCore2", "logs", "cocoro_core2.log");
+            var alternativeDebugPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+                "..", "..", "..", "..", "CocoroCoreM", "logs", "cocoro_core2.log");
             return Path.GetFullPath(alternativeDebugPath);
         }
 
@@ -280,7 +280,7 @@ namespace CocoroDock.Windows
         /// <param name="errorMessage">エラーメッセージ</param>
         private void OnWatcherError(string errorMessage)
         {
-            Dispatcher.BeginInvoke(new Action(() => 
+            Dispatcher.BeginInvoke(new Action(() =>
             {
                 UpdateStatus($"エラー: {errorMessage}");
                 // エラー時もUI状態をリセット
@@ -294,7 +294,7 @@ namespace CocoroDock.Windows
         /// </summary>
         private void OnLoadingStarted()
         {
-            Dispatcher.BeginInvoke(new Action(() => 
+            Dispatcher.BeginInvoke(new Action(() =>
             {
                 UpdateStatus("既存ログを読み込み中...");
                 Cursor = System.Windows.Input.Cursors.Wait;
@@ -309,11 +309,11 @@ namespace CocoroDock.Windows
         /// <param name="logMessages">読み込まれたログリスト</param>
         private void OnLoadingCompleted(List<LogMessage> logMessages)
         {
-            Dispatcher.BeginInvoke(new Action(() => 
+            Dispatcher.BeginInvoke(new Action(() =>
             {
                 // 一括でログを追加
                 LoadInitialLogs(logMessages);
-                
+
                 // UI状態を通常に戻す
                 Cursor = System.Windows.Input.Cursors.Arrow;
                 LogDataGrid.IsEnabled = true;
@@ -327,7 +327,7 @@ namespace CocoroDock.Windows
         /// <param name="total">総処理数</param>
         private void OnProgressUpdated(int current, int total)
         {
-            Dispatcher.BeginInvoke(new Action(() => 
+            Dispatcher.BeginInvoke(new Action(() =>
             {
                 var percentage = (int)((double)current / total * 100);
                 UpdateStatus($"既存ログを読み込み中... ({current}/{total} - {percentage}%)");

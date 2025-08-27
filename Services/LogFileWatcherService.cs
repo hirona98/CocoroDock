@@ -29,7 +29,7 @@ namespace CocoroDock.Services
         private const int MaxLogEntries = 1000;
         private const int DebounceDelayMs = 100;
 
-        // Python標準ロガーの形式: 2025-08-15 12:00:07,337 - __main__ - INFO - CocoroCore2を初期化しています...
+        // Python標準ロガーの形式: 2025-08-15 12:00:07,337 - __main__ - INFO - CocoroCoreMを初期化しています...
         private readonly Regex _logPattern = new Regex(
             @"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) - (.+?) - (\w+) - (.+)$",
             RegexOptions.Compiled | RegexOptions.Multiline);

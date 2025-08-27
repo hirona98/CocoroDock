@@ -191,7 +191,7 @@ namespace CocoroDock.Communication
         public ScreenshotSettings screenshotSettings { get; set; } = new ScreenshotSettings();
         public MicrophoneSettings microphoneSettings { get; set; } = new MicrophoneSettings();
 
-        // CocoroCore2用追加設定
+        // CocoroCoreM用追加設定
         public bool enable_pro_mode { get; set; } = true;
         public bool enable_internet_retrieval { get; set; } = true;
         public string googleApiKey { get; set; } = "GOOGLE_API_KEY";
@@ -426,11 +426,11 @@ namespace CocoroDock.Communication
     }
 
     // ========================================
-    // CocoroCore2 チャットAPI関連モデル
+    // CocoroCoreM チャットAPI関連モデル
     // ========================================
 
     /// <summary>
-    /// CocoroCore2 画像データ
+    /// CocoroCoreM 画像データ
     /// </summary>
     public class ImageData
     {
@@ -438,7 +438,7 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// CocoroCore2 通知データ
+    /// CocoroCoreM 通知データ
     /// </summary>
     public class NotificationData
     {
@@ -447,7 +447,7 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// CocoroCore2 デスクトップ監視コンテキスト
+    /// CocoroCoreM デスクトップ監視コンテキスト
     /// </summary>
     public class DesktopContext
     {
@@ -458,7 +458,7 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// CocoroCore2 会話履歴メッセージ
+    /// CocoroCoreM 会話履歴メッセージ
     /// </summary>
     public class HistoryMessage
     {
@@ -468,9 +468,9 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// CocoroCore2 チャットAPIリクエスト
+    /// CocoroCoreM チャットAPIリクエスト
     /// </summary>
-    public class CocoroCore2ChatRequest
+    public class CocoroCoreMChatRequest
     {
         public string query { get; set; } = string.Empty; // ユーザークエリ（必須）
         public string chat_type { get; set; } = "text"; // "text" | "text_image" | "notification" | "desktop_watch"

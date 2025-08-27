@@ -39,14 +39,14 @@ namespace CocoroDock.Services
         public event EventHandler<ControlRequest>? ControlCommandReceived;
         public event EventHandler<string>? ErrorOccurred;
         public event EventHandler<StatusUpdateEventArgs>? StatusUpdateRequested;
-        public event EventHandler<CocoroCore2Status>? StatusChanged;
+        public event EventHandler<CocoroCoreMStatus>? StatusChanged;
 
         public bool IsServerRunning => _apiServer.IsRunning;
 
         /// <summary>
-        /// 現在のCocoroCore2ステータス
+        /// 現在のCocoroCoreMステータス
         /// </summary>
-        public CocoroCore2Status CurrentStatus => _statusPollingService.CurrentStatus;
+        public CocoroCoreMStatus CurrentStatus => _statusPollingService.CurrentStatus;
 
         /// <summary>
         /// コンストラクタ
@@ -200,7 +200,7 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// CocoroCore2にWebSocketチャットメッセージを送信
+        /// CocoroCoreMにWebSocketチャットメッセージを送信
         /// </summary>
         /// <param name="message">送信メッセージ</param>
         /// <param name="characterName">キャラクター名（オプション）</param>
@@ -263,8 +263,8 @@ namespace CocoroDock.Services
 
                 // 画像がある場合は画像処理中、そうでなければメッセージ処理中に設定
                 var processingStatus = (images != null && images.Count > 0)
-                    ? CocoroCore2Status.ProcessingImage
-                    : CocoroCore2Status.ProcessingMessage;
+                    ? CocoroCoreMStatus.ProcessingImage
+                    : CocoroCoreMStatus.ProcessingMessage;
                 _statusPollingService.SetProcessingStatus(processingStatus);
 
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "WebSocketチャット開始"));
@@ -354,7 +354,7 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// CocoroCore2に通知メッセージを送信
+        /// CocoroCoreMに通知メッセージを送信
         /// </summary>
         /// <param name="originalSource">通知送信元</param>
         /// <param name="originalMessage">元の通知メッセージ</param>
@@ -395,7 +395,7 @@ namespace CocoroDock.Services
                 };
 
                 // 処理中ステータスを設定
-                _statusPollingService.SetProcessingStatus(CocoroCore2Status.ProcessingMessage);
+                _statusPollingService.SetProcessingStatus(CocoroCoreMStatus.ProcessingMessage);
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "通知処理開始"));
 
                 // WebSocketメッセージを送信

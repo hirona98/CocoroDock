@@ -73,7 +73,7 @@ namespace CocoroDock.Services
         public float WindowPositionX { get; set; } = 0.0f;
         public float WindowPositionY { get; set; } = 0.0f;
 
-        // CocoroCore2用追加設定
+        // CocoroCoreM用追加設定
         public bool EnableProMode { get; set; } = true;
         public bool EnableInternetRetrieval { get; set; } = true;
         public string GoogleApiKey { get; set; } = "GOOGLE_API_KEY";
@@ -192,7 +192,7 @@ namespace CocoroDock.Services
                 MicrophoneSettings = config.microphoneSettings;
             }
 
-            // CocoroCore2用追加設定を更新
+            // CocoroCoreM用追加設定を更新
             EnableProMode = config.enable_pro_mode;
             EnableInternetRetrieval = config.enable_internet_retrieval;
             GoogleApiKey = config.googleApiKey;

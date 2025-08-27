@@ -51,9 +51,9 @@ namespace CocoroDock.Services
         event EventHandler<StatusUpdateEventArgs>? StatusUpdateRequested;
 
         /// <summary>
-        /// CocoroCore2ステータス変更イベント
+        /// CocoroCoreMステータス変更イベント
         /// </summary>
-        event EventHandler<CocoroCore2Status>? StatusChanged;
+        event EventHandler<CocoroCoreMStatus>? StatusChanged;
 
         /// <summary>
         /// APIサーバーが起動しているかどうか
@@ -61,9 +61,9 @@ namespace CocoroDock.Services
         bool IsServerRunning { get; }
 
         /// <summary>
-        /// 現在のCocoroCore2ステータス
+        /// 現在のCocoroCoreMステータス
         /// </summary>
-        CocoroCore2Status CurrentStatus { get; }
+        CocoroCoreMStatus CurrentStatus { get; }
 
         /// <summary>
         /// APIサーバーを開始

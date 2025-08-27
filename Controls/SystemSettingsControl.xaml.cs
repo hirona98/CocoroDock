@@ -65,7 +65,7 @@ namespace CocoroDock.Controls
                 // マイク設定
                 MicThresholdSlider.Value = appSettings.MicrophoneSettings.inputThreshold;
 
-                // CocoroCore2設定
+                // CocoroCoreM設定
                 EnableInternetRetrievalCheckBox.IsChecked = appSettings.EnableInternetRetrieval;
                 GoogleApiKeyTextBox.Text = appSettings.GoogleApiKey;
                 GoogleSearchEngineIdTextBox.Text = appSettings.GoogleSearchEngineId;
@@ -106,7 +106,7 @@ namespace CocoroDock.Controls
             // マイク設定
             MicThresholdSlider.ValueChanged += OnSettingsChanged;
 
-            // CocoroCore2設定
+            // CocoroCoreM設定
             EnableInternetRetrievalCheckBox.Checked += OnSettingsChanged;
             EnableInternetRetrievalCheckBox.Unchecked += OnSettingsChanged;
             GoogleApiKeyTextBox.TextChanged += OnSettingsChanged;
@@ -238,9 +238,9 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// CocoroCore2設定を取得
+        /// CocoroCoreM設定を取得
         /// </summary>
-        public (bool enableProMode, bool enableInternetRetrieval, string googleApiKey, string googleSearchEngineId, int internetMaxResults) GetCocoroCore2Settings()
+        public (bool enableProMode, bool enableInternetRetrieval, string googleApiKey, string googleSearchEngineId, int internetMaxResults) GetCocoroCoreMSettings()
         {
             bool enableProMode = true; // 設定ファイルのみで制御
             bool enableInternetRetrieval = EnableInternetRetrievalCheckBox.IsChecked ?? true;
@@ -260,9 +260,9 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// CocoroCore2設定を設定
+        /// CocoroCoreM設定を設定
         /// </summary>
-        public void SetCocoroCore2Settings(bool enableProMode, bool enableInternetRetrieval, string googleApiKey, string googleSearchEngineId, int internetMaxResults)
+        public void SetCocoroCoreMSettings(bool enableProMode, bool enableInternetRetrieval, string googleApiKey, string googleSearchEngineId, int internetMaxResults)
         {
             // enableProModeはコメントアウト（設定ファイルでのみ制御）
             EnableInternetRetrievalCheckBox.IsChecked = enableInternetRetrieval;
@@ -292,7 +292,7 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// CocoroCore2に登録されているメモリー一覧を取得
+        /// CocoroCoreMに登録されているメモリー一覧を取得
         /// </summary>
         private async Task LoadRegisteredMemories()
         {
@@ -301,7 +301,7 @@ namespace CocoroDock.Controls
                 var appSettings = AppSettings.Instance;
                 using var coreClient = new CocoroCoreClient(appSettings.CocoroCorePort);
 
-                // CocoroCore2からメモリー一覧を取得
+                // CocoroCoreMからメモリー一覧を取得
                 var memoriesResponse = await coreClient.GetMemoryListAsync();
 
                 if (memoriesResponse.data?.Any() == true)
@@ -444,8 +444,8 @@ namespace CocoroDock.Controls
 
                 string errorMessage = ex switch
                 {
-                    TimeoutException => "処理がタイムアウトしました。\nCocoroCore2の応答に時間がかかっています。",
-                    HttpRequestException => "通信エラーが発生しました。\nCocoroCore2が起動していることを確認してください。",
+                    TimeoutException => "処理がタイムアウトしました。\nCocoroCoreMの応答に時間がかかっています。",
+                    HttpRequestException => "通信エラーが発生しました。\nCocoroCoreMが起動していることを確認してください。",
                     InvalidOperationException => ex.Message,
                     _ => $"予期しないエラーが発生しました。\n\n詳細: {ex.Message}"
                 };

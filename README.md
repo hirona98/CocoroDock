@@ -72,7 +72,7 @@ CocoroAI全体構成は CocoroCoreリポジトリの CocoroAI全体構成.drawio
 
 - POST /api/logs
 	- 目的: ログメッセージ受信
-	- リクエスト: { timestamp, level: "DEBUG"|"INFO"|"WARNING"|"ERROR", component: "CocoroCore2"|"SEPARATOR", message }
+	- リクエスト: { timestamp, level: "DEBUG"|"INFO"|"WARNING"|"ERROR", component: "CocoroCoreM"|"SEPARATOR", message }
 	- 必須: level, component, message
 	- 200: { status: "success", message }
 

@@ -32,8 +32,8 @@ namespace CocoroDock.Controls
         // 通信サービス
         private ICommunicationService? _communicationService;
 
-        // CocoroCore2再起動が必要な設定の前回値を保存
-        private ConfigSettings _previousCocoroCore2Settings;
+        // CocoroCoreM再起動が必要な設定の前回値を保存
+        private ConfigSettings _previousCocoroCoreMSettings;
 
         public AdminWindow() : this(null)
         {
@@ -67,8 +67,8 @@ namespace CocoroDock.Controls
             // 元の設定のバックアップを作成
             BackupSettings();
 
-            // CocoroCore2再起動チェック用に現在の設定を保存
-            _previousCocoroCore2Settings = AppSettings.Instance.GetConfigSettings();
+            // CocoroCoreM再起動チェック用に現在の設定を保存
+            _previousCocoroCoreMSettings = AppSettings.Instance.GetConfigSettings();
         }
 
         /// <summary>
@@ -168,12 +168,12 @@ namespace CocoroDock.Controls
             var microphoneSettings = SystemSettingsControl.GetMicrophoneSettings();
             dict["MicInputThreshold"] = microphoneSettings.inputThreshold;
 
-            var cocoroCore2Settings = SystemSettingsControl.GetCocoroCore2Settings();
-            dict["EnableProMode"] = cocoroCore2Settings.enableProMode;
-            dict["EnableInternetRetrieval"] = cocoroCore2Settings.enableInternetRetrieval;
-            dict["GoogleApiKey"] = cocoroCore2Settings.googleApiKey;
-            dict["GoogleSearchEngineId"] = cocoroCore2Settings.googleSearchEngineId;
-            dict["InternetMaxResults"] = cocoroCore2Settings.internetMaxResults;
+            var CocoroCoreMSettings = SystemSettingsControl.GetCocoroCoreMSettings();
+            dict["EnableProMode"] = CocoroCoreMSettings.enableProMode;
+            dict["EnableInternetRetrieval"] = CocoroCoreMSettings.enableInternetRetrieval;
+            dict["GoogleApiKey"] = CocoroCoreMSettings.googleApiKey;
+            dict["GoogleSearchEngineId"] = CocoroCoreMSettings.googleSearchEngineId;
+            dict["InternetMaxResults"] = CocoroCoreMSettings.internetMaxResults;
 
             // MCP 有効/無効
             dict["IsEnableMcp"] = McpSettingsControl.GetMcpEnabled();
@@ -251,9 +251,9 @@ namespace CocoroDock.Controls
                 // CharacterManagementControlの設定確定処理を実行
                 CharacterManagementControl.ConfirmSettings();
 
-                // UI上の現在の設定を取得してCocoroCore2再起動が必要かチェック
+                // UI上の現在の設定を取得してCocoroCoreM再起動が必要かチェック
                 var currentSettings = GetCurrentUISettings();
-                bool needsCocoroCore2Restart = HasCocoroCore2RestartRequiredChanges(_previousCocoroCore2Settings, currentSettings);
+                bool needsCocoroCoreMRestart = HasCocoroCoreMRestartRequiredChanges(_previousCocoroCoreMSettings, currentSettings);
 
                 // すべてのタブの設定を保存
                 SaveAllSettings();
@@ -261,10 +261,10 @@ namespace CocoroDock.Controls
                 // CocoroShellを再起動
                 RestartCocoroShell();
 
-                // CocoroCore2の設定変更があった場合は通知
-                if (needsCocoroCore2Restart)
+                // CocoroCoreMの設定変更があった場合は通知
+                if (needsCocoroCoreMRestart)
                 {
-                    ShowCocoroCore2RestartNotificationDialog();
+                    ShowCocoroCoreMRestartNotificationDialog();
                 }
 
                 // ウィンドウを閉じる
@@ -301,9 +301,9 @@ namespace CocoroDock.Controls
                 // CharacterManagementControlの設定確定処理を実行
                 CharacterManagementControl.ConfirmSettings();
 
-                // UI上の現在の設定を取得してCocoroCore2再起動が必要かチェック
+                // UI上の現在の設定を取得してCocoroCoreM再起動が必要かチェック
                 var currentSettings = GetCurrentUISettings();
-                bool needsCocoroCore2Restart = HasCocoroCore2RestartRequiredChanges(_previousCocoroCore2Settings, currentSettings);
+                bool needsCocoroCoreMRestart = HasCocoroCoreMRestartRequiredChanges(_previousCocoroCoreMSettings, currentSettings);
 
                 // すべてのタブの設定を保存
                 SaveAllSettings();
@@ -311,15 +311,15 @@ namespace CocoroDock.Controls
                 // CocoroShellを再起動
                 RestartCocoroShell();
 
-                // CocoroCore2の設定変更があった場合は通知
-                if (needsCocoroCore2Restart)
+                // CocoroCoreMの設定変更があった場合は通知
+                if (needsCocoroCoreMRestart)
                 {
-                    ShowCocoroCore2RestartNotificationDialog();
+                    ShowCocoroCoreMRestartNotificationDialog();
                 }
 
                 // 設定のバックアップを更新（適用後の状態を新しいベースラインとする）
                 BackupSettings();
-                _previousCocoroCore2Settings = AppSettings.Instance.GetConfigSettings();
+                _previousCocoroCoreMSettings = AppSettings.Instance.GetConfigSettings();
             }
             catch (Exception ex)
             {
@@ -401,8 +401,8 @@ namespace CocoroDock.Controls
         /// <summary>
         /// 再起動が必要な場合にダイアログで通知
         /// </summary>
-        /// <param name="needsCocoroCore2Restart">CocoroCore2の再起動が必要か</param>
-        private void ShowCocoroCore2RestartNotificationDialog()
+        /// <param name="needsCocoroCoreMRestart">CocoroCoreMの再起動が必要か</param>
+        private void ShowCocoroCoreMRestartNotificationDialog()
         {
             MessageBox.Show("VRMモデル以外の設定は次回起動時に有効になります",
                           "設定変更完了",
@@ -580,9 +580,9 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// CocoroCore2を再起動する
+        /// CocoroCoreMを再起動する
         /// </summary>
-        private async Task RestartCocoroCore2Async()
+        private async Task RestartCocoroCoreMAsync()
         {
             try
             {
@@ -590,33 +590,33 @@ namespace CocoroDock.Controls
                 var mainWindow = Application.Current.MainWindow as MainWindow;
                 if (mainWindow != null)
                 {
-                    // MainWindowのLaunchCocoroCore2メソッドを呼び出してCocoroCore2を再起動
-                    var launchMethod = mainWindow.GetType().GetMethod("LaunchCocoroCore2",
+                    // MainWindowのLaunchCocoroCoreMメソッドを呼び出してCocoroCoreMを再起動
+                    var launchMethod = mainWindow.GetType().GetMethod("LaunchCocoroCoreM",
                         System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
                     if (launchMethod != null)
                     {
-                        // ProcessOperation.RestartIfRunning を指定してCocoroCore2を再起動
+                        // ProcessOperation.RestartIfRunning を指定してCocoroCoreMを再起動
                         launchMethod.Invoke(mainWindow, new object[] { ProcessOperation.RestartIfRunning });
-                        Debug.WriteLine("CocoroCore2を再起動要求をしました");
+                        Debug.WriteLine("CocoroCoreMを再起動要求をしました");
 
                         // 再起動完了を待機
-                        await WaitForCocoroCore2RestartAsync();
-                        Debug.WriteLine("CocoroCore2の再起動が完了しました");
+                        await WaitForCocoroCoreMRestartAsync();
+                        Debug.WriteLine("CocoroCoreMの再起動が完了しました");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"CocoroCore2再起動中にエラーが発生しました: {ex.Message}");
-                throw new Exception($"CocoroCore2の再起動に失敗しました: {ex.Message}");
+                Debug.WriteLine($"CocoroCoreM再起動中にエラーが発生しました: {ex.Message}");
+                throw new Exception($"CocoroCoreMの再起動に失敗しました: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// CocoroCore2の再起動完了を待機
+        /// CocoroCoreMの再起動完了を待機
         /// </summary>
-        private async Task WaitForCocoroCore2RestartAsync()
+        private async Task WaitForCocoroCoreMRestartAsync()
         {
             var delay = TimeSpan.FromSeconds(1);
             var maxWaitTime = TimeSpan.FromSeconds(120);
@@ -635,20 +635,20 @@ namespace CocoroDock.Controls
                         // まず停止（起動待ち）状態になることを確認
                         if (!hasBeenDisconnected)
                         {
-                            if (currentStatus == CocoroCore2Status.WaitingForStartup)
+                            if (currentStatus == CocoroCoreMStatus.WaitingForStartup)
                             {
                                 hasBeenDisconnected = true;
-                                Debug.WriteLine("CocoroCore2停止を確認（起動待ち）");
+                                Debug.WriteLine("CocoroCoreM停止を確認（起動待ち）");
                             }
                         }
                         // 停止を確認済みの場合、再起動完了を待機
                         else
                         {
-                            if (currentStatus == CocoroCore2Status.Normal ||
-                                currentStatus == CocoroCore2Status.ProcessingMessage ||
-                                currentStatus == CocoroCore2Status.ProcessingImage)
+                            if (currentStatus == CocoroCoreMStatus.Normal ||
+                                currentStatus == CocoroCoreMStatus.ProcessingMessage ||
+                                currentStatus == CocoroCoreMStatus.ProcessingImage)
                             {
-                                Debug.WriteLine("CocoroCore2再起動完了");
+                                Debug.WriteLine("CocoroCoreM再起動完了");
                                 return;
                             }
                         }
@@ -661,7 +661,7 @@ namespace CocoroDock.Controls
                 await Task.Delay(delay);
             }
 
-            throw new TimeoutException("CocoroCore2の再起動がタイムアウトしました");
+            throw new TimeoutException("CocoroCoreMの再起動がタイムアウトしました");
         }
 
         /// <summary>
@@ -676,12 +676,12 @@ namespace CocoroDock.Controls
             config.isEnableNotificationApi = SystemSettingsControl.GetIsEnableNotificationApi();
             config.isEnableMcp = McpSettingsControl.GetMcpEnabled();
 
-            var cocoroCore2Settings = SystemSettingsControl.GetCocoroCore2Settings();
-            config.enable_pro_mode = cocoroCore2Settings.enableProMode;
-            config.enable_internet_retrieval = cocoroCore2Settings.enableInternetRetrieval;
-            config.googleApiKey = cocoroCore2Settings.googleApiKey;
-            config.googleSearchEngineId = cocoroCore2Settings.googleSearchEngineId;
-            config.internetMaxResults = cocoroCore2Settings.internetMaxResults;
+            var CocoroCoreMSettings = SystemSettingsControl.GetCocoroCoreMSettings();
+            config.enable_pro_mode = CocoroCoreMSettings.enableProMode;
+            config.enable_internet_retrieval = CocoroCoreMSettings.enableInternetRetrieval;
+            config.googleApiKey = CocoroCoreMSettings.googleApiKey;
+            config.googleSearchEngineId = CocoroCoreMSettings.googleSearchEngineId;
+            config.internetMaxResults = CocoroCoreMSettings.internetMaxResults;
 
             // Character設定の取得
             config.currentCharacterIndex = CharacterManagementControl.GetCurrentCharacterIndex();
@@ -706,12 +706,12 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// CocoroCore2再起動が必要な設定項目が変更されたかどうかをチェック
+        /// CocoroCoreM再起動が必要な設定項目が変更されたかどうかをチェック
         /// </summary>
         /// <param name="previousSettings">以前の設定</param>
         /// <param name="currentSettings">現在の設定</param>
-        /// <returns>CocoroCore2再起動が必要な変更があった場合true</returns>
-        private bool HasCocoroCore2RestartRequiredChanges(ConfigSettings previousSettings, ConfigSettings currentSettings)
+        /// <returns>CocoroCoreM再起動が必要な変更があった場合true</returns>
+        private bool HasCocoroCoreMRestartRequiredChanges(ConfigSettings previousSettings, ConfigSettings currentSettings)
         {
             // 基本設定項目の比較
             if (currentSettings.isEnableNotificationApi != previousSettings.isEnableNotificationApi ||

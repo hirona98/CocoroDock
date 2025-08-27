@@ -8,13 +8,13 @@ using System.Diagnostics;
 namespace CocoroDock.Services
 {
     /// <summary>
-    /// CocoroCore2のステータス状態を表す列挙型
+    /// CocoroCoreMのステータス状態を表す列挙型
     /// </summary>
-    public enum CocoroCore2Status
+    public enum CocoroCoreMStatus
     {
-        /// <summary>CocoroCore2起動待ち</summary>
+        /// <summary>CocoroCoreM起動待ち</summary>
         WaitingForStartup,
-        /// <summary>正常動作中（CocoroCore2とのポーリングが正常なとき）</summary>
+        /// <summary>正常動作中（CocoroCoreMとのポーリングが正常なとき）</summary>
         Normal,
         /// <summary>LLMメッセージ処理中</summary>
         ProcessingMessage,
@@ -24,30 +24,30 @@ namespace CocoroDock.Services
 
 
     /// <summary>
-    /// CocoroCore2のステータスポーリングサービス
+    /// CocoroCoreMのステータスポーリングサービス
     /// </summary>
     public class StatusPollingService : IDisposable
     {
         private readonly HttpClient _httpClient;
         private readonly string _healthEndpoint;
         private readonly Timer _pollingTimer;
-        private CocoroCore2Status _currentStatus = CocoroCore2Status.WaitingForStartup;
+        private CocoroCoreMStatus _currentStatus = CocoroCoreMStatus.WaitingForStartup;
         private volatile bool _disposed = false;
 
         /// <summary>
         /// ステータス変更時のイベント
         /// </summary>
-        public event EventHandler<CocoroCore2Status>? StatusChanged;
+        public event EventHandler<CocoroCoreMStatus>? StatusChanged;
 
         /// <summary>
         /// 現在のステータス
         /// </summary>
-        public CocoroCore2Status CurrentStatus => _currentStatus;
+        public CocoroCoreMStatus CurrentStatus => _currentStatus;
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="baseUrl">CocoroCore2のベースURL（デフォルト: http://localhost:55601）</param>
+        /// <param name="baseUrl">CocoroCoreMのベースURL（デフォルト: http://localhost:55601）</param>
         public StatusPollingService(string baseUrl = "http://localhost:55601")
         {
             _httpClient = new HttpClient
@@ -80,25 +80,25 @@ namespace CocoroDock.Services
                     if (healthCheck != null && healthCheck.status == "healthy")
                     {
                         // 接続成功時は現在の処理状態を維持（Disconnected以外）
-                        if (_currentStatus == CocoroCore2Status.WaitingForStartup)
+                        if (_currentStatus == CocoroCoreMStatus.WaitingForStartup)
                         {
-                            UpdateStatus(CocoroCore2Status.Normal);
+                            UpdateStatus(CocoroCoreMStatus.Normal);
                         }
                     }
                     else
                     {
-                        UpdateStatus(CocoroCore2Status.WaitingForStartup);
+                        UpdateStatus(CocoroCoreMStatus.WaitingForStartup);
                     }
                 }
                 else
                 {
-                    UpdateStatus(CocoroCore2Status.WaitingForStartup);
+                    UpdateStatus(CocoroCoreMStatus.WaitingForStartup);
                 }
             }
             catch (Exception)
             {
                 // 接続エラー時はDisconnected状態に
-                UpdateStatus(CocoroCore2Status.WaitingForStartup);
+                UpdateStatus(CocoroCoreMStatus.WaitingForStartup);
             }
         }
 
@@ -106,7 +106,7 @@ namespace CocoroDock.Services
         /// ステータスを更新してイベントを発火
         /// </summary>
         /// <param name="newStatus">新しいステータス</param>
-        private void UpdateStatus(CocoroCore2Status newStatus)
+        private void UpdateStatus(CocoroCoreMStatus newStatus)
         {
             if (_currentStatus != newStatus)
             {
@@ -120,10 +120,10 @@ namespace CocoroDock.Services
         /// 処理状態を手動で設定（通信開始時に呼び出し）
         /// </summary>
         /// <param name="processingStatus">処理状態</param>
-        public void SetProcessingStatus(CocoroCore2Status processingStatus)
+        public void SetProcessingStatus(CocoroCoreMStatus processingStatus)
         {
-            if (processingStatus == CocoroCore2Status.ProcessingMessage ||
-                processingStatus == CocoroCore2Status.ProcessingImage)
+            if (processingStatus == CocoroCoreMStatus.ProcessingMessage ||
+                processingStatus == CocoroCoreMStatus.ProcessingImage)
             {
                 UpdateStatus(processingStatus);
             }
@@ -134,7 +134,7 @@ namespace CocoroDock.Services
         /// </summary>
         public void SetNormalStatus()
         {
-            UpdateStatus(CocoroCore2Status.Normal);
+            UpdateStatus(CocoroCoreMStatus.Normal);
         }
 
         /// <summary>
