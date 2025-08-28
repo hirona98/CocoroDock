@@ -180,7 +180,7 @@
                         <!-- 説明テキスト -->
                         <TextBlock TextWrapping="Wrap"
                                    Foreground="#666666">
-                            高度な機能とインターネット検索機能の設定（実装中/OFFにしてください）
+                            高度な機能とインターネット検索機能の設定（未実装/OFFにしてください）
                         </TextBlock>
 
 
