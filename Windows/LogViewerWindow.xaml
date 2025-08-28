@@ -134,6 +134,7 @@
                           CanUserReorderColumns="False"
                           CanUserSortColumns="True"
                           ScrollViewer.CanContentScroll="True"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                           VirtualizingPanel.IsVirtualizing="True"
                           RowStyle="{StaticResource SeparatorRowStyle}">
 
@@ -155,12 +156,18 @@
                                 <DataGridTextColumn Header="コンポーネント"
                                                     Binding="{Binding component}"
                                                     Width="120"
-                                                    CanUserResize="False"/>
+                                                    CanUserResize="True"/>
 
                                 <!-- メッセージ -->
                                 <DataGridTextColumn Header="メッセージ"
                                                     Binding="{Binding message}"
-                                                    Width="*"/>
+                                                    Width="*">
+                                        <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                                </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                         </DataGrid.Columns>
                 </DataGrid>
 
