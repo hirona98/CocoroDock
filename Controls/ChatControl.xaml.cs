@@ -115,7 +115,7 @@ namespace CocoroDock.Controls
 
                     imagePanel.Children.Add(imageBorder);
                 }
-                
+
                 messageContent.Children.Add(imagePanel);
             }
 
@@ -697,7 +697,7 @@ namespace CocoroDock.Controls
 
                 // 画像をBase64エンコード
                 string imageDataUrl = ConvertToDataUrl(bitmapSource);
-                
+
                 // リストに追加
                 _attachedImageDataUrls.Add(imageDataUrl);
                 _attachedImageSources.Add(bitmapSource);
@@ -924,6 +924,7 @@ namespace CocoroDock.Controls
         public void UpdateSendButtonEnabled(bool isEnabled)
         {
             SendButton.IsEnabled = isEnabled;
+            // テキストボックスとマイク入力も止めたほうが良いけど面倒なので保留
         }
 
         /// <summary>

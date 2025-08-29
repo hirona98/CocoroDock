@@ -15,6 +15,7 @@ https://naokimiku39.booth.pm/items/4366008
 ◆ ChatdollKit ◆
 Copyright (c) uezo
 https://github.com/uezo/ChatdollKit/blob/master/LICENSE
+　※以下変更を加えています
 　 * CocoroAI環境に組み込むための変更（通信/モーション制御/モジュール読み込み/TTS切り替え）
 　 * ブレンドシェイプ検索処理に"angry", "fun", "←", "目"を追加
 
