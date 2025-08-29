@@ -190,8 +190,6 @@ namespace CocoroDock.Communication
         public float windowPositionY { get; set; } = 0.0f;
         public ScreenshotSettings screenshotSettings { get; set; } = new ScreenshotSettings();
         public MicrophoneSettings microphoneSettings { get; set; } = new MicrophoneSettings();
-
-        // CocoroCoreM用追加設定
         public bool enable_pro_mode { get; set; } = true;
         public bool enable_internet_retrieval { get; set; } = true;
         public string googleApiKey { get; set; } = "GOOGLE_API_KEY";

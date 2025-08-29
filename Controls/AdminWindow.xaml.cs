@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -34,6 +35,7 @@ namespace CocoroDock.Controls
 
         // CocoroCoreM再起動が必要な設定の前回値を保存
         private ConfigSettings _previousCocoroCoreMSettings;
+        private Dictionary<int, string> _previousSystemPromptFileHashes = new Dictionary<int, string>();
 
         public AdminWindow() : this(null)
         {
@@ -69,6 +71,9 @@ namespace CocoroDock.Controls
 
             // CocoroCoreM再起動チェック用に現在の設定を保存
             _previousCocoroCoreMSettings = AppSettings.Instance.GetConfigSettings();
+
+            // systemPromptFileのハッシュを保存
+            SaveSystemPromptFileHashes(_previousCocoroCoreMSettings);
         }
 
         /// <summary>
@@ -320,6 +325,9 @@ namespace CocoroDock.Controls
                 // 設定のバックアップを更新（適用後の状態を新しいベースラインとする）
                 BackupSettings();
                 _previousCocoroCoreMSettings = AppSettings.Instance.GetConfigSettings();
+
+                // systemPromptFileのハッシュも更新
+                SaveSystemPromptFileHashes(_previousCocoroCoreMSettings);
             }
             catch (Exception ex)
             {
@@ -732,6 +740,7 @@ namespace CocoroDock.Controls
                 return true;
             }
 
+            // キャラクターの比較（追加して削除して…とかやるとNGだけど…）
             for (int i = 0; i < currentSettings.characterList.Count; i++)
             {
                 var current = currentSettings.characterList[i];
@@ -743,6 +752,7 @@ namespace CocoroDock.Controls
                     current.visionApiKey != previous.visionApiKey ||
                     current.visionModel != previous.visionModel ||
                     current.localLLMBaseUrl != previous.localLLMBaseUrl ||
+                    current.systemPromptFilePath != previous.systemPromptFilePath ||
                     current.isEnableMemory != previous.isEnableMemory ||
                     current.memoryId != previous.memoryId ||
                     current.embeddedApiKey != previous.embeddedApiKey ||
@@ -750,9 +760,58 @@ namespace CocoroDock.Controls
                 {
                     return true;
                 }
+
+                // systemPromptFileのファイル内容変更チェック
+                if (!string.IsNullOrEmpty(current.systemPromptFilePath))
+                {
+                    var currentHash = GetFileContentHash(current.systemPromptFilePath);
+                    var previousHash = _previousSystemPromptFileHashes.ContainsKey(i) ? _previousSystemPromptFileHashes[i] : string.Empty;
+
+                    if (currentHash != previousHash)
+                    {
+                        return true;
+                    }
+                }
             }
 
             return false;
+        }
+
+        private string GetFileContentHash(string filePath)
+        {
+            try
+            {
+                if (!File.Exists(filePath))
+                {
+                    return string.Empty;
+                }
+
+                using (var sha256 = System.Security.Cryptography.SHA256.Create())
+                {
+                    var content = File.ReadAllText(filePath, System.Text.Encoding.UTF8);
+                    var hash = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(content));
+                    return Convert.ToHexString(hash);
+                }
+            }
+            catch
+            {
+                // ファイル読み込みエラーの場合は空文字を返す
+                return string.Empty;
+            }
+        }
+
+        private void SaveSystemPromptFileHashes(ConfigSettings settings)
+        {
+            _previousSystemPromptFileHashes.Clear();
+
+            for (int i = 0; i < settings.characterList.Count; i++)
+            {
+                var character = settings.characterList[i];
+                if (!string.IsNullOrEmpty(character.systemPromptFilePath))
+                {
+                    _previousSystemPromptFileHashes[i] = GetFileContentHash(character.systemPromptFilePath);
+                }
+            }
         }
 
         /// <summary>
