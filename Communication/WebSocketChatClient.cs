@@ -43,7 +43,6 @@ namespace CocoroDock.Communication
         {
             _clientId = clientId;
             _webSocketUri = new Uri($"ws://127.0.0.1:{port}/ws/chat/{clientId}");
-            
             Debug.WriteLine($"[WebSocket] WebSocketChatClient初期化: URI={_webSocketUri}");
         }
 
@@ -61,15 +60,11 @@ namespace CocoroDock.Communication
                 }
             }
 
-            const int maxRetries = 3;
-            const int retryDelayMs = 1000;
 
-            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            while (true)
             {
                 try
                 {
-                    Debug.WriteLine($"[WebSocket] 接続を開始します（試行 {attempt}/{maxRetries}）: {_webSocketUri}");
-
                     // 既存のリソースをクリーンアップ
                     await DisconnectAsync();
 
@@ -94,25 +89,13 @@ namespace CocoroDock.Communication
 
                     return true;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    Debug.WriteLine($"[WebSocket] 接続エラー（試行 {attempt}/{maxRetries}）: {ex.Message}");
-                    
-                    if (attempt < maxRetries)
-                    {
-                        Debug.WriteLine($"[WebSocket] {retryDelayMs}ms後にリトライします...");
-                        await Task.Delay(retryDelayMs);
-                    }
-                    else
-                    {
-                        ErrorOccurred?.Invoke(this, $"接続エラー（最大試行回数に達しました）: {ex.Message}");
-                    }
-
+                    const int retryDelayMs = 1000;
+                    await Task.Delay(retryDelayMs);
                     await DisconnectAsync();
                 }
             }
-
-            return false;
         }
 
         /// <summary>
@@ -232,8 +215,8 @@ namespace CocoroDock.Communication
 
             try
             {
-                while (_isConnected && 
-                       _webSocket?.State == WebSocketState.Open && 
+                while (_isConnected &&
+                       _webSocket?.State == WebSocketState.Open &&
                        !(_cancellationTokenSource?.Token.IsCancellationRequested ?? true))
                 {
                     var messageBuffer = new List<byte>();

@@ -57,7 +57,7 @@
       "ttsSperkerID": "",
       "ttsType": "voicevox",
       "styleBertVits2Config": {
-        "endpointUrl": "http://localhost:5000",
+        "endpointUrl": "http://127.0.0.1:5000",
         "modelName": "amitaro",
         "modelId": 0,
         "speakerName": "あみたろ",

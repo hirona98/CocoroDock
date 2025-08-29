@@ -88,7 +88,7 @@ namespace CocoroDock.Services
             RefreshSettingsCache();
 
             // ステータスポーリングサービスの初期化
-            _statusPollingService = new StatusPollingService($"http://localhost:{_appSettings.CocoroCorePort}");
+            _statusPollingService = new StatusPollingService($"http://127.0.0.1:{_appSettings.CocoroCorePort}");
             _statusPollingService.StatusChanged += (sender, status) => StatusChanged?.Invoke(this, status);
 
             // AppSettingsの変更イベントを購読

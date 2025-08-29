@@ -47,8 +47,8 @@ namespace CocoroDock.Services
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="baseUrl">CocoroCoreMのベースURL（デフォルト: http://localhost:55601）</param>
-        public StatusPollingService(string baseUrl = "http://localhost:55601")
+        /// <param name="baseUrl">CocoroCoreMのベースURL（デフォルト: http://127.0.0.1:55601）</param>
+        public StatusPollingService(string baseUrl = "http://127.0.0.1:55601")
         {
             _httpClient = new HttpClient
             {

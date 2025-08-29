@@ -19,7 +19,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class StyleBertVits2Config
     {
-        public string endpointUrl { get; set; } = "http://localhost:5000";
+        public string endpointUrl { get; set; } = "http://127.0.0.1:5000";
         public string modelName { get; set; } = "amitaro";
         public int modelId { get; set; } = 0;
         public string speakerName { get; set; } = "あみたろ";
