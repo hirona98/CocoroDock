@@ -11,7 +11,7 @@ CocoroCore に合わせてそのうち作り直すと思うので、かな～り
 
 プルリクしたい場合はお気軽にどうぞ！
 
-CocoroAI全体構成は CocoroCoreリポジトリの CocoroAI全体構成.drawio を参照願います
+CocoroAI全体構成は CocoroCoreMリポジトリの CocoroAI全体構成.drawio に作成予定です
 ----
 
 ## 開発環境
@@ -21,6 +21,8 @@ CocoroAI全体構成は CocoroCoreリポジトリの CocoroAI全体構成.drawio
 - WPF
 
 ## REST API 概要
+
+※仕様古いかも
 
 このアプリは 2 種類の REST API を提供します。
 
