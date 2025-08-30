@@ -147,7 +147,8 @@
                                                    Foreground="#222222"
                                                    HorizontalAlignment="Center"
                                                    Margin="0,0,0,10"/>
-                                        <TextBlock Text="記憶を整理しています"
+                                        <TextBlock x:Name="MemoryCleanupText"
+                                                   Text="記憶を整理しています"
                                                    FontSize="12"
                                                    Foreground="#222222"
                                                    HorizontalAlignment="Center"/>

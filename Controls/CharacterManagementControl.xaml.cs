@@ -79,13 +79,12 @@ namespace CocoroDock.Controls
             _characterNameChangeTimer.Tick += CharacterNameChangeTimer_Tick;
 
             // Base URLのプレースホルダー制御イベントを設定
-            // TODO: LiteLLM
-            // BaseUrlTextBox.TextChanged += BaseUrlTextBox_TextChanged;
-            // BaseUrlTextBox.GotFocus += BaseUrlTextBox_GotFocus;
+            BaseUrlTextBox.TextChanged += BaseUrlTextBox_TextChanged;
+            BaseUrlTextBox.GotFocus += BaseUrlTextBox_GotFocus;
 
             // SystemPromptTextBoxのテキスト変更イベントを設定
             SystemPromptTextBox.TextChanged += SystemPromptTextBox_TextChanged;
-            // BaseUrlTextBox.LostFocus += BaseUrlTextBox_LostFocus;
+            BaseUrlTextBox.LostFocus += BaseUrlTextBox_LostFocus;
         }
 
         /// <summary>
@@ -197,7 +196,7 @@ namespace CocoroDock.Controls
             character.isUseLLM = IsUseLLMCheckBox.IsChecked ?? false;
             character.apiKey = ApiKeyPasswordBox.Text;
             character.llmModel = LlmModelTextBox.Text;
-            // TODO: LiteLLM character.localLLMBaseUrl = BaseUrlTextBox.Text;
+            character.localLLMBaseUrl = BaseUrlTextBox.Text;
             // 画像分析用設定
             character.visionApiKey = VisionApiKeyPasswordBox.Text;
             character.visionModel = VisionModelTextBox.Text;
@@ -324,12 +323,13 @@ namespace CocoroDock.Controls
             IsUseLLMCheckBox.IsChecked = character.isUseLLM;
             ApiKeyPasswordBox.Text = character.apiKey;
             LlmModelTextBox.Text = character.llmModel;
-            // TODO: LiteLLM/ BaseUrlTextBox.Text = character.localLLMBaseUrl;
+            BaseUrlTextBox.Text = character.localLLMBaseUrl;
             UpdateBaseUrlPlaceholder(); // プレースホルダー更新
 
             // 画像分析用設定
             VisionApiKeyPasswordBox.Text = character.visionApiKey;
             VisionModelTextBox.Text = character.visionModel;
+
             // systemPromptは保存された内容があればそれを使用、なければファイルから読み込み
             string promptText;
             if (_allCharacterSystemPrompts.ContainsKey(_currentCharacterIndex))
@@ -711,12 +711,11 @@ namespace CocoroDock.Controls
 
         private void UpdateBaseUrlPlaceholder()
         {
-            // TODO: LiteLLM
-            // if (BaseUrlTextBox != null && BaseUrlPlaceholder != null)
-            // {
-            //     BaseUrlPlaceholder.Visibility = string.IsNullOrEmpty(BaseUrlTextBox.Text) ?
-            //         Visibility.Visible : Visibility.Collapsed;
-            // }
+            if (BaseUrlTextBox != null && BaseUrlPlaceholder != null)
+            {
+                BaseUrlPlaceholder.Visibility = string.IsNullOrEmpty(BaseUrlTextBox.Text) ?
+                    Visibility.Visible : Visibility.Collapsed;
+            }
         }
 
         /// <summary>

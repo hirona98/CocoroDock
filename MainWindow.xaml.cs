@@ -216,11 +216,21 @@ namespace CocoroDock
         {
             try
             {
-                // 画像を表示
+                // 現在のキャラクター設定を取得してLLMの使用状況を確認
+                var currentCharacter = GetCurrentCharacterSettings();
+                bool isLLMEnabled = currentCharacter?.isUseLLM ?? false;
+
+                // LLMが無効の場合は画像表示のみ行い、送信はしない
                 UIHelper.RunOnUIThread(() =>
                 {
                     ChatControlInstance.AddDesktopMonitoringImage(screenshotData.ImageBase64);
                 });
+
+                if (!isLLMEnabled)
+                {
+                    Debug.WriteLine("デスクトップモニタリング: LLMが無効のため送信をスキップ");
+                    return;
+                }
 
                 // CommunicationServiceを使用してデスクトップモニタリングを送信
                 if (_communicationService != null && _communicationService.IsServerRunning)
@@ -329,10 +339,14 @@ namespace CocoroDock
         /// <param name="status">CocoroCoreMのステータス</param>
         private void UpdateCocoroCoreMStatusDisplay(CocoroCoreMStatus status)
         {
+            // 現在のキャラクター設定を取得してLLMの使用状況を確認
+            var currentCharacter = GetCurrentCharacterSettings();
+            bool isLLMEnabled = currentCharacter?.isUseLLM ?? false;
+
             string statusText = status switch
             {
-                CocoroCoreMStatus.WaitingForStartup => "CocoroCoreM起動待ち",
-                CocoroCoreMStatus.Normal => "正常動作中",
+                CocoroCoreMStatus.WaitingForStartup => isLLMEnabled ? "CocoroCoreM起動待ち" : "LLM無効",
+                CocoroCoreMStatus.Normal => isLLMEnabled ? "正常動作中" : "LLM無効",
                 CocoroCoreMStatus.ProcessingMessage => "LLMメッセージ処理中",
                 CocoroCoreMStatus.ProcessingImage => "LLM画像処理中",
                 _ => "不明な状態"
@@ -340,8 +354,8 @@ namespace CocoroDock
 
             ConnectionStatusText.Text = $"状態: {statusText}";
 
-            // 送信ボタンの有効/無効を制御
-            bool isSendEnabled = status != CocoroCoreMStatus.WaitingForStartup;
+            // 送信ボタンの有効/無効を制御（LLMが無効の場合は無効にする）
+            bool isSendEnabled = isLLMEnabled && status != CocoroCoreMStatus.WaitingForStartup;
             ChatControlInstance.UpdateSendButtonEnabled(isSendEnabled);
         }
 
@@ -1136,6 +1150,19 @@ namespace CocoroDock
                 }
                 this.Topmost = true;
                 this.Activate();
+
+                // LLMが有効かどうかを確認してシャットダウンメッセージを設定
+                var currentCharacter = GetCurrentCharacterSettings();
+                bool isLLMEnabled = currentCharacter?.isUseLLM ?? false;
+                
+                if (!isLLMEnabled)
+                {
+                    // LLMが無効の場合は「記憶を整理しています」を非表示に
+                    if (ShutdownOverlay.FindName("MemoryCleanupText") is System.Windows.Controls.TextBlock memoryText)
+                    {
+                        memoryText.Visibility = Visibility.Collapsed;
+                    }
+                }
 
                 // シャットダウンオーバーレイを表示
                 ShutdownOverlay.Visibility = Visibility.Visible;

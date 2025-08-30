@@ -225,6 +225,13 @@ namespace CocoroDock.Services
                 // 現在のキャラクター設定を取得
                 var currentCharacter = GetCurrentCharacterSettings();
 
+                // LLMが無効の場合は処理しない
+                if (currentCharacter == null || !currentCharacter.isUseLLM)
+                {
+                    Debug.WriteLine("チャット送信: LLMが無効のためスキップ");
+                    return;
+                }
+
                 // セッションIDを生成または既存のものを使用
                 if (string.IsNullOrEmpty(_currentSessionId))
                 {
@@ -474,7 +481,6 @@ namespace CocoroDock.Services
         /// </summary>
         public void OpenLogViewer()
         {
-            // TODO: ファイルベースのログビューアー実装に変更予定
             var logViewerWindow = new LogViewerWindow();
             logViewerWindow.Show();
         }

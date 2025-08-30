@@ -178,11 +178,10 @@
                                      Text=""/>
                         </Grid>
                         <!-- LLM説明テキスト -->
-                        <TextBlock TextWrapping="Wrap"
+                        <TextBlock Foreground="#666666"
+                                   TextWrapping="Wrap"
                                    Margin="100,0,0,0">
                             <TextBlock.Inlines>
-                                <Run Text="OpenAIのみ対応"/>
-                                <!-- TODO: LiteLLM実装時復活
                                 <Run Text="LiteLLM の書式で記載してください"/>
                                 <LineBreak/>
                                 <Run Text="ex) openai/gpt-4o-mini, gemini/gemini-2.0-flash, ollama_chat/gemma3:12b"/>
@@ -193,7 +192,6 @@
                                     <Run Text="https://docs.litellm.ai/docs/providers"/>
                                 </Hyperlink>
                                 <Run Text=" を参照してください"/>
-                                -->
                             </TextBlock.Inlines>
                         </TextBlock>
 
@@ -224,7 +222,6 @@
                         </Grid>
 
                         <!-- Base URLの設定（ローカルLLM用） -->
-                        <!-- TODO: LiteLLM実装時復活
                         <Grid Margin="0,5,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
@@ -237,10 +234,9 @@
                                 <TextBox x:Name="BaseUrlTextBox"
                                          Margin="0,5"
                                          Foreground="#FF0078D7"
-                                         Text=""
-                                         ToolTip="ローカルLLMのベースURL (例: http://127.0.0.1:11434)"/>
+                                         Text=""/>
                                 <TextBlock x:Name="BaseUrlPlaceholder"
-                                           Text="ローカルLLM使用時のみ設定可能です"
+                                           Text="ローカルLLM使用時はBase URLを設定可能です（例: http://127.0.0.1:11434）"
                                            Foreground="#999999"
                                            VerticalAlignment="Center"
                                            Margin="5,5,0,5"
@@ -248,17 +244,6 @@
                                            Visibility="Visible"/>
                             </Grid>
                         </Grid>
-                        -->
-                        <!-- LLM説明テキスト -->
-                        <!-- TODO: LiteLLM実装時復活
-                        <TextBlock TextWrapping="Wrap"
-                                   Margin="100,0,0,10">
-                            <TextBlock.Inlines>
-                                <Run Text="ローカルLLM使用時はBase URLも設定してください（例: http://127.0.0.1:11434）"/>
-                                <LineBreak/>
-                            </TextBlock.Inlines>
-                        </TextBlock>
-                        -->
 
                         <!-- Vision Model -->
                         <Grid Margin="0,10,0,0">
@@ -280,9 +265,9 @@
                         <TextBlock Foreground="#666666"
                                    TextWrapping="Wrap"
                                    Margin="100,0,0,0">
-                            画像説明生成とそれに対するコメント生成で2回LLMを呼び出します。
+                            CocoroAIでは画像説明生成とそれに対するコメント生成で2回LLMを呼び出します。
                             <LineBreak/>
-                            画像のみ低コストのLLMを指定できます。
+                            画像のみローカルにしたり低コストAPIにしたりできます。
                         </TextBlock>
 
                         <!-- Vision API Key -->
@@ -367,13 +352,9 @@
                                    TextWrapping="Wrap"
                                    Margin="100,0,0,0">
                             <TextBlock.Inlines>
-                                <Run Text="OpenAIのみ対応（text-embedding-3-smallなど）"/>
-                                <!--
                                 <Run Text="長期記憶をベクトル化するための埋め込みモデルを設定します。LiteLLM の書式で記載してください。"/>
                                 <LineBreak/>
                                 <Run Text="ex) openai/text-embedding-3-large, openai/text-embedding-3-small, gemini/text-embedding-004"/>
-                                <LineBreak/>
-                                <Run Text="※1536次元のモデルに最適化されています"/>
                                 <LineBreak/>
                                 <Run Text="詳細は "/>
                                 <Hyperlink NavigateUri="https://docs.litellm.ai/docs/embedding/supported_embedding"
@@ -381,7 +362,6 @@
                                     <Run Text="https://docs.litellm.ai/docs/embedding/supported_embedding"/>
                                 </Hyperlink>
                                 <Run Text=" を参照してください"/>
-                                -->
                             </TextBlock.Inlines>
                         </TextBlock>
 
@@ -439,7 +419,7 @@
                                       SelectionChanged="TTSEngineComboBox_SelectionChanged">
                                 <ComboBoxItem Content="VOICEVOX/SHAREVOX/AivisSpeech"
                                               Tag="voicevox"/>
-                                <ComboBoxItem Content="Style-Bert-VITS2（動作未確認！）"
+                                <ComboBoxItem Content="Style-Bert-VITS2"
                                               Tag="style-bert-vits2"/>
                                 <ComboBoxItem Content="Aivis Cloud API"
                                               Tag="aivis-cloud"/>
