@@ -35,7 +35,7 @@ namespace CocoroDock.Controls
 
         // CocoroCoreM再起動が必要な設定の前回値を保存
         private ConfigSettings _previousCocoroCoreMSettings;
-        private Dictionary<int, string> _previousSystemPromptFileHashes = new Dictionary<int, string>();
+        private Dictionary<int, string> _previousSystemPrompts = new Dictionary<int, string>();
 
         public AdminWindow() : this(null)
         {
@@ -72,8 +72,8 @@ namespace CocoroDock.Controls
             // CocoroCoreM再起動チェック用に現在の設定を保存
             _previousCocoroCoreMSettings = AppSettings.Instance.GetConfigSettings();
 
-            // systemPromptFileのハッシュを保存
-            SaveSystemPromptFileHashes(_previousCocoroCoreMSettings);
+            // systemPrompt内容を保存
+            SaveSystemPromptContents();
         }
 
         /// <summary>
@@ -326,8 +326,8 @@ namespace CocoroDock.Controls
                 BackupSettings();
                 _previousCocoroCoreMSettings = AppSettings.Instance.GetConfigSettings();
 
-                // systemPromptFileのハッシュも更新
-                SaveSystemPromptFileHashes(_previousCocoroCoreMSettings);
+                // systemPrompt内容も更新
+                SaveSystemPromptContents();
             }
             catch (Exception ex)
             {
@@ -752,13 +752,14 @@ namespace CocoroDock.Controls
                     return true;
                 }
 
-                // systemPromptFileのファイル内容変更チェック
-                if (!string.IsNullOrEmpty(current.systemPromptFilePath))
+                // systemPromptのテキスト内容変更チェック
+                if (CharacterManagementControl != null)
                 {
-                    var currentHash = GetFileContentHash(current.systemPromptFilePath);
-                    var previousHash = _previousSystemPromptFileHashes.ContainsKey(i) ? _previousSystemPromptFileHashes[i] : string.Empty;
+                    var currentPrompts = CharacterManagementControl.GetCurrentSystemPrompts();
+                    var currentPrompt = currentPrompts.ContainsKey(i) ? currentPrompts[i] : string.Empty;
+                    var previousPrompt = _previousSystemPrompts.ContainsKey(i) ? _previousSystemPrompts[i] : string.Empty;
 
-                    if (currentHash != previousHash)
+                    if (currentPrompt != previousPrompt)
                     {
                         return true;
                     }
@@ -768,39 +769,16 @@ namespace CocoroDock.Controls
             return false;
         }
 
-        private string GetFileContentHash(string filePath)
+        private void SaveSystemPromptContents()
         {
-            try
+            _previousSystemPrompts.Clear();
+            
+            if (CharacterManagementControl != null)
             {
-                if (!File.Exists(filePath))
+                var currentPrompts = CharacterManagementControl.GetCurrentSystemPrompts();
+                foreach (var kvp in currentPrompts)
                 {
-                    return string.Empty;
-                }
-
-                using (var sha256 = System.Security.Cryptography.SHA256.Create())
-                {
-                    var content = File.ReadAllText(filePath, System.Text.Encoding.UTF8);
-                    var hash = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(content));
-                    return Convert.ToHexString(hash);
-                }
-            }
-            catch
-            {
-                // ファイル読み込みエラーの場合は空文字を返す
-                return string.Empty;
-            }
-        }
-
-        private void SaveSystemPromptFileHashes(ConfigSettings settings)
-        {
-            _previousSystemPromptFileHashes.Clear();
-
-            for (int i = 0; i < settings.characterList.Count; i++)
-            {
-                var character = settings.characterList[i];
-                if (!string.IsNullOrEmpty(character.systemPromptFilePath))
-                {
-                    _previousSystemPromptFileHashes[i] = GetFileContentHash(character.systemPromptFilePath);
+                    _previousSystemPrompts[kvp.Key] = kvp.Value;
                 }
             }
         }

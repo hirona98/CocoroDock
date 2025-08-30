@@ -985,5 +985,20 @@ namespace CocoroDock.Controls
                 }
             }
         }
+
+        /// <summary>
+        /// 全キャラクターの現在のシステムプロンプト内容を取得
+        /// </summary>
+        /// <returns>キャラクターインデックスをキーとするシステムプロンプト内容の辞書</returns>
+        public Dictionary<int, string> GetCurrentSystemPrompts()
+        {
+            // 現在表示中のキャラクターの内容も最新化
+            if (_currentCharacterIndex >= 0 && SystemPromptTextBox != null)
+            {
+                _allCharacterSystemPrompts[_currentCharacterIndex] = SystemPromptTextBox.Text;
+            }
+
+            return new Dictionary<int, string>(_allCharacterSystemPrompts);
+        }
     }
 }
