@@ -266,10 +266,10 @@ namespace CocoroDock.Controls
                 // CocoroShellを再起動
                 RestartCocoroShell();
 
-                // CocoroCoreMの設定変更があった場合は通知
+                // CocoroCoreMの設定変更があった場合は再起動
                 if (needsCocoroCoreMRestart)
                 {
-                    ShowCocoroCoreMRestartNotificationDialog();
+                    _ = RestartCocoroCoreMAsync();
                 }
 
                 // ウィンドウを閉じる
@@ -316,10 +316,10 @@ namespace CocoroDock.Controls
                 // CocoroShellを再起動
                 RestartCocoroShell();
 
-                // CocoroCoreMの設定変更があった場合は通知
+                // CocoroCoreMの設定変更があった場合は再起動
                 if (needsCocoroCoreMRestart)
                 {
-                    ShowCocoroCoreMRestartNotificationDialog();
+                    _ = RestartCocoroCoreMAsync();
                 }
 
                 // 設定のバックアップを更新（適用後の状態を新しいベースラインとする）
@@ -404,18 +404,6 @@ namespace CocoroDock.Controls
             OkButton.IsEnabled = enabled;
             ApplyButton.IsEnabled = enabled;
             CancelButton.IsEnabled = enabled;
-        }
-
-        /// <summary>
-        /// 再起動が必要な場合にダイアログで通知
-        /// </summary>
-        /// <param name="needsCocoroCoreMRestart">CocoroCoreMの再起動が必要か</param>
-        private void ShowCocoroCoreMRestartNotificationDialog()
-        {
-            MessageBox.Show("VRMモデル以外の設定は次回起動時に有効になります",
-                          "設定変更完了",
-                          MessageBoxButton.OK,
-                          MessageBoxImage.Information);
         }
 
         /// <summary>
@@ -598,15 +586,18 @@ namespace CocoroDock.Controls
                 var mainWindow = Application.Current.MainWindow as MainWindow;
                 if (mainWindow != null)
                 {
-                    // MainWindowのLaunchCocoroCoreMメソッドを呼び出してCocoroCoreMを再起動
-                    var launchMethod = mainWindow.GetType().GetMethod("LaunchCocoroCoreM",
+                    // MainWindowのLaunchCocoroCoreMAsyncメソッドを呼び出してCocoroCoreMを再起動
+                    var launchMethod = mainWindow.GetType().GetMethod("LaunchCocoroCoreMAsync",
                         System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
                     if (launchMethod != null)
                     {
-                        // ProcessOperation.RestartIfRunning を指定してCocoroCoreMを再起動
-                        launchMethod.Invoke(mainWindow, new object[] { ProcessOperation.RestartIfRunning });
+                        // ProcessOperation.RestartIfRunning を指定してCocoroCoreMを再起動（非同期）
+                        var task = (Task)launchMethod.Invoke(mainWindow, new object[] { ProcessOperation.RestartIfRunning });
                         Debug.WriteLine("CocoroCoreMを再起動要求をしました");
+                        
+                        // 非同期で再起動処理を待機
+                        await task;
 
                         // 再起動完了を待機
                         await WaitForCocoroCoreMRestartAsync();

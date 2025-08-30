@@ -864,6 +864,41 @@ namespace CocoroDock
             }
         }
 
+        /// <summary>
+        /// CocoroCoreM.exeを起動する（既に起動している場合は終了してから再起動）（非同期版）
+        /// </summary>
+        /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
+        private async Task LaunchCocoroCoreMAsync(ProcessOperation operation = ProcessOperation.RestartIfRunning)
+        {
+            if (_appSettings.CharacterList.Count > 0 &&
+               _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count &&
+               _appSettings.CharacterList[_appSettings.CurrentCharacterIndex].isUseLLM)
+            {
+                // 起動監視を開始
+                if (operation != ProcessOperation.Terminate)
+                {
+#if !DEBUG
+                    // プロセス起動（非同期）
+                    await ProcessHelper.LaunchExternalApplicationAsync("CocoroCoreM.exe", "CocoroCoreM", operation, false);
+#endif
+                    // 非同期でAPI通信による起動完了を監視（無限ループ）
+                    _ = Task.Run(async () =>
+                    {
+                        await WaitForCocoroCoreMStartupAsync();
+                    });
+                }
+                else
+                {
+                    await ProcessHelper.LaunchExternalApplicationAsync("CocoroCoreM.exe", "CocoroCoreM", operation, false);
+                }
+            }
+            else
+            {
+                // LLMを使用しない場合はCocoroCoreMを終了
+                await ProcessHelper.LaunchExternalApplicationAsync("CocoroCoreM.exe", "CocoroCoreM", ProcessOperation.Terminate, false);
+            }
+        }
+
 
         /// <summary>
         /// 音声認識サービスを初期化
