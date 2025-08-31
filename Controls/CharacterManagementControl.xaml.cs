@@ -286,6 +286,7 @@ namespace CocoroDock.Controls
             character.memoryId = MemoryIdTextBox.Text;
             character.embeddedApiKey = EmbeddedApiKeyPasswordBox.Text;
             character.embeddedModel = EmbeddedModelTextBox.Text;
+            character.embeddedDimension = EmbeddedDimensionTextBox.Text;
             character.isUseSTT = IsUseSTTCheckBox.IsChecked ?? false;
             character.sttEngine = STTEngineComboBox.SelectedItem is ComboBoxItem selectedSttEngine ? selectedSttEngine.Tag?.ToString() ?? "amivoice" : "amivoice";
             character.sttWakeWord = STTWakeWordTextBox.Text;
@@ -413,6 +414,7 @@ namespace CocoroDock.Controls
             MemoryIdTextBox.Text = character.memoryId;
             EmbeddedApiKeyPasswordBox.Text = character.embeddedApiKey;
             EmbeddedModelTextBox.Text = character.embeddedModel;
+            EmbeddedDimensionTextBox.Text = character.embeddedDimension;
 
             // STT設定
             IsUseSTTCheckBox.IsChecked = character.isUseSTT;

@@ -365,6 +365,28 @@
                             </TextBlock.Inlines>
                         </TextBlock>
 
+                        <!-- 埋め込みモデル次元数設定 -->
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="次元数:"
+                                       VerticalAlignment="Center"
+                                       ToolTip="Embedded Dimension"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="EmbeddedDimensionTextBox"
+                                     Foreground="#FF0078D7"
+                                     Text=""
+                                     ToolTip="埋め込みモデルの次元数（例: 3072, 1536）"/>
+                        </Grid>
+                        <TextBlock Foreground="#666666"
+                                   TextWrapping="Wrap"
+                                   Margin="100,0,0,0">
+                            埋め込みモデルの次元数を設定します。text-embedding-3-large は 3072、text-embedding-3-small は 1536 です。
+                        </TextBlock>
+
                         <!-- 埋め込みモデルAPIキーの設定 -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
