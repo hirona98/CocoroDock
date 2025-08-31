@@ -89,7 +89,7 @@ namespace CocoroDock.Communication
 
                     return true;
                 }
-                catch (Exception)
+                catch (Exception ex) when (!(ex is WebSocketException) && !(ex is AggregateException))
                 {
                     const int retryDelayMs = 1000;
                     await Task.Delay(retryDelayMs);
