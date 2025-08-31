@@ -48,6 +48,11 @@ namespace CocoroDock.Controls
         private Dictionary<int, string> _allCharacterSystemPrompts = new Dictionary<int, string>();
 
         /// <summary>
+        /// キャンセル時復元用のオリジナルシステムプロンプト内容（キャラクターインデックス -> プロンプト内容）
+        /// </summary>
+        private Dictionary<int, string> _originalCharacterSystemPrompts = new Dictionary<int, string>();
+
+        /// <summary>
         /// OK押下時に削除予定のシステムプロンプトファイルパス一覧
         /// </summary>
         private List<string> _filesToDelete = new List<string>();
@@ -141,6 +146,9 @@ namespace CocoroDock.Controls
         {
             LoadCharacterList();
 
+            // 全キャラクターのシステムプロンプト内容を初期化時に読み込む
+            LoadAllCharacterSystemPrompts();
+
             // 選択されたキャラクターの設定をUIに反映
             if (CharacterSelectComboBox.SelectedIndex >= 0)
             {
@@ -149,6 +157,67 @@ namespace CocoroDock.Controls
             }
 
             _isInitialized = true;
+        }
+
+        /// <summary>
+        /// 全キャラクターのシステムプロンプト内容を読み込み
+        /// </summary>
+        private void LoadAllCharacterSystemPrompts()
+        {
+            _allCharacterSystemPrompts.Clear();
+            _originalCharacterSystemPrompts.Clear();
+
+            var appSettings = AppSettings.Instance;
+            for (int i = 0; i < appSettings.CharacterList.Count; i++)
+            {
+                var character = appSettings.CharacterList[i];
+                string promptContent = !string.IsNullOrEmpty(character.systemPromptFilePath)
+                    ? appSettings.LoadSystemPrompt(character.systemPromptFilePath)
+                    : string.Empty;
+
+                _allCharacterSystemPrompts[i] = promptContent;
+                _originalCharacterSystemPrompts[i] = promptContent; // バックアップ作成
+
+                Debug.WriteLine($"初期化: キャラクター {i} ({character.modelName}) のプロンプト読み込み完了");
+            }
+
+            Debug.WriteLine($"全 {appSettings.CharacterList.Count} キャラクターのシステムプロンプト初期化完了");
+        }
+
+        /// <summary>
+        /// キャラクターリストの変更後に辞書のインデックスを再構築
+        /// </summary>
+        private void RebuildCharacterSystemPromptsDictionaries()
+        {
+            var tempAllPrompts = new Dictionary<int, string>(_allCharacterSystemPrompts);
+            var tempOriginalPrompts = new Dictionary<int, string>(_originalCharacterSystemPrompts);
+
+            _allCharacterSystemPrompts.Clear();
+            _originalCharacterSystemPrompts.Clear();
+
+            // 現在のCharacterListの順序に合わせて辞書を再構築
+            for (int i = 0; i < AppSettings.Instance.CharacterList.Count; i++)
+            {
+                // 削除されたキャラクターのインデックスを考慮して、適切な内容を設定
+                if (i < tempAllPrompts.Count && tempAllPrompts.ContainsKey(i))
+                {
+                    _allCharacterSystemPrompts[i] = tempAllPrompts[i];
+                    _originalCharacterSystemPrompts[i] = tempOriginalPrompts.ContainsKey(i) ? tempOriginalPrompts[i] : tempAllPrompts[i];
+                }
+                else
+                {
+                    // 新規追加されたキャラクターまたは削除により詰められたキャラクター
+                    var character = AppSettings.Instance.CharacterList[i];
+                    string promptContent = !string.IsNullOrEmpty(character.systemPromptFilePath)
+                        ? AppSettings.Instance.LoadSystemPrompt(character.systemPromptFilePath)
+                        : string.Empty;
+
+                    _allCharacterSystemPrompts[i] = promptContent;
+                    _originalCharacterSystemPrompts[i] = promptContent;
+                }
+            }
+
+            Debug.WriteLine($"辞書を再構築しました: {AppSettings.Instance.CharacterList.Count} キャラクター");
         }
 
         /// <summary>
@@ -330,23 +399,15 @@ namespace CocoroDock.Controls
             VisionApiKeyPasswordBox.Text = character.visionApiKey;
             VisionModelTextBox.Text = character.visionModel;
 
-            // systemPromptは保存された内容があればそれを使用、なければファイルから読み込み
-            string promptText;
-            if (_allCharacterSystemPrompts.ContainsKey(_currentCharacterIndex))
-            {
-                promptText = _allCharacterSystemPrompts[_currentCharacterIndex];
-                Debug.WriteLine($"キャラクター復元: インデックス {_currentCharacterIndex} の保存された内容を使用");
-            }
-            else
-            {
-                promptText = !string.IsNullOrEmpty(character.systemPromptFilePath)
-                    ? AppSettings.Instance.LoadSystemPrompt(character.systemPromptFilePath)
-                    : string.Empty;
-                _allCharacterSystemPrompts[_currentCharacterIndex] = promptText; // 初回読み込み時に保存
-                Debug.WriteLine($"キャラクター復元: インデックス {_currentCharacterIndex} の内容をファイルから読み込み");
-            }
+            // systemPromptは必ず辞書から読み込む（初期化時に全キャラクター分読み込み済み）
+            string promptText = _allCharacterSystemPrompts.ContainsKey(_currentCharacterIndex)
+                ? _allCharacterSystemPrompts[_currentCharacterIndex]
+                : string.Empty;
+
             SystemPromptTextBox.Text = promptText;
             _tempSystemPromptText = promptText; // 一時保存も初期化
+
+            Debug.WriteLine($"キャラクター復元: インデックス {_currentCharacterIndex} の内容を辞書から取得");
 
             // 記憶機能
             MemoryIdTextBox.Text = character.memoryId;
@@ -445,10 +506,15 @@ namespace CocoroDock.Controls
 
                 AppSettings.Instance.CharacterList.Add(newCharacter);
 
+                // 新しいキャラクターを辞書に追加
+                int newIndex = AppSettings.Instance.CharacterList.Count - 1;
+                _allCharacterSystemPrompts[newIndex] = string.Empty;
+                _originalCharacterSystemPrompts[newIndex] = string.Empty;
+
                 // ComboBoxのItemsSourceを更新
                 CharacterSelectComboBox.ItemsSource = null;
                 CharacterSelectComboBox.ItemsSource = AppSettings.Instance.CharacterList;
-                CharacterSelectComboBox.SelectedIndex = AppSettings.Instance.CharacterList.Count - 1;
+                CharacterSelectComboBox.SelectedIndex = newIndex;
 
                 // 設定変更イベントを発生
                 SettingsChanged?.Invoke(this, EventArgs.Empty);
@@ -484,6 +550,9 @@ namespace CocoroDock.Controls
                 }
 
                 AppSettings.Instance.CharacterList.RemoveAt(_currentCharacterIndex);
+
+                // 辞書を再構築（インデックスが変わるため）
+                RebuildCharacterSystemPromptsDictionaries();
 
                 // ComboBoxのItemsSourceを更新
                 CharacterSelectComboBox.ItemsSource = null;
@@ -604,12 +673,23 @@ namespace CocoroDock.Controls
                 // リストに追加
                 AppSettings.Instance.CharacterList.Add(newCharacter);
 
+                // 新しいキャラクターを辞書に追加（複製元のプロンプト内容を使用）
+                int newIndex = AppSettings.Instance.CharacterList.Count - 1;
+                string sourcePromptContent = _allCharacterSystemPrompts.ContainsKey(_currentCharacterIndex)
+                    ? _allCharacterSystemPrompts[_currentCharacterIndex]
+                    : (!string.IsNullOrEmpty(sourceCharacter.systemPromptFilePath)
+                        ? AppSettings.Instance.LoadSystemPrompt(sourceCharacter.systemPromptFilePath)
+                        : string.Empty);
+
+                _allCharacterSystemPrompts[newIndex] = sourcePromptContent;
+                _originalCharacterSystemPrompts[newIndex] = sourcePromptContent;
+
                 // ComboBoxのItemsSourceを更新（ItemsSourceとItemsの併用を避ける）
                 CharacterSelectComboBox.ItemsSource = null;
                 CharacterSelectComboBox.ItemsSource = AppSettings.Instance.CharacterList;
 
                 // 新しく追加したキャラクターを選択
-                CharacterSelectComboBox.SelectedIndex = AppSettings.Instance.CharacterList.Count - 1;
+                CharacterSelectComboBox.SelectedIndex = newIndex;
 
                 // 設定変更イベントを発生
                 SettingsChanged?.Invoke(this, EventArgs.Empty);
@@ -920,13 +1000,17 @@ namespace CocoroDock.Controls
                     }
 
                     // 各キャラクターのシステムプロンプト内容を取得してファイルに保存
-                    string promptContent = _allCharacterSystemPrompts.ContainsKey(i)
-                        ? _allCharacterSystemPrompts[i]
-                        : string.Empty;
-
-                    AppSettings.Instance.SaveSystemPrompt(character.systemPromptFilePath, promptContent);
-
-                    Debug.WriteLine($"設定確定: インデックス {i}, キャラクター '{character.modelName}', ファイル '{character.systemPromptFilePath}'");
+                    // 辞書に必ず存在するはず（初期化時に全キャラクター分読み込み済み）
+                    if (_allCharacterSystemPrompts.ContainsKey(i))
+                    {
+                        string promptContent = _allCharacterSystemPrompts[i];
+                        AppSettings.Instance.SaveSystemPrompt(character.systemPromptFilePath, promptContent);
+                        Debug.WriteLine($"設定確定: インデックス {i}, キャラクター '{character.modelName}', ファイル '{character.systemPromptFilePath}'");
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"警告: インデックス {i} のキャラクター '{character.modelName}' が辞書に存在しません");
+                    }
                 }
 
                 Debug.WriteLine($"全 {AppSettings.Instance.CharacterList.Count} キャラクターの設定確定完了");
@@ -959,10 +1043,21 @@ namespace CocoroDock.Controls
                 // 削除予定リストをクリア
                 _filesToDelete.Clear();
 
-                // 一時保存されたプロンプト内容をクリア
+                // 一時保存されたプロンプト内容を元の状態に復元
                 _allCharacterSystemPrompts.Clear();
+                foreach (var kvp in _originalCharacterSystemPrompts)
+                {
+                    _allCharacterSystemPrompts[kvp.Key] = kvp.Value;
+                }
 
-                Debug.WriteLine("キャンセル処理: 削除予定リストと一時保存内容をクリアしました");
+                // 現在選択中のキャラクターのUIも復元
+                if (_currentCharacterIndex >= 0 && _allCharacterSystemPrompts.ContainsKey(_currentCharacterIndex))
+                {
+                    SystemPromptTextBox.Text = _allCharacterSystemPrompts[_currentCharacterIndex];
+                    _tempSystemPromptText = _allCharacterSystemPrompts[_currentCharacterIndex];
+                }
+
+                Debug.WriteLine("キャンセル処理: 全ての変更を元の状態に復元しました");
             }
             catch (Exception ex)
             {
