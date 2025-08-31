@@ -195,11 +195,13 @@ namespace CocoroDock
                 // スクリーンショットサービスを初期化
                 _screenshotService = new ScreenshotService(
                     screenshotSettings.intervalMinutes,
-                    async (screenshotData) => await OnScreenshotCaptured(screenshotData)
+                    async (screenshotData) => await OnScreenshotCaptured(screenshotData),
+                    async (message) => await OnScreenshotSkipped(message)
                 );
 
                 _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
                 _screenshotService.IdleTimeoutMinutes = screenshotSettings.idleTimeoutMinutes;
+                _screenshotService.SetExcludePatterns(screenshotSettings.excludePatterns);
 
 
                 // サービスを開始
@@ -247,6 +249,29 @@ namespace CocoroDock
             }
         }
 
+        /// <summary>
+        /// スクリーンショットがスキップされた時の処理
+        /// </summary>
+        private Task OnScreenshotSkipped(string message)
+        {
+            try
+            {
+                // UIスレッドでチャットコントロールに通知メッセージを追加
+                UIHelper.RunOnUIThread(() =>
+                {
+                    if (ChatControlInstance != null)
+                    {
+                        ChatControlInstance.AddSystemErrorMessage($"ℹ️ {message}");
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"スクリーンショットスキップ通知エラー: {ex.Message}");
+            }
+
+            return Task.CompletedTask;
+        }
 
         /// <summary>
         /// スクリーンショットサービスの設定を更新
@@ -283,6 +308,7 @@ namespace CocoroDock
                 // その他の設定は動的に更新
                 _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
                 _screenshotService.IdleTimeoutMinutes = screenshotSettings.idleTimeoutMinutes;
+                _screenshotService.SetExcludePatterns(screenshotSettings.excludePatterns);
 
                 if (needsRestart)
                 {
@@ -1189,7 +1215,7 @@ namespace CocoroDock
                 // LLMが有効かどうかを確認してシャットダウンメッセージを設定
                 var currentCharacter = GetCurrentCharacterSettings();
                 bool isLLMEnabled = currentCharacter?.isUseLLM ?? false;
-                
+
                 if (!isLLMEnabled)
                 {
                     // LLMが無効の場合は「記憶を整理しています」を非表示に

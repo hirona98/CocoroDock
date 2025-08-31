@@ -169,6 +169,7 @@ namespace CocoroDock.Controls
             dict["ScreenshotInterval"] = screenshotSettings.intervalMinutes;
             dict["IdleTimeout"] = screenshotSettings.idleTimeoutMinutes;
             dict["CaptureActiveWindowOnly"] = screenshotSettings.captureActiveWindowOnly;
+            dict["ExcludePatterns"] = screenshotSettings.excludePatterns;
 
             var microphoneSettings = SystemSettingsControl.GetMicrophoneSettings();
             dict["MicInputThreshold"] = microphoneSettings.inputThreshold;
@@ -420,6 +421,7 @@ namespace CocoroDock.Controls
             appSettings.ScreenshotSettings.intervalMinutes = (int)snapshot["ScreenshotInterval"];
             appSettings.ScreenshotSettings.idleTimeoutMinutes = (int)snapshot["IdleTimeout"];
             appSettings.ScreenshotSettings.captureActiveWindowOnly = (bool)snapshot["CaptureActiveWindowOnly"];
+            appSettings.ScreenshotSettings.excludePatterns = (List<string>)snapshot["ExcludePatterns"];
 
             appSettings.MicrophoneSettings.inputThreshold = (int)snapshot["MicInputThreshold"];
 
@@ -595,7 +597,7 @@ namespace CocoroDock.Controls
                         // ProcessOperation.RestartIfRunning を指定してCocoroCoreMを再起動（非同期）
                         var task = (Task)launchMethod.Invoke(mainWindow, new object[] { ProcessOperation.RestartIfRunning });
                         Debug.WriteLine("CocoroCoreMを再起動要求をしました");
-                        
+
                         // 非同期で再起動処理を待機
                         await task;
 
@@ -772,7 +774,7 @@ namespace CocoroDock.Controls
         private void SaveSystemPromptContents()
         {
             _previousSystemPrompts.Clear();
-            
+
             if (CharacterManagementControl != null)
             {
                 var currentPrompts = CharacterManagementControl.GetCurrentSystemPrompts();

@@ -122,8 +122,31 @@
 
                         <!-- アイドルタイムアウト説明テキスト -->
                         <TextBlock TextWrapping="Wrap"
-                                   Foreground="#666666">
+                                   Foreground="#666666"
+                                   Margin="0,0,0,10">
                             ※マウスやキーボードの操作がない時間が設定値を超えると、デスクトップウォッチを一時停止します。
+                        </TextBlock>
+
+                        <!-- 除外パターン設定 -->
+                        <TextBlock Text="除外パターン（正規表現）:"
+                                   Margin="0,5,0,5"
+                                   VerticalAlignment="Center"/>
+                        <TextBox x:Name="ExcludePatternsTextBox"
+                                 Foreground="#FF0078D7"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 Height="80"
+                                 Margin="0,0,0,5"
+                                 ToolTip="ウィンドウタイトルにマッチする正規表現パターン（1行に1つ）"/>
+
+                        <!-- 除外パターン説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="#666666"
+                                   Margin="0,0,0,5">
+                            ※ウィンドウタイトルが指定パターンにマッチした場合、スクリーンショットを取得しません。
+                            <LineBreak/>
+                            　例: .*パスワード.* （パスワードを含むタイトルを除外）
                         </TextBlock>
                     </StackPanel>
                 </GroupBox>

@@ -107,6 +107,7 @@ namespace CocoroDock.Communication
         public int intervalMinutes { get; set; } = 10;
         public bool captureActiveWindowOnly { get; set; } = true;
         public int idleTimeoutMinutes { get; set; } = 10;
+        public List<string> excludePatterns { get; set; } = new List<string>();
     }
 
     /// <summary>

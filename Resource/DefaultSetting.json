@@ -29,7 +29,17 @@
     "enabled": false,
     "intervalMinutes": 10,
     "captureActiveWindowOnly": true,
-    "idleTimeoutMinutes": 10
+    "idleTimeoutMinutes": 10,
+    "excludePatterns": [
+      ".*パスワード.*",
+      ".*ログイン.*",
+      ".*プライベート.*",
+      ".*シークレット.*",
+      ".*incognito.*",
+      ".*Private.*",
+      ".*Password.*",
+      ".*Login.*"
+    ]
   },
   "microphoneSettings": {
     "inputThreshold": -30

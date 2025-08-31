@@ -61,6 +61,7 @@ namespace CocoroDock.Controls
                 CaptureActiveWindowOnlyCheckBox.IsChecked = appSettings.ScreenshotSettings.captureActiveWindowOnly;
                 ScreenshotIntervalTextBox.Text = appSettings.ScreenshotSettings.intervalMinutes.ToString();
                 IdleTimeoutTextBox.Text = appSettings.ScreenshotSettings.idleTimeoutMinutes.ToString();
+                ExcludePatternsTextBox.Text = string.Join(Environment.NewLine, appSettings.ScreenshotSettings.excludePatterns);
 
                 // マイク設定
                 MicThresholdSlider.Value = appSettings.MicrophoneSettings.inputThreshold;
@@ -102,6 +103,7 @@ namespace CocoroDock.Controls
             CaptureActiveWindowOnlyCheckBox.Unchecked += OnSettingsChanged;
             ScreenshotIntervalTextBox.TextChanged += OnSettingsChanged;
             IdleTimeoutTextBox.TextChanged += OnSettingsChanged;
+            ExcludePatternsTextBox.TextChanged += OnSettingsChanged;
 
             // マイク設定
             MicThresholdSlider.ValueChanged += OnSettingsChanged;
@@ -204,6 +206,14 @@ namespace CocoroDock.Controls
                 settings.idleTimeoutMinutes = timeout;
             }
 
+            // 除外パターンを取得（空行を除外）
+            var patterns = ExcludePatternsTextBox.Text
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .Where(p => !string.IsNullOrEmpty(p))
+                .ToList();
+            settings.excludePatterns = patterns;
+
             return settings;
         }
 
@@ -216,6 +226,7 @@ namespace CocoroDock.Controls
             CaptureActiveWindowOnlyCheckBox.IsChecked = settings.captureActiveWindowOnly;
             ScreenshotIntervalTextBox.Text = settings.intervalMinutes.ToString();
             IdleTimeoutTextBox.Text = settings.idleTimeoutMinutes.ToString();
+            ExcludePatternsTextBox.Text = string.Join(Environment.NewLine, settings.excludePatterns);
         }
 
         /// <summary>
