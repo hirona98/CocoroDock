@@ -687,7 +687,7 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// UI上の現在の設定を取得する
+        /// UI上の現在の設定を取得する（ディープコピー）
         /// </summary>
         /// <returns>現在のUI設定から構築したConfigSettings</returns>
         private ConfigSettings GetCurrentUISettings()
@@ -710,9 +710,10 @@ namespace CocoroDock.Controls
             var currentCharacterSetting = CharacterManagementControl.GetCurrentCharacterSetting();
             if (currentCharacterSetting != null)
             {
-                // 既存のCharacterListをコピーしてから現在のキャラクターを更新
+                // 既存のCharacterListをディープコピーしてから現在のキャラクターを更新
                 var appSettings = AppSettings.Instance;
-                config.characterList = new List<CharacterSettings>(appSettings.CharacterList);
+                config.characterList =
+                    appSettings.CharacterList.Select(cs => cs.DeepCopy()).ToList();
 
                 if (config.currentCharacterIndex >= 0 && config.currentCharacterIndex < config.characterList.Count)
                 {
@@ -721,7 +722,8 @@ namespace CocoroDock.Controls
             }
             else
             {
-                config.characterList = new List<CharacterSettings>(AppSettings.Instance.CharacterList);
+                config.characterList =
+                    AppSettings.Instance.CharacterList.Select(cs => cs.DeepCopy()).ToList();
             }
 
             return config;

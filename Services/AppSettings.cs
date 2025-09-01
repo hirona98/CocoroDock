@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -204,7 +205,7 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// 現在の設定からConfigSettingsオブジェクトを作成
+        /// 現在の設定からConfigSettingsオブジェクトを作成（ディープコピー）
         /// </summary>
         /// <returns>ConfigSettings オブジェクト</returns>
         public ConfigSettings GetConfigSettings()
@@ -223,7 +224,7 @@ namespace CocoroDock.Services
                 isRestoreWindowPosition = IsRestoreWindowPosition,
                 isTopmost = IsTopmost,
                 isEscapeCursor = IsEscapeCursor,
-                escapePositions = new List<EscapePosition>(EscapePositions),
+                escapePositions = EscapePositions.Select(ep => ep.DeepCopy()).ToList(),
                 isInputVirtualKey = IsInputVirtualKey,
                 virtualKeyString = VirtualKeyString,
                 isAutoMove = IsAutoMove,
@@ -237,15 +238,15 @@ namespace CocoroDock.Services
                 windowSize = WindowSize,
                 windowPositionX = WindowPositionX,
                 windowPositionY = WindowPositionY,
-                screenshotSettings = ScreenshotSettings,
-                microphoneSettings = MicrophoneSettings,
+                screenshotSettings = ScreenshotSettings.DeepCopy(),
+                microphoneSettings = MicrophoneSettings.DeepCopy(),
                 enable_pro_mode = EnableProMode,
                 enable_internet_retrieval = EnableInternetRetrieval,
                 googleApiKey = GoogleApiKey,
                 googleSearchEngineId = GoogleSearchEngineId,
                 internetMaxResults = InternetMaxResults,
                 currentCharacterIndex = CurrentCharacterIndex,
-                characterList = new List<CharacterSettings>(CharacterList)
+                characterList = CharacterList.Select(cs => cs.DeepCopy()).ToList()
             };
         }
 

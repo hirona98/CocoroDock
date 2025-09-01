@@ -247,14 +247,17 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// 現在のキャラクター設定を取得
+        /// 現在のキャラクター設定を取得（元のオブジェクトを変更しないディープコピー）
         /// </summary>
         public CharacterSettings? GetCurrentCharacterSetting()
         {
             if (_currentCharacterIndex < 0 || _currentCharacterIndex >= AppSettings.Instance.CharacterList.Count)
                 return null;
 
-            var character = AppSettings.Instance.CharacterList[_currentCharacterIndex];
+            // 元のキャラクター設定をディープコピーして、変更版を作成
+            var originalCharacter =
+                AppSettings.Instance.CharacterList[_currentCharacterIndex];
+            var character = originalCharacter.DeepCopy();
 
             // UIから最新の値を取得して設定
             character.modelName = CharacterNameTextBox.Text;
