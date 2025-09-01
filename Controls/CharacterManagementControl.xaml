@@ -310,104 +310,125 @@
                                      VerticalScrollBarVisibility="Auto"/>
                         </Grid>
 
-                        <!-- 記憶のユーザーIDの設定 -->
-                        <Grid Margin="0,10,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="Memory ID:"
-                                       VerticalAlignment="Center"/>
-                            <TextBox Grid.Column="1"
-                                     x:Name="MemoryIdTextBox"
-                                     Foreground="#FF0078D7"
-                                     Text=""/>
-                        </Grid>
-                        <TextBlock TextWrapping="Wrap"
-                                   Foreground="#666666"
-                                   Margin="100,0,0,0">
-                            あなたとキャラクターの記憶を紐づけるIDです。キャラクター毎に別の名前にすることを推奨します。
-                        </TextBlock>
+                        <!-- 記憶の設定（初回起動時のみ反映可能） -->
+                        <Expander x:Name="MemorySettingsExpander"
+                                  Margin="0,10,0,0"
+                                  IsExpanded="False">
+                            <Expander.Header>
+                                <TextBlock Text="記憶の設定"
+                                           Foreground="#FF4873CF"/>
+                            </Expander.Header>
+                            <StackPanel>
+                                <!-- 記憶のユーザーIDの設定 -->
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="Memory ID:"
+                                               VerticalAlignment="Center"
+                                               Foreground="#FF4873CF"/>
+                                    <TextBox Grid.Column="1"
+                                             x:Name="MemoryIdTextBox"
+                                             Foreground="#FF0078D7"
+                                             Text=""/>
+                                </Grid>
+                                <TextBlock TextWrapping="Wrap"
+                                           Foreground="#666666"
+                                           Margin="100,0,0,0">
+                                    あなたとキャラクターの記憶を紐づけるIDです。キャラクター毎に別の名前にすることを推奨します。
+                                </TextBlock>
 
-                        <!-- 埋め込みモデル設定 -->
-                        <Grid Margin="0,10,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="埋め込みモデル:"
-                                       VerticalAlignment="Center"
-                                       ToolTip="Embedded Model"/>
-                            <TextBox Grid.Column="1"
-                                     x:Name="EmbeddedModelTextBox"
-                                     Foreground="#FF0078D7"
-                                     Text=""/>
-                        </Grid>
-                        <TextBlock Foreground="#666666"
-                                   TextWrapping="Wrap"
-                                   Margin="100,0,0,0">
-                            <TextBlock.Inlines>
-                                <Run Text="長期記憶をベクトル化するための埋め込みモデルを設定します。LiteLLM の書式で記載してください。"/>
-                                <LineBreak/>
-                                <Run Text="ex) openai/text-embedding-3-large, openai/text-embedding-3-small, gemini/text-embedding-004"/>
-                                <LineBreak/>
-                                <Run Text="詳細は "/>
-                                <Hyperlink NavigateUri="https://docs.litellm.ai/docs/embedding/supported_embedding"
-                                           RequestNavigate="Hyperlink_RequestNavigate">
-                                    <Run Text="https://docs.litellm.ai/docs/embedding/supported_embedding"/>
-                                </Hyperlink>
-                                <Run Text=" を参照してください"/>
-                            </TextBlock.Inlines>
-                        </TextBlock>
+                                <!-- 埋め込みモデル設定 -->
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="埋め込みモデル:"
+                                               VerticalAlignment="Center"
+                                               ToolTip="Embedded Model"
+                                               Foreground="#FF4873CF"/>
+                                    <TextBox Grid.Column="1"
+                                             x:Name="EmbeddedModelTextBox"
+                                             Foreground="#FF0078D7"
+                                             Text=""/>
+                                </Grid>
+                                <TextBlock Foreground="#666666"
+                                           TextWrapping="Wrap"
+                                           Margin="100,0,0,0">
+                                    <TextBlock.Inlines>
+                                        <Run Text="長期記憶をベクトル化するための埋め込みモデルを設定します。LiteLLM の書式で記載してください。"/>
+                                        <LineBreak/>
+                                        <Run Text="ex) openai/text-embedding-3-large, openai/text-embedding-3-small, gemini/text-embedding-004"/>
+                                        <LineBreak/>
+                                        <Run Text="詳細は "/>
+                                        <Hyperlink NavigateUri="https://docs.litellm.ai/docs/embedding/supported_embedding"
+                                                   RequestNavigate="Hyperlink_RequestNavigate">
+                                            <Run Text="https://docs.litellm.ai/docs/embedding/supported_embedding"/>
+                                        </Hyperlink>
+                                        <Run Text=" を参照してください"/>
+                                        <LineBreak/>
+                                        <Run Text="※初回以外は変更しないでください"
+                                             Foreground="Red"/>
+                                    </TextBlock.Inlines>
+                                </TextBlock>
 
-                        <!-- 埋め込みモデル次元数設定 -->
-                        <Grid Margin="0,10,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="次元数:"
-                                       VerticalAlignment="Center"
-                                       ToolTip="Embedded Dimension"/>
-                            <TextBox Grid.Column="1"
-                                     x:Name="EmbeddedDimensionTextBox"
-                                     Foreground="#FF0078D7"
-                                     Text=""
-                                     ToolTip="埋め込みモデルの次元数（例: 3072, 1536）"/>
-                        </Grid>
-                        <TextBlock Foreground="#666666"
-                                   TextWrapping="Wrap"
-                                   Margin="100,0,0,0">
-                            埋め込みモデルの次元数を設定します。text-embedding-3-large は 3072、text-embedding-3-small は 1536 です。
-                        </TextBlock>
+                                <!-- 埋め込みモデル次元数設定 -->
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="次元数:"
+                                               VerticalAlignment="Center"
+                                               ToolTip="Embedded Dimension"
+                                               Foreground="#FF4873CF"/>
+                                    <TextBox Grid.Column="1"
+                                             x:Name="EmbeddedDimensionTextBox"
+                                             Foreground="#FF0078D7"
+                                             Text=""
+                                             ToolTip="埋め込みモデルの次元数（例: 3072, 1536）"/>
+                                </Grid>
+                                <TextBlock Foreground="#666666"
+                                           TextWrapping="Wrap"
+                                           Margin="100,0,0,0">
+                                    埋め込みモデルの次元数を設定します。text-embedding-3-large は 3072、text-embedding-3-small は 1536 です。
+                                    <LineBreak/>
+                                    <Run Text="※初回以外は変更しないでください。"
+                                         Foreground="Red"/>
+                                </TextBlock>
 
-                        <!-- 埋め込みモデルAPIキーの設定 -->
-                        <Grid Margin="0,10,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="API Key:"
-                                       VerticalAlignment="Center"
-                                       ToolTip="API Key"/>
-                            <StackPanel Grid.Column="1"
-                                        Orientation="Horizontal"
-                                        VerticalAlignment="Center">
-                                <TextBox x:Name="EmbeddedApiKeyPasswordBox"
-                                         Foreground="#FF0078D7"
-                                         Width="200"
-                                         HorizontalAlignment="Left"/>
-                                <Button Content="上書き貼付け"
-                                        Margin="10,0,0,0"
-                                        Padding="10,0,10,0"
-                                        Click="EmbeddedApiKeyPasteOverrideButton_Click"
-                                        ToolTip="クリップボードのテキストで上書き"/>
+                                <!-- 埋め込みモデルAPIキーの設定 -->
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="API Key:"
+                                               VerticalAlignment="Center"
+                                               ToolTip="API Key"
+                                               Foreground="#FF4873CF"/>
+                                    <StackPanel Grid.Column="1"
+                                                Orientation="Horizontal"
+                                                VerticalAlignment="Center">
+                                        <TextBox x:Name="EmbeddedApiKeyPasswordBox"
+                                                 Foreground="#FF0078D7"
+                                                 Width="200"
+                                                 HorizontalAlignment="Left"/>
+                                        <Button Content="上書き貼付け"
+                                                Margin="10,0,0,0"
+                                                Padding="10,0,10,0"
+                                                Click="EmbeddedApiKeyPasteOverrideButton_Click"
+                                                ToolTip="クリップボードのテキストで上書き"/>
+                                    </StackPanel>
+                                </Grid>
                             </StackPanel>
-                        </Grid>
+                        </Expander>
                     </StackPanel>
                 </GroupBox>
 
