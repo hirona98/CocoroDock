@@ -66,6 +66,9 @@ namespace CocoroDock.Controls
                 // 設定変更の記録（必要に応じて処理を追加）
             };
 
+            // TabControlのSelectionChangedイベントを登録
+            AdminTabControl.SelectionChanged += AdminTabControl_SelectionChanged;
+
             // 元の設定のバックアップを作成
             BackupSettings();
 
@@ -187,6 +190,30 @@ namespace CocoroDock.Controls
         }
 
         #endregion
+
+        /// <summary>
+        /// タブ選択変更時のイベントハンドラー
+        /// </summary>
+        private async void AdminTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.Source is TabControl tabControl && tabControl.SelectedItem is TabItem selectedTab)
+            {
+                // Systemタブが選択された場合
+                if (selectedTab.Header?.ToString() == "System")
+                {
+                    try
+                    {
+                        // メモリー一覧を再読み込み
+                        await SystemSettingsControl.RefreshMemoryListAsync();
+                        Debug.WriteLine("Systemタブ選択時にメモリー一覧を再読み込みしました");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"メモリー一覧の再読み込み中にエラーが発生しました: {ex.Message}");
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// アニメーションチェックボックスのチェック時の処理

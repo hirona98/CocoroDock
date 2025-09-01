@@ -303,6 +303,14 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
+        /// メモリー一覧を再読み込み（外部から呼び出し可能）
+        /// </summary>
+        public async Task RefreshMemoryListAsync()
+        {
+            await LoadRegisteredMemories();
+        }
+
+        /// <summary>
         /// CocoroCoreMに登録されているメモリー一覧を取得
         /// </summary>
         private async Task LoadRegisteredMemories()
