@@ -281,24 +281,8 @@ namespace CocoroDock.Controls
         {
             try
             {
-                // CharacterManagementControlの設定確定処理を実行
-                CharacterManagementControl.ConfirmSettings();
-
-                // UI上の現在の設定を取得してCocoroCoreM再起動が必要かチェック
-                var currentSettings = GetCurrentUISettings();
-                bool needsCocoroCoreMRestart = HasCocoroCoreMRestartRequiredChanges(_previousCocoroCoreMSettings, currentSettings);
-
-                // すべてのタブの設定を保存
-                SaveAllSettings();
-
-                // CocoroShellを再起動
-                RestartCocoroShell();
-
-                // CocoroCoreMの設定変更があった場合は再起動
-                if (needsCocoroCoreMRestart)
-                {
-                    _ = RestartCocoroCoreMAsync();
-                }
+                // 共通の設定保存処理を実行
+                ApplySettingsChanges();
 
                 // ウィンドウを閉じる
                 Close();
@@ -331,24 +315,8 @@ namespace CocoroDock.Controls
         {
             try
             {
-                // CharacterManagementControlの設定確定処理を実行
-                CharacterManagementControl.ConfirmSettings();
-
-                // UI上の現在の設定を取得してCocoroCoreM再起動が必要かチェック
-                var currentSettings = GetCurrentUISettings();
-                bool needsCocoroCoreMRestart = HasCocoroCoreMRestartRequiredChanges(_previousCocoroCoreMSettings, currentSettings);
-
-                // すべてのタブの設定を保存
-                SaveAllSettings();
-
-                // CocoroShellを再起動
-                RestartCocoroShell();
-
-                // CocoroCoreMの設定変更があった場合は再起動
-                if (needsCocoroCoreMRestart)
-                {
-                    _ = RestartCocoroCoreMAsync();
-                }
+                // 共通の設定保存処理を実行
+                ApplySettingsChanges();
 
                 // 設定のバックアップを更新（適用後の状態を新しいベースラインとする）
                 BackupSettings();
@@ -360,6 +328,32 @@ namespace CocoroDock.Controls
             catch (Exception ex)
             {
                 MessageBox.Show($"設定の保存中にエラーが発生しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// 設定変更を適用する共通処理
+        /// </summary>
+        private void ApplySettingsChanges()
+        {
+            // CharacterManagementControlの設定確定処理を実行
+            CharacterManagementControl.ConfirmSettings();
+
+            // UI上の現在の設定を取得してCocoroCoreM再起動が必要かチェック
+            var currentSettings = GetCurrentUISettings();
+            bool needsCocoroCoreMRestart = HasCocoroCoreMRestartRequiredChanges(_previousCocoroCoreMSettings, currentSettings);
+
+            // すべてのタブの設定を保存
+            SaveAllSettings();
+
+            // CocoroShellを再起動
+            RestartCocoroShell();
+
+            // CocoroCoreMの設定変更があった場合は再起動
+            if (needsCocoroCoreMRestart)
+            {
+                _ = RestartCocoroCoreMAsync();
+                Debug.WriteLine("CocoroCoreM再起動処理を実行しました");
             }
         }
 
