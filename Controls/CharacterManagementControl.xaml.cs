@@ -661,6 +661,7 @@ namespace CocoroDock.Controls
                     memoryId = sourceCharacter.memoryId,
                     embeddedApiKey = sourceCharacter.embeddedApiKey,
                     embeddedModel = sourceCharacter.embeddedModel,
+                    embeddedDimension = sourceCharacter.embeddedDimension,
                     isUseSTT = sourceCharacter.isUseSTT,
                     sttEngine = sourceCharacter.sttEngine,
                     sttWakeWord = sourceCharacter.sttWakeWord,

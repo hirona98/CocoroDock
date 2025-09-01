@@ -87,7 +87,7 @@ namespace CocoroDock.Communication
         public bool isEnableMemory { get; set; } = true; // メモリ機能の有効/無効
         public string memoryId { get; set; } = "";
         public string embeddedApiKey { get; set; } = string.Empty; // 埋め込みモデル用APIキー
-        public string embeddedModel { get; set; } = "text-embedding-3-small"; // 埋め込みモデル名
+        public string embeddedModel { get; set; } = "text-embedding-3-large"; // 埋め込みモデル名
         public string embeddedDimension { get; set; } = "3072"; // 埋め込みモデルの次元数
         public bool isUseSTT { get; set; } = false; // STT（音声認識）機能の有効/無効
         public string sttEngine { get; set; } = "amivoice"; // STTエンジン ("amivoice" | "openai")

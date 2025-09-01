@@ -749,7 +749,8 @@ namespace CocoroDock.Controls
                     current.isEnableMemory != previous.isEnableMemory ||
                     current.memoryId != previous.memoryId ||
                     current.embeddedApiKey != previous.embeddedApiKey ||
-                    current.embeddedModel != previous.embeddedModel)
+                    current.embeddedModel != previous.embeddedModel ||
+                    current.embeddedDimension != previous.embeddedDimension)
                 {
                     return true;
                 }
