@@ -78,7 +78,6 @@
                             Content="Capture Key"
                             Padding="10,0"
                             ToolTip="Capture key"
-                            VerticalAlignment="Center"
                             HorizontalAlignment="Left"
                             Click="CaptureKeyButton_Click"/>
                 </Grid>

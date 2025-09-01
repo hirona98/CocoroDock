@@ -77,6 +77,7 @@
                             <TextBox Grid.Column="1"
                                      x:Name="CharacterNameTextBox"
                                      Foreground="#FF0078D7"
+                                     Padding="2"
                                      TextChanged="CharacterNameTextBox_TextChanged"/>
                         </Grid>
 
@@ -93,6 +94,7 @@
                             <TextBox Grid.Column="1"
                                      x:Name="VRMFilePathTextBox"
                                      Foreground="#FF0078D7"
+                                     Padding="2"
                                      IsReadOnly="True"/>
                             <Button Grid.Column="2"
                                     x:Name="BrowseVrmFileButton"
@@ -138,6 +140,7 @@
                             <TextBox Grid.Column="1"
                                      x:Name="ShadowOffMeshTextBox"
                                      Foreground="#FF0078D7"
+                                     Padding="2"
                                      ToolTip="カンマ区切りでメッシュ名を入力 (例: Face, U_Char_1)"/>
                         </Grid>
                         <!-- 影設定説明テキスト -->
@@ -174,6 +177,7 @@
                             <TextBox Grid.Column="1"
                                      x:Name="LlmModelTextBox"
                                      Foreground="#FF0078D7"
+                                     Padding="2"
                                      Text=""/>
                         </Grid>
                         <!-- LLM説明テキスト -->
@@ -191,6 +195,8 @@
                                     <Run Text="https://docs.litellm.ai/docs/providers"/>
                                 </Hyperlink>
                                 <Run Text=" を参照してください"/>
+                                <LineBreak/>
+                                <Run Text="内部で複雑なプロンプトを使っているため小規模モデルだと正常動作しない可能性があります"/>
                             </TextBlock.Inlines>
                         </TextBlock>
 
@@ -208,6 +214,7 @@
                                         VerticalAlignment="Center">
                                 <TextBox x:Name="ApiKeyPasswordBox"
                                          Foreground="#FF4873CF"
+                                         Padding="2"
                                          ToolTip="Enter your API key"
                                          Width="200"
                                          HorizontalAlignment="Left"/>
@@ -232,6 +239,7 @@
                                 <TextBox x:Name="BaseUrlTextBox"
                                          Margin="0,5"
                                          Foreground="#FF0078D7"
+                                         Padding="2"
                                          Text=""/>
                                 <TextBlock x:Name="BaseUrlPlaceholder"
                                            Text="ローカルLLM使用時はBase URLを設定可能です（例: http://127.0.0.1:11434）"
@@ -255,6 +263,7 @@
                             <TextBox Grid.Column="1"
                                      x:Name="VisionModelTextBox"
                                      Foreground="#FF0078D7"
+                                     Padding="2"
                                      Text=""
                                      ToolTip="画像分析用のVisionモデル"/>
                         </Grid>
@@ -281,6 +290,7 @@
                                         VerticalAlignment="Center">
                                 <TextBox x:Name="VisionApiKeyPasswordBox"
                                          Foreground="#FF4873CF"
+                                         Padding="2"
                                          ToolTip="画像分析用のAPIキー（空の場合は上記のAPIキーを使用）"
                                          Width="200"
                                          HorizontalAlignment="Left"/>
@@ -304,6 +314,7 @@
                             <TextBox Grid.Column="1"
                                      x:Name="SystemPromptTextBox"
                                      Foreground="#FF0078D7"
+                                     Padding="2"
                                      Height="200"
                                      AcceptsReturn="True"
                                      TextWrapping="Wrap"
@@ -332,6 +343,7 @@
                                     <TextBox Grid.Column="1"
                                              x:Name="MemoryIdTextBox"
                                              Foreground="#FF0078D7"
+                                             Padding="2"
                                              Text=""/>
                                 </Grid>
                                 <TextBlock TextWrapping="Wrap"
@@ -354,6 +366,7 @@
                                     <TextBox Grid.Column="1"
                                              x:Name="EmbeddedModelTextBox"
                                              Foreground="#FF0078D7"
+                                             Padding="2"
                                              Text=""/>
                                 </Grid>
                                 <TextBlock Foreground="#666666"
@@ -390,6 +403,7 @@
                                     <TextBox Grid.Column="1"
                                              x:Name="EmbeddedDimensionTextBox"
                                              Foreground="#FF0078D7"
+                                             Padding="2"
                                              Text=""
                                              ToolTip="埋め込みモデルの次元数（例: 3072, 1536）"/>
                                 </Grid>
@@ -418,6 +432,7 @@
                                                 VerticalAlignment="Center">
                                         <TextBox x:Name="EmbeddedApiKeyPasswordBox"
                                                  Foreground="#FF0078D7"
+                                                 Padding="2"
                                                  Width="200"
                                                  HorizontalAlignment="Left"/>
                                         <Button Content="上書き貼付け"
@@ -479,6 +494,7 @@
                                 <TextBox Grid.Column="1"
                                          x:Name="TTSEndpointURLTextBox"
                                          Foreground="#FF0078D7"
+                                         Padding="2"
                                          Text=""/>
                             </Grid>
 
@@ -494,6 +510,7 @@
                                 <TextBox Grid.Column="1"
                                          x:Name="TTSSperkerIDTextBox"
                                          Foreground="#FF0078D7"
+                                         Padding="2"
                                          Text=""/>
                             </Grid>
                         </StackPanel>
@@ -512,7 +529,8 @@
                                            Foreground="#FF4873CF"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="SBV2EndpointUrlTextBox"
-                                         Foreground="#FF0078D7"/>
+                                         Foreground="#FF0078D7"
+                                         Padding="2"/>
                             </Grid>
 
                             <!-- Model Name -->
@@ -527,7 +545,8 @@
                                            Foreground="#FF4873CF"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="SBV2ModelNameTextBox"
-                                         Foreground="#FF0078D7"/>
+                                         Foreground="#FF0078D7"
+                                         Padding="2"/>
                             </Grid>
 
                             <!-- Model ID -->
@@ -542,7 +561,8 @@
                                            Foreground="#FF4873CF"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="SBV2ModelIdTextBox"
-                                         Foreground="#FF0078D7"/>
+                                         Foreground="#FF0078D7"
+                                         Padding="2"/>
                             </Grid>
 
                             <!-- Speaker Name -->
@@ -557,7 +577,8 @@
                                            Foreground="#FF4873CF"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="SBV2SpeakerNameTextBox"
-                                         Foreground="#FF0078D7"/>
+                                         Foreground="#FF0078D7"
+                                         Padding="2"/>
                             </Grid>
 
                             <!-- Speaker ID -->
@@ -572,7 +593,8 @@
                                            Foreground="#FF4873CF"/>
                                 <TextBox Grid.Column="1"
                                          x:Name="SBV2SpeakerIdTextBox"
-                                         Foreground="#FF0078D7"/>
+                                         Foreground="#FF0078D7"
+                                         Padding="2"/>
                             </Grid>
                         </StackPanel>
 
@@ -597,7 +619,8 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2StyleTextBox"
-                                             Foreground="#FF0078D7"/>
+                                             Foreground="#FF0078D7"
+                                             Padding="2"/>
                                 </Grid>
 
                                 <!-- Style Weight -->
@@ -612,7 +635,8 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2StyleWeightTextBox"
-                                             Foreground="#FF0078D7"/>
+                                             Foreground="#FF0078D7"
+                                             Padding="2"/>
                                 </Grid>
 
                                 <!-- Language -->
@@ -627,7 +651,8 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2LanguageTextBox"
-                                             Foreground="#FF0078D7"/>
+                                             Foreground="#FF0078D7"
+                                             Padding="2"/>
                                 </Grid>
 
                                 <!-- SDP Ratio -->
@@ -642,7 +667,8 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2SdpRatioTextBox"
-                                             Foreground="#FF0078D7"/>
+                                             Foreground="#FF0078D7"
+                                             Padding="2"/>
                                 </Grid>
 
                                 <!-- Noise -->
@@ -657,7 +683,8 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2NoiseTextBox"
-                                             Foreground="#FF0078D7"/>
+                                             Foreground="#FF0078D7"
+                                             Padding="2"/>
                                 </Grid>
 
                                 <!-- Noise W -->
@@ -672,7 +699,8 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2NoiseWTextBox"
-                                             Foreground="#FF0078D7"/>
+                                             Foreground="#FF0078D7"
+                                             Padding="2"/>
                                 </Grid>
 
                                 <!-- Length -->
@@ -687,7 +715,8 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2LengthTextBox"
-                                             Foreground="#FF0078D7"/>
+                                             Foreground="#FF0078D7"
+                                             Padding="2"/>
                                 </Grid>
 
                                 <!-- Auto Split -->
@@ -709,7 +738,8 @@
                                                Foreground="#FF4873CF"/>
                                     <TextBox Grid.Column="1"
                                              x:Name="SBV2SplitIntervalTextBox"
-                                             Foreground="#FF0078D7"/>
+                                             Foreground="#FF0078D7"
+                                             Padding="2"/>
                                 </Grid>
                             </StackPanel>
                         </Expander>
@@ -731,6 +761,7 @@
                                             VerticalAlignment="Center">
                                     <TextBox x:Name="AivisCloudApiKeyPasswordBox"
                                              Foreground="#FF0078D7"
+                                             Padding="2"
                                              ToolTip="Aivis Cloud APIキー"
                                              Width="200"
                                              HorizontalAlignment="Left"/>
@@ -755,6 +786,7 @@
                                 <TextBox Grid.Column="1"
                                          x:Name="AivisCloudModelUuidTextBox"
                                          Foreground="#FF0078D7"
+                                         Padding="2"
                                          ToolTip="音声合成モデルのUUID"/>
                             </Grid>
 
@@ -771,6 +803,7 @@
                                 <TextBox Grid.Column="1"
                                          x:Name="AivisCloudSpeakerUuidTextBox"
                                          Foreground="#FF0078D7"
+                                         Padding="2"
                                          ToolTip="スピーカーUUID（オプション）"/>
                             </Grid>
 
@@ -787,6 +820,7 @@
                                 <TextBox Grid.Column="1"
                                          x:Name="AivisCloudStyleIdTextBox"
                                          Foreground="#FF0078D7"
+                                         Padding="2"
                                          ToolTip="スタイルID"/>
                             </Grid>
 
@@ -812,6 +846,7 @@
                                         <TextBox Grid.Column="1"
                                                  x:Name="AivisCloudSpeakingRateTextBox"
                                                  Foreground="#FF0078D7"
+                                                 Padding="2"
                                                  ToolTip="話速 (0.5-2.0)"/>
                                     </Grid>
 
@@ -828,6 +863,7 @@
                                         <TextBox Grid.Column="1"
                                                  x:Name="AivisCloudEmotionalIntensityTextBox"
                                                  Foreground="#FF0078D7"
+                                                 Padding="2"
                                                  ToolTip="感情表現の強さ (0.0-2.0)"/>
                                     </Grid>
 
@@ -844,6 +880,7 @@
                                         <TextBox Grid.Column="1"
                                                  x:Name="AivisCloudTempoDynamicsTextBox"
                                                  Foreground="#FF0078D7"
+                                                 Padding="2"
                                                  ToolTip="テンポの緩急 (0.0-2.0)"/>
                                     </Grid>
 
@@ -860,6 +897,7 @@
                                         <TextBox Grid.Column="1"
                                                  x:Name="AivisCloudVolumeTextBox"
                                                  Foreground="#FF0078D7"
+                                                 Padding="2"
                                                  ToolTip="音量 (0.0-2.0)"/>
                                     </Grid>
                                 </StackPanel>
@@ -917,6 +955,7 @@
                             <TextBox Grid.Column="1"
                                      x:Name="STTWakeWordTextBox"
                                      Foreground="#FF0078D7"
+                                     Padding="2"
                                      ToolTip="Wake word for STT"/>
                         </Grid>
                         -->
@@ -943,6 +982,7 @@
                                         VerticalAlignment="Center">
                                 <TextBox x:Name="STTApiKeyPasswordBox"
                                          Foreground="#FF0078D7"
+                                         Padding="2"
                                          Width="200"
                                          HorizontalAlignment="Left"/>
                                 <Button Content="上書き貼付け"
