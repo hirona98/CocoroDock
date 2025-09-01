@@ -289,7 +289,7 @@ namespace CocoroDock.Controls
             character.embeddedDimension = EmbeddedDimensionTextBox.Text;
             character.isUseSTT = IsUseSTTCheckBox.IsChecked ?? false;
             character.sttEngine = STTEngineComboBox.SelectedItem is ComboBoxItem selectedSttEngine ? selectedSttEngine.Tag?.ToString() ?? "amivoice" : "amivoice";
-            character.sttWakeWord = STTWakeWordTextBox.Text;
+            // character.sttWakeWord = STTWakeWordTextBox.Text;
             character.sttApiKey = STTApiKeyPasswordBox.Text;
             character.isUseTTS = IsUseTTSCheckBox.IsChecked ?? false;
             character.ttsEndpointURL = TTSEndpointURLTextBox.Text;
@@ -429,7 +429,7 @@ namespace CocoroDock.Controls
                 }
             }
 
-            STTWakeWordTextBox.Text = character.sttWakeWord;
+            // STTWakeWordTextBox.Text = character.sttWakeWord;
             STTApiKeyPasswordBox.Text = character.sttApiKey;
 
             // TTS設定

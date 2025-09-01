@@ -954,16 +954,16 @@ namespace CocoroDock
                     return;
                 }
 
-                if (string.IsNullOrEmpty(currentCharacter.sttWakeWord))
-                {
-                    Debug.WriteLine("[MainWindow] ウェイクアップワードが未設定");
-                    // 音量バーを0にリセット（UIスレッドで確実に実行）
-                    UIHelper.RunOnUIThread(() =>
-                    {
-                        ChatControlInstance.UpdateVoiceLevel(0, false);
-                    });
-                    return;
-                }
+                // if (string.IsNullOrEmpty(currentCharacter.sttWakeWord))
+                // {
+                //     Debug.WriteLine("[MainWindow] ウェイクアップワードが未設定");
+                //     // 音量バーを0にリセット（UIスレッドで確実に実行）
+                //     UIHelper.RunOnUIThread(() =>
+                //     {
+                //         ChatControlInstance.UpdateVoiceLevel(0, false);
+                //     });
+                //     return;
+                // }
 
                 // 音声処理パラメータ
                 // 無音区間判定用の閾値（dB値）
