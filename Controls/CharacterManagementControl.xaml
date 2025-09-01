@@ -100,7 +100,6 @@
                                     Padding="10,0"
                                     Click="BrowseVrmFileButton_Click"
                                     ToolTip="Open..."
-                                    VerticalAlignment="Center"
                                     Margin="5,0,0,0"/>
                         </Grid>
                     </StackPanel>
@@ -215,7 +214,6 @@
                                 <Button Content="上書き貼付け"
                                         Margin="10,0,0,0"
                                         Padding="10,0,10,0"
-                                        VerticalAlignment="Center"
                                         Click="ApiKeyPasteOverrideButton_Click"
                                         ToolTip="クリップボードのテキストで上書き"/>
                             </StackPanel>
@@ -289,7 +287,6 @@
                                 <Button Content="上書き貼付け"
                                         Margin="10,0,0,0"
                                         Padding="10,0,10,0"
-                                        VerticalAlignment="Center"
                                         Click="VisionApiKeyPasteOverrideButton_Click"
                                         ToolTip="クリップボードのテキストで上書き"/>
                             </StackPanel>
@@ -407,7 +404,6 @@
                                 <Button Content="上書き貼付け"
                                         Margin="10,0,0,0"
                                         Padding="10,0,10,0"
-                                        VerticalAlignment="Center"
                                         Click="EmbeddedApiKeyPasteOverrideButton_Click"
                                         ToolTip="クリップボードのテキストで上書き"/>
                             </StackPanel>
@@ -720,7 +716,6 @@
                                     <Button Content="上書き貼付け"
                                             Margin="10,0,0,0"
                                             Padding="10,0,10,0"
-                                            VerticalAlignment="Center"
                                             Click="AivisCloudApiKeyPasteOverrideButton_Click"
                                             ToolTip="クリップボードのテキストで上書き"/>
                                 </StackPanel>
@@ -932,7 +927,6 @@
                                 <Button Content="上書き貼付け"
                                         Margin="10,0,0,0"
                                         Padding="10,0,10,0"
-                                        VerticalAlignment="Center"
                                         Click="STTApiKeyPasteOverrideButton_Click"
                                         ToolTip="クリップボードのテキストで上書き"/>
                             </StackPanel>
