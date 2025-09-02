@@ -247,16 +247,18 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// 現在のキャラクター設定を取得
+        /// 現在のキャラクター設定を取得（UIから値を読み取ってディープコピーを返却）
         /// </summary>
         public CharacterSettings? GetCurrentCharacterSetting()
         {
             if (_currentCharacterIndex < 0 || _currentCharacterIndex >= AppSettings.Instance.CharacterList.Count)
                 return null;
 
-            var character = AppSettings.Instance.CharacterList[_currentCharacterIndex];
+            // 既存のキャラクター設定のディープコピーを作成
+            var originalCharacter = AppSettings.Instance.CharacterList[_currentCharacterIndex];
+            var character = originalCharacter.DeepCopy();
 
-            // UIから最新の値を取得して設定
+            // UIから最新の値を取得してコピーに設定
             character.modelName = CharacterNameTextBox.Text;
             character.vrmFilePath = VRMFilePathTextBox.Text;
             character.isConvertMToon = ConvertMToonCheckBox.IsChecked ?? false;

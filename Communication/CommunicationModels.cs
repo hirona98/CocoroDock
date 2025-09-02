@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CocoroDock.Communication
 {
@@ -97,6 +98,89 @@ namespace CocoroDock.Communication
         public bool isConvertMToon { get; set; } = false; // UnlitをMToonに変換するかどうか
         public bool isEnableShadowOff { get; set; } = true; // 影オフ機能の有効/無効（デフォルト: true）
         public string shadowOffMesh { get; set; } = "Face, U_Char_1"; // 影を落とさないメッシュ名
+
+        /// <summary>
+        /// このCharacterSettingsオブジェクトのディープコピーを作成
+        /// </summary>
+        /// <returns>新しいCharacterSettingsインスタンス</returns>
+        public CharacterSettings DeepCopy()
+        {
+            return new CharacterSettings
+            {
+                isReadOnly = this.isReadOnly,
+                modelName = this.modelName,
+                vrmFilePath = this.vrmFilePath,
+                isUseLLM = this.isUseLLM,
+                apiKey = this.apiKey,
+                llmModel = this.llmModel,
+                visionApiKey = this.visionApiKey,
+                visionModel = this.visionModel,
+                localLLMBaseUrl = this.localLLMBaseUrl,
+                systemPromptFilePath = this.systemPromptFilePath,
+                isUseTTS = this.isUseTTS,
+                ttsEndpointURL = this.ttsEndpointURL,
+                ttsSperkerID = this.ttsSperkerID,
+                ttsType = this.ttsType,
+
+                // StyleBertVits2Configのディープコピー
+                styleBertVits2Config = new StyleBertVits2Config
+                {
+                    endpointUrl = this.styleBertVits2Config.endpointUrl,
+                    modelName = this.styleBertVits2Config.modelName,
+                    modelId = this.styleBertVits2Config.modelId,
+                    speakerName = this.styleBertVits2Config.speakerName,
+                    speakerId = this.styleBertVits2Config.speakerId,
+                    style = this.styleBertVits2Config.style,
+                    styleWeight = this.styleBertVits2Config.styleWeight,
+                    sdpRatio = this.styleBertVits2Config.sdpRatio,
+                    noise = this.styleBertVits2Config.noise,
+                    noiseW = this.styleBertVits2Config.noiseW,
+                    length = this.styleBertVits2Config.length,
+                    language = this.styleBertVits2Config.language,
+                    autoSplit = this.styleBertVits2Config.autoSplit,
+                    splitInterval = this.styleBertVits2Config.splitInterval,
+                    assistText = this.styleBertVits2Config.assistText,
+                    assistTextWeight = this.styleBertVits2Config.assistTextWeight,
+                    referenceAudioPath = this.styleBertVits2Config.referenceAudioPath
+                },
+
+                // AivisCloudConfigのディープコピー
+                aivisCloudConfig = new AivisCloudConfig
+                {
+                    apiKey = this.aivisCloudConfig.apiKey,
+                    endpointUrl = this.aivisCloudConfig.endpointUrl,
+                    modelUuid = this.aivisCloudConfig.modelUuid,
+                    speakerUuid = this.aivisCloudConfig.speakerUuid,
+                    styleId = this.aivisCloudConfig.styleId,
+                    styleName = this.aivisCloudConfig.styleName,
+                    useSSML = this.aivisCloudConfig.useSSML,
+                    language = this.aivisCloudConfig.language,
+                    speakingRate = this.aivisCloudConfig.speakingRate,
+                    emotionalIntensity = this.aivisCloudConfig.emotionalIntensity,
+                    tempoDynamics = this.aivisCloudConfig.tempoDynamics,
+                    pitch = this.aivisCloudConfig.pitch,
+                    volume = this.aivisCloudConfig.volume,
+                    outputFormat = this.aivisCloudConfig.outputFormat,
+                    outputBitrate = this.aivisCloudConfig.outputBitrate,
+                    outputSamplingRate = this.aivisCloudConfig.outputSamplingRate,
+                    outputAudioChannels = this.aivisCloudConfig.outputAudioChannels
+                },
+
+                isEnableMemory = this.isEnableMemory,
+                memoryId = this.memoryId,
+                embeddedApiKey = this.embeddedApiKey,
+                embeddedModel = this.embeddedModel,
+                embeddedDimension = this.embeddedDimension,
+                isUseSTT = this.isUseSTT,
+                sttEngine = this.sttEngine,
+                sttWakeWord = this.sttWakeWord,
+                sttApiKey = this.sttApiKey,
+                sttLanguage = this.sttLanguage,
+                isConvertMToon = this.isConvertMToon,
+                isEnableShadowOff = this.isEnableShadowOff,
+                shadowOffMesh = this.shadowOffMesh
+            };
+        }
     }
 
     /// <summary>
@@ -200,6 +284,74 @@ namespace CocoroDock.Communication
 
         public int currentCharacterIndex { get; set; }
         public List<CharacterSettings> characterList { get; set; } = new List<CharacterSettings>();
+
+        /// <summary>
+        /// このConfigSettingsオブジェクトのディープコピーを作成
+        /// </summary>
+        /// <returns>新しいConfigSettingsインスタンス</returns>
+        public ConfigSettings DeepCopy()
+        {
+            return new ConfigSettings
+            {
+                cocoroDockPort = this.cocoroDockPort,
+                cocoroCorePort = this.cocoroCorePort,
+                cocoroMemoryPort = this.cocoroMemoryPort,
+                cocoroMemoryDBPort = this.cocoroMemoryDBPort,
+                cocoroMemoryWebPort = this.cocoroMemoryWebPort,
+                cocoroShellPort = this.cocoroShellPort,
+                notificationApiPort = this.notificationApiPort,
+                isEnableNotificationApi = this.isEnableNotificationApi,
+                isEnableMcp = this.isEnableMcp,
+                isRestoreWindowPosition = this.isRestoreWindowPosition,
+                isTopmost = this.isTopmost,
+                isEscapeCursor = this.isEscapeCursor,
+                isInputVirtualKey = this.isInputVirtualKey,
+                virtualKeyString = this.virtualKeyString,
+                isAutoMove = this.isAutoMove,
+                showMessageWindow = this.showMessageWindow,
+                isEnableAmbientOcclusion = this.isEnableAmbientOcclusion,
+                msaaLevel = this.msaaLevel,
+                characterShadow = this.characterShadow,
+                characterShadowResolution = this.characterShadowResolution,
+                backgroundShadow = this.backgroundShadow,
+                backgroundShadowResolution = this.backgroundShadowResolution,
+                windowSize = this.windowSize,
+                windowPositionX = this.windowPositionX,
+                windowPositionY = this.windowPositionY,
+                enable_pro_mode = this.enable_pro_mode,
+                enable_internet_retrieval = this.enable_internet_retrieval,
+                googleApiKey = this.googleApiKey,
+                googleSearchEngineId = this.googleSearchEngineId,
+                internetMaxResults = this.internetMaxResults,
+                currentCharacterIndex = this.currentCharacterIndex,
+
+                // 複雑オブジェクトのディープコピー
+                screenshotSettings = new ScreenshotSettings
+                {
+                    enabled = this.screenshotSettings.enabled,
+                    intervalMinutes = this.screenshotSettings.intervalMinutes,
+                    captureActiveWindowOnly = this.screenshotSettings.captureActiveWindowOnly,
+                    idleTimeoutMinutes = this.screenshotSettings.idleTimeoutMinutes,
+                    excludePatterns = new List<string>(this.screenshotSettings.excludePatterns)
+                },
+
+                microphoneSettings = new MicrophoneSettings
+                {
+                    inputThreshold = this.microphoneSettings.inputThreshold
+                },
+
+                // EscapePositionリストのディープコピー
+                escapePositions = this.escapePositions.Select(ep => new EscapePosition
+                {
+                    x = ep.x,
+                    y = ep.y,
+                    enabled = ep.enabled
+                }).ToList(),
+
+                // CharacterSettingsリストのディープコピー
+                characterList = this.characterList.Select(c => c.DeepCopy()).ToList()
+            };
+        }
     }
 
 

@@ -72,8 +72,8 @@ namespace CocoroDock.Controls
             // 元の設定のバックアップを作成
             BackupSettings();
 
-            // CocoroCoreM再起動チェック用に現在の設定を保存
-            _previousCocoroCoreMSettings = AppSettings.Instance.GetConfigSettings();
+            // CocoroCoreM再起動チェック用に現在の設定のディープコピーを保存
+            _previousCocoroCoreMSettings = AppSettings.Instance.GetConfigSettings().DeepCopy();
 
             // systemPrompt内容を保存
             SaveSystemPromptContents();
@@ -320,7 +320,7 @@ namespace CocoroDock.Controls
 
                 // 設定のバックアップを更新（適用後の状態を新しいベースラインとする）
                 BackupSettings();
-                _previousCocoroCoreMSettings = AppSettings.Instance.GetConfigSettings();
+                _previousCocoroCoreMSettings = AppSettings.Instance.GetConfigSettings().DeepCopy();
 
                 // systemPrompt内容も更新
                 SaveSystemPromptContents();
@@ -687,12 +687,13 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// UI上の現在の設定を取得する
+        /// UI上の現在の設定を取得する（ディープコピー）
         /// </summary>
         /// <returns>現在のUI設定から構築したConfigSettings</returns>
         private ConfigSettings GetCurrentUISettings()
         {
-            var config = new ConfigSettings();
+            // 現在の設定のディープコピーを作成
+            var config = AppSettings.Instance.GetConfigSettings().DeepCopy();
 
             // System設定の取得
             config.isEnableNotificationApi = SystemSettingsControl.GetIsEnableNotificationApi();
@@ -705,23 +706,15 @@ namespace CocoroDock.Controls
             config.googleSearchEngineId = CocoroCoreMSettings.googleSearchEngineId;
             config.internetMaxResults = CocoroCoreMSettings.internetMaxResults;
 
-            // Character設定の取得
+            // Character設定の取得（ディープコピーを使用）
             config.currentCharacterIndex = CharacterManagementControl.GetCurrentCharacterIndex();
             var currentCharacterSetting = CharacterManagementControl.GetCurrentCharacterSetting();
             if (currentCharacterSetting != null)
             {
-                // 既存のCharacterListをコピーしてから現在のキャラクターを更新
-                var appSettings = AppSettings.Instance;
-                config.characterList = new List<CharacterSettings>(appSettings.CharacterList);
-
                 if (config.currentCharacterIndex >= 0 && config.currentCharacterIndex < config.characterList.Count)
                 {
                     config.characterList[config.currentCharacterIndex] = currentCharacterSetting;
                 }
-            }
-            else
-            {
-                config.characterList = new List<CharacterSettings>(AppSettings.Instance.CharacterList);
             }
 
             return config;

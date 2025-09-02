@@ -14,14 +14,11 @@ namespace CocoroDock.Services
                 _wakeWords = new string[0];
                 return;
             }
-
             _wakeWords = wakeWordsConfig
                 .Split(',')
                 .Select(w => w.Trim().ToLower())
                 .Where(w => !string.IsNullOrEmpty(w))
                 .ToArray();
-
-            System.Diagnostics.Debug.WriteLine($"[WakeWordDetector] Initialized with words: {string.Join(", ", _wakeWords)}");
         }
 
         public bool ContainsWakeWord(string recognizedText)
@@ -30,9 +27,9 @@ namespace CocoroDock.Services
                 return false;
 
             string lowerText = recognizedText.ToLower();
-            
+
             bool found = _wakeWords.Any(wakeWord => lowerText.Contains(wakeWord));
-            
+
             if (found)
             {
                 var detectedWord = _wakeWords.First(wakeWord => lowerText.Contains(wakeWord));
