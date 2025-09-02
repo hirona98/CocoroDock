@@ -666,7 +666,7 @@ namespace CocoroDock.Controls
                     embeddedDimension = sourceCharacter.embeddedDimension,
                     isUseSTT = sourceCharacter.isUseSTT,
                     sttEngine = sourceCharacter.sttEngine,
-                    // sttWakeWord = sourceCharacter.sttWakeWord,
+                    sttWakeWord = sourceCharacter.sttWakeWord,
                     sttApiKey = sourceCharacter.sttApiKey,
                     sttLanguage = sourceCharacter.sttLanguage,
                     isConvertMToon = sourceCharacter.isConvertMToon,

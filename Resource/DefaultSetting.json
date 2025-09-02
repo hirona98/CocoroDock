@@ -111,7 +111,7 @@
       "embeddedDimension": "3072",
       "isUseSTT": false,
       "sttEngine": "amivoice",
-      "sttWakeWord": "こんにちは, ミク",
+      "sttWakeWord": "",
       "sttApiKey": "",
       "sttLanguage": "ja",
       "isConvertMToon": false,

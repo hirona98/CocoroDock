@@ -38,17 +38,24 @@ namespace CocoroDock.Services
             _activeTimeoutMs = activeTimeoutMs;
             _wakeWordDetector = new WakeWordDetector(wakeWords);
             _isMicButtonActivated = startActive;
-            
-            // MicButton切り替え時はACTIVE状態から開始
-            if (startActive)
+
+            // ウェイクワードが設定されていない場合、またはMicButton切り替え時はACTIVE状態から開始
+            if (startActive || !_wakeWordDetector.HasWakeWords)
             {
                 _currentState = VoiceRecognitionState.ACTIVE;
                 StartTimeoutTimer();
-                System.Diagnostics.Debug.WriteLine("[VoiceRecognition] Started in ACTIVE state (MicButton activated)");
+                if (!_wakeWordDetector.HasWakeWords)
+                {
+                    System.Diagnostics.Debug.WriteLine("[VoiceRecognition] Started in ACTIVE state (no wake words configured)");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[VoiceRecognition] Started in ACTIVE state (MicButton activated)");
+                }
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("[VoiceRecognition] Started in SLEEPING state (normal startup)");
+                System.Diagnostics.Debug.WriteLine("[VoiceRecognition] Started in SLEEPING state (normal startup with wake words)");
             }
         }
 
@@ -63,7 +70,8 @@ namespace CocoroDock.Services
                 switch (_currentState)
                 {
                     case VoiceRecognitionState.SLEEPING:
-                        if (_wakeWordDetector.ContainsWakeWord(text))
+                        // ウェイクワードが設定されていない場合は全てのテキストでACTIVE状態に遷移
+                        if (!_wakeWordDetector.HasWakeWords || _wakeWordDetector.ContainsWakeWord(text))
                         {
                             TransitionTo(VoiceRecognitionState.ACTIVE);
                             OnRecognizedText?.Invoke(text); // ウェイクアップワード含む発話も送信
@@ -137,16 +145,16 @@ namespace CocoroDock.Services
                 if (_currentState == VoiceRecognitionState.ACTIVE)
                 {
                     System.Diagnostics.Debug.WriteLine("[VoiceRecognition] Timeout occurred");
-                    if (_isMicButtonActivated)
+                    if (_isMicButtonActivated || !_wakeWordDetector.HasWakeWords)
                     {
-                        // MicButton切り替えの場合：タイムアウト後もACTIVE状態を維持（ウェイクアップワード検出済み状態）
-                        System.Diagnostics.Debug.WriteLine("[VoiceRecognition] MicButton mode: staying in ACTIVE after timeout");
+                        // MicButton切り替えの場合、またはウェイクワードが未設定の場合：タイムアウト後もACTIVE状態を維持
+                        System.Diagnostics.Debug.WriteLine("[VoiceRecognition] MicButton mode or no wake words: staying in ACTIVE after timeout");
                         ResetTimeoutTimer(); // タイマーを再開始
                     }
                     else
                     {
-                        // 通常起動の場合：タイムアウト後はSLEEPING状態に戻る
-                        System.Diagnostics.Debug.WriteLine("[VoiceRecognition] Normal mode: returning to SLEEPING after timeout");
+                        // 通常起動かつウェイクワード設定済みの場合：タイムアウト後はSLEEPING状態に戻る
+                        System.Diagnostics.Debug.WriteLine("[VoiceRecognition] Normal mode with wake words: returning to SLEEPING after timeout");
                         TransitionTo(VoiceRecognitionState.SLEEPING);
                     }
                 }
