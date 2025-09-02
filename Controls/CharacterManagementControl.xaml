@@ -960,6 +960,7 @@
                         </Grid>
                         -->
                         <!-- STT起動ワード説明テキスト -->
+                        <!--
                         <TextBlock Foreground="#666666"
                                    TextWrapping="Wrap"
                                    Margin="100,0,0,0">
@@ -967,6 +968,7 @@
                             <LineBreak/>
                             （例: こんにちは, ハロー, ミク）。起動直後は反応が遅くなることがあります。
                         </TextBlock>
+                        -->
 
                         <!-- STT APIキーの設定 -->
                         <Grid Margin="0,10,0,0">

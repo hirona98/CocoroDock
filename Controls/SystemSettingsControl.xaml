@@ -23,7 +23,7 @@
 
                         <!-- 通知要求を受けるチェックボックス -->
                         <CheckBox x:Name="IsEnableNotificationApiCheckBox"
-                                  Content="通知要求を受ける"
+                                  Content="通知要求を受ける（要再起動）"
                                   Margin="0,10,0,0"
                                   Foreground="#FF4873CF"
                                   ToolTip="Enable notification API"/>
