@@ -464,7 +464,7 @@ namespace CocoroDock.Controls
             var appSettings = AppSettings.Instance;
             appSettings.CurrentCharacterIndex = CharacterManagementControl.GetCurrentCharacterIndex();
 
-            var currentCharacterSetting = CharacterManagementControl.GetCurrentCharacterSetting();
+            var currentCharacterSetting = CharacterManagementControl.GetCurrentCharacterSettingFromUI();
             if (currentCharacterSetting != null)
             {
                 var currentIndex = CharacterManagementControl.GetCurrentCharacterIndex();
@@ -708,7 +708,7 @@ namespace CocoroDock.Controls
 
             // Character設定の取得（ディープコピーを使用）
             config.currentCharacterIndex = CharacterManagementControl.GetCurrentCharacterIndex();
-            var currentCharacterSetting = CharacterManagementControl.GetCurrentCharacterSetting();
+            var currentCharacterSetting = CharacterManagementControl.GetCurrentCharacterSettingFromUI();
             if (currentCharacterSetting != null)
             {
                 if (config.currentCharacterIndex >= 0 && config.currentCharacterIndex < config.characterList.Count)

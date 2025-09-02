@@ -247,9 +247,9 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// 現在のキャラクター設定を取得（UIから値を読み取ってディープコピーを返却）
+        /// UI上の現在のキャラクター設定を取得（UIから値を読み取ってディープコピーを返却）
         /// </summary>
-        public CharacterSettings? GetCurrentCharacterSetting()
+        public CharacterSettings? GetCurrentCharacterSettingFromUI()
         {
             if (_currentCharacterIndex < 0 || _currentCharacterIndex >= AppSettings.Instance.CharacterList.Count)
                 return null;

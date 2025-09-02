@@ -124,7 +124,7 @@ namespace CocoroDock
             }
 
             // 現在のキャラクターの設定を反映
-            var currentCharacter = GetCurrentCharacterSettings();
+            var currentCharacter = GetStoredCharacterSetting();
             if (currentCharacter != null)
             {
                 // STTの状態を反映
@@ -219,7 +219,7 @@ namespace CocoroDock
             try
             {
                 // 現在のキャラクター設定を取得してLLMの使用状況を確認
-                var currentCharacter = GetCurrentCharacterSettings();
+                var currentCharacter = GetStoredCharacterSetting();
                 bool isLLMEnabled = currentCharacter?.isUseLLM ?? false;
 
                 // LLMが無効の場合は画像表示のみ行い、送信はしない
@@ -366,7 +366,7 @@ namespace CocoroDock
         private void UpdateCocoroCoreMStatusDisplay(CocoroCoreMStatus status)
         {
             // 現在のキャラクター設定を取得してLLMの使用状況を確認
-            var currentCharacter = GetCurrentCharacterSettings();
+            var currentCharacter = GetStoredCharacterSetting();
             bool isLLMEnabled = currentCharacter?.isUseLLM ?? false;
 
             string statusText = status switch
@@ -717,7 +717,7 @@ namespace CocoroDock
         private void MicButton_Click(object sender, RoutedEventArgs e)
         {
             // 現在のキャラクターのSTT設定をトグル
-            var currentCharacter = GetCurrentCharacterSettings();
+            var currentCharacter = GetStoredCharacterSetting();
             if (currentCharacter != null)
             {
                 currentCharacter.isUseSTT = !currentCharacter.isUseSTT;
@@ -768,9 +768,9 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// 現在のキャラクター設定を取得
+        /// 保存済みの現在のキャラクター設定を取得（AppSettingsから直接読み取り）
         /// </summary>
-        private CharacterSettings? GetCurrentCharacterSettings()
+        private CharacterSettings? GetStoredCharacterSetting()
         {
             var config = _appSettings.GetConfigSettings();
             if (config.characterList != null &&
@@ -788,7 +788,7 @@ namespace CocoroDock
         private void TTSButton_Click(object sender, RoutedEventArgs e)
         {
             // 現在のキャラクターのTTS設定をトグル
-            var currentCharacter = GetCurrentCharacterSettings();
+            var currentCharacter = GetStoredCharacterSetting();
             if (currentCharacter != null)
             {
                 currentCharacter.isUseTTS = !currentCharacter.isUseTTS;
@@ -935,7 +935,7 @@ namespace CocoroDock
             try
             {
                 // 現在のキャラクター設定を取得
-                var currentCharacter = GetCurrentCharacterSettings();
+                var currentCharacter = GetStoredCharacterSetting();
                 if (currentCharacter == null)
                 {
                     Debug.WriteLine("[MainWindow] 現在のキャラクター設定が見つかりません");
@@ -1059,7 +1059,7 @@ namespace CocoroDock
             {
                 if (_communicationService != null)
                 {
-                    var currentCharacter = GetCurrentCharacterSettings();
+                    var currentCharacter = GetStoredCharacterSetting();
                     if (currentCharacter != null && currentCharacter.isUseLLM)
                     {
                         await _communicationService.SendChatToCoreUnifiedAsync(message, currentCharacter.modelName, imageData);
@@ -1213,7 +1213,7 @@ namespace CocoroDock
                 this.Activate();
 
                 // LLMが有効かどうかを確認してシャットダウンメッセージを設定
-                var currentCharacter = GetCurrentCharacterSettings();
+                var currentCharacter = GetStoredCharacterSetting();
                 bool isLLMEnabled = currentCharacter?.isUseLLM ?? false;
 
                 if (!isLLMEnabled)

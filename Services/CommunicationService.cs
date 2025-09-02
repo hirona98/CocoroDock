@@ -223,7 +223,7 @@ namespace CocoroDock.Services
             try
             {
                 // 現在のキャラクター設定を取得
-                var currentCharacter = GetCurrentCharacterSettings();
+                var currentCharacter = GetStoredCharacterSetting();
 
                 // LLMが無効の場合は処理しない
                 if (currentCharacter == null || !currentCharacter.isUseLLM)
@@ -333,7 +333,7 @@ namespace CocoroDock.Services
             try
             {
                 // 現在のキャラクター設定を取得
-                var currentCharacter = GetCurrentCharacterSettings();
+                var currentCharacter = GetStoredCharacterSetting();
 
                 // LLMが有効でない場合は処理しない
                 if (currentCharacter == null || !currentCharacter.isUseLLM)
@@ -419,9 +419,9 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
-        /// 現在のキャラクター設定を取得（キャッシュ使用）
+        /// 保存済みの現在のキャラクター設定を取得（キャッシュ使用）
         /// </summary>
-        private CharacterSettings? GetCurrentCharacterSettings()
+        private CharacterSettings? GetStoredCharacterSetting()
         {
             // キャッシュされた設定を使用
             var config = _cachedConfigSettings;
@@ -619,7 +619,7 @@ namespace CocoroDock.Services
                     var content = contentElement.GetString() ?? "";
                     var sessionId = message.session_id;
 
-                    var currentCharacter = GetCurrentCharacterSettings();
+                    var currentCharacter = GetStoredCharacterSetting();
                     var memoryId = !string.IsNullOrEmpty(currentCharacter?.memoryId) ? currentCharacter.memoryId : "memory";
 
                     var chatRequest = new ChatRequest
