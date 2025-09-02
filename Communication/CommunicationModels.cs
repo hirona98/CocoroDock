@@ -129,10 +129,10 @@ namespace CocoroDock.Communication
         public string vrmFilePath { get; set; } = string.Empty;
         public bool isUseLLM { get; set; }
         public string apiKey { get; set; } = string.Empty;
-        public string llmModel { get; set; } = string.Empty;
+        public string llmModel { get; set; } = "openai/gpt-4o-mini";
         // 画像分析用設定
         public string visionApiKey { get; set; } = string.Empty; // 画像分析用APIキー（空ならapiKeyを使用）
-        public string visionModel { get; set; } = string.Empty; // 画像分析用モデル
+        public string visionModel { get; set; } = "openai/gpt-4o-mini"; // 画像分析用モデル
         public string localLLMBaseUrl { get; set; } = string.Empty; // ローカルLLMのベースURL
         public string systemPromptFilePath { get; set; } = string.Empty;
         public bool isUseTTS { get; set; }
@@ -144,7 +144,7 @@ namespace CocoroDock.Communication
         public bool isEnableMemory { get; set; } = true; // メモリ機能の有効/無効
         public string memoryId { get; set; } = "";
         public string embeddedApiKey { get; set; } = string.Empty; // 埋め込みモデル用APIキー
-        public string embeddedModel { get; set; } = "text-embedding-3-large"; // 埋め込みモデル名
+        public string embeddedModel { get; set; } = "openai/text-embedding-3-large"; // 埋め込みモデル名
         public string embeddedDimension { get; set; } = "3072"; // 埋め込みモデルの次元数
         public bool isUseSTT { get; set; } = false; // STT（音声認識）機能の有効/無効
         public string sttEngine { get; set; } = "amivoice"; // STTエンジン ("amivoice" | "openai")
