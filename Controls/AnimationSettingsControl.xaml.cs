@@ -102,9 +102,27 @@ namespace CocoroDock.Controls
         /// </summary>
         private void SaveOriginalAnimationSettings()
         {
-            // ディープコピーを使用して元の設定を保存
-            _originalAnimationSettings =
-                AppSettings.Instance.AnimationSettings.Select(animSetting => animSetting.DeepCopy()).ToList();
+            _originalAnimationSettings = new List<AnimationSetting>();
+            foreach (var animSetting in AppSettings.Instance.AnimationSettings)
+            {
+                var newAnimSetting = new AnimationSetting
+                {
+                    animeSetName = animSetting.animeSetName,
+                    animations = new List<AnimationConfig>()
+                };
+
+                foreach (var animation in animSetting.animations)
+                {
+                    newAnimSetting.animations.Add(new AnimationConfig
+                    {
+                        displayName = animation.displayName,
+                        animationType = animation.animationType,
+                        animationName = animation.animationName,
+                        isEnabled = animation.isEnabled
+                    });
+                }
+                _originalAnimationSettings.Add(newAnimSetting);
+            }
         }
 
         /// <summary>

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace CocoroDock.Communication
 {
@@ -37,34 +36,6 @@ namespace CocoroDock.Communication
         public string assistText { get; set; } = "";
         public float assistTextWeight { get; set; } = 0f;
         public string referenceAudioPath { get; set; } = "";
-
-        /// <summary>
-        /// ディープコピーを作成
-        /// </summary>
-        /// <returns>ディープコピーされたStyleBertVits2Config</returns>
-        public StyleBertVits2Config DeepCopy()
-        {
-            return new StyleBertVits2Config
-            {
-                endpointUrl = this.endpointUrl,
-                modelName = this.modelName,
-                modelId = this.modelId,
-                speakerName = this.speakerName,
-                speakerId = this.speakerId,
-                style = this.style,
-                styleWeight = this.styleWeight,
-                sdpRatio = this.sdpRatio,
-                noise = this.noise,
-                noiseW = this.noiseW,
-                length = this.length,
-                language = this.language,
-                autoSplit = this.autoSplit,
-                splitInterval = this.splitInterval,
-                assistText = this.assistText,
-                assistTextWeight = this.assistTextWeight,
-                referenceAudioPath = this.referenceAudioPath
-            };
-        }
     }
 
     /// <summary>
@@ -89,34 +60,6 @@ namespace CocoroDock.Communication
         public int outputBitrate { get; set; } = 0;
         public int outputSamplingRate { get; set; } = 16000;
         public string outputAudioChannels { get; set; } = "mono";
-
-        /// <summary>
-        /// ディープコピーを作成
-        /// </summary>
-        /// <returns>ディープコピーされたAivisCloudConfig</returns>
-        public AivisCloudConfig DeepCopy()
-        {
-            return new AivisCloudConfig
-            {
-                apiKey = this.apiKey,
-                endpointUrl = this.endpointUrl,
-                modelUuid = this.modelUuid,
-                speakerUuid = this.speakerUuid,
-                styleId = this.styleId,
-                styleName = this.styleName,
-                useSSML = this.useSSML,
-                language = this.language,
-                speakingRate = this.speakingRate,
-                emotionalIntensity = this.emotionalIntensity,
-                tempoDynamics = this.tempoDynamics,
-                pitch = this.pitch,
-                volume = this.volume,
-                outputFormat = this.outputFormat,
-                outputBitrate = this.outputBitrate,
-                outputSamplingRate = this.outputSamplingRate,
-                outputAudioChannels = this.outputAudioChannels
-            };
-        }
     }
 
     /// <summary>
@@ -154,46 +97,6 @@ namespace CocoroDock.Communication
         public bool isConvertMToon { get; set; } = false; // UnlitをMToonに変換するかどうか
         public bool isEnableShadowOff { get; set; } = true; // 影オフ機能の有効/無効（デフォルト: true）
         public string shadowOffMesh { get; set; } = "Face, U_Char_1"; // 影を落とさないメッシュ名
-
-        /// <summary>
-        /// ディープコピーを作成
-        /// </summary>
-        /// <returns>ディープコピーされたCharacterSettings</returns>
-        public CharacterSettings DeepCopy()
-        {
-            return new CharacterSettings
-            {
-                isReadOnly = this.isReadOnly,
-                modelName = this.modelName,
-                vrmFilePath = this.vrmFilePath,
-                isUseLLM = this.isUseLLM,
-                apiKey = this.apiKey,
-                llmModel = this.llmModel,
-                visionApiKey = this.visionApiKey,
-                visionModel = this.visionModel,
-                localLLMBaseUrl = this.localLLMBaseUrl,
-                systemPromptFilePath = this.systemPromptFilePath,
-                isUseTTS = this.isUseTTS,
-                ttsEndpointURL = this.ttsEndpointURL,
-                ttsSperkerID = this.ttsSperkerID,
-                ttsType = this.ttsType,
-                styleBertVits2Config = this.styleBertVits2Config.DeepCopy(),
-                aivisCloudConfig = this.aivisCloudConfig.DeepCopy(),
-                isEnableMemory = this.isEnableMemory,
-                memoryId = this.memoryId,
-                embeddedApiKey = this.embeddedApiKey,
-                embeddedModel = this.embeddedModel,
-                embeddedDimension = this.embeddedDimension,
-                isUseSTT = this.isUseSTT,
-                sttEngine = this.sttEngine,
-                sttWakeWord = this.sttWakeWord,
-                sttApiKey = this.sttApiKey,
-                sttLanguage = this.sttLanguage,
-                isConvertMToon = this.isConvertMToon,
-                isEnableShadowOff = this.isEnableShadowOff,
-                shadowOffMesh = this.shadowOffMesh
-            };
-        }
     }
 
     /// <summary>
@@ -206,22 +109,6 @@ namespace CocoroDock.Communication
         public bool captureActiveWindowOnly { get; set; } = true;
         public int idleTimeoutMinutes { get; set; } = 10;
         public List<string> excludePatterns { get; set; } = new List<string>();
-
-        /// <summary>
-        /// ディープコピーを作成
-        /// </summary>
-        /// <returns>ディープコピーされたScreenshotSettings</returns>
-        public ScreenshotSettings DeepCopy()
-        {
-            return new ScreenshotSettings
-            {
-                enabled = this.enabled,
-                intervalMinutes = this.intervalMinutes,
-                captureActiveWindowOnly = this.captureActiveWindowOnly,
-                idleTimeoutMinutes = this.idleTimeoutMinutes,
-                excludePatterns = new List<string>(this.excludePatterns)
-            };
-        }
     }
 
     /// <summary>
@@ -230,18 +117,6 @@ namespace CocoroDock.Communication
     public class MicrophoneSettings
     {
         public int inputThreshold { get; set; } = -45;
-
-        /// <summary>
-        /// ディープコピーを作成
-        /// </summary>
-        /// <returns>ディープコピーされたMicrophoneSettings</returns>
-        public MicrophoneSettings DeepCopy()
-        {
-            return new MicrophoneSettings
-            {
-                inputThreshold = this.inputThreshold
-            };
-        }
     }
 
     /// <summary>
@@ -252,20 +127,6 @@ namespace CocoroDock.Communication
         public float x { get; set; } = 0f;
         public float y { get; set; } = 0f;
         public bool enabled { get; set; } = true;
-
-        /// <summary>
-        /// ディープコピーを作成
-        /// </summary>
-        /// <returns>ディープコピーされたEscapePosition</returns>
-        public EscapePosition DeepCopy()
-        {
-            return new EscapePosition
-            {
-                x = this.x,
-                y = this.y,
-                enabled = this.enabled
-            };
-        }
     }
 
     /// <summary>
@@ -339,54 +200,6 @@ namespace CocoroDock.Communication
 
         public int currentCharacterIndex { get; set; }
         public List<CharacterSettings> characterList { get; set; } = new List<CharacterSettings>();
-
-        /// <summary>
-        /// ディープコピーを作成
-        /// </summary>
-        /// <returns>ディープコピーされたConfigSettings</returns>
-        public ConfigSettings DeepCopy()
-        {
-            return new ConfigSettings
-            {
-                cocoroDockPort = this.cocoroDockPort,
-                cocoroCorePort = this.cocoroCorePort,
-                cocoroMemoryPort = this.cocoroMemoryPort,
-                cocoroMemoryDBPort = this.cocoroMemoryDBPort,
-                cocoroMemoryWebPort = this.cocoroMemoryWebPort,
-                cocoroShellPort = this.cocoroShellPort,
-                notificationApiPort = this.notificationApiPort,
-                isEnableNotificationApi = this.isEnableNotificationApi,
-                isEnableMcp = this.isEnableMcp,
-                isRestoreWindowPosition = this.isRestoreWindowPosition,
-                isTopmost = this.isTopmost,
-                isEscapeCursor = this.isEscapeCursor,
-                escapePositions =
-                    this.escapePositions.Select(ep => ep.DeepCopy()).ToList(),
-                isInputVirtualKey = this.isInputVirtualKey,
-                virtualKeyString = this.virtualKeyString,
-                isAutoMove = this.isAutoMove,
-                showMessageWindow = this.showMessageWindow,
-                isEnableAmbientOcclusion = this.isEnableAmbientOcclusion,
-                msaaLevel = this.msaaLevel,
-                characterShadow = this.characterShadow,
-                characterShadowResolution = this.characterShadowResolution,
-                backgroundShadow = this.backgroundShadow,
-                backgroundShadowResolution = this.backgroundShadowResolution,
-                windowSize = this.windowSize,
-                windowPositionX = this.windowPositionX,
-                windowPositionY = this.windowPositionY,
-                screenshotSettings = this.screenshotSettings.DeepCopy(),
-                microphoneSettings = this.microphoneSettings.DeepCopy(),
-                enable_pro_mode = this.enable_pro_mode,
-                enable_internet_retrieval = this.enable_internet_retrieval,
-                googleApiKey = this.googleApiKey,
-                googleSearchEngineId = this.googleSearchEngineId,
-                internetMaxResults = this.internetMaxResults,
-                currentCharacterIndex = this.currentCharacterIndex,
-                characterList =
-                    this.characterList.Select(cs => cs.DeepCopy()).ToList()
-            };
-        }
     }
 
 
@@ -399,23 +212,6 @@ namespace CocoroDock.Communication
         public int postureChangeLoopCountStanding { get; set; } = 30; // 立ち姿勢の変更ループ回数
         public int postureChangeLoopCountSittingFloor { get; set; } = 30; // 座り姿勢の変更ループ回数
         public List<AnimationConfig> animations { get; set; } = new List<AnimationConfig>(); // 個別アニメーション設定
-
-        /// <summary>
-        /// ディープコピーを作成
-        /// </summary>
-        /// <returns>ディープコピーされたAnimationSetting</returns>
-        public AnimationSetting DeepCopy()
-        {
-            return new AnimationSetting
-            {
-                animeSetName = this.animeSetName,
-                postureChangeLoopCountStanding =
-                    this.postureChangeLoopCountStanding,
-                postureChangeLoopCountSittingFloor =
-                    this.postureChangeLoopCountSittingFloor,
-                animations = this.animations.Select(ac => ac.DeepCopy()).ToList()
-            };
-        }
     }
 
     /// <summary>
@@ -427,21 +223,6 @@ namespace CocoroDock.Communication
         public int animationType { get; set; } = 0; // 0:Standing, 1:SittingFloor (2:LyingDownは非表示)
         public string animationName { get; set; } = ""; // Animator内での名前（例：「DT_01_wait_natural_F_001_FBX」）
         public bool isEnabled { get; set; } = true; // 有効/無効
-
-        /// <summary>
-        /// ディープコピーを作成
-        /// </summary>
-        /// <returns>ディープコピーされたAnimationConfig</returns>
-        public AnimationConfig DeepCopy()
-        {
-            return new AnimationConfig
-            {
-                displayName = this.displayName,
-                animationType = this.animationType,
-                animationName = this.animationName,
-                isEnabled = this.isEnabled
-            };
-        }
     }
 
     #region REST API ペイロードクラス
