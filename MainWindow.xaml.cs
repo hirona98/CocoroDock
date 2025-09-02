@@ -2,6 +2,7 @@ using CocoroDock.Communication;
 using CocoroDock.Controls;
 using CocoroDock.Services;
 using CocoroDock.Utilities;
+using CocoroDock.Windows;
 using CocoroAI.Services;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,8 @@ namespace CocoroDock
         private ScreenshotService? _screenshotService;
         private bool _isScreenshotPaused = false;
         private RealtimeVoiceRecognitionService? _voiceRecognitionService;
+        private AdminWindow? _adminWindow;
+        private LogViewerWindow? _logViewerWindow;
 
 
         public MainWindow()
@@ -585,6 +588,29 @@ namespace CocoroDock
         #endregion
 
         /// <summary>
+        /// ログビューアーを開く
+        /// </summary>
+        public void OpenLogViewer()
+        {
+            // 既にログビューアーが開いている場合はアクティブにする
+            if (_logViewerWindow != null && !_logViewerWindow.IsClosed)
+            {
+                _logViewerWindow.Activate();
+                _logViewerWindow.WindowState = WindowState.Normal;
+                return;
+            }
+
+            // ログビューアーを新規作成
+            _logViewerWindow = new LogViewerWindow();
+            _logViewerWindow.Owner = this;
+
+            // ウィンドウが閉じられた時の処理
+            _logViewerWindow.Closed += (sender, args) => { _logViewerWindow = null; };
+
+            _logViewerWindow.Show();
+        }
+
+        /// <summary>
         /// アプリケーション終了時の処理
         /// </summary>
         protected override void OnClosed(EventArgs e)
@@ -646,14 +672,22 @@ namespace CocoroDock
         {
             try
             {
-                // 設定画面を表示
-                var adminWindow = new AdminWindow(_communicationService);
-                adminWindow.Owner = this; // メインウィンドウを親に設定
+                // 既に設定画面が開いている場合はアクティブにする
+                if (_adminWindow != null && !_adminWindow.IsClosed)
+                {
+                    _adminWindow.Activate();
+                    _adminWindow.WindowState = WindowState.Normal;
+                    return;
+                }
+
+                // 設定画面を新規作成
+                _adminWindow = new AdminWindow(_communicationService);
+                _adminWindow.Owner = this; // メインウィンドウを親に設定
 
                 // ウィンドウが閉じられた時にボタンの状態を更新
-                adminWindow.Closed += AdminWindow_Closed;
+                _adminWindow.Closed += AdminWindow_Closed;
 
-                adminWindow.Show(); // モードレスダイアログとして表示
+                _adminWindow.Show(); // モードレスダイアログとして表示
             }
             catch (Exception ex)
             {
@@ -671,6 +705,9 @@ namespace CocoroDock
 
             // 設定変更に応じてサービスを更新
             ApplySettings();
+
+            // AdminWindowの参照をクリア
+            _adminWindow = null;
         }
 
         /// <summary>

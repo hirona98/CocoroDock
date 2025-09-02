@@ -23,6 +23,7 @@ namespace CocoroDock.Windows
         private string _componentFilter = "";
         private LogFileWatcherService? _logWatcher;
         private const int MaxDisplayedLogs = 1000;
+        public bool IsClosed { get; private set; } = false;
 
         public LogViewerWindow()
         {
@@ -346,6 +347,7 @@ namespace CocoroDock.Windows
 
             // リソースの解放
             _logWatcher?.Dispose();
+            IsClosed = true;
             base.OnClosed(e);
         }
 

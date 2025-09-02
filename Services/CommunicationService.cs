@@ -481,8 +481,11 @@ namespace CocoroDock.Services
         /// </summary>
         public void OpenLogViewer()
         {
-            var logViewerWindow = new LogViewerWindow();
-            logViewerWindow.Show();
+            // MainWindowのOpenLogViewerメソッドに委譲
+            if (System.Windows.Application.Current.MainWindow is MainWindow mainWindow)
+            {
+                mainWindow.OpenLogViewer();
+            }
         }
 
 

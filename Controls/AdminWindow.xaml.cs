@@ -37,6 +37,8 @@ namespace CocoroDock.Controls
         private ConfigSettings _previousCocoroCoreMSettings;
         private Dictionary<int, string> _previousSystemPrompts = new Dictionary<int, string>();
 
+        public bool IsClosed { get; private set; } = false;
+
         public AdminWindow() : this(null)
         {
         }
@@ -414,6 +416,7 @@ namespace CocoroDock.Controls
         {
             // MCPタブのViewModelを破棄
             McpSettingsControl.GetViewModel()?.Dispose();
+            IsClosed = true;
             base.OnClosed(e);
         }
 
