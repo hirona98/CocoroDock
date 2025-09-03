@@ -21,7 +21,7 @@ namespace CocoroDock.ViewModels
     {
         private readonly IAppSettings _appSettings;
         private readonly CocoroCoreClient _cocoroCoreClient;
-        // TODO: MCP機能実装時に使用予定 private readonly DispatcherTimer? _statusUpdateTimer;
+        private readonly DispatcherTimer? _statusUpdateTimer;
         private readonly string _mcpConfigPath;
 
         private bool _isMcpEnabled;

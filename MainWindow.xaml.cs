@@ -468,23 +468,36 @@ namespace CocoroDock
         /// </summary>
         private void OnSettingsSaved(object? sender, EventArgs e)
         {
-            // マイク関連設定が変更された可能性があるので、音声認識サービスを再初期化
+            // 現在の設定に基づいて音声認識サービスを制御
+            var currentCharacter = GetStoredCharacterSetting();
+            bool shouldBeActive = currentCharacter?.isUseSTT ?? false;
+
+            // 既存のサービスを停止
             if (_voiceRecognitionService != null)
             {
-                bool wasListening = _voiceRecognitionService.IsListening;
-                var currentState = _voiceRecognitionService.CurrentState;
-
-                // 現在のサービスを停止・破棄
                 _voiceRecognitionService.StopListening();
                 _voiceRecognitionService.Dispose();
                 _voiceRecognitionService = null;
-
-                // 新しい設定で再初期化（必要に応じて開始状態を復元）
-                bool startActive = currentState == VoiceRecognitionState.ACTIVE;
-                InitializeVoiceRecognitionService(startActive);
-
-                Debug.WriteLine("[MainWindow] 設定変更により音声認識サービスを再初期化しました");
             }
+
+            // 設定に応じてサービスを開始
+            if (shouldBeActive)
+            {
+                InitializeVoiceRecognitionService(startActive: true);
+                Debug.WriteLine("[MainWindow] 音声認識サービスを開始しました");
+            }
+            else
+            {
+                // 音声レベル表示をリセット
+                UIHelper.RunOnUIThread(() =>
+                {
+                    ChatControlInstance.UpdateVoiceLevel(0, false);
+                });
+                Debug.WriteLine("[MainWindow] 音声認識サービスを停止しました");
+            }
+
+            // デスクトップウォッチ設定の更新
+            UpdateScreenshotService();
         }
 
         #endregion
@@ -760,9 +773,6 @@ namespace CocoroDock
             {
                 currentCharacter.isUseSTT = !currentCharacter.isUseSTT;
 
-                // 設定を保存
-                _appSettings.SaveSettings();
-
                 // ボタンの画像を更新
                 if (MicButtonImage != null)
                 {
@@ -776,32 +786,11 @@ namespace CocoroDock
                 if (MicButton != null)
                 {
                     MicButton.ToolTip = currentCharacter.isUseSTT ? "STTを無効にする" : "STTを有効にする";
-
-                    // 無効状態の場合は半透明にする
                     MicButton.Opacity = currentCharacter.isUseSTT ? 1.0 : 0.6;
                 }
 
-                // 音声認識サービスの開始/停止
-                if (currentCharacter.isUseSTT)
-                {
-                    // STTを有効にする場合は音声認識を開始（MicButton切り替えなのでACTIVE状態から開始）
-                    InitializeVoiceRecognitionService(startActive: true);
-                }
-                else
-                {
-                    // STTを無効にする場合は音声認識を停止
-                    if (_voiceRecognitionService != null)
-                    {
-                        _voiceRecognitionService.Dispose();
-                        _voiceRecognitionService = null;
-                    }
-
-                    // 音量バーを0にリセット（UIスレッドで確実に実行）
-                    UIHelper.RunOnUIThread(() =>
-                    {
-                        ChatControlInstance.UpdateVoiceLevel(0, false);
-                    });
-                }
+                // 設定を保存（OnSettingsSavedで音声認識サービスが制御される）
+                _appSettings.SaveSettings();
             }
         }
 

@@ -65,7 +65,8 @@ namespace CocoroDock.Controls
             // システム設定変更イベントを登録
             SystemSettingsControl.SettingsChanged += (sender, args) =>
             {
-                // 設定変更の記録（必要に応じて処理を追加）
+                // 設定変更を即座に保存してメインウィンドウに反映
+                SaveSystemSettings();
             };
 
             // TabControlのSelectionChangedイベントを登録
@@ -189,6 +190,30 @@ namespace CocoroDock.Controls
             // MCP 有効/無効
             dict["IsEnableMcp"] = McpSettingsControl.GetMcpEnabled();
             return dict;
+        }
+
+        /// <summary>
+        /// システム設定を即座に保存してメインウィンドウに反映
+        /// </summary>
+        private void SaveSystemSettings()
+        {
+            try
+            {
+                // System/MCP の設定を収集
+                var systemSnapshot = CollectSystemAndMcpSettings();
+
+                // AppSettings に反映（System/MCP）
+                ApplySystemSnapshotToAppSettings(systemSnapshot);
+
+                // 設定をファイルに保存
+                AppSettings.Instance.SaveAppSettings();
+
+                System.Diagnostics.Debug.WriteLine("[AdminWindow] システム設定を即座に保存しました");
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AdminWindow] システム設定の保存中にエラーが発生しました: {ex.Message}");
+            }
         }
 
         #endregion
@@ -326,6 +351,9 @@ namespace CocoroDock.Controls
 
                 // systemPrompt内容も更新
                 SaveSystemPromptContents();
+
+                // メインウィンドウのボタン状態とサービスを更新
+                UpdateMainWindowStates();
             }
             catch (Exception ex)
             {
@@ -579,6 +607,44 @@ namespace CocoroDock.Controls
             catch (Exception ex)
             {
                 Debug.WriteLine($"デスクトップウォッチ設定の更新中にエラーが発生しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// メインウィンドウのボタン状態とサービスを更新
+        /// </summary>
+        private void UpdateMainWindowStates()
+        {
+            try
+            {
+                // MainWindowのインスタンスを取得
+                var mainWindow = Application.Current.MainWindow as MainWindow;
+                if (mainWindow != null)
+                {
+                    // InitializeButtonStatesメソッドを呼び出してボタン状態を更新
+                    var initButtonMethod = mainWindow.GetType().GetMethod("InitializeButtonStates",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+                    if (initButtonMethod != null)
+                    {
+                        initButtonMethod.Invoke(mainWindow, null);
+                        Debug.WriteLine("[AdminWindow] メインウィンドウのボタン状態を更新しました");
+                    }
+
+                    // ApplySettingsメソッドを呼び出してサービスを更新
+                    var applyMethod = mainWindow.GetType().GetMethod("ApplySettings",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+                    if (applyMethod != null)
+                    {
+                        applyMethod.Invoke(mainWindow, null);
+                        Debug.WriteLine("[AdminWindow] メインウィンドウのサービスを更新しました");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[AdminWindow] メインウィンドウの状態更新中にエラーが発生しました: {ex.Message}");
             }
         }
 
