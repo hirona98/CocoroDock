@@ -619,11 +619,15 @@ namespace CocoroDock.Controls
                     if (launchMethod != null)
                     {
                         // ProcessOperation.RestartIfRunning を指定してCocoroCoreMを再起動（非同期）
-                        var task = (Task)launchMethod.Invoke(mainWindow, new object[] { ProcessOperation.RestartIfRunning });
+                        var taskResult =
+                            launchMethod.Invoke(mainWindow, new object[] { ProcessOperation.RestartIfRunning });
                         Debug.WriteLine("CocoroCoreMを再起動要求をしました");
 
                         // 非同期で再起動処理を待機
-                        await task;
+                        if (taskResult is Task task)
+                        {
+                            await task;
+                        }
 
                         // 再起動完了を待機
                         await WaitForCocoroCoreMRestartAsync();
