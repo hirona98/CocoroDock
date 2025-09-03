@@ -79,10 +79,8 @@ namespace CocoroDock
                 InitializeScreenshotService();
 
                 // 音声認識サービスを初期化
-                // 設定でSTTが有効な場合は起動時からACTIVE状態で開始
-                var currentCharacter = GetStoredCharacterSetting();
-                bool shouldStartActive = currentCharacter?.isUseSTT ?? false;
-                InitializeVoiceRecognitionService(shouldStartActive);
+                // 起動時はウェイクワードの有無に応じてVoiceRecognitionStateMachine内で状態が決定される
+                InitializeVoiceRecognitionService(startActive: false);
 
                 // UIコントロールのイベントハンドラを登録
                 RegisterEventHandlers();

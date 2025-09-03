@@ -943,7 +943,6 @@
                         </Grid>
 
                         <!-- STT起動ワードの設定 -->
-                        <!--
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100"/>
@@ -958,17 +957,14 @@
                                      Padding="2"
                                      ToolTip="Wake word for STT"/>
                         </Grid>
-                        -->
                         <!-- STT起動ワード説明テキスト -->
-                        <!--
                         <TextBlock Foreground="#666666"
                                    TextWrapping="Wrap"
                                    Margin="100,0,0,0">
                             音声認識を開始するキーワードです。複数設定する場合はカンマ区切りで入力してください
                             <LineBreak/>
-                            （例: こんにちは, ハロー, ミク）。起動直後は反応が遅くなることがあります。
+                            （例: こんにちは, ハロー, ミク）。空欄の場合は常に音声認識が有効になります。
                         </TextBlock>
-                        -->
 
                         <!-- STT APIキーの設定 -->
                         <Grid Margin="0,10,0,0">
