@@ -468,7 +468,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ShellControlRequest
     {
-        public string command { get; set; } = string.Empty;
+        public string action { get; set; } = string.Empty;
         public Dictionary<string, object>? @params { get; set; }
     }
 

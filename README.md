@@ -67,7 +67,7 @@ CocoroAI全体構成は CocoroCoreMリポジトリの CocoroAI全体構成.drawi
 
 - POST /api/control
 	- 目的: アプリ制御コマンド
-	- リクエスト: { command: "shutdown"|"restart"|"reloadConfig", params?: object, reason?: string }
+	- リクエスト: { action: "shutdown"|"restart"|"reloadConfig", params?: object, reason?: string }
 	- 200: { status: "success", message }
 
 - POST /api/status
