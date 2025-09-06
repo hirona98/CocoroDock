@@ -122,13 +122,33 @@
                             <Run Text="全キャラクターのデータが完全に削除されます。"
                                  Foreground="Red"/>
                         </TextBlock>
-                        <Button x:Name="DeleteMemoryButton"
-                                Content="記憶を削除"
-                                Background="#FFD50000"
-                                Foreground="White"
-                                Padding="10,5"
-                                HorizontalAlignment="Left"
-                                Click="DeleteMemoryButton_Click"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="BackupMemoryButton"
+                                    Content="記憶をバックアップ"
+                                    Background="#FF0078D7"
+                                    Foreground="White"
+                                    Padding="10,5"
+                                    Margin="0,0,10,0"
+                                    Click="BackupMemoryButton_Click"
+                                    ToolTip="すべての記憶データをバックアップします"/>
+
+                            <Button x:Name="RestoreMemoryButton"
+                                    Content="記憶を復元"
+                                    Background="#FF228B22"
+                                    Foreground="White"
+                                    Padding="10,5"
+                                    Margin="0,0,10,0"
+                                    Click="RestoreMemoryButton_Click"
+                                    ToolTip="バックアップから記憶データを復元します"/>
+
+                            <Button x:Name="DeleteMemoryButton"
+                                    Content="記憶を削除"
+                                    Background="#FFD50000"
+                                    Foreground="White"
+                                    Padding="10,5"
+                                    HorizontalAlignment="Left"
+                                    Click="DeleteMemoryButton_Click"/>
+                        </StackPanel>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
