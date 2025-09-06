@@ -390,7 +390,7 @@
                                            Text="Endpoint URL:"
                                            VerticalAlignment="Center"/>
                                 <TextBox Grid.Column="1"
-                                         x:Name="TTSEndpointURLTextBox"
+                                         x:Name="VoicevoxEndpointUrlTextBox"
                                          Foreground="#FF0078D7"
                                          Padding="2"
                                          Text=""/>
@@ -406,11 +406,207 @@
                                            Text="Speaker ID:"
                                            VerticalAlignment="Center"/>
                                 <TextBox Grid.Column="1"
-                                         x:Name="TTSSperkerIDTextBox"
+                                         x:Name="VoicevoxSpeakerIdTextBox"
                                          Foreground="#FF0078D7"
                                          Padding="2"
                                          Text=""/>
                             </Grid>
+
+                            <!-- VOICEVOX詳細設定 -->
+                            <Expander x:Name="VoicevoxAdvancedSettingsPanel"
+                                      Margin="0,10,0,0"
+                                      IsExpanded="False">
+                                <Expander.Header>
+                                    <TextBlock Text="VOICEVOX詳細設定"
+                                               Foreground="#FF4873CF"/>
+                                </Expander.Header>
+                                <StackPanel>
+                                    <!-- Speed Scale -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="話速:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <Slider Grid.Column="1"
+                                                x:Name="VoicevoxSpeedScaleSlider"
+                                                Minimum="0.5"
+                                                Maximum="2.0"
+                                                Value="1.0"
+                                                TickFrequency="0.1"
+                                                IsSnapToTickEnabled="True"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding ElementName=VoicevoxSpeedScaleSlider, Path=Value, StringFormat=F1}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                    </Grid>
+                                    <!-- Pitch Scale -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="音高:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <Slider Grid.Column="1"
+                                                x:Name="VoicevoxPitchScaleSlider"
+                                                Minimum="-0.15"
+                                                Maximum="0.15"
+                                                Value="0.0"
+                                                TickFrequency="0.01"
+                                                IsSnapToTickEnabled="True"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding ElementName=VoicevoxPitchScaleSlider, Path=Value, StringFormat=F2}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                    </Grid>
+                                    <!-- Intonation Scale -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="抑揚:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <Slider Grid.Column="1"
+                                                x:Name="VoicevoxIntonationScaleSlider"
+                                                Minimum="0.0"
+                                                Maximum="2.0"
+                                                Value="1.0"
+                                                TickFrequency="0.1"
+                                                IsSnapToTickEnabled="True"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding ElementName=VoicevoxIntonationScaleSlider, Path=Value, StringFormat=F1}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                    </Grid>
+                                    <!-- Volume Scale -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="音量:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <Slider Grid.Column="1"
+                                                x:Name="VoicevoxVolumeScaleSlider"
+                                                Minimum="0.0"
+                                                Maximum="2.0"
+                                                Value="1.0"
+                                                TickFrequency="0.1"
+                                                IsSnapToTickEnabled="True"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding ElementName=VoicevoxVolumeScaleSlider, Path=Value, StringFormat=F1}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                    </Grid>
+                                    <!-- Pre Phoneme Length -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="前無音:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <Slider Grid.Column="1"
+                                                x:Name="VoicevoxPrePhonemeLengthSlider"
+                                                Minimum="0.0"
+                                                Maximum="1.5"
+                                                Value="0.1"
+                                                TickFrequency="0.05"
+                                                IsSnapToTickEnabled="True"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding ElementName=VoicevoxPrePhonemeLengthSlider, Path=Value, StringFormat=F2}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                    </Grid>
+                                    <!-- Post Phoneme Length -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="後無音:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <Slider Grid.Column="1"
+                                                x:Name="VoicevoxPostPhonemeLengthSlider"
+                                                Minimum="0.0"
+                                                Maximum="1.5"
+                                                Value="0.1"
+                                                TickFrequency="0.05"
+                                                IsSnapToTickEnabled="True"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding ElementName=VoicevoxPostPhonemeLengthSlider, Path=Value, StringFormat=F2}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                    </Grid>
+                                    <!-- Output Sampling Rate -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="サンプリング:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <ComboBox Grid.Column="1"
+                                                  x:Name="VoicevoxOutputSamplingRateComboBox"
+                                                  SelectedValue="24000">
+                                            <ComboBoxItem Content="16000 Hz"
+                                                          Tag="16000"/>
+                                            <ComboBoxItem Content="22050 Hz"
+                                                          Tag="22050"/>
+                                            <ComboBoxItem Content="24000 Hz"
+                                                          Tag="24000"/>
+                                            <ComboBoxItem Content="44100 Hz"
+                                                          Tag="44100"/>
+                                            <ComboBoxItem Content="48000 Hz"
+                                                          Tag="48000"/>
+                                        </ComboBox>
+                                    </Grid>
+                                    <!-- Output Stereo -->
+                                    <Grid Margin="0,10,0,0">
+                                        <CheckBox Grid.Column="1"
+                                                  x:Name="VoicevoxOutputStereoCheckBox"
+                                                  Content="ステレオ出力を有効にする"
+                                                  Foreground="#FF4873CF"
+                                                  VerticalAlignment="Center"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
+
                         </StackPanel>
 
                         <!-- Style-Bert-VITS2用設定：基本設定 -->

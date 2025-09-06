@@ -287,11 +287,27 @@ namespace CocoroDock.Controls
             character.sttWakeWord = STTWakeWordTextBox.Text;
             character.sttApiKey = STTApiKeyPasswordBox.Text;
             character.isUseTTS = IsUseTTSCheckBox.IsChecked ?? false;
-            character.ttsEndpointURL = TTSEndpointURLTextBox.Text;
-            character.ttsSperkerID = TTSSperkerIDTextBox.Text;
 
             // TTSエンジンタイプ
             character.ttsType = TTSEngineComboBox.SelectedItem is ComboBoxItem selectedTtsEngine ? selectedTtsEngine.Tag?.ToString() ?? "voicevox" : "voicevox";
+
+            // VOICEVOX詳細設定
+            character.voicevoxConfig.endpointUrl = VoicevoxEndpointUrlTextBox.Text;
+            if (int.TryParse(VoicevoxSpeakerIdTextBox.Text, out int voicevoxSpeakerId))
+                character.voicevoxConfig.speakerId = voicevoxSpeakerId;
+            character.voicevoxConfig.speedScale = (float)VoicevoxSpeedScaleSlider.Value;
+            character.voicevoxConfig.pitchScale = (float)VoicevoxPitchScaleSlider.Value;
+            character.voicevoxConfig.intonationScale = (float)VoicevoxIntonationScaleSlider.Value;
+            character.voicevoxConfig.volumeScale = (float)VoicevoxVolumeScaleSlider.Value;
+            character.voicevoxConfig.prePhonemeLength = (float)VoicevoxPrePhonemeLengthSlider.Value;
+            character.voicevoxConfig.postPhonemeLength = (float)VoicevoxPostPhonemeLengthSlider.Value;
+
+            // サンプリングレート設定
+            if (VoicevoxOutputSamplingRateComboBox.SelectedItem is ComboBoxItem selectedSampleRate &&
+                int.TryParse(selectedSampleRate.Tag?.ToString(), out int samplingRate))
+                character.voicevoxConfig.outputSamplingRate = samplingRate;
+
+            character.voicevoxConfig.outputStereo = VoicevoxOutputStereoCheckBox.IsChecked ?? false;
 
             // Style-Bert-VITS2設定
             character.styleBertVits2Config.endpointUrl = SBV2EndpointUrlTextBox.Text;
@@ -426,8 +442,27 @@ namespace CocoroDock.Controls
 
             // TTS設定
             IsUseTTSCheckBox.IsChecked = character.isUseTTS;
-            TTSEndpointURLTextBox.Text = character.ttsEndpointURL;
-            TTSSperkerIDTextBox.Text = character.ttsSperkerID;
+
+            // VOICEVOX詳細設定の読み込み
+            VoicevoxEndpointUrlTextBox.Text = character.voicevoxConfig.endpointUrl;
+            VoicevoxSpeakerIdTextBox.Text = character.voicevoxConfig.speakerId.ToString();
+            VoicevoxSpeedScaleSlider.Value = character.voicevoxConfig.speedScale;
+            VoicevoxPitchScaleSlider.Value = character.voicevoxConfig.pitchScale;
+            VoicevoxIntonationScaleSlider.Value = character.voicevoxConfig.intonationScale;
+            VoicevoxVolumeScaleSlider.Value = character.voicevoxConfig.volumeScale;
+            VoicevoxPrePhonemeLengthSlider.Value = character.voicevoxConfig.prePhonemeLength;
+            VoicevoxPostPhonemeLengthSlider.Value = character.voicevoxConfig.postPhonemeLength;
+            VoicevoxOutputStereoCheckBox.IsChecked = character.voicevoxConfig.outputStereo;
+
+            // サンプリングレート設定
+            foreach (ComboBoxItem item in VoicevoxOutputSamplingRateComboBox.Items)
+            {
+                if (item.Tag?.ToString() == character.voicevoxConfig.outputSamplingRate.ToString())
+                {
+                    VoicevoxOutputSamplingRateComboBox.SelectedItem = item;
+                    break;
+                }
+            }
 
             // TTSエンジンComboBox設定
             foreach (ComboBoxItem item in TTSEngineComboBox.Items)
@@ -606,9 +641,22 @@ namespace CocoroDock.Controls
                         ? CopySystemPromptFile(sourceCharacter.systemPromptFilePath, newName)
                         : AppSettings.Instance.GenerateSystemPromptFilePath(newName),
                     isUseTTS = sourceCharacter.isUseTTS,
-                    ttsEndpointURL = sourceCharacter.ttsEndpointURL,
-                    ttsSperkerID = sourceCharacter.ttsSperkerID,
                     ttsType = sourceCharacter.ttsType,
+
+                    // VOICEVOX詳細設定のコピー
+                    voicevoxConfig = new VoicevoxConfig
+                    {
+                        endpointUrl = sourceCharacter.voicevoxConfig.endpointUrl,
+                        speakerId = sourceCharacter.voicevoxConfig.speakerId,
+                        speedScale = sourceCharacter.voicevoxConfig.speedScale,
+                        pitchScale = sourceCharacter.voicevoxConfig.pitchScale,
+                        intonationScale = sourceCharacter.voicevoxConfig.intonationScale,
+                        volumeScale = sourceCharacter.voicevoxConfig.volumeScale,
+                        prePhonemeLength = sourceCharacter.voicevoxConfig.prePhonemeLength,
+                        postPhonemeLength = sourceCharacter.voicevoxConfig.postPhonemeLength,
+                        outputSamplingRate = sourceCharacter.voicevoxConfig.outputSamplingRate,
+                        outputStereo = sourceCharacter.voicevoxConfig.outputStereo
+                    },
                     styleBertVits2Config = new StyleBertVits2Config
                     {
                         endpointUrl = sourceCharacter.styleBertVits2Config.endpointUrl,
