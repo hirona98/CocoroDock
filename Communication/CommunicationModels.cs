@@ -549,33 +549,6 @@ namespace CocoroDock.Communication
         public string message { get; set; } = string.Empty;
     }
 
-    // ========================================
-    // 記憶削除関連モデル
-    // ========================================
-
-
-
-
-    /// <summary>
-    /// メモリ一覧取得レスポンス
-    /// </summary>
-    public class MemoryListResponse
-    {
-        public string status { get; set; } = string.Empty;
-        public string message { get; set; } = string.Empty;
-        public List<MemoryInfo>? data { get; set; }
-    }
-
-    /// <summary>
-    /// メモリ情報
-    /// </summary>
-    public class MemoryInfo
-    {
-        public string memory_id { get; set; } = string.Empty;
-        public string memory_name { get; set; } = string.Empty;
-        public string role { get; set; } = string.Empty;
-        public bool created { get; set; }
-    }
 
     // ========================================
     // CocoroCoreM チャットAPI関連モデル

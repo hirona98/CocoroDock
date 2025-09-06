@@ -89,30 +89,6 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// WebSocket参照データ
-    /// </summary>
-    public class WebSocketReferenceData
-    {
-        [JsonPropertyName("references")]
-        public List<MemoryReference>? references { get; set; }
-    }
-
-    /// <summary>
-    /// 記憶参照情報
-    /// </summary>
-    public class MemoryReference
-    {
-        [JsonPropertyName("memory_id")]
-        public string memory_id { get; set; } = "";
-
-        [JsonPropertyName("content")]
-        public string content { get; set; } = "";
-
-        [JsonPropertyName("relevance_score")]
-        public double relevance_score { get; set; } = 0.0;
-    }
-
-    /// <summary>
     /// WebSocket時間データ
     /// </summary>
     public class WebSocketTimeData
