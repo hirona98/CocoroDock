@@ -70,14 +70,14 @@ namespace CocoroDock.Controls
         /// <summary>
         /// 設定を保存して再読み込みボタンクリック
         /// </summary>
-        private async void SaveMcpConfigButton_Click(object sender, RoutedEventArgs e)
+        private void SaveMcpConfigButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 if (_mcpTabViewModel != null && _mcpTabViewModel.SaveConfigCommand.CanExecute(null))
                 {
                     _mcpTabViewModel.SaveConfigCommand.Execute(null);
-                    
+
                     // 設定変更イベントを発生
                     SettingsChanged?.Invoke(this, EventArgs.Empty);
                 }

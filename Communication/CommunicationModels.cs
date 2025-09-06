@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CocoroDock.Communication
 {
@@ -9,7 +10,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ChatMessagePayload
     {
-        public string userId { get; set; } = string.Empty; // 現状未使用
+        public string from { get; set; } = string.Empty;
         public string sessionId { get; set; } = string.Empty;
         public string message { get; set; } = string.Empty;
     }
@@ -19,7 +20,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class StyleBertVits2Config
     {
-        public string endpointUrl { get; set; } = "http://localhost:5000";
+        public string endpointUrl { get; set; } = "http://127.0.0.1:5000";
         public string modelName { get; set; } = "amitaro";
         public int modelId { get; set; } = 0;
         public string speakerName { get; set; } = "あみたろ";
@@ -60,9 +61,6 @@ namespace CocoroDock.Communication
         public int outputBitrate { get; set; } = 0;
         public int outputSamplingRate { get; set; } = 16000;
         public string outputAudioChannels { get; set; } = "mono";
-        public float leadingSilenceSeconds { get; set; } = 0.0f;
-        public float trailingSilenceSeconds { get; set; } = 0.3f;
-        public float lineBreakSilenceSeconds { get; set; } = 0.3f;
     }
 
     /// <summary>
@@ -75,25 +73,24 @@ namespace CocoroDock.Communication
         public string vrmFilePath { get; set; } = string.Empty;
         public bool isUseLLM { get; set; }
         public string apiKey { get; set; } = string.Empty;
-        public string llmModel { get; set; } = string.Empty;
+        public string llmModel { get; set; } = "openai/gpt-4o-mini";
+        // 画像分析用設定
+        public string visionApiKey { get; set; } = string.Empty; // 画像分析用APIキー（空ならapiKeyを使用）
+        public string visionModel { get; set; } = "openai/gpt-4o-mini"; // 画像分析用モデル
         public string localLLMBaseUrl { get; set; } = string.Empty; // ローカルLLMのベースURL
-        public string systemPrompt { get; set; } = string.Empty;
+        public string systemPromptFilePath { get; set; } = string.Empty;
         public bool isUseTTS { get; set; }
         public string ttsEndpointURL { get; set; } = string.Empty;
         public string ttsSperkerID { get; set; } = string.Empty;
         public string ttsType { get; set; } = "voicevox"; // "voicevox" or "style-bert-vits2" or "aivis-cloud"
-
-        // Style-Bert-VITS2用設定
         public StyleBertVits2Config styleBertVits2Config { get; set; } = new StyleBertVits2Config();
-
-        // AivisCloud用設定
         public AivisCloudConfig aivisCloudConfig { get; set; } = new AivisCloudConfig();
-        public bool isEnableMemory { get; set; } = false; // メモリ機能の有効/無効
-        public string userId { get; set; } = "";
+        public bool isEnableMemory { get; set; } = true; // メモリ機能の有効/無効
+        public string memoryId { get; set; } = "";
         public string embeddedApiKey { get; set; } = string.Empty; // 埋め込みモデル用APIキー
-        public string embeddedModel { get; set; } = "openai/text-embedding-3-small"; // 埋め込みモデル名
+        public string embeddedModel { get; set; } = "openai/text-embedding-3-large"; // 埋め込みモデル名
+        public string embeddedDimension { get; set; } = "3072"; // 埋め込みモデルの次元数
         public bool isUseSTT { get; set; } = false; // STT（音声認識）機能の有効/無効
-        public string sttModel { get; set; } = string.Empty; // STTモデル
         public string sttEngine { get; set; } = "amivoice"; // STTエンジン ("amivoice" | "openai")
         public string sttWakeWord { get; set; } = string.Empty; // STT起動ワード
         public string sttApiKey { get; set; } = string.Empty; // STT用APIキー
@@ -101,6 +98,89 @@ namespace CocoroDock.Communication
         public bool isConvertMToon { get; set; } = false; // UnlitをMToonに変換するかどうか
         public bool isEnableShadowOff { get; set; } = true; // 影オフ機能の有効/無効（デフォルト: true）
         public string shadowOffMesh { get; set; } = "Face, U_Char_1"; // 影を落とさないメッシュ名
+
+        /// <summary>
+        /// このCharacterSettingsオブジェクトのディープコピーを作成
+        /// </summary>
+        /// <returns>新しいCharacterSettingsインスタンス</returns>
+        public CharacterSettings DeepCopy()
+        {
+            return new CharacterSettings
+            {
+                isReadOnly = this.isReadOnly,
+                modelName = this.modelName,
+                vrmFilePath = this.vrmFilePath,
+                isUseLLM = this.isUseLLM,
+                apiKey = this.apiKey,
+                llmModel = this.llmModel,
+                visionApiKey = this.visionApiKey,
+                visionModel = this.visionModel,
+                localLLMBaseUrl = this.localLLMBaseUrl,
+                systemPromptFilePath = this.systemPromptFilePath,
+                isUseTTS = this.isUseTTS,
+                ttsEndpointURL = this.ttsEndpointURL,
+                ttsSperkerID = this.ttsSperkerID,
+                ttsType = this.ttsType,
+
+                // StyleBertVits2Configのディープコピー
+                styleBertVits2Config = new StyleBertVits2Config
+                {
+                    endpointUrl = this.styleBertVits2Config.endpointUrl,
+                    modelName = this.styleBertVits2Config.modelName,
+                    modelId = this.styleBertVits2Config.modelId,
+                    speakerName = this.styleBertVits2Config.speakerName,
+                    speakerId = this.styleBertVits2Config.speakerId,
+                    style = this.styleBertVits2Config.style,
+                    styleWeight = this.styleBertVits2Config.styleWeight,
+                    sdpRatio = this.styleBertVits2Config.sdpRatio,
+                    noise = this.styleBertVits2Config.noise,
+                    noiseW = this.styleBertVits2Config.noiseW,
+                    length = this.styleBertVits2Config.length,
+                    language = this.styleBertVits2Config.language,
+                    autoSplit = this.styleBertVits2Config.autoSplit,
+                    splitInterval = this.styleBertVits2Config.splitInterval,
+                    assistText = this.styleBertVits2Config.assistText,
+                    assistTextWeight = this.styleBertVits2Config.assistTextWeight,
+                    referenceAudioPath = this.styleBertVits2Config.referenceAudioPath
+                },
+
+                // AivisCloudConfigのディープコピー
+                aivisCloudConfig = new AivisCloudConfig
+                {
+                    apiKey = this.aivisCloudConfig.apiKey,
+                    endpointUrl = this.aivisCloudConfig.endpointUrl,
+                    modelUuid = this.aivisCloudConfig.modelUuid,
+                    speakerUuid = this.aivisCloudConfig.speakerUuid,
+                    styleId = this.aivisCloudConfig.styleId,
+                    styleName = this.aivisCloudConfig.styleName,
+                    useSSML = this.aivisCloudConfig.useSSML,
+                    language = this.aivisCloudConfig.language,
+                    speakingRate = this.aivisCloudConfig.speakingRate,
+                    emotionalIntensity = this.aivisCloudConfig.emotionalIntensity,
+                    tempoDynamics = this.aivisCloudConfig.tempoDynamics,
+                    pitch = this.aivisCloudConfig.pitch,
+                    volume = this.aivisCloudConfig.volume,
+                    outputFormat = this.aivisCloudConfig.outputFormat,
+                    outputBitrate = this.aivisCloudConfig.outputBitrate,
+                    outputSamplingRate = this.aivisCloudConfig.outputSamplingRate,
+                    outputAudioChannels = this.aivisCloudConfig.outputAudioChannels
+                },
+
+                isEnableMemory = this.isEnableMemory,
+                memoryId = this.memoryId,
+                embeddedApiKey = this.embeddedApiKey,
+                embeddedModel = this.embeddedModel,
+                embeddedDimension = this.embeddedDimension,
+                isUseSTT = this.isUseSTT,
+                sttEngine = this.sttEngine,
+                sttWakeWord = this.sttWakeWord,
+                sttApiKey = this.sttApiKey,
+                sttLanguage = this.sttLanguage,
+                isConvertMToon = this.isConvertMToon,
+                isEnableShadowOff = this.isEnableShadowOff,
+                shadowOffMesh = this.shadowOffMesh
+            };
+        }
     }
 
     /// <summary>
@@ -112,6 +192,7 @@ namespace CocoroDock.Communication
         public int intervalMinutes { get; set; } = 10;
         public bool captureActiveWindowOnly { get; set; } = true;
         public int idleTimeoutMinutes { get; set; } = 10;
+        public List<string> excludePatterns { get; set; } = new List<string>();
     }
 
     /// <summary>
@@ -120,7 +201,6 @@ namespace CocoroDock.Communication
     public class MicrophoneSettings
     {
         public int inputThreshold { get; set; } = -45;
-        public bool autoAdjustment { get; set; } = true;
     }
 
     /// <summary>
@@ -172,6 +252,7 @@ namespace CocoroDock.Communication
         public int cocoroCorePort { get; set; } = 55601;
         public int cocoroMemoryPort { get; set; } = 55602;
         public int cocoroMemoryDBPort { get; set; } = 55603;
+        public int cocoroMemoryWebPort { get; set; } = 55606;
         public int cocoroShellPort { get; set; } = 55605;
         public int notificationApiPort { get; set; } = 55604;
         public bool isEnableNotificationApi { get; set; } = false;
@@ -193,12 +274,84 @@ namespace CocoroDock.Communication
         public float windowSize { get; set; }
         public float windowPositionX { get; set; } = 0.0f;
         public float windowPositionY { get; set; } = 0.0f;
-        public int currentCharacterIndex { get; set; }
-        public int currentAnimationSettingIndex { get; set; } = 0;
-        public List<CharacterSettings> characterList { get; set; } = new List<CharacterSettings>();
-        public List<AnimationSetting> animationSettings { get; set; } = new List<AnimationSetting>();
         public ScreenshotSettings screenshotSettings { get; set; } = new ScreenshotSettings();
         public MicrophoneSettings microphoneSettings { get; set; } = new MicrophoneSettings();
+        public bool enable_pro_mode { get; set; } = true;
+        public bool enable_internet_retrieval { get; set; } = true;
+        public string googleApiKey { get; set; } = "GOOGLE_API_KEY";
+        public string googleSearchEngineId { get; set; } = "GOOGLE_SERCH_ENGINE_ID";
+        public int internetMaxResults { get; set; } = 5;
+
+        public int currentCharacterIndex { get; set; }
+        public List<CharacterSettings> characterList { get; set; } = new List<CharacterSettings>();
+
+        /// <summary>
+        /// このConfigSettingsオブジェクトのディープコピーを作成
+        /// </summary>
+        /// <returns>新しいConfigSettingsインスタンス</returns>
+        public ConfigSettings DeepCopy()
+        {
+            return new ConfigSettings
+            {
+                cocoroDockPort = this.cocoroDockPort,
+                cocoroCorePort = this.cocoroCorePort,
+                cocoroMemoryPort = this.cocoroMemoryPort,
+                cocoroMemoryDBPort = this.cocoroMemoryDBPort,
+                cocoroMemoryWebPort = this.cocoroMemoryWebPort,
+                cocoroShellPort = this.cocoroShellPort,
+                notificationApiPort = this.notificationApiPort,
+                isEnableNotificationApi = this.isEnableNotificationApi,
+                isEnableMcp = this.isEnableMcp,
+                isRestoreWindowPosition = this.isRestoreWindowPosition,
+                isTopmost = this.isTopmost,
+                isEscapeCursor = this.isEscapeCursor,
+                isInputVirtualKey = this.isInputVirtualKey,
+                virtualKeyString = this.virtualKeyString,
+                isAutoMove = this.isAutoMove,
+                showMessageWindow = this.showMessageWindow,
+                isEnableAmbientOcclusion = this.isEnableAmbientOcclusion,
+                msaaLevel = this.msaaLevel,
+                characterShadow = this.characterShadow,
+                characterShadowResolution = this.characterShadowResolution,
+                backgroundShadow = this.backgroundShadow,
+                backgroundShadowResolution = this.backgroundShadowResolution,
+                windowSize = this.windowSize,
+                windowPositionX = this.windowPositionX,
+                windowPositionY = this.windowPositionY,
+                enable_pro_mode = this.enable_pro_mode,
+                enable_internet_retrieval = this.enable_internet_retrieval,
+                googleApiKey = this.googleApiKey,
+                googleSearchEngineId = this.googleSearchEngineId,
+                internetMaxResults = this.internetMaxResults,
+                currentCharacterIndex = this.currentCharacterIndex,
+
+                // 複雑オブジェクトのディープコピー
+                screenshotSettings = new ScreenshotSettings
+                {
+                    enabled = this.screenshotSettings.enabled,
+                    intervalMinutes = this.screenshotSettings.intervalMinutes,
+                    captureActiveWindowOnly = this.screenshotSettings.captureActiveWindowOnly,
+                    idleTimeoutMinutes = this.screenshotSettings.idleTimeoutMinutes,
+                    excludePatterns = new List<string>(this.screenshotSettings.excludePatterns)
+                },
+
+                microphoneSettings = new MicrophoneSettings
+                {
+                    inputThreshold = this.microphoneSettings.inputThreshold
+                },
+
+                // EscapePositionリストのディープコピー
+                escapePositions = this.escapePositions.Select(ep => new EscapePosition
+                {
+                    x = ep.x,
+                    y = ep.y,
+                    enabled = ep.enabled
+                }).ToList(),
+
+                // CharacterSettingsリストのディープコピー
+                characterList = this.characterList.Select(c => c.DeepCopy()).ToList()
+            };
+        }
     }
 
 
@@ -231,6 +384,9 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ChatRequest
     {
+        public string memoryId { get; set; } = string.Empty;
+        public string sessionId { get; set; } = string.Empty;
+        public string message { get; set; } = string.Empty;
         public string role { get; set; } = string.Empty; // "user" | "assistant"
         public string content { get; set; } = string.Empty;
         public DateTime timestamp { get; set; } = DateTime.UtcNow;
@@ -241,7 +397,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ControlRequest
     {
-        public string command { get; set; } = string.Empty; // "shutdown" | "restart" | "reloadConfig"
+        public string action { get; set; } = string.Empty; // "shutdown" | "restart" | "reloadConfig"
         public Dictionary<string, object>? @params { get; set; }
         public string? reason { get; set; }
     }
@@ -326,40 +482,11 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// CocoroCore API: チャットリクエスト (AIAvatarKit仕様準拠)
-    /// </summary>
-    public class CoreChatRequest
-    {
-        public string type { get; set; } = "invoke"; // AIAvatarKit: リクエストタイプ
-        public string session_id { get; set; } = string.Empty; // セッションID
-        public string user_id { get; set; } = string.Empty; // ユーザーID
-        public string? context_id { get; set; } // コンテキストID（会話継続用）
-        public string text { get; set; } = string.Empty; // テキストメッセージ
-        public string? audio_data { get; set; } // Base64エンコードされた音声データ
-        public List<object>? files { get; set; } // 添付ファイル
-        public Dictionary<string, object>? system_prompt_params { get; set; } // システムプロンプトパラメータ
-        public Dictionary<string, object>? metadata { get; set; } // メタデータ
-    }
-
-    /// <summary>
-    /// CocoroCore API: 通知リクエスト (AIAvatarKit仕様準拠)
-    /// </summary>
-    public class CoreNotificationRequest
-    {
-        public string type { get; set; } = "invoke"; // AIAvatarKit: リクエストタイプ
-        public string session_id { get; set; } = string.Empty; // セッションID
-        public string user_id { get; set; } = string.Empty; // ユーザーID（送信者）
-        public string? context_id { get; set; } // コンテキストID
-        public string text { get; set; } = string.Empty; // 通知メッセージ
-        public Dictionary<string, object>? metadata { get; set; } // メタデータ
-    }
-
-    /// <summary>
     /// CocoroCore API: 制御コマンドリクエスト
     /// </summary>
     public class CoreControlRequest
     {
-        public string command { get; set; } = string.Empty;
+        public string action { get; set; } = string.Empty;
         public Dictionary<string, object>? @params { get; set; }
     }
 
@@ -374,17 +501,11 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// CocoroCore: ヘルスチェックレスポンス
+    /// ヘルスチェックレスポンス
     /// </summary>
     public class HealthCheckResponse
     {
-        public string status { get; set; } = string.Empty;
-        public string version { get; set; } = string.Empty;
-        public string character { get; set; } = string.Empty;
-        public bool memory_enabled { get; set; }
-        public string llm_model { get; set; } = string.Empty;
-        public int active_sessions { get; set; }
-        public McpStatus? mcp_status { get; set; }
+        public string status { get; set; } = "healthy";
     }
 
     /// <summary>
@@ -410,37 +531,6 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// MCP診断結果
-    /// </summary>
-    public class McpDiagnosticResult
-    {
-        public List<McpServerDiagnostic>? servers { get; set; }
-        public string summary { get; set; } = string.Empty;
-        public string? error { get; set; }
-    }
-
-    /// <summary>
-    /// MCPサーバー診断詳細
-    /// </summary>
-    public class McpServerDiagnostic
-    {
-        public string name { get; set; } = string.Empty;
-        public string command { get; set; } = string.Empty;
-        public List<string>? args { get; set; }
-        public Dictionary<string, object>? env { get; set; }
-        public List<string>? issues { get; set; }
-        public List<string>? checks { get; set; }
-    }
-
-    /// <summary>
-    /// MCP診断レスポンス
-    /// </summary>
-    public class McpDiagnosticResponse : StandardResponse
-    {
-        public McpDiagnosticResult? diagnostic_result { get; set; }
-    }
-
-    /// <summary>
     /// MCPツール登録ログレスポンス
     /// </summary>
     public class McpToolRegistrationResponse : StandardResponse
@@ -455,8 +545,105 @@ namespace CocoroDock.Communication
     {
         public DateTime timestamp { get; set; } = DateTime.UtcNow;
         public string level { get; set; } = string.Empty; // "DEBUG", "INFO", "WARNING", "ERROR"
-        public string component { get; set; } = string.Empty; // "CocoroCore", "CocoroMemory"
+        public string component { get; set; } = string.Empty; // "CocoroCore"
         public string message { get; set; } = string.Empty;
+    }
+
+    // ========================================
+    // 記憶削除関連モデル
+    // ========================================
+
+
+
+
+    /// <summary>
+    /// メモリ一覧取得レスポンス
+    /// </summary>
+    public class MemoryListResponse
+    {
+        public string status { get; set; } = string.Empty;
+        public string message { get; set; } = string.Empty;
+        public List<MemoryInfo>? data { get; set; }
+    }
+
+    /// <summary>
+    /// メモリ情報
+    /// </summary>
+    public class MemoryInfo
+    {
+        public string memory_id { get; set; } = string.Empty;
+        public string memory_name { get; set; } = string.Empty;
+        public string role { get; set; } = string.Empty;
+        public bool created { get; set; }
+    }
+
+    // ========================================
+    // CocoroCoreM チャットAPI関連モデル
+    // ========================================
+
+    /// <summary>
+    /// CocoroCoreM 画像データ
+    /// </summary>
+    public class ImageData
+    {
+        public string data { get; set; } = string.Empty; // Base64 data URL形式の画像データ
+    }
+
+    /// <summary>
+    /// CocoroCoreM 通知データ
+    /// </summary>
+    public class NotificationData
+    {
+        public string original_source { get; set; } = string.Empty; // 通知送信元
+        public string original_message { get; set; } = string.Empty; // 元の通知メッセージ
+    }
+
+    /// <summary>
+    /// CocoroCoreM デスクトップ監視コンテキスト
+    /// </summary>
+    public class DesktopContext
+    {
+        public string window_title { get; set; } = string.Empty; // ウィンドウタイトル
+        public string application { get; set; } = string.Empty; // アプリケーション名
+        public string capture_type { get; set; } = string.Empty; // "active" | "full"
+        public string timestamp { get; set; } = string.Empty; // キャプチャ時刻（ISO形式）
+    }
+
+    /// <summary>
+    /// CocoroCoreM 会話履歴メッセージ
+    /// </summary>
+    public class HistoryMessage
+    {
+        public string role { get; set; } = string.Empty; // "user" | "assistant"
+        public string content { get; set; } = string.Empty; // メッセージ内容
+        public string timestamp { get; set; } = string.Empty; // メッセージ時刻（ISO形式）
+    }
+
+    /// <summary>
+    /// CocoroCoreM チャットAPIリクエスト
+    /// </summary>
+    public class CocoroCoreMChatRequest
+    {
+        public string query { get; set; } = string.Empty; // ユーザークエリ（必須）
+        public string chat_type { get; set; } = "text"; // "text" | "text_image" | "notification" | "desktop_watch"
+        public List<ImageData>? images { get; set; } // 画像データ配列（オプション）
+        public NotificationData? notification { get; set; } // 通知データ（オプション）
+        public DesktopContext? desktop_context { get; set; } // デスクトップコンテキスト（オプション）
+        public List<HistoryMessage>? history { get; set; } // 会話履歴（オプション）
+        public bool? internet_search { get; set; } // インターネット検索有効化（オプション）
+        public string? request_id { get; set; } // リクエスト識別ID（オプション）
+    }
+
+
+    /// <summary>
+    /// ストリーミングチャットイベントデータ
+    /// </summary>
+    public class StreamingChatEventArgs : EventArgs
+    {
+        public string Content { get; set; } = string.Empty; // ストリーミングコンテンツ
+        public bool IsFinished { get; set; } // 完了フラグ
+        public string? ErrorMessage { get; set; } // エラーメッセージ（エラー時のみ）
+        public bool IsError { get; set; } // エラーフラグ
     }
 
     #endregion

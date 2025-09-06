@@ -27,7 +27,6 @@ namespace CocoroDock.Communication
         public event EventHandler<ChatRequest>? ChatMessageReceived;
         public event EventHandler<ControlRequest>? ControlCommandReceived;
         public event EventHandler<StatusUpdateRequest>? StatusUpdateReceived;
-        public event EventHandler<LogMessage>? LogMessageReceived;
 
         public bool IsRunning => _host != null;
 
@@ -348,25 +347,28 @@ namespace CocoroDock.Communication
                     }
 
                     // コマンド検証
-                    var validCommands = new[] { "shutdown", "restart", "reloadConfig" };
-                    if (!Array.Exists(validCommands, cmd => cmd == request.command))
+                    var validAction = new[] { "shutdown", "restart", "reloadConfig" };
+                    if (!Array.Exists(validAction, cmd => cmd == request.action))
                     {
                         context.Response.StatusCode = 400;
                         await context.Response.WriteAsJsonAsync(new ErrorResponse
                         {
-                            message = $"Invalid command. Must be one of: {string.Join(", ", validCommands)}",
-                            errorCode = "INVALID_COMMAND"
+                            message = $"Invalid action. Must be one of: {string.Join(", ", validAction)}",
+                            errorCode = "INVALID_ACTION"
                         });
                         return;
                     }
 
+                    // パラメータとログを出力
+                    Debug.WriteLine($"制御コマンド受信: action={request.action}, reason={request.reason}, params={request.@params?.Count ?? 0}個");
+                    
                     // イベント発火
                     ControlCommandReceived?.Invoke(this, request);
 
                     await context.Response.WriteAsJsonAsync(new StandardResponse
                     {
                         status = "success",
-                        message = "Command executed"
+                        message = $"制御アクション '{request.action}' を実行しました"
                     });
                 }
                 catch (System.Text.Json.JsonException)
@@ -449,91 +451,6 @@ namespace CocoroDock.Communication
                 }
             });
 
-            // POST /api/logs - ログメッセージ受信
-            app.MapPost("/api/logs", async (HttpContext context) =>
-            {
-                try
-                {
-                    var request = await context.Request.ReadFromJsonAsync<LogMessage>();
-                    if (request == null)
-                    {
-                        context.Response.StatusCode = 400;
-                        await context.Response.WriteAsJsonAsync(new ErrorResponse
-                        {
-                            message = "Request body is required",
-                            errorCode = "INVALID_REQUEST"
-                        });
-                        return;
-                    }
-
-                    // 検証
-                    if (string.IsNullOrWhiteSpace(request.message))
-                    {
-                        context.Response.StatusCode = 400;
-                        await context.Response.WriteAsJsonAsync(new ErrorResponse
-                        {
-                            message = "Field 'message' is required and cannot be empty",
-                            errorCode = "VALIDATION_ERROR"
-                        });
-                        return;
-                    }
-
-                    // ログレベル検証
-                    var validLevels = new[] { "DEBUG", "INFO", "WARNING", "ERROR" };
-                    if (!Array.Exists(validLevels, level => level == request.level))
-                    {
-                        context.Response.StatusCode = 400;
-                        await context.Response.WriteAsJsonAsync(new ErrorResponse
-                        {
-                            message = $"Invalid log level. Must be one of: {string.Join(", ", validLevels)}",
-                            errorCode = "VALIDATION_ERROR"
-                        });
-                        return;
-                    }
-
-                    // コンポーネント検証
-                    var validComponents = new[] { "CocoroCore", "CocoroMemory", "SEPARATOR" };
-                    if (!Array.Exists(validComponents, comp => comp == request.component))
-                    {
-                        context.Response.StatusCode = 400;
-                        await context.Response.WriteAsJsonAsync(new ErrorResponse
-                        {
-                            message = $"Invalid component. Must be one of: {string.Join(", ", validComponents)}",
-                            errorCode = "VALIDATION_ERROR"
-                        });
-                        return;
-                    }
-
-                    // イベント発火
-                    LogMessageReceived?.Invoke(this, request);
-
-                    // 成功レスポンス
-                    await context.Response.WriteAsJsonAsync(new StandardResponse
-                    {
-                        status = "success",
-                        message = "Log message received"
-                    });
-                }
-                catch (System.Text.Json.JsonException)
-                {
-                    context.Response.StatusCode = 400;
-                    await context.Response.WriteAsJsonAsync(new ErrorResponse
-                    {
-                        message = "Invalid JSON format",
-                        errorCode = "JSON_ERROR"
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"ログ受信処理エラー: {ex.Message}");
-                    context.Response.StatusCode = 500;
-                    await context.Response.WriteAsJsonAsync(new ErrorResponse
-                    {
-                        message = "Internal server error",
-                        errorCode = "INTERNAL_ERROR"
-                    });
-                }
-            });
         }
 
         /// <summary>
@@ -608,12 +525,12 @@ namespace CocoroDock.Communication
                                     propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(System.Collections.Generic.List<>))
                             {
                                 // List型の場合はJsonElementから直接デシリアライズ
-                                convertedValue = JsonSerializer.Deserialize(jsonElement.GetRawText(), propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType);
+                                convertedValue = JsonSerializer.Deserialize(jsonElement.GetRawText(), propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType)!;
                             }
                             else
                             {
                                 // その他の型はJsonElementから直接デシリアライズ
-                                convertedValue = JsonSerializer.Deserialize(jsonElement.GetRawText(), propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType);
+                                convertedValue = JsonSerializer.Deserialize(jsonElement.GetRawText(), propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType) ?? throw new InvalidOperationException($"Cannot create instance of type {propertyInfo.PropertyType.Name}");
                             }
                         }
                         else
@@ -636,7 +553,7 @@ namespace CocoroDock.Communication
                             {
                                 // List型の場合はJSONから直接デシリアライズ（同じオプションを使用）
                                 var json = JsonSerializer.Serialize(kvp.Value, jsonOptions);
-                                convertedValue = JsonSerializer.Deserialize(json, propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType);
+                                convertedValue = JsonSerializer.Deserialize(json, propertyInfo.PropertyType, jsonOptions) ?? Activator.CreateInstance(propertyInfo.PropertyType)!;
                             }
                             else
                             {

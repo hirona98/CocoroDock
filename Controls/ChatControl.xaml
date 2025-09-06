@@ -13,6 +13,51 @@
                 <!-- コンバーター -->
                 <converters:PercentageConverter x:Key="PercentageConverter"/>
 
+                <!-- ボタンスタイル（無効状態対応） -->
+                <Style x:Key="DisabledButtonStyle"
+                       TargetType="Button">
+                        <Setter Property="Background"
+                                Value="#4873CF"/>
+                        <Setter Property="Foreground"
+                                Value="WhiteSmoke"/>
+                        <Setter Property="BorderThickness"
+                                Value="0"/>
+                        <Setter Property="Template">
+                                <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="5">
+                                                        <ContentPresenter HorizontalAlignment="Center"
+                                                                          VerticalAlignment="Center"
+                                                                          Content="{TemplateBinding Content}"
+                                                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsEnabled"
+                                                                 Value="False">
+                                                                <Setter Property="Background"
+                                                                        Value="#CCCCCC"/>
+                                                                <Setter Property="Foreground"
+                                                                        Value="#888888"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsMouseOver"
+                                                                 Value="True">
+                                                                <Setter Property="Background"
+                                                                        Value="#5A84D9"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed"
+                                                                 Value="True">
+                                                                <Setter Property="Background"
+                                                                        Value="#3A62B8"/>
+                                                        </Trigger>
+                                                </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                </Setter.Value>
+                        </Setter>
+                </Style>
+
                 <!-- バブルスタイル定義 -->
                 <Style x:Key="UserBubbleStyle"
                        TargetType="Border">
@@ -135,6 +180,7 @@
                         <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
+
                 <!-- チャット表示エリア -->
                 <ScrollViewer x:Name="ChatScrollViewer"
                               Grid.Row="0"
@@ -165,36 +211,19 @@
                                 Background="#F0F0F0"
                                 Visibility="Collapsed">
                                 <Grid>
-                                        <TextBlock Text="画像をドラッグ&amp;ドロップまたはクリップボードから貼り付け"
+                                        <TextBlock Text="画像をドラッグ&amp;ドロップまたはクリップボードから貼り付け（最大5枚）"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
                                                    Foreground="#999999"
                                                    x:Name="ImagePlaceholderText"/>
-                                        <Image x:Name="PreviewImage"
-                                               Margin="5"
-                                               Stretch="Uniform"
-                                               Visibility="Collapsed"/>
-                                        <Button x:Name="RemoveImageButton"
-                                                Content="✕"
-                                                Width="25"
-                                                Height="25"
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Top"
-                                                Margin="5"
-                                                Background="#7F7F7F"
-                                                Foreground="White"
-                                                BorderThickness="0"
-                                                FontSize="12"
-                                                FontWeight="Bold"
-                                                Visibility="Collapsed"
-                                                Click="RemoveImageButton_Click">
-                                                <Button.Resources>
-                                                        <Style TargetType="Border">
-                                                                <Setter Property="CornerRadius"
-                                                                        Value="10"/>
-                                                        </Style>
-                                                </Button.Resources>
-                                        </Button>
+                                        <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                                     VerticalScrollBarVisibility="Disabled"
+                                                     x:Name="ImagePreviewScrollViewer"
+                                                     Margin="5"
+                                                     Visibility="Collapsed">
+                                                <WrapPanel x:Name="ImagePreviewPanel"
+                                                          Orientation="Horizontal"/>
+                                        </ScrollViewer>
                                 </Grid>
                         </Border>
 
@@ -202,6 +231,7 @@
                         <Grid Grid.Row="1">
                                 <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
@@ -235,10 +265,13 @@
                                                            IsHitTestVisible="False">
                                                         <TextBlock.Style>
                                                                 <Style TargetType="TextBlock">
-                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        <Setter Property="Visibility"
+                                                                                Value="Collapsed"/>
                                                                         <Style.Triggers>
-                                                                                <DataTrigger Binding="{Binding Text, ElementName=MessageTextBox}" Value="">
-                                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                                <DataTrigger Binding="{Binding Text, ElementName=MessageTextBox}"
+                                                                                             Value="">
+                                                                                        <Setter Property="Visibility"
+                                                                                                Value="Visible"/>
                                                                                 </DataTrigger>
                                                                         </Style.Triggers>
                                                                 </Style>
@@ -247,24 +280,33 @@
                                         </Grid>
                                 </Border>
 
-                                <Button x:Name="SendButton"
+                                <!-- 音声レベルバー（縦向き） -->
+                                <Border x:Name="VoiceLevelBorder"
                                         Grid.Column="1"
+                                        Width="10"
+                                        Height="55"
+                                        Margin="5,0,5,0"
+                                        Background="#E0E0E0"
+                                        CornerRadius="5">
+                                        <Grid VerticalAlignment="Bottom">
+                                                <Rectangle x:Name="VoiceLevelBar"
+                                                           Width="10"
+                                                           Height="0"
+                                                           Fill="#4CAF50"
+                                                           VerticalAlignment="Bottom"
+                                                           RadiusX="5"
+                                                           RadiusY="5"/>
+                                        </Grid>
+                                </Border>
+
+                                <Button x:Name="SendButton"
+                                        Grid.Column="2"
                                         Content="送信"
                                         Width="60"
                                         Height="55"
-                                        Margin="5,0,0,0"
                                         Click="SendButton_Click"
-                                        Background="#4873CF"
-                                        Foreground="WhiteSmoke"
-                                        BorderThickness="0"
-                                        FontSize="14">
-                                        <Button.Resources>
-                                                <Style TargetType="Border">
-                                                        <Setter Property="CornerRadius"
-                                                                Value="5"/>
-                                                </Style>
-                                        </Button.Resources>
-                                </Button>
+                                        FontSize="14"
+                                        Style="{StaticResource DisabledButtonStyle}"/>
                         </Grid>
                 </Grid>
         </Grid>

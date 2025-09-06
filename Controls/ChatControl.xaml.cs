@@ -11,6 +11,7 @@ using System.Linq;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using CocoroDock.Windows;
+using CocoroDock.Services;
 
 namespace CocoroDock.Controls
 {
@@ -21,9 +22,10 @@ namespace CocoroDock.Controls
     {
         public event EventHandler<string>? MessageSent;
 
-        // 添付画像データ（Base64形式のdata URL）
-        private string? _attachedImageDataUrl;
-        private BitmapSource? _attachedImageSource;
+        // 添付画像データ（Base64形式のdata URL、最大5枚）
+        private List<string> _attachedImageDataUrls = new List<string>();
+        private List<BitmapSource> _attachedImageSources = new List<BitmapSource>();
+        private const int MaxImageCount = 5;
 
         public ChatControl()
         {
@@ -47,7 +49,7 @@ namespace CocoroDock.Controls
         private void SendMessage()
         {
             string message = MessageTextBox.Text.Trim();
-            if (string.IsNullOrEmpty(message) && _attachedImageSource == null)
+            if (string.IsNullOrEmpty(message) && _attachedImageSources.Count == 0)
                 return;
 
             // メッセージ送信イベント発火（UIへの追加はMainWindowで行う）
@@ -61,8 +63,8 @@ namespace CocoroDock.Controls
         /// ユーザーメッセージをUIに追加
         /// </summary>
         /// <param name="message">メッセージ</param>
-        /// <param name="imageSource">画像（オプション）</param>
-        public void AddUserMessage(string message, BitmapSource? imageSource = null)
+        /// <param name="imageSources">画像リスト（オプション）</param>
+        public void AddUserMessage(string message, List<BitmapSource>? imageSources = null)
         {
             var messageContainer = new StackPanel();
 
@@ -73,36 +75,48 @@ namespace CocoroDock.Controls
 
             var messageContent = new StackPanel();
 
-            // 画像がある場合は先に表示
-            if (imageSource != null)
+            // 複数画像がある場合は先に表示
+            if (imageSources != null && imageSources.Count > 0)
             {
-                var imageBorder = new Border
+                // 画像を横並びで表示するためのWrapPanel
+                var imagePanel = new WrapPanel
                 {
-                    BorderBrush = new SolidColorBrush(Colors.White),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(0),  // 角を丸くしない
-                    Margin = new Thickness(0, 0, 0, 5),
-                    Cursor = System.Windows.Input.Cursors.Hand
+                    Orientation = Orientation.Horizontal,
+                    Margin = new Thickness(0, 0, 0, 5)
                 };
 
-                var image = new Image
+                foreach (var imageSource in imageSources)
                 {
-                    Source = imageSource,
-                    MaxHeight = 150,
-                    MaxWidth = 200,
-                    Stretch = Stretch.Uniform
-                };
+                    var imageBorder = new Border
+                    {
+                        BorderBrush = new SolidColorBrush(Colors.White),
+                        BorderThickness = new Thickness(1),
+                        CornerRadius = new CornerRadius(0),  // 角を丸くしない
+                        Margin = new Thickness(0, 0, 5, 0),
+                        Cursor = System.Windows.Input.Cursors.Hand
+                    };
 
-                imageBorder.Child = image;
+                    var image = new Image
+                    {
+                        Source = imageSource,
+                        MaxHeight = 120,
+                        MaxWidth = 160,
+                        Stretch = Stretch.Uniform
+                    };
 
-                // クリックイベントで拡大表示
-                imageBorder.MouseLeftButtonUp += (s, e) =>
-                {
-                    var previewWindow = new Windows.ImagePreviewWindow(imageSource);
-                    previewWindow.Show();
-                };
+                    imageBorder.Child = image;
 
-                messageContent.Children.Add(imageBorder);
+                    // クリックイベントで拡大表示
+                    imageBorder.MouseLeftButtonUp += (s, e) =>
+                    {
+                        var previewWindow = new Windows.ImagePreviewWindow(imageSource);
+                        previewWindow.Show();
+                    };
+
+                    imagePanel.Children.Add(imageBorder);
+                }
+
+                messageContent.Children.Add(imagePanel);
             }
 
             // テキストメッセージ（空でない場合のみ）
@@ -154,6 +168,39 @@ namespace CocoroDock.Controls
             messageContainer.Children.Add(bubble);
 
             ChatMessagesPanel.Children.Add(messageContainer);
+
+            // 自動スクロール
+            ChatScrollViewer.ScrollToEnd();
+        }
+
+        /// <summary>
+        /// 最後のAIメッセージにテキストを追記
+        /// </summary>
+        /// <param name="additionalText">追記するテキスト</param>
+        public void AppendToLastAiMessage(string additionalText)
+        {
+            if (ChatMessagesPanel.Children.Count == 0)
+                return;
+
+            // 最後のメッセージコンテナを取得
+            var lastContainer = ChatMessagesPanel.Children[ChatMessagesPanel.Children.Count - 1] as StackPanel;
+            if (lastContainer == null) return;
+
+            // バブルを取得
+            var bubble = lastContainer.Children.OfType<Border>().FirstOrDefault(b => b.Style == (Style)Resources["AiBubbleStyle"]);
+            if (bubble == null) return;
+
+            // メッセージコンテンツを取得
+            var messageContent = bubble.Child as StackPanel;
+            if (messageContent == null) return;
+
+            // テキストボックスを取得
+            var messageTextBox = messageContent.Children.OfType<TextBox>().FirstOrDefault(tb => tb.Style == (Style)Resources["AiMessageTextStyle"]);
+            if (messageTextBox == null) return;
+
+            // 表情タグを削除してからテキストを追記
+            var cleanAdditionalText = RemoveFaceTags(additionalText);
+            messageTextBox.Text += cleanAdditionalText;
 
             // 自動スクロール
             ChatScrollViewer.ScrollToEnd();
@@ -229,27 +276,45 @@ namespace CocoroDock.Controls
             // 複数画像がある場合は追加
             if (imageSources != null && imageSources.Count > 0)
             {
+                // 画像を横並びで表示するためのWrapPanel
+                var imagePanel = new WrapPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Margin = new Thickness(0, 10, 0, 0)
+                };
+
                 foreach (var imageSource in imageSources)
                 {
-                    var image = new Image
+                    var imageBorder = new Border
                     {
-                        Source = imageSource,
-                        MaxWidth = 200,
-                        MaxHeight = 200,
-                        HorizontalAlignment = HorizontalAlignment.Left,
-                        Margin = new Thickness(0, 10, 0, 0),
+                        BorderBrush = new SolidColorBrush(Colors.LightGray),
+                        BorderThickness = new Thickness(1),
+                        CornerRadius = new CornerRadius(3),
+                        Margin = new Thickness(0, 0, 5, 0),
                         Cursor = Cursors.Hand
                     };
 
-                    // 画像をクリックした時の拡大表示
-                    image.MouseLeftButtonDown += (sender, e) =>
+                    var image = new Image
+                    {
+                        Source = imageSource,
+                        MaxHeight = 120,
+                        MaxWidth = 160,
+                        Stretch = Stretch.Uniform
+                    };
+
+                    imageBorder.Child = image;
+
+                    // クリックイベントで拡大表示
+                    imageBorder.MouseLeftButtonUp += (s, e) =>
                     {
                         var previewWindow = new ImagePreviewWindow(imageSource);
                         previewWindow.Show();
                     };
 
-                    messageContent.Children.Add(image);
+                    imagePanel.Children.Add(imageBorder);
                 }
+
+                messageContent.Children.Add(imagePanel);
             }
 
             bubble.Child = messageContent;
@@ -398,7 +463,7 @@ namespace CocoroDock.Controls
                     var image = Clipboard.GetImage();
                     if (image != null)
                     {
-                        LoadImageFromBitmapSource(image);
+                        AddImageFromBitmapSource(image);
                         e.Handled = true;
                     }
                 }
@@ -410,7 +475,7 @@ namespace CocoroDock.Controls
                         string? filePath = files[0];
                         if (filePath != null)
                         {
-                            LoadImageFromFile(filePath);
+                            AddImageFromFile(filePath);
                             e.Handled = true;
                         }
                     }
@@ -512,7 +577,7 @@ namespace CocoroDock.Controls
                 if (files.Length > 0)
                 {
                     string filePath = files[0];
-                    LoadImageFromFile(filePath);
+                    AddImageFromFile(filePath);
                 }
             }
             e.Handled = true;
@@ -550,10 +615,9 @@ namespace CocoroDock.Controls
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                if (files.Length > 0)
+                foreach (string filePath in files)
                 {
-                    string filePath = files[0];
-                    LoadImageFromFile(filePath);
+                    AddImageFromFile(filePath);
                 }
                 e.Handled = true;
             }
@@ -569,29 +633,35 @@ namespace CocoroDock.Controls
                 var image = e.DataObject.GetData(DataFormats.Bitmap) as BitmapSource;
                 if (image != null)
                 {
-                    LoadImageFromBitmapSource(image);
+                    AddImageFromBitmapSource(image);
                     e.CancelCommand();
                 }
             }
             else if (e.DataObject.GetDataPresent(DataFormats.FileDrop))
             {
                 string[] files = (string[])e.DataObject.GetData(DataFormats.FileDrop);
-                if (files.Length > 0)
+                foreach (string filePath in files)
                 {
-                    string filePath = files[0];
-                    LoadImageFromFile(filePath);
-                    e.CancelCommand();
+                    AddImageFromFile(filePath);
                 }
+                e.CancelCommand();
             }
         }
 
         /// <summary>
-        /// ファイルから画像を読み込み
+        /// ファイルから画像を追加
         /// </summary>
-        private void LoadImageFromFile(string filePath)
+        private void AddImageFromFile(string filePath)
         {
             try
             {
+                // 画像数の上限チェック
+                if (_attachedImageSources.Count >= MaxImageCount)
+                {
+                    MessageBox.Show($"画像は最大{MaxImageCount}枚まで添付できます。", "制限", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
                 // サポートされる画像形式を確認
                 string[] supportedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
                 string extension = Path.GetExtension(filePath).ToLower();
@@ -603,7 +673,7 @@ namespace CocoroDock.Controls
                 }
 
                 var bitmap = new BitmapImage(new Uri(filePath));
-                LoadImageFromBitmapSource(bitmap);
+                AddImageFromBitmapSource(bitmap);
             }
             catch (Exception ex)
             {
@@ -612,22 +682,28 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// BitmapSourceから画像を読み込み
+        /// BitmapSourceから画像を追加
         /// </summary>
-        private void LoadImageFromBitmapSource(BitmapSource bitmapSource)
+        private void AddImageFromBitmapSource(BitmapSource bitmapSource)
         {
             try
             {
-                // 画像をBase64エンコード
-                _attachedImageDataUrl = ConvertToDataUrl(bitmapSource);
-                _attachedImageSource = bitmapSource;
+                // 画像数の上限チェック
+                if (_attachedImageSources.Count >= MaxImageCount)
+                {
+                    MessageBox.Show($"画像は最大{MaxImageCount}枚まで添付できます。", "制限", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
-                // プレビューに表示
-                PreviewImage.Source = bitmapSource;
-                PreviewImage.Visibility = Visibility.Visible;
-                ImagePlaceholderText.Visibility = Visibility.Collapsed;
-                RemoveImageButton.Visibility = Visibility.Visible;
-                ImagePreviewBorder.Visibility = Visibility.Visible;
+                // 画像をBase64エンコード
+                string imageDataUrl = ConvertToDataUrl(bitmapSource);
+
+                // リストに追加
+                _attachedImageDataUrls.Add(imageDataUrl);
+                _attachedImageSources.Add(bitmapSource);
+
+                // プレビューを更新
+                UpdateImagePreview();
             }
             catch (Exception ex)
             {
@@ -653,38 +729,233 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// 画像削除ボタンクリックハンドラ
+        /// 画像プレビューを更新
         /// </summary>
-        private void RemoveImageButton_Click(object sender, RoutedEventArgs e)
+        private void UpdateImagePreview()
         {
-            _attachedImageDataUrl = null;
-            _attachedImageSource = null;
-            PreviewImage.Source = null;
-            PreviewImage.Visibility = Visibility.Collapsed;
-            ImagePlaceholderText.Visibility = Visibility.Visible;
-            RemoveImageButton.Visibility = Visibility.Collapsed;
-            ImagePreviewBorder.Visibility = Visibility.Collapsed;
+            // プレビューパネルをクリア
+            ImagePreviewPanel.Children.Clear();
+
+            if (_attachedImageSources.Count == 0)
+            {
+                // 画像がない場合はプレースホルダーを表示
+                ImagePreviewBorder.Visibility = Visibility.Collapsed;
+                ImagePlaceholderText.Visibility = Visibility.Visible;
+                ImagePreviewScrollViewer.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                // 複数画像をプレビューに表示
+                for (int i = 0; i < _attachedImageSources.Count; i++)
+                {
+                    var imageSource = _attachedImageSources[i];
+                    int imageIndex = i; // ラムダ式でキャプチャするためのローカル変数
+
+                    // 各画像のコンテナ
+                    var imageContainer = new Border
+                    {
+                        BorderBrush = new SolidColorBrush(Colors.Gray),
+                        BorderThickness = new Thickness(1),
+                        CornerRadius = new CornerRadius(3),
+                        Margin = new Thickness(2),
+                        Background = new SolidColorBrush(Colors.White),
+                        Width = 80,
+                        Height = 80
+                    };
+
+                    // グリッドで画像と削除ボタンを重ねる
+                    var grid = new Grid();
+
+                    // 画像要素
+                    var image = new Image
+                    {
+                        Source = imageSource,
+                        Stretch = Stretch.Uniform,
+                        Margin = new Thickness(2),
+                        Cursor = Cursors.Hand
+                    };
+
+                    // 画像クリックで拡大表示
+                    image.MouseLeftButtonUp += (s, e) =>
+                    {
+                        var previewWindow = new Windows.ImagePreviewWindow(imageSource);
+                        previewWindow.Show();
+                    };
+
+                    // 個別削除ボタン
+                    var deleteButton = new Button
+                    {
+                        Content = "×",
+                        Width = 16,
+                        Height = 16,
+                        HorizontalAlignment = HorizontalAlignment.Right,
+                        VerticalAlignment = VerticalAlignment.Top,
+                        Margin = new Thickness(2),
+                        Background = new SolidColorBrush(Color.FromArgb(170, 160, 0, 0)),
+                        Foreground = new SolidColorBrush(Colors.White),
+                        BorderThickness = new Thickness(0),
+                        FontSize = 10,
+                        FontWeight = FontWeights.Bold,
+                        Cursor = Cursors.Hand
+                    };
+
+                    // 個別削除ボタンのクリックイベント
+                    deleteButton.Click += (s, e) =>
+                    {
+                        RemoveImageBySource(imageSource);
+                    };
+
+                    grid.Children.Add(image);
+                    grid.Children.Add(deleteButton);
+                    imageContainer.Child = grid;
+
+                    ImagePreviewPanel.Children.Add(imageContainer);
+                }
+
+                // プレビューエリアを表示
+                ImagePlaceholderText.Visibility = Visibility.Collapsed;
+                ImagePreviewScrollViewer.Visibility = Visibility.Visible;
+                ImagePreviewBorder.Visibility = Visibility.Visible;
+            }
         }
 
         /// <summary>
-        /// 添付画像を取得してクリア
+        /// 指定したBitmapSourceの画像を削除
+        /// </summary>
+        private void RemoveImageBySource(BitmapSource imageSource)
+        {
+            int index = _attachedImageSources.IndexOf(imageSource);
+            if (index >= 0)
+            {
+                _attachedImageDataUrls.RemoveAt(index);
+                _attachedImageSources.RemoveAt(index);
+                UpdateImagePreview();
+            }
+        }
+
+        /// <summary>
+        /// 指定したインデックスの画像を削除
+        /// </summary>
+        private void RemoveImageAt(int index)
+        {
+            if (index >= 0 && index < _attachedImageSources.Count)
+            {
+                _attachedImageDataUrls.RemoveAt(index);
+                _attachedImageSources.RemoveAt(index);
+                UpdateImagePreview();
+            }
+        }
+
+
+        /// <summary>
+        /// 添付画像データ（複数）を取得してクリア
+        /// </summary>
+        public List<string> GetAndClearAttachedImages()
+        {
+            var imageDataUrls = new List<string>(_attachedImageDataUrls);
+            if (_attachedImageDataUrls.Count > 0)
+            {
+                _attachedImageDataUrls.Clear();
+                _attachedImageSources.Clear();
+                UpdateImagePreview();
+            }
+            return imageDataUrls;
+        }
+
+        /// <summary>
+        /// 添付画像の最初の1枚を取得してクリア（既存互換性のため）
         /// </summary>
         public string? GetAndClearAttachedImage()
         {
-            string? imageDataUrl = _attachedImageDataUrl;
-            if (_attachedImageDataUrl != null)
+            string? imageDataUrl = _attachedImageDataUrls.Count > 0 ? _attachedImageDataUrls[0] : null;
+            if (_attachedImageDataUrls.Count > 0)
             {
-                RemoveImageButton_Click(null!, null!);
+                _attachedImageDataUrls.Clear();
+                _attachedImageSources.Clear();
+                UpdateImagePreview();
             }
             return imageDataUrl;
         }
 
         /// <summary>
-        /// 添付画像のBitmapSourceを取得
+        /// 添付画像のBitmapSourceリストを取得
+        /// </summary>
+        public List<BitmapSource> GetAttachedImageSources()
+        {
+            return new List<BitmapSource>(_attachedImageSources);
+        }
+
+        /// <summary>
+        /// 添付画像の最初の1枚のBitmapSourceを取得（既存互換性のため）
         /// </summary>
         public BitmapSource? GetAttachedImageSource()
         {
-            return _attachedImageSource;
+            return _attachedImageSources.Count > 0 ? _attachedImageSources[0] : null;
+        }
+
+        /// <summary>
+        /// 音声レベルを更新
+        /// </summary>
+        /// <param name="level">音声レベル (0.0-1.0)</param>
+        /// <param name="isAboveThreshold">しきい値を超えているかどうか</param>
+        public void UpdateVoiceLevel(float level, bool isAboveThreshold)
+        {
+            // 常にボーダーは表示（マイクOFF時と同じ見た目）
+            VoiceLevelBorder.Visibility = Visibility.Visible;
+
+            if (isAboveThreshold)
+            {
+                // しきい値を超えた場合はレベルバーを表示
+                // 0-1の値を0-55ピクセルにマッピング（下から上に伸びる）
+                double height = Math.Max(0, Math.Min(1, level)) * 55;
+                VoiceLevelBar.Height = height;
+            }
+            else
+            {
+                // しきい値以下の場合はレベルバーを0（背景だけ表示）
+                VoiceLevelBar.Height = 0;
+            }
+        }
+
+        /// <summary>
+        /// 送信ボタンの有効/無効を設定
+        /// </summary>
+        /// <param name="isEnabled">ボタンを有効にするかどうか</param>
+        public void UpdateSendButtonEnabled(bool isEnabled)
+        {
+            SendButton.IsEnabled = isEnabled;
+            // テキストボックスとマイク入力も止めたほうが良いけど面倒なので保留
+        }
+
+        /// <summary>
+        /// 音声認識結果をチャットに追加
+        /// </summary>
+        /// <param name="text">認識されたテキスト</param>
+        public void AddVoiceMessage(string text)
+        {
+            var messageContainer = new StackPanel();
+
+            var bubble = new Border
+            {
+                Style = (Style)Resources["UserBubbleStyle"]  // テキスト入力と同じスタイル
+            };
+
+            var messageContent = new StackPanel();
+
+            var messageText = new TextBox
+            {
+                Style = (Style)Resources["UserMessageTextStyle"],
+                Text = text  // 🎤アイコンを削除してテキストのみ
+            };
+
+            messageContent.Children.Add(messageText);
+            bubble.Child = messageContent;
+            messageContainer.Children.Add(bubble);
+
+            ChatMessagesPanel.Children.Add(messageContainer);
+
+            // 自動スクロール
+            ChatScrollViewer.ScrollToEnd();
         }
     }
 }

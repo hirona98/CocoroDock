@@ -51,9 +51,19 @@ namespace CocoroDock.Services
         event EventHandler<StatusUpdateEventArgs>? StatusUpdateRequested;
 
         /// <summary>
+        /// CocoroCoreMステータス変更イベント
+        /// </summary>
+        event EventHandler<CocoroCoreMStatus>? StatusChanged;
+
+        /// <summary>
         /// APIサーバーが起動しているかどうか
         /// </summary>
         bool IsServerRunning { get; }
+
+        /// <summary>
+        /// 現在のCocoroCoreMステータス
+        /// </summary>
+        CocoroCoreMStatus CurrentStatus { get; }
 
         /// <summary>
         /// APIサーバーを開始
@@ -71,18 +81,20 @@ namespace CocoroDock.Services
         ConfigSettings GetCurrentConfig();
 
         /// <summary>
-        /// 設定を更新して保存
-        /// </summary>
-        /// <param name="settings">更新する設定情報</param>
-        void UpdateAndSaveConfig(ConfigSettings settings);
-
-        /// <summary>
-        /// CocoroCoreにチャットメッセージを送信
+        /// CocoroCoreにAPIでチャットメッセージを送信
         /// </summary>
         /// <param name="message">送信メッセージ</param>
         /// <param name="characterName">キャラクター名（オプション）</param>
         /// <param name="imageDataUrl">画像データURL（オプション）</param>
-        Task SendChatToCoreAsync(string message, string? characterName = null, string? imageDataUrl = null);
+        Task SendChatToCoreUnifiedAsync(string message, string? characterName = null, string? imageDataUrl = null);
+
+        /// <summary>
+        /// CocoroCoreへメッセージを送信（複数画像対応）
+        /// </summary>
+        /// <param name="message">送信メッセージ</param>
+        /// <param name="characterName">キャラクター名（オプション）</param>
+        /// <param name="imageDataUrls">画像データURLリスト（オプション）</param>
+        Task SendChatToCoreUnifiedAsync(string message, string? characterName = null, List<string>? imageDataUrls = null);
 
         /// <summary>
         /// 新しい会話セッションを開始
@@ -96,23 +108,12 @@ namespace CocoroDock.Services
         Task SendAnimationToShellAsync(string animationName);
 
         /// <summary>
-        /// CocoroShellに制御コマンドを送信
-        /// </summary>
-        /// <param name="command">コマンド名</param>
-        Task SendControlToShellAsync(string command);
-
-        /// <summary>
         /// 通知メッセージを処理（Notification API用）
         /// </summary>
         /// <param name="notification">通知メッセージ</param>
         /// <param name="imageDataUrls">画像データURL配列（オプション）</param>
         Task ProcessNotificationAsync(ChatMessagePayload notification, string[]? imageDataUrls = null);
 
-        /// <summary>
-        /// デスクトップモニタリング画像をCocoroCoreに送信
-        /// </summary>
-        /// <param name="imageBase64">Base64エンコードされた画像データ</param>
-        Task SendDesktopMonitoringToCoreAsync(string imageBase64);
 
         /// <summary>
         /// CocoroShellにTTS状態を送信
@@ -120,18 +121,7 @@ namespace CocoroDock.Services
         /// <param name="isUseTTS">TTS使用状態</param>
         Task SendTTSStateToShellAsync(bool isUseTTS);
 
-        /// <summary>
-        /// CocoroCoreにSTT状態を送信
-        /// </summary>
-        /// <param name="isUseSTT">STT使用状態</param>
-        Task SendSTTStateToCoreAsync(bool isUseSTT);
 
-        /// <summary>
-        /// CocoroCoreにマイク設定を送信
-        /// </summary>
-        /// <param name="autoAdjustment">自動調節ON/OFF</param>
-        /// <param name="inputThreshold">入力しきい値</param>
-        Task SendMicrophoneSettingsToCoreAsync(bool autoAdjustment, float inputThreshold);
 
         /// <summary>
         /// ログビューアーウィンドウを開く
@@ -148,5 +138,10 @@ namespace CocoroDock.Services
         /// </summary>
         /// <param name="updates">更新する設定のキーと値のペア</param>
         Task SendConfigPatchToShellAsync(Dictionary<string, object> updates);
+
+        /// <summary>
+        /// 設定キャッシュを更新
+        /// </summary>
+        void RefreshSettingsCache();
     }
 }

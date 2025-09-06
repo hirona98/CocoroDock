@@ -8,179 +8,184 @@
         WindowStartupLocation="CenterOwner"
         Icon="/Resource/logo.ico">
 
-    <Window.Resources>
-        <!-- ログレベル別の色設定 -->
-        <Style x:Key="LogLevelCellStyle"
-                TargetType="DataGridCell">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding level}"
-                        Value="ERROR">
-                    <Setter Property="Foreground"
-                            Value="Red"/>
-                    <Setter Property="FontWeight"
-                            Value="Bold"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding level}"
-                        Value="WARNING">
-                    <Setter Property="Foreground"
-                            Value="Orange"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding level}"
-                        Value="INFO">
-                    <Setter Property="Foreground"
-                            Value="Blue"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding level}"
-                        Value="DEBUG">
-                    <Setter Property="Foreground"
-                            Value="Gray"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
+        <Window.Resources>
+                <!-- ログレベル別の色設定 -->
+                <Style x:Key="LogLevelCellStyle"
+                       TargetType="DataGridCell">
+                        <Style.Triggers>
+                                <DataTrigger Binding="{Binding level}"
+                                             Value="ERROR">
+                                        <Setter Property="Foreground"
+                                                Value="Red"/>
+                                        <Setter Property="FontWeight"
+                                                Value="Bold"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding level}"
+                                             Value="WARNING">
+                                        <Setter Property="Foreground"
+                                                Value="Orange"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding level}"
+                                             Value="INFO">
+                                        <Setter Property="Foreground"
+                                                Value="Blue"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding level}"
+                                             Value="DEBUG">
+                                        <Setter Property="Foreground"
+                                                Value="Gray"/>
+                                </DataTrigger>
+                        </Style.Triggers>
+                </Style>
 
-        <!-- セパレーター行のスタイル -->
-        <Style x:Key="SeparatorRowStyle"
-                TargetType="DataGridRow">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding component}"
-                        Value="SEPARATOR">
-                    <Setter Property="Background"
-                            Value="#E8F4FD"/>
-                    <Setter Property="BorderBrush"
-                            Value="#4A90E2"/>
-                    <Setter Property="BorderThickness"
-                            Value="0,1,0,1"/>
-                    <Setter Property="FontWeight"
-                            Value="Bold"/>
-                    <Setter Property="Foreground"
-                            Value="#2C5282"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-    </Window.Resources>
+                <!-- セパレーター行のスタイル -->
+                <Style x:Key="SeparatorRowStyle"
+                       TargetType="DataGridRow">
+                        <Style.Triggers>
+                                <DataTrigger Binding="{Binding component}"
+                                             Value="SEPARATOR">
+                                        <Setter Property="Background"
+                                                Value="#E8F4FD"/>
+                                        <Setter Property="BorderBrush"
+                                                Value="#4A90E2"/>
+                                        <Setter Property="BorderThickness"
+                                                Value="0,1,0,1"/>
+                                        <Setter Property="FontWeight"
+                                                Value="Bold"/>
+                                        <Setter Property="Foreground"
+                                                Value="#2C5282"/>
+                                </DataTrigger>
+                        </Style.Triggers>
+                </Style>
+        </Window.Resources>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+        <Grid>
+                <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-        <!-- フィルターコントロール -->
-        <Border Grid.Row="0"
-                Background="#F5F5F5"
-                BorderBrush="#E0E0E0"
-                BorderThickness="0,0,0,1"
-                Padding="10">
-            <StackPanel Orientation="Horizontal">
-                <Label Content="レベル:"
-                        VerticalAlignment="Center"/>
-                <ComboBox x:Name="LevelFilterComboBox"
-                          Width="100"
-                          Margin="5,0"
-                          SelectionChanged="LevelFilterComboBox_SelectionChanged">
-                    <ComboBoxItem Content="全て"
-                            IsSelected="True"
-                            Tag=""/>
-                    <ComboBoxItem Content="DEBUG"
-                            Tag="DEBUG"/>
-                    <ComboBoxItem Content="INFO"
-                            Tag="INFO"/>
-                    <ComboBoxItem Content="WARNING"
-                            Tag="WARNING"/>
-                    <ComboBoxItem Content="ERROR"
-                            Tag="ERROR"/>
-                </ComboBox>
+                <!-- フィルターコントロール -->
+                <Border Grid.Row="0"
+                        Background="#F5F5F5"
+                        BorderBrush="#E0E0E0"
+                        BorderThickness="0,0,0,1"
+                        Padding="10">
+                        <StackPanel Orientation="Horizontal">
+                                <Label Content="レベル:"
+                                       VerticalAlignment="Center"/>
+                                <ComboBox x:Name="LevelFilterComboBox"
+                                          Width="100"
+                                          Margin="5,0"
+                                          SelectionChanged="LevelFilterComboBox_SelectionChanged">
+                                        <ComboBoxItem Content="全て"
+                                                      IsSelected="True"
+                                                      Tag=""/>
+                                        <ComboBoxItem Content="DEBUG"
+                                                      Tag="DEBUG"/>
+                                        <ComboBoxItem Content="INFO"
+                                                      Tag="INFO"/>
+                                        <ComboBoxItem Content="WARNING"
+                                                      Tag="WARNING"/>
+                                        <ComboBoxItem Content="ERROR"
+                                                      Tag="ERROR"/>
+                                </ComboBox>
 
-                <Label Content="コンポーネント:"
-                        VerticalAlignment="Center"
-                        Margin="20,0,0,0"/>
-                <ComboBox x:Name="ComponentFilterComboBox"
-                          Width="120"
-                          Margin="5,0"
-                          SelectionChanged="ComponentFilterComboBox_SelectionChanged">
-                    <ComboBoxItem Content="全て"
-                            IsSelected="True"
-                            Tag=""/>
-                    <ComboBoxItem Content="CocoroCore"
-                            Tag="CocoroCore"/>
-                    <ComboBoxItem Content="CocoroMemory"
-                            Tag="CocoroMemory"/>
-                </ComboBox>
+                                <Label Content="コンポーネント:"
+                                       VerticalAlignment="Center"
+                                       Margin="20,0,0,0"/>
+                                <ComboBox x:Name="ComponentFilterComboBox"
+                                          Width="120"
+                                          Margin="5,0"
+                                          SelectionChanged="ComponentFilterComboBox_SelectionChanged">
+                                        <ComboBoxItem Content="全て"
+                                                      IsSelected="True"
+                                                      Tag=""/>
+                                        <ComboBoxItem Content="CocoroCoreM"
+                                                      Tag="CocoroCoreM"/>
+                                </ComboBox>
 
-                <Button x:Name="ClearButton"
-                        Content="クリア"
-                        Width="80"
-                        Height="25"
-                        Margin="20,0,0,0"
-                        Click="ClearButton_Click"/>
+                                <Button x:Name="ClearButton"
+                                        Content="クリア"
+                                        Width="80"
+                                        Height="25"
+                                        Margin="20,0,0,0"
+                                        Click="ClearButton_Click"/>
 
-                <CheckBox x:Name="AutoScrollCheckBox"
-                          Content="自動スクロール"
-                          IsChecked="True"
-                          VerticalAlignment="Center"
-                          Margin="20,0,0,0"/>
-            </StackPanel>
-        </Border>
+                                <CheckBox x:Name="AutoScrollCheckBox"
+                                          Content="自動スクロール"
+                                          IsChecked="True"
+                                          VerticalAlignment="Center"
+                                          Margin="20,0,0,0"/>
+                        </StackPanel>
+                </Border>
 
-        <!-- ログ表示エリア -->
-        <DataGrid x:Name="LogDataGrid"
-                  Grid.Row="1"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  GridLinesVisibility="Horizontal"
-                  HorizontalGridLinesBrush="#E0E0E0"
-                  AlternatingRowBackground="#F9F9F9"
-                  HeadersVisibility="Column"
-                  CanUserResizeColumns="True"
-                  CanUserReorderColumns="False"
-                  CanUserSortColumns="True"
-                  ScrollViewer.CanContentScroll="True"
-                  VirtualizingPanel.IsVirtualizing="True"
-                  RowStyle="{StaticResource SeparatorRowStyle}">
+                <!-- ログ表示エリア -->
+                <DataGrid x:Name="LogDataGrid"
+                          Grid.Row="1"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="#E0E0E0"
+                          AlternatingRowBackground="#F9F9F9"
+                          HeadersVisibility="Column"
+                          CanUserResizeColumns="True"
+                          CanUserReorderColumns="False"
+                          CanUserSortColumns="True"
+                          ScrollViewer.CanContentScroll="True"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          RowStyle="{StaticResource SeparatorRowStyle}">
 
-            <DataGrid.Columns>
-                <!-- タイムスタンプ -->
-                <DataGridTextColumn Header="時刻"
-                                    Binding="{Binding timestamp, StringFormat='HH:mm:ss.fff'}"
-                                    Width="80"
-                                    CanUserResize="False"/>
+                        <DataGrid.Columns>
+                                <!-- タイムスタンプ -->
+                                <DataGridTextColumn Header="時刻"
+                                                    Binding="{Binding timestamp, StringFormat='HH:mm:ss.fff'}"
+                                                    Width="80"
+                                                    CanUserResize="False"/>
 
-                <!-- ログレベル -->
-                <DataGridTextColumn Header="レベル"
-                                    Binding="{Binding level}"
-                                    Width="70"
-                                    CanUserResize="False"
-                                    CellStyle="{StaticResource LogLevelCellStyle}"/>
+                                <!-- ログレベル -->
+                                <DataGridTextColumn Header="レベル"
+                                                    Binding="{Binding level}"
+                                                    Width="70"
+                                                    CanUserResize="False"
+                                                    CellStyle="{StaticResource LogLevelCellStyle}"/>
 
-                <!-- コンポーネント -->
-                <DataGridTextColumn Header="コンポーネント"
-                                    Binding="{Binding component}"
-                                    Width="120"
-                                    CanUserResize="False"/>
+                                <!-- コンポーネント -->
+                                <DataGridTextColumn Header="コンポーネント"
+                                                    Binding="{Binding component}"
+                                                    Width="120"
+                                                    CanUserResize="True"/>
 
-                <!-- メッセージ -->
-                <DataGridTextColumn Header="メッセージ"
-                                    Binding="{Binding message}"
-                                    Width="*"/>
-            </DataGrid.Columns>
-        </DataGrid>
+                                <!-- メッセージ -->
+                                <DataGridTextColumn Header="メッセージ"
+                                                    Binding="{Binding message}"
+                                                    Width="*">
+                                        <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                                </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                        </DataGrid.Columns>
+                </DataGrid>
 
-        <!-- ステータスバー -->
-        <Border Grid.Row="2"
-                Background="#F5F5F5"
-                BorderBrush="#E0E0E0"
-                BorderThickness="0,1,0,0"
-                Padding="10,5">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock x:Name="StatusTextBlock"
-                           Text="ログ待機中..."
-                           VerticalAlignment="Center"/>
-                <TextBlock x:Name="LogCountTextBlock"
-                           Text="総件数: 0"
-                           VerticalAlignment="Center"
-                           Margin="20,0,0,0"/>
-            </StackPanel>
-        </Border>
-    </Grid>
+                <!-- ステータスバー -->
+                <Border Grid.Row="2"
+                        Background="#F5F5F5"
+                        BorderBrush="#E0E0E0"
+                        BorderThickness="0,1,0,0"
+                        Padding="10,5">
+                        <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="StatusTextBlock"
+                                           Text="ログ待機中..."
+                                           VerticalAlignment="Center"/>
+                                <TextBlock x:Name="LogCountTextBlock"
+                                           Text="総件数: 0"
+                                           VerticalAlignment="Center"
+                                           Margin="20,0,0,0"/>
+                        </StackPanel>
+                </Border>
+        </Grid>
 </Window>

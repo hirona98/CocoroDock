@@ -1,5 +1,6 @@
 ﻿using CocoroDock.Services;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -45,11 +46,11 @@ namespace CocoroDock
             // Mutexによる二重起動チェック
             string mutexName = $"Global\\{GetPipeNameFromExecutable()}";
             bool createdNew;
-            
+
             try
             {
                 _mutex = new Mutex(true, mutexName, out createdNew);
-                
+
                 if (!createdNew)
                 {
                     // 既に起動している場合、既存のプロセスにメッセージを送信
@@ -89,7 +90,7 @@ namespace CocoroDock
 
             // システムトレイアイコンの初期化
             InitializeNotifyIcon();
-            
+
             // 未処理の例外ハンドラを登録
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Application.Current.DispatcherUnhandledException += Application_DispatcherUnhandledException;
@@ -166,7 +167,7 @@ namespace CocoroDock
 
             // システムトレイアイコンの解放
             _notifyIcon?.Dispose();
-            
+
             // Mutexを解放
             _mutex?.ReleaseMutex();
             _mutex?.Dispose();
@@ -215,7 +216,7 @@ namespace CocoroDock
                 {
                     Text = "終了"
                 };
-                exitMenuItem.Click += (s, e) => Shutdown();
+                exitMenuItem.Click += async (s, e) => await PerformGracefulShutdownAsync();
                 contextMenu.Items.Add(exitMenuItem);
 
                 _notifyIcon.ContextMenuStrip = contextMenu;
@@ -337,6 +338,50 @@ namespace CocoroDock
             finally
             {
                 Environment.Exit(1);
+            }
+        }
+
+        /// <summary>
+        /// グレースフルシャットダウンを実行
+        /// </summary>
+        private async Task PerformGracefulShutdownAsync()
+        {
+            try
+            {
+                // UIスレッドで実行
+                await Dispatcher.InvokeAsync(async () =>
+                {
+                    // メインウィンドウを取得
+                    MainWindow? mainWindow = null;
+
+                    foreach (Window window in Application.Current.Windows)
+                    {
+                        if (window is MainWindow mw)
+                        {
+                            mainWindow = mw;
+                            break;
+                        }
+                    }
+
+                    if (mainWindow != null)
+                    {
+                        // MainWindowのグレースフルシャットダウンメソッドを呼び出し
+                        await mainWindow.PerformGracefulShutdownAsync();
+                    }
+                    else
+                    {
+                        // メインウィンドウが見つからない場合は通常のシャットダウン
+                        Debug.WriteLine("MainWindowが見つかりません。通常のシャットダウンを実行します。");
+                        Shutdown();
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"グレースフルシャットダウン中にエラーが発生しました: {ex.Message}");
+
+                // エラーが発生した場合は通常のシャットダウン
+                Shutdown();
             }
         }
     }

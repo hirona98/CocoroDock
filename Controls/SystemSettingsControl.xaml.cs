@@ -1,11 +1,27 @@
 using CocoroDock.Communication;
 using CocoroDock.Services;
+using CocoroDock.Windows;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
 namespace CocoroDock.Controls
 {
+    /// <summary>
+    /// 表示用記憶情報
+    /// </summary>
+    public class DisplayMemoryInfo
+    {
+        public string MemoryId { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+    }
+
     /// <summary>
     /// SystemSettingsControl.xaml の相互作用ロジック
     /// </summary>
@@ -21,6 +37,7 @@ namespace CocoroDock.Controls
         /// </summary>
         private bool _isInitialized = false;
 
+
         public SystemSettingsControl()
         {
             InitializeComponent();
@@ -34,24 +51,33 @@ namespace CocoroDock.Controls
             try
             {
                 var appSettings = AppSettings.Instance;
-                
+
                 // 通知API設定
                 IsEnableNotificationApiCheckBox.IsChecked = appSettings.IsEnableNotificationApi;
-                ApiDescriptionTextBox.Text = GetApiDescription();
-                
+                ApiDetailsTextBox.Text = GetApiDetails();
+
                 // デスクトップウォッチ設定
                 ScreenshotEnabledCheckBox.IsChecked = appSettings.ScreenshotSettings.enabled;
                 CaptureActiveWindowOnlyCheckBox.IsChecked = appSettings.ScreenshotSettings.captureActiveWindowOnly;
                 ScreenshotIntervalTextBox.Text = appSettings.ScreenshotSettings.intervalMinutes.ToString();
                 IdleTimeoutTextBox.Text = appSettings.ScreenshotSettings.idleTimeoutMinutes.ToString();
-                
+                ExcludePatternsTextBox.Text = string.Join(Environment.NewLine, appSettings.ScreenshotSettings.excludePatterns);
+
                 // マイク設定
-                MicAutoAdjustmentCheckBox.IsChecked = appSettings.MicrophoneSettings.autoAdjustment;
                 MicThresholdSlider.Value = appSettings.MicrophoneSettings.inputThreshold;
-                
+
+                // CocoroCoreM設定
+                EnableInternetRetrievalCheckBox.IsChecked = appSettings.EnableInternetRetrieval;
+                GoogleApiKeyTextBox.Text = appSettings.GoogleApiKey;
+                GoogleSearchEngineIdTextBox.Text = appSettings.GoogleSearchEngineId;
+                InternetMaxResultsTextBox.Text = appSettings.InternetMaxResults.ToString();
+
+                // 記憶管理の初期化
+                LoadMemoryManagementSettings();
+
                 // イベントハンドラーを設定
                 SetupEventHandlers();
-                
+
                 _isInitialized = true;
             }
             catch (Exception ex)
@@ -69,7 +95,7 @@ namespace CocoroDock.Controls
             // 通知API設定
             IsEnableNotificationApiCheckBox.Checked += OnSettingsChanged;
             IsEnableNotificationApiCheckBox.Unchecked += OnSettingsChanged;
-            
+
             // デスクトップウォッチ設定
             ScreenshotEnabledCheckBox.Checked += OnSettingsChanged;
             ScreenshotEnabledCheckBox.Unchecked += OnSettingsChanged;
@@ -77,11 +103,17 @@ namespace CocoroDock.Controls
             CaptureActiveWindowOnlyCheckBox.Unchecked += OnSettingsChanged;
             ScreenshotIntervalTextBox.TextChanged += OnSettingsChanged;
             IdleTimeoutTextBox.TextChanged += OnSettingsChanged;
-            
+            ExcludePatternsTextBox.TextChanged += OnSettingsChanged;
+
             // マイク設定
-            MicAutoAdjustmentCheckBox.Checked += OnSettingsChanged;
-            MicAutoAdjustmentCheckBox.Unchecked += OnSettingsChanged;
             MicThresholdSlider.ValueChanged += OnSettingsChanged;
+
+            // CocoroCoreM設定
+            EnableInternetRetrievalCheckBox.Checked += OnSettingsChanged;
+            EnableInternetRetrievalCheckBox.Unchecked += OnSettingsChanged;
+            GoogleApiKeyTextBox.TextChanged += OnSettingsChanged;
+            GoogleSearchEngineIdTextBox.TextChanged += OnSettingsChanged;
+            InternetMaxResultsTextBox.TextChanged += OnSettingsChanged;
         }
 
         /// <summary>
@@ -96,9 +128,9 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// API説明テキストを取得
+        /// API詳細テキストを取得（エンドポイント/ボディ/レスポンス/使用例を含む）
         /// </summary>
-        private string GetApiDescription()
+        private string GetApiDetails()
         {
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("エンドポイント:");
@@ -174,6 +206,14 @@ namespace CocoroDock.Controls
                 settings.idleTimeoutMinutes = timeout;
             }
 
+            // 除外パターンを取得（空行を除外）
+            var patterns = ExcludePatternsTextBox.Text
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .Where(p => !string.IsNullOrEmpty(p))
+                .ToList();
+            settings.excludePatterns = patterns;
+
             return settings;
         }
 
@@ -186,6 +226,7 @@ namespace CocoroDock.Controls
             CaptureActiveWindowOnlyCheckBox.IsChecked = settings.captureActiveWindowOnly;
             ScreenshotIntervalTextBox.Text = settings.intervalMinutes.ToString();
             IdleTimeoutTextBox.Text = settings.idleTimeoutMinutes.ToString();
+            ExcludePatternsTextBox.Text = string.Join(Environment.NewLine, settings.excludePatterns);
         }
 
         /// <summary>
@@ -195,7 +236,6 @@ namespace CocoroDock.Controls
         {
             return new MicrophoneSettings
             {
-                autoAdjustment = MicAutoAdjustmentCheckBox.IsChecked ?? false,
                 inputThreshold = (int)MicThresholdSlider.Value
             };
         }
@@ -205,8 +245,241 @@ namespace CocoroDock.Controls
         /// </summary>
         public void SetMicrophoneSettings(MicrophoneSettings settings)
         {
-            MicAutoAdjustmentCheckBox.IsChecked = settings.autoAdjustment;
             MicThresholdSlider.Value = settings.inputThreshold;
         }
+
+        /// <summary>
+        /// CocoroCoreM設定を取得
+        /// </summary>
+        public (bool enableProMode, bool enableInternetRetrieval, string googleApiKey, string googleSearchEngineId, int internetMaxResults) GetCocoroCoreMSettings()
+        {
+            bool enableProMode = true; // 設定ファイルのみで制御
+            bool enableInternetRetrieval = EnableInternetRetrievalCheckBox.IsChecked ?? true;
+            string googleApiKey = GoogleApiKeyTextBox.Text;
+            string googleSearchEngineId = GoogleSearchEngineIdTextBox.Text;
+            int internetMaxResults = 5;
+
+            if (int.TryParse(InternetMaxResultsTextBox.Text, out int maxResults))
+            {
+                if (maxResults >= 1 && maxResults <= 10)
+                {
+                    internetMaxResults = maxResults;
+                }
+            }
+
+            return (enableProMode, enableInternetRetrieval, googleApiKey, googleSearchEngineId, internetMaxResults);
+        }
+
+        /// <summary>
+        /// CocoroCoreM設定を設定
+        /// </summary>
+        public void SetCocoroCoreMSettings(bool enableProMode, bool enableInternetRetrieval, string googleApiKey, string googleSearchEngineId, int internetMaxResults)
+        {
+            // enableProModeはコメントアウト（設定ファイルでのみ制御）
+            EnableInternetRetrievalCheckBox.IsChecked = enableInternetRetrieval;
+            GoogleApiKeyTextBox.Text = googleApiKey;
+            GoogleSearchEngineIdTextBox.Text = googleSearchEngineId;
+            InternetMaxResultsTextBox.Text = internetMaxResults.ToString();
+        }
+
+        // ========================================
+        // 記憶管理機能
+        // ========================================
+
+        /// <summary>
+        /// 記憶管理設定の読み込み
+        /// </summary>
+        private async void LoadMemoryManagementSettings()
+        {
+            try
+            {
+                await LoadRegisteredMemories();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"記憶管理設定の読み込みエラー: {ex.Message}");
+                DeleteMemoryButton.IsEnabled = false;
+            }
+        }
+
+        /// <summary>
+        /// メモリー一覧を再読み込み（外部から呼び出し可能）
+        /// </summary>
+        public async Task RefreshMemoryListAsync()
+        {
+            await LoadRegisteredMemories();
+        }
+
+        /// <summary>
+        /// CocoroCoreMに登録されているメモリー一覧を取得
+        /// </summary>
+        private async Task LoadRegisteredMemories()
+        {
+            try
+            {
+                var appSettings = AppSettings.Instance;
+                using var coreClient = new CocoroCoreClient(appSettings.CocoroCorePort);
+
+                // CocoroCoreMからメモリー一覧を取得
+                var memoriesResponse = await coreClient.GetMemoryListAsync();
+
+                if (memoriesResponse.data?.Any() == true)
+                {
+                    // 表示用のメモリー情報リストを作成
+                    var displayMemories = memoriesResponse.data.Select(u => new DisplayMemoryInfo
+                    {
+                        MemoryId = u.memory_id,
+                        DisplayName = u.memory_id,  // MemoryIDを表示
+                        Role = u.role
+                    }).ToList();
+
+                    MemoryComboBox.ItemsSource = displayMemories;
+
+                    // 最初のメモリーを選択
+                    if (displayMemories.Any())
+                    {
+                        MemoryComboBox.SelectedIndex = 0;
+                    }
+                }
+                else
+                {
+                    // データが空の場合はComboBoxをクリア
+                    MemoryComboBox.ItemsSource = null;
+                    MemoryComboBox.SelectedItem = null;
+                    DeleteMemoryButton.IsEnabled = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"メモリー一覧取得エラー: {ex.Message}");
+                // エラー時もComboBoxをクリア
+                MemoryComboBox.ItemsSource = null;
+                MemoryComboBox.SelectedItem = null;
+                DeleteMemoryButton.IsEnabled = false;
+            }
+        }
+
+        /// <summary>
+        /// メモリー選択変更時
+        /// </summary>
+        private void MemoryComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var selectedMemory = MemoryComboBox.SelectedItem as DisplayMemoryInfo;
+            if (selectedMemory == null)
+            {
+                DeleteMemoryButton.IsEnabled = false;
+                return;
+            }
+
+            UpdateSelectedCharacterDisplay(selectedMemory);
+        }
+
+
+        /// <summary>
+        /// キャラクター選択時の表示更新
+        /// </summary>
+        private void UpdateSelectedCharacterDisplay(DisplayMemoryInfo memory)
+        {
+            DeleteMemoryButton.IsEnabled = true;
+        }
+
+        /// <summary>
+        /// 記憶削除ボタンクリック時
+        /// </summary>
+        private async void DeleteMemoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedMemory = MemoryComboBox.SelectedItem as DisplayMemoryInfo;
+            if (selectedMemory == null) return;
+
+            // 確認ダイアログ
+            var result = MessageBox.Show(
+                Window.GetWindow(this),
+                $"「{selectedMemory.DisplayName}」の記憶をすべて削除します。\n\n" +
+                "この操作は取り消すことができません。\n" +
+                "本当に続行しますか？",
+                "警告: 記憶の初期化",
+                MessageBoxButton.OKCancel,
+                MessageBoxImage.Warning,
+                MessageBoxResult.Cancel
+            );
+
+            if (result != MessageBoxResult.OK) return;
+
+            // 二重確認
+            var confirmResult = MessageBox.Show(
+                Window.GetWindow(this),
+                $"最終確認\n\n「{selectedMemory.DisplayName}」の記憶をすべて削除します。\n" +
+                "よろしいですか？",
+                "最終確認",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question,
+                MessageBoxResult.No
+            );
+
+            if (confirmResult != MessageBoxResult.Yes) return;
+
+            await ExecuteMemoryDeletion(selectedMemory);
+        }
+
+        /// <summary>
+        /// 記憶削除の実行
+        /// </summary>
+        private async Task ExecuteMemoryDeletion(DisplayMemoryInfo memory)
+        {
+            var progressDialog = new MemoryDeleteProgressDialog
+            {
+                Owner = Window.GetWindow(this),
+                CharacterName = memory.DisplayName
+            };
+
+            try
+            {
+                // プログレスダイアログを表示（非モーダル）
+                progressDialog.Show();
+
+                var appSettings = AppSettings.Instance;
+                using var coreClient = new CocoroCoreClient(appSettings.CocoroCorePort);
+
+                // 削除実行
+                await coreClient.DeleteUserMemoriesAsync(memory.MemoryId);
+
+                progressDialog.Close();
+
+                // ComboBoxの内容を再読み込み
+                await LoadRegisteredMemories();
+
+                // 完了通知
+                MessageBox.Show(
+                    Window.GetWindow(this),
+                    "記憶の削除が完了しました。",
+                    "完了",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information
+                );
+            }
+            catch (Exception ex)
+            {
+                progressDialog.Close();
+
+                string errorMessage = ex switch
+                {
+                    TimeoutException => "処理がタイムアウトしました。\nCocoroCoreMの応答に時間がかかっています。",
+                    HttpRequestException => "通信エラーが発生しました。\nCocoroCoreMが起動していることを確認してください。",
+                    InvalidOperationException => ex.Message,
+                    _ => $"予期しないエラーが発生しました。\n\n詳細: {ex.Message}"
+                };
+
+                MessageBox.Show(
+                    Window.GetWindow(this),
+                    $"記憶の削除に失敗しました。\n\n{errorMessage}",
+                    "エラー",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
+                );
+
+                Debug.WriteLine($"Memory deletion failed: {ex}");
+            }
+        }
+
     }
 }

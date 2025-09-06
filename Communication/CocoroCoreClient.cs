@@ -18,166 +18,19 @@ namespace CocoroDock.Communication
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
 
-        // SSEデータ用のクラス
-        public class SseData
-        {
-            public string? type { get; set; }
-            public string? content { get; set; }
-            public string? role { get; set; }
-            public string? session_id { get; set; }
-            public string? context_id { get; set; }
-        }
 
         public CocoroCoreClient(int port)
         {
             _httpClient = new HttpClient
             {
-                Timeout = TimeSpan.FromMinutes(5) // SSE用に長めのタイムアウトを設定
+                Timeout = TimeSpan.FromSeconds(120) // REST API用のタイムアウト
             };
             _baseUrl = $"http://127.0.0.1:{port}";
         }
 
-        /// <summary>
-        /// SSEレスポンス結果
-        /// </summary>
-        public class ChatResponse : StandardResponse
-        {
-            public string? context_id { get; set; }
-        }
 
-        /// <summary>
-        /// CocoroCoreにチャットメッセージを送信（SSEストリーミング対応）
-        /// </summary>
-        /// <param name="request">チャットリクエスト</param>
-        public async Task<ChatResponse> SendChatMessageAsync(CoreChatRequest request)
-        {
-            try
-            {
-                var json = MessageHelper.SerializeToJson(request);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                // SSEストリームを受信するため、特別なリクエストを構成
-                var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/chat")
-                {
-                    Content = content
-                };
-                
-                using var response = await _httpClient.SendAsync(
-                    httpRequest, 
-                    HttpCompletionOption.ResponseHeadersRead
-                );
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorBody = await response.Content.ReadAsStringAsync();
-                    var error = MessageHelper.DeserializeFromJson<ErrorResponse>(errorBody);
-                    throw new HttpRequestException($"CocoroCoreエラー: {error?.message ?? errorBody}");
-                }
-
-                // Server-Sent Eventsの処理
-                await using var stream = await response.Content.ReadAsStreamAsync();
-                using var reader = new StreamReader(stream);
-                
-                string? finalContextId = null;
-                var responseReceived = false;
-
-                while (!reader.EndOfStream)
-                {
-                    var line = await reader.ReadLineAsync();
-                    if (line == null) break;
-
-                    if (line.StartsWith("data: "))
-                    {
-                        var jsonData = line.Substring(6);
-                        if (jsonData == "[DONE]") break;
-
-                        try
-                        {
-                            var data = MessageHelper.DeserializeFromJson<SseData>(jsonData);
-                            if (data != null)
-                            {
-                                // context_idを保存（今後の会話継続用）
-                                if (!string.IsNullOrEmpty(data.context_id))
-                                {
-                                    finalContextId = data.context_id;
-                                }
-
-                                // チャンクごとの処理（必要に応じて）
-                                Debug.WriteLine($"SSE チャンク受信: type={data.type}, content={data.content?.Length ?? 0} chars");
-                                
-                                responseReceived = true;
-                            }
-                        }
-                        catch (JsonException ex)
-                        {
-                            Debug.WriteLine($"SSEデータのパースエラー: {ex.Message}");
-                        }
-                    }
-                }
-
-                // 最終的なレスポンスはCocoroCoreから/api/addChatUiに送信されるため、
-                // ここでは成功レスポンスとcontext_idを返す
-                return new ChatResponse 
-                { 
-                    status = "success", 
-                    message = responseReceived ? "AI response received via SSE" : "No response received",
-                    timestamp = DateTime.UtcNow,
-                    context_id = finalContextId
-                };
-            }
-            catch (TaskCanceledException)
-            {
-                throw new TimeoutException("CocoroCoreへのリクエストがタイムアウトしました");
-            }
-            catch (HttpRequestException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"CocoroCoreへのチャット送信エラー: {ex.Message}");
-                throw new InvalidOperationException($"CocoroCoreとの通信に失敗しました: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// CocoroCoreに通知メッセージを送信（/chatエンドポイントを使用）
-        /// </summary>
-        /// <param name="request">通知リクエスト</param>
-        public async Task<StandardResponse> SendNotificationAsync(CoreNotificationRequest request)
-        {
-            try
-            {
-                // 通知も/chatエンドポイントを使用（AIAvatarKit仕様）
-                var chatRequest = new CoreChatRequest
-                {
-                    type = request.type,
-                    session_id = request.session_id,
-                    user_id = request.user_id,
-                    context_id = request.context_id,
-                    text = request.text,
-                    audio_data = null,
-                    files = null,
-                    system_prompt_params = null,
-                    metadata = request.metadata
-                };
-
-                // チャットメッセージとして送信
-                var response = await SendChatMessageAsync(chatRequest);
-                // ChatResponseからStandardResponseに変換
-                return new StandardResponse
-                {
-                    status = response.status,
-                    message = response.message,
-                    timestamp = response.timestamp
-                };
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"CocoroCoreへの通知送信エラー: {ex.Message}");
-                throw;
-            }
-        }
 
         /// <summary>
         /// CocoroCoreに制御コマンドを送信
@@ -200,7 +53,7 @@ namespace CocoroDock.Communication
                     throw new HttpRequestException($"CocoroCoreエラー: {error?.message ?? responseBody}");
                 }
 
-                return MessageHelper.DeserializeFromJson<StandardResponse>(responseBody) 
+                return MessageHelper.DeserializeFromJson<StandardResponse>(responseBody)
                        ?? new StandardResponse { status = "success", message = "Command sent successfully" };
             }
             catch (TaskCanceledException)
@@ -219,13 +72,13 @@ namespace CocoroDock.Communication
         }
 
         /// <summary>
-        /// CocoroCoreのヘルスチェックを実行（MCP状態を含む）
+        /// CocoroCoreのヘルスチェックを実行
         /// </summary>
         public async Task<HealthCheckResponse> GetHealthAsync()
         {
             try
             {
-                using var response = await _httpClient.GetAsync($"{_baseUrl}/health");
+                using var response = await _httpClient.GetAsync($"{_baseUrl}/api/health");
 
                 var responseBody = await response.Content.ReadAsStringAsync();
 
@@ -235,7 +88,7 @@ namespace CocoroDock.Communication
                     throw new HttpRequestException($"CocoroCoreエラー: {error?.message ?? responseBody}");
                 }
 
-                return MessageHelper.DeserializeFromJson<HealthCheckResponse>(responseBody) 
+                return MessageHelper.DeserializeFromJson<HealthCheckResponse>(responseBody)
                        ?? throw new InvalidOperationException("ヘルスチェックレスポンスのパースに失敗しました");
             }
             catch (TaskCanceledException)
@@ -252,7 +105,6 @@ namespace CocoroDock.Communication
                 throw new InvalidOperationException($"CocoroCoreとの通信に失敗しました: {ex.Message}", ex);
             }
         }
-
 
         /// <summary>
         /// MCPツール登録ログを取得
@@ -271,7 +123,7 @@ namespace CocoroDock.Communication
                     throw new HttpRequestException($"CocoroCoreエラー: {error?.message ?? responseBody}");
                 }
 
-                return MessageHelper.DeserializeFromJson<McpToolRegistrationResponse>(responseBody) 
+                return MessageHelper.DeserializeFromJson<McpToolRegistrationResponse>(responseBody)
                        ?? new McpToolRegistrationResponse { status = "success", message = "ログ取得完了", logs = new List<string>() };
             }
             catch (TaskCanceledException)
@@ -288,6 +140,96 @@ namespace CocoroDock.Communication
                 throw new InvalidOperationException($"CocoroCoreとの通信に失敗しました: {ex.Message}", ex);
             }
         }
+
+        /// <summary>
+        /// ユーザー一覧を取得
+        /// </summary>
+        public async Task<MemoryListResponse> GetMemoryListAsync()
+        {
+            try
+            {
+                var requestUrl = $"{_baseUrl}/api/memory/characters";
+                Debug.WriteLine($"[API Request] GET {requestUrl}");
+
+                using var response = await _httpClient.GetAsync(requestUrl);
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+                Debug.WriteLine($"[API Response] Status: {(int)response.StatusCode} {response.StatusCode}");
+                Debug.WriteLine($"[API Response] Body: {responseBody}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = MessageHelper.DeserializeFromJson<ErrorResponse>(responseBody);
+                    throw new HttpRequestException($"ユーザー一覧取得エラー: {error?.message ?? responseBody}");
+                }
+
+                var result = MessageHelper.DeserializeFromJson<MemoryListResponse>(responseBody)
+                       ?? throw new InvalidOperationException("ユーザー一覧の解析に失敗しました");
+
+                Debug.WriteLine($"[API Parsed] Users count: {result.data?.Count ?? 0}");
+                if (result.data != null)
+                {
+                    foreach (var user in result.data)
+                    {
+                        Debug.WriteLine($"[API User] ID: {user.memory_id}, Name: {user.memory_name}, Role: {user.role}");
+                    }
+                }
+
+                return result;
+            }
+            catch (TaskCanceledException)
+            {
+                Debug.WriteLine("[API Error] ユーザー一覧取得がタイムアウトしました");
+                throw new TimeoutException("ユーザー一覧取得がタイムアウトしました");
+            }
+        }
+
+
+        /// <summary>
+        /// ユーザーの全記憶を削除
+        /// </summary>
+        public async Task<StandardResponse> DeleteUserMemoriesAsync(string memoryId)
+        {
+            try
+            {
+                var requestUrl = $"{_baseUrl}/api/memory/character/{Uri.EscapeDataString(memoryId)}/all";
+                Debug.WriteLine($"[API Request] DELETE {requestUrl}");
+                Debug.WriteLine($"[API Param] MemoryId: {memoryId}");
+
+                using var response = await _httpClient.DeleteAsync(requestUrl);
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+                Debug.WriteLine($"[API Response] Status: {(int)response.StatusCode} {response.StatusCode}");
+                Debug.WriteLine($"[API Response] Body: {responseBody}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = MessageHelper.DeserializeFromJson<ErrorResponse>(responseBody);
+
+                    if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        Debug.WriteLine("[API Error] ユーザーが見つかりません");
+                        throw new InvalidOperationException($"ユーザーが見つかりません: {memoryId}");
+                    }
+
+                    Debug.WriteLine($"[API Error] 記憶削除に失敗: {error?.message ?? responseBody}");
+                    throw new HttpRequestException($"記憶削除エラー: {error?.message ?? responseBody}");
+                }
+
+                var result = MessageHelper.DeserializeFromJson<StandardResponse>(responseBody)
+                       ?? throw new InvalidOperationException("削除結果の解析に失敗しました");
+
+                Debug.WriteLine($"[API Parsed] DeleteResult - Status: {result.status}, Message: {result.message}");
+
+                return result;
+            }
+            catch (TaskCanceledException)
+            {
+                Debug.WriteLine("[API Error] 記憶削除リクエストがタイムアウトしました");
+                throw new TimeoutException("記憶削除リクエストがタイムアウトしました");
+            }
+        }
+
 
         public void Dispose()
         {

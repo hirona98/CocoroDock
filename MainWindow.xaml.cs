@@ -2,6 +2,7 @@ using CocoroDock.Communication;
 using CocoroDock.Controls;
 using CocoroDock.Services;
 using CocoroDock.Utilities;
+using CocoroDock.Windows;
 using CocoroAI.Services;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ using System.Windows;
 
 namespace CocoroDock
 {
+
     /// <summary>
     /// MainWindow.xaml の相互作用ロジック
     /// </summary>
@@ -21,23 +23,12 @@ namespace CocoroDock
     {
         private ICommunicationService? _communicationService;
         private readonly IAppSettings _appSettings;
-        private Timer? _statusMessageTimer;
-        private readonly List<StatusMessage> _statusMessages = new List<StatusMessage>();
-        private readonly object _statusLock = new object();
-        private const int MaxStatusMessages = 5; // 最大表示メッセージ数
         private ScreenshotService? _screenshotService;
         private bool _isScreenshotPaused = false;
+        private RealtimeVoiceRecognitionService? _voiceRecognitionService;
+        private AdminWindow? _adminWindow;
+        private LogViewerWindow? _logViewerWindow;
 
-        private class StatusMessage
-        {
-            public string Message { get; set; }
-            public Timer Timer { get; set; } = null!;
-
-            public StatusMessage(string message)
-            {
-                Message = message;
-            }
-        }
 
         public MainWindow()
         {
@@ -87,11 +78,21 @@ namespace CocoroDock
                 // スクリーンショットサービスを初期化
                 InitializeScreenshotService();
 
+                // 音声認識サービスを初期化
+                // 起動時はウェイクワードの有無に応じてVoiceRecognitionStateMachine内で状態が決定される
+                InitializeVoiceRecognitionService(startActive: false);
+
                 // UIコントロールのイベントハンドラを登録
                 RegisterEventHandlers();
 
                 // ボタンの初期状態を設定
                 InitializeButtonStates();
+
+                // 初期ステータス表示
+                if (_communicationService != null)
+                {
+                    UpdateCocoroCoreMStatusDisplay(_communicationService.CurrentStatus);
+                }
 
                 // APIサーバーの起動を開始
                 _ = StartApiServerAsync();
@@ -127,7 +128,7 @@ namespace CocoroDock
             }
 
             // 現在のキャラクターの設定を反映
-            var currentCharacter = GetCurrentCharacterSettings();
+            var currentCharacter = GetStoredCharacterSetting();
             if (currentCharacter != null)
             {
                 // STTの状態を反映
@@ -165,14 +166,10 @@ namespace CocoroDock
         /// </summary>
         private void InitializeExternalProcesses()
         {
-#if !DEBUG
             // CocoroShell.exeを起動（既に起動していれば終了してから再起動）
             LaunchCocoroShell();
-            // CocoroCore.exeを起動（既に起動していれば終了してから再起動）
-            LaunchCocoroCore();
-            // CocoroMemory.exeを起動（既に起動していれば終了してから再起動）
-            LaunchCocoroMemory();
-#endif
+            // CocoroCoreM.exeを起動（既に起動していれば終了してから再起動）
+            LaunchCocoroCoreM();
         }
 
         /// <summary>
@@ -187,6 +184,7 @@ namespace CocoroDock
             _communicationService.ControlCommandReceived += OnControlCommandReceived;
             _communicationService.ErrorOccurred += OnErrorOccurred;
             _communicationService.StatusUpdateRequested += OnStatusUpdateRequested;
+            _communicationService.StatusChanged += OnCocoroCoreMStatusChanged;
         }
 
         /// <summary>
@@ -201,11 +199,13 @@ namespace CocoroDock
                 // スクリーンショットサービスを初期化
                 _screenshotService = new ScreenshotService(
                     screenshotSettings.intervalMinutes,
-                    async (screenshotData) => await OnScreenshotCaptured(screenshotData)
+                    async (screenshotData) => await OnScreenshotCaptured(screenshotData),
+                    async (message) => await OnScreenshotSkipped(message)
                 );
 
                 _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
                 _screenshotService.IdleTimeoutMinutes = screenshotSettings.idleTimeoutMinutes;
+                _screenshotService.SetExcludePatterns(screenshotSettings.excludePatterns);
 
 
                 // サービスを開始
@@ -222,17 +222,29 @@ namespace CocoroDock
         {
             try
             {
-                // 画像を表示
+                // 現在のキャラクター設定を取得してLLMの使用状況を確認
+                var currentCharacter = GetStoredCharacterSetting();
+                bool isLLMEnabled = currentCharacter?.isUseLLM ?? false;
+
+                // LLMが無効の場合は画像表示のみ行い、送信はしない
                 UIHelper.RunOnUIThread(() =>
                 {
                     ChatControlInstance.AddDesktopMonitoringImage(screenshotData.ImageBase64);
                 });
 
+                if (!isLLMEnabled)
+                {
+                    Debug.WriteLine("デスクトップモニタリング: LLMが無効のため送信をスキップ");
+                    return;
+                }
+
                 // CommunicationServiceを使用してデスクトップモニタリングを送信
                 if (_communicationService != null && _communicationService.IsServerRunning)
                 {
-                    // デスクトップモニタリング用の送信処理
-                    await _communicationService.SendDesktopMonitoringToCoreAsync(screenshotData.ImageBase64);
+                    // デスクトップモニタリング用の送信処理（WebSocket使用）
+                    // 画像データをdata URL形式に変換
+                    var imageDataUrl = $"data:image/png;base64,{screenshotData.ImageBase64}";
+                    await _communicationService.SendChatToCoreUnifiedAsync("", null, imageDataUrl);
                 }
             }
             catch (Exception ex)
@@ -241,6 +253,29 @@ namespace CocoroDock
             }
         }
 
+        /// <summary>
+        /// スクリーンショットがスキップされた時の処理
+        /// </summary>
+        private Task OnScreenshotSkipped(string message)
+        {
+            try
+            {
+                // UIスレッドでチャットコントロールに通知メッセージを追加
+                UIHelper.RunOnUIThread(() =>
+                {
+                    if (ChatControlInstance != null)
+                    {
+                        ChatControlInstance.AddSystemErrorMessage($"ℹ️ {message}");
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"スクリーンショットスキップ通知エラー: {ex.Message}");
+            }
+
+            return Task.CompletedTask;
+        }
 
         /// <summary>
         /// スクリーンショットサービスの設定を更新
@@ -277,6 +312,7 @@ namespace CocoroDock
                 // その他の設定は動的に更新
                 _screenshotService.CaptureActiveWindowOnly = screenshotSettings.captureActiveWindowOnly;
                 _screenshotService.IdleTimeoutMinutes = screenshotSettings.idleTimeoutMinutes;
+                _screenshotService.SetExcludePatterns(screenshotSettings.excludePatterns);
 
                 if (needsRestart)
                 {
@@ -299,21 +335,14 @@ namespace CocoroDock
         {
             try
             {
-                // UI更新
-                UpdateConnectionStatus(false, "サーバーを起動中...");
-
                 if (_communicationService != null && !_communicationService.IsServerRunning)
                 {
                     // APIサーバーを起動
                     await _communicationService.StartServerAsync();
-
-                    // UI更新
-                    UpdateConnectionStatus(true);
                 }
             }
             catch (Exception ex)
             {
-                UpdateConnectionStatus(false, "サーバー起動エラー");
                 Debug.WriteLine($"APIサーバー起動エラー: {ex.Message}");
             }
         }
@@ -325,122 +354,39 @@ namespace CocoroDock
         {
             // チャットコントロールのイベント登録
             ChatControlInstance.MessageSent += OnChatMessageSent;
+
+            // 設定保存イベントの登録
+            AppSettings.SettingsSaved += OnSettingsSaved;
         }
 
-        /// <summary>
-        /// 接続ステータス表示を更新
-        /// </summary>
-        private void UpdateConnectionStatus(bool isConnected, string? customMessage = null)
-        {
-            // UIスレッドで実行
-            UIHelper.RunOnUIThread(() =>
-            {
-                if (!string.IsNullOrEmpty(customMessage))
-                {
-                    // カスタムメッセージがある場合は履歴に追加
-                    AddStatusMessage(customMessage);
-                }
-                else
-                {
-                    // 切断状態
-                    string statusText = "停止中";
-                    lock (_statusLock)
-                    {
-                        // すべてのタイマーを破棄
-                        foreach (var msg in _statusMessages)
-                        {
-                            msg.Timer?.Dispose();
-                        }
-                        _statusMessages.Clear();
-                        ConnectionStatusText.Text = $"状態: {statusText}";
-                    }
-                }
-            });
-        }
+
+
+
 
         /// <summary>
-        /// ステータスメッセージを履歴に追加して表示
+        /// CocoroCoreMステータスに基づいて表示を更新
         /// </summary>
-        private void AddStatusMessage(string message)
+        /// <param name="status">CocoroCoreMのステータス</param>
+        private void UpdateCocoroCoreMStatusDisplay(CocoroCoreMStatus status)
         {
-            lock (_statusLock)
+            // 現在のキャラクター設定を取得してLLMの使用状況を確認
+            var currentCharacter = GetStoredCharacterSetting();
+            bool isLLMEnabled = currentCharacter?.isUseLLM ?? false;
+
+            string statusText = status switch
             {
-                // 既存の同じメッセージを探す
-                var existingMessage = _statusMessages.FirstOrDefault(m => m.Message == message);
+                CocoroCoreMStatus.WaitingForStartup => isLLMEnabled ? "CocoroCoreM起動待ち" : "LLM無効",
+                CocoroCoreMStatus.Normal => isLLMEnabled ? "正常動作中" : "LLM無効",
+                CocoroCoreMStatus.ProcessingMessage => "LLMメッセージ処理中",
+                CocoroCoreMStatus.ProcessingImage => "LLM画像処理中",
+                _ => "不明な状態"
+            };
 
-                if (existingMessage != null)
-                {
-                    // 既存のメッセージがある場合はタイマーをリセット
-                    existingMessage.Timer?.Dispose();
-                    existingMessage.Timer = CreateMessageTimer(message);
-                }
-                else
-                {
-                    // 新しいメッセージを追加
-                    var newMessage = new StatusMessage(message);
-                    newMessage.Timer = CreateMessageTimer(message);
-                    _statusMessages.Add(newMessage);
+            ConnectionStatusText.Text = $"状態: {statusText}";
 
-                    // 最大数を超えたら古いメッセージを削除
-                    while (_statusMessages.Count > MaxStatusMessages)
-                    {
-                        var oldestMessage = _statusMessages[0];
-                        oldestMessage.Timer?.Dispose();
-                        _statusMessages.RemoveAt(0);
-                    }
-                }
-
-                // 表示を更新
-                UpdateStatusDisplay();
-            }
-        }
-
-        /// <summary>
-        /// メッセージ用のタイマーを作成
-        /// </summary>
-        private Timer CreateMessageTimer(string message)
-        {
-            return new Timer(_ =>
-            {
-                UIHelper.RunOnUIThread(() =>
-                {
-                    RemoveStatusMessage(message);
-                });
-            }, null, 3000, Timeout.Infinite); // 3秒後に削除
-        }
-
-        /// <summary>
-        /// 特定のステータスメッセージを削除
-        /// </summary>
-        private void RemoveStatusMessage(string message)
-        {
-            lock (_statusLock)
-            {
-                var messageToRemove = _statusMessages.FirstOrDefault(m => m.Message == message);
-                if (messageToRemove != null)
-                {
-                    messageToRemove.Timer?.Dispose();
-                    _statusMessages.Remove(messageToRemove);
-                    UpdateStatusDisplay();
-                }
-            }
-        }
-
-        /// <summary>
-        /// ステータス表示を更新
-        /// </summary>
-        private void UpdateStatusDisplay()
-        {
-            if (_statusMessages.Count == 0)
-            {
-                ConnectionStatusText.Text = "状態: 正常動作中";
-            }
-            else
-            {
-                // 最新のメッセージを左に、古いメッセージを右に表示
-                var messages = _statusMessages.Select(m => m.Message).Reverse().ToArray();
-                ConnectionStatusText.Text = $"状態: {string.Join(" | ", messages)}";
-            }
+            // 送信ボタンの有効/無効を制御（LLMが無効の場合は無効にする）
+            bool isSendEnabled = isLLMEnabled && status != CocoroCoreMStatus.WaitingForStartup;
+            ChatControlInstance.UpdateSendButtonEnabled(isSendEnabled);
         }
 
         /// <summary>
@@ -473,20 +419,20 @@ namespace CocoroDock
                 return;
             }
 
-            // 添付画像を取得（あれば）
-            var imageSource = ChatControlInstance.GetAttachedImageSource();
-            string? imageDataUrl = ChatControlInstance.GetAndClearAttachedImage();
+            // UIスレッドで画像データを取得・処理（スレッドセーフな形式に変換）
+            var imageSources = ChatControlInstance.GetAttachedImageSources();
+            var imageDataUrls = ChatControlInstance.GetAndClearAttachedImages();
 
             // ユーザーメッセージとしてチャットウィンドウに表示（送信前に表示）
-            ChatControlInstance.AddUserMessage(message, imageSource);
+            ChatControlInstance.AddUserMessage(message, imageSources);
 
             // 非同期でCocoroCoreにメッセージを送信（UIをブロックしない）
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    // CocoroCoreにメッセージを送信（画像付きの場合は画像データも送信）
-                    await _communicationService.SendChatToCoreAsync(message, null, imageDataUrl);
+                    // CocoroCoreにメッセージを送信（API使用、画像付きの場合は画像データも送信）
+                    await _communicationService.SendChatToCoreUnifiedAsync(message, null, imageDataUrls);
                 }
                 catch (TimeoutException)
                 {
@@ -517,6 +463,43 @@ namespace CocoroDock
             });
         }
 
+        /// <summary>
+        /// 設定保存時のイベントハンドラ
+        /// </summary>
+        private void OnSettingsSaved(object? sender, EventArgs e)
+        {
+            // 現在の設定に基づいて音声認識サービスを制御
+            var currentCharacter = GetStoredCharacterSetting();
+            bool shouldBeActive = currentCharacter?.isUseSTT ?? false;
+
+            // 既存のサービスを停止
+            if (_voiceRecognitionService != null)
+            {
+                _voiceRecognitionService.StopListening();
+                _voiceRecognitionService.Dispose();
+                _voiceRecognitionService = null;
+            }
+
+            // 設定に応じてサービスを開始
+            if (shouldBeActive)
+            {
+                InitializeVoiceRecognitionService(startActive: true);
+                Debug.WriteLine("[MainWindow] 音声認識サービスを開始しました");
+            }
+            else
+            {
+                // 音声レベル表示をリセット
+                UIHelper.RunOnUIThread(() =>
+                {
+                    ChatControlInstance.UpdateVoiceLevel(0, false);
+                });
+                Debug.WriteLine("[MainWindow] 音声認識サービスを停止しました");
+            }
+
+            // デスクトップウォッチ設定の更新
+            UpdateScreenshotService();
+        }
+
         #endregion
 
         #region 通信サービスイベントハンドラ
@@ -534,6 +517,7 @@ namespace CocoroDock
                 }
                 else if (request.role == "assistant")
                 {
+                    // サーバー側処理済みメッセージをそのまま新規追加
                     ChatControlInstance.AddAiMessage(request.content);
                 }
             });
@@ -547,7 +531,7 @@ namespace CocoroDock
             UIHelper.RunOnUIThread(() =>
             {
                 // 通知メッセージをチャットウィンドウに表示（複数画像付き）
-                ChatControlInstance.AddNotificationMessage(notification.userId, notification.message, imageSources);
+                ChatControlInstance.AddNotificationMessage(notification.from, notification.message, imageSources);
             });
         }
 
@@ -557,18 +541,29 @@ namespace CocoroDock
         /// </summary>
         private void OnControlCommandReceived(object? sender, ControlRequest request)
         {
-            UIHelper.RunOnUIThread(() =>
+            UIHelper.RunOnUIThread(async () =>
             {
-                switch (request.command)
+                // パラメータ情報をログ出力
+                var paramsInfo = request.@params?.Count > 0 ? $" パラメータ: {request.@params.Count}個" : "";
+                Debug.WriteLine($"制御コマンド受信: {request.action}, 理由: {request.reason}{paramsInfo}");
+
+                switch (request.action)
                 {
                     case "shutdown":
-                        // シャットダウン理由をログに記録
-                        Debug.WriteLine($"シャットダウン要求を受信しました: {request.reason}");
-                        Application.Current.Shutdown();
+                        // 非同期でシャットダウン処理を実行
+                        await PerformGracefulShutdownAsync();
+                        break;
+
+                    case "restart":
+                        Debug.WriteLine("restart コマンドは現在未実装です");
+                        break;
+
+                    case "reloadConfig":
+                        Debug.WriteLine("reloadConfig コマンドは現在未実装です");
                         break;
 
                     default:
-                        Debug.WriteLine($"未知の制御コマンド: {request.command}");
+                        Debug.WriteLine($"未知の制御コマンド: {request.action}");
                         break;
                 }
             });
@@ -585,10 +580,49 @@ namespace CocoroDock
         /// </summary>
         private void OnStatusUpdateRequested(object? sender, StatusUpdateEventArgs e)
         {
-            UpdateConnectionStatus(e.IsConnected, e.Message);
+            // 新仕様では古いステータスメッセージは使用しない
+            // 必要に応じてログ出力のみ
+            if (!string.IsNullOrEmpty(e.Message))
+            {
+                Debug.WriteLine($"[StatusUpdate] {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// CocoroCoreMステータス変更時のハンドラ
+        /// </summary>
+        private void OnCocoroCoreMStatusChanged(object? sender, CocoroCoreMStatus status)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                UpdateCocoroCoreMStatusDisplay(status);
+            });
         }
 
         #endregion
+
+        /// <summary>
+        /// ログビューアーを開く
+        /// </summary>
+        public void OpenLogViewer()
+        {
+            // 既にログビューアーが開いている場合はアクティブにする
+            if (_logViewerWindow != null && !_logViewerWindow.IsClosed)
+            {
+                _logViewerWindow.Activate();
+                _logViewerWindow.WindowState = WindowState.Normal;
+                return;
+            }
+
+            // ログビューアーを新規作成
+            _logViewerWindow = new LogViewerWindow();
+            _logViewerWindow.Owner = this;
+
+            // ウィンドウが閉じられた時の処理
+            _logViewerWindow.Closed += (sender, args) => { _logViewerWindow = null; };
+
+            _logViewerWindow.Show();
+        }
 
         /// <summary>
         /// アプリケーション終了時の処理
@@ -597,19 +631,8 @@ namespace CocoroDock
         {
             try
             {
-                // タイマーのクリーンアップ
-                _statusMessageTimer?.Dispose();
-                _statusMessageTimer = null;
-
-                // すべてのステータスメッセージタイマーを破棄
-                lock (_statusLock)
-                {
-                    foreach (var msg in _statusMessages)
-                    {
-                        msg.Timer?.Dispose();
-                    }
-                    _statusMessages.Clear();
-                }
+                // イベントハンドラの購読解除
+                AppSettings.SettingsSaved -= OnSettingsSaved;
 
                 // 接続中ならリソース解放
                 if (_communicationService != null)
@@ -633,18 +656,17 @@ namespace CocoroDock
         }
 
         /// <summary>
-        /// 外部アプリケーション（CocoroCore, CocoroShell, CocoroMemory）を終了する
+        /// 外部アプリケーション（CocoroCore, CocoroShell）を終了する
         /// </summary>
         private void TerminateExternalApplications()
         {
             try
             {
-                // 3つのプロセスを並行して終了させる
+                // 2つのプロセスを並行して終了させる
                 var tasks = new[]
                 {
-                    Task.Run(() => LaunchCocoroCore(ProcessOperation.Terminate)),
-                    Task.Run(() => LaunchCocoroShell(ProcessOperation.Terminate)),
-                    Task.Run(() => LaunchCocoroMemory(ProcessOperation.Terminate))
+                    Task.Run(() => LaunchCocoroCoreM(ProcessOperation.Terminate)),
+                    Task.Run(() => LaunchCocoroShell(ProcessOperation.Terminate))
                 };
 
                 // すべてのプロセスが終了するまで待機
@@ -664,14 +686,22 @@ namespace CocoroDock
         {
             try
             {
-                // 設定画面を表示
-                var adminWindow = new AdminWindow(_communicationService);
-                adminWindow.Owner = this; // メインウィンドウを親に設定
+                // 既に設定画面が開いている場合はアクティブにする
+                if (_adminWindow != null && !_adminWindow.IsClosed)
+                {
+                    _adminWindow.Activate();
+                    _adminWindow.WindowState = WindowState.Normal;
+                    return;
+                }
+
+                // 設定画面を新規作成
+                _adminWindow = new AdminWindow(_communicationService);
+                _adminWindow.Owner = this; // メインウィンドウを親に設定
 
                 // ウィンドウが閉じられた時にボタンの状態を更新
-                adminWindow.Closed += AdminWindow_Closed;
+                _adminWindow.Closed += AdminWindow_Closed;
 
-                adminWindow.Show(); // モードレスダイアログとして表示
+                _adminWindow.Show(); // モードレスダイアログとして表示
             }
             catch (Exception ex)
             {
@@ -689,6 +719,9 @@ namespace CocoroDock
 
             // 設定変更に応じてサービスを更新
             ApplySettings();
+
+            // AdminWindowの参照をクリア
+            _adminWindow = null;
         }
 
         /// <summary>
@@ -726,8 +759,6 @@ namespace CocoroDock
 
                 // スクリーンショットサービスの状態を更新
                 UpdateScreenshotService();
-
-                AddStatusMessage(_isScreenshotPaused ? "デスクトップウォッチを無効にしました" : "デスクトップウォッチを有効にしました");
             }
         }
 
@@ -737,13 +768,10 @@ namespace CocoroDock
         private void MicButton_Click(object sender, RoutedEventArgs e)
         {
             // 現在のキャラクターのSTT設定をトグル
-            var currentCharacter = GetCurrentCharacterSettings();
+            var currentCharacter = GetStoredCharacterSetting();
             if (currentCharacter != null)
             {
                 currentCharacter.isUseSTT = !currentCharacter.isUseSTT;
-
-                // 設定を保存
-                _appSettings.SaveSettings();
 
                 // ボタンの画像を更新
                 if (MicButtonImage != null)
@@ -758,39 +786,18 @@ namespace CocoroDock
                 if (MicButton != null)
                 {
                     MicButton.ToolTip = currentCharacter.isUseSTT ? "STTを無効にする" : "STTを有効にする";
-
-                    // 無効状態の場合は半透明にする
                     MicButton.Opacity = currentCharacter.isUseSTT ? 1.0 : 0.6;
                 }
 
-                // CocoroCoreにSTT状態を送信
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        if (_communicationService != null)
-                        {
-                            // STT設定をCocoroCoreに送信
-                            await _communicationService.SendSTTStateToCoreAsync(currentCharacter.isUseSTT);
-
-                            UIHelper.RunOnUIThread(() =>
-                            {
-                                AddStatusMessage(currentCharacter.isUseSTT ? "STTを有効にしました" : "STTを無効にしました");
-                            });
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"STT状態の送信エラー: {ex.Message}");
-                    }
-                });
+                // 設定を保存（OnSettingsSavedで音声認識サービスが制御される）
+                _appSettings.SaveSettings();
             }
         }
 
         /// <summary>
-        /// 現在のキャラクター設定を取得
+        /// 保存済みの現在のキャラクター設定を取得（AppSettingsから直接読み取り）
         /// </summary>
-        private CharacterSettings? GetCurrentCharacterSettings()
+        private CharacterSettings? GetStoredCharacterSetting()
         {
             var config = _appSettings.GetConfigSettings();
             if (config.characterList != null &&
@@ -808,7 +815,7 @@ namespace CocoroDock
         private void TTSButton_Click(object sender, RoutedEventArgs e)
         {
             // 現在のキャラクターのTTS設定をトグル
-            var currentCharacter = GetCurrentCharacterSettings();
+            var currentCharacter = GetStoredCharacterSetting();
             if (currentCharacter != null)
             {
                 currentCharacter.isUseTTS = !currentCharacter.isUseTTS;
@@ -844,10 +851,7 @@ namespace CocoroDock
                             // TTS設定をCocoroShellに送信
                             await _communicationService.SendTTSStateToShellAsync(currentCharacter.isUseTTS);
 
-                            UIHelper.RunOnUIThread(() =>
-                            {
-                                AddStatusMessage(currentCharacter.isUseTTS ? "TTSを有効にしました" : "TTSを無効にしました");
-                            });
+                            // TTS状態変更完了（ログ出力は既にある）
                         }
                     }
                     catch (Exception ex)
@@ -869,55 +873,262 @@ namespace CocoroDock
             if (_appSettings.CharacterList.Count > 0 &&
                _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count)
             {
-                ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", operation);
+                ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", operation, true);
             }
             else
             {
-                ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", ProcessOperation.Terminate);
+                ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", ProcessOperation.Terminate, true);
             }
 #endif
         }
 
         /// <summary>
-        /// CocoroCore.exeを起動する（既に起動している場合は終了してから再起動）
+        /// CocoroCoreM.exeを起動する（既に起動している場合は終了してから再起動）
         /// </summary>
         /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
-        private void LaunchCocoroCore(ProcessOperation operation = ProcessOperation.RestartIfRunning)
+        private void LaunchCocoroCoreM(ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
-#if !DEBUG
             if (_appSettings.CharacterList.Count > 0 &&
                _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count &&
                _appSettings.CharacterList[_appSettings.CurrentCharacterIndex].isUseLLM)
             {
-                ProcessHelper.LaunchExternalApplication("CocoroCore.exe", "CocoroCore", operation);
+                // 起動監視を開始
+                if (operation != ProcessOperation.Terminate)
+                {
+#if !DEBUG
+                    // プロセス起動
+                    ProcessHelper.LaunchExternalApplication("CocoroCoreM.exe", "CocoroCoreM", operation, false);
+#endif
+                    // 非同期でAPI通信による起動完了を監視（無限ループ）
+                    _ = Task.Run(async () =>
+                    {
+                        await WaitForCocoroCoreMStartupAsync();
+                    });
+                }
+                else
+                {
+                    ProcessHelper.LaunchExternalApplication("CocoroCoreM.exe", "CocoroCoreM", operation, false);
+                }
             }
             else
             {
-                ProcessHelper.LaunchExternalApplication("CocoroCore.exe", "CocoroCore", ProcessOperation.Terminate);
+                // LLMを使用しない場合はCocoroCoreMを終了
+                ProcessHelper.LaunchExternalApplication("CocoroCoreM.exe", "CocoroCoreM", ProcessOperation.Terminate, false);
             }
-#endif
         }
 
         /// <summary>
-        /// CocoroMemory.exeを起動する（既に起動している場合は終了してから再起動）
+        /// CocoroCoreM.exeを起動する（既に起動している場合は終了してから再起動）（非同期版）
         /// </summary>
         /// <param name="operation">プロセス操作の種類（デフォルトは再起動）</param>
-        private void LaunchCocoroMemory(ProcessOperation operation = ProcessOperation.RestartIfRunning)
+        private async Task LaunchCocoroCoreMAsync(ProcessOperation operation = ProcessOperation.RestartIfRunning)
         {
-#if !DEBUG
-            // 現在のキャラクターが有効で、記憶機能が有効な場合のみ起動
             if (_appSettings.CharacterList.Count > 0 &&
                _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count &&
-               _appSettings.CharacterList[_appSettings.CurrentCharacterIndex].isEnableMemory)
+               _appSettings.CharacterList[_appSettings.CurrentCharacterIndex].isUseLLM)
             {
-                ProcessHelper.LaunchExternalApplication("CocoroMemory.exe", "CocoroMemory", operation);
+                // 起動監視を開始
+                if (operation != ProcessOperation.Terminate)
+                {
+#if !DEBUG
+                    // プロセス起動（非同期）
+                    await ProcessHelper.LaunchExternalApplicationAsync("CocoroCoreM.exe", "CocoroCoreM", operation, false);
+#endif
+                    // 非同期でAPI通信による起動完了を監視（無限ループ）
+                    _ = Task.Run(async () =>
+                    {
+                        await WaitForCocoroCoreMStartupAsync();
+                    });
+                }
+                else
+                {
+                    await ProcessHelper.LaunchExternalApplicationAsync("CocoroCoreM.exe", "CocoroCoreM", operation, false);
+                }
             }
             else
             {
-                // 記憶機能が無効な場合は終了
-                ProcessHelper.LaunchExternalApplication("CocoroMemory.exe", "CocoroMemory", ProcessOperation.Terminate);
+                // LLMを使用しない場合はCocoroCoreMを終了
+                await ProcessHelper.LaunchExternalApplicationAsync("CocoroCoreM.exe", "CocoroCoreM", ProcessOperation.Terminate, false);
             }
-#endif
+        }
+
+
+        /// <summary>
+        /// 音声認識サービスを初期化
+        /// </summary>
+        /// <param name="startActive">ACTIVE状態から開始するかどうか（MicButton切り替え時はtrue）</param>
+        private void InitializeVoiceRecognitionService(bool startActive = false)
+        {
+            try
+            {
+                // 現在のキャラクター設定を取得
+                var currentCharacter = GetStoredCharacterSetting();
+                if (currentCharacter == null)
+                {
+                    Debug.WriteLine("[MainWindow] 現在のキャラクター設定が見つかりません");
+                    return;
+                }
+
+                // 音声認識が有効でAPIキーが設定されている場合のみ初期化
+                if (!currentCharacter.isUseSTT || string.IsNullOrEmpty(currentCharacter.sttApiKey))
+                {
+                    Debug.WriteLine("[MainWindow] 音声認識機能が無効、またはAPIキーが未設定");
+                    // 音量バーを0にリセット（UIスレッドで確実に実行）
+                    UIHelper.RunOnUIThread(() =>
+                    {
+                        ChatControlInstance.UpdateVoiceLevel(0, false);
+                    });
+                    return;
+                }
+
+                // if (string.IsNullOrEmpty(currentCharacter.sttWakeWord))
+                // {
+                //     Debug.WriteLine("[MainWindow] ウェイクアップワードが未設定");
+                //     // 音量バーを0にリセット（UIスレッドで確実に実行）
+                //     UIHelper.RunOnUIThread(() =>
+                //     {
+                //         ChatControlInstance.UpdateVoiceLevel(0, false);
+                //     });
+                //     return;
+                // }
+
+                // 音声処理パラメータ
+                // 無音区間判定用の閾値（dB値）
+                float inputThresholdDb = _appSettings.MicrophoneSettings?.inputThreshold ?? -45.0f;
+                // 音声検出用の閾値（振幅比率に変換）
+                float voiceThreshold = (float)(Math.Pow(10, inputThresholdDb / 20.0));
+                const int silenceTimeoutMs = 500; // 高速化のため短縮
+                const int activeTimeoutMs = 60000;
+
+                _voiceRecognitionService = new RealtimeVoiceRecognitionService(
+                    currentCharacter.sttApiKey,
+                    currentCharacter.sttWakeWord,
+                    voiceThreshold,
+                    silenceTimeoutMs,
+                    activeTimeoutMs,
+                    startActive
+                );
+
+                // イベント購読
+                _voiceRecognitionService.OnRecognizedText += OnVoiceRecognized;
+                _voiceRecognitionService.OnStateChanged += OnVoiceStateChanged;
+                _voiceRecognitionService.OnVoiceLevel += OnVoiceLevelChanged;
+
+                // 音声認識開始
+                _voiceRecognitionService.StartListening();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MainWindow] 音声認識サービス初期化エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 音声認識結果を処理
+        /// </summary>
+        private void OnVoiceRecognized(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return;
+
+            UIHelper.RunOnUIThread(() =>
+            {
+                // チャットに音声認識結果を表示
+                ChatControlInstance.AddVoiceMessage(text);
+
+                // CocoroCoreMに送信
+                SendMessageToCocoroCore(text, null);
+
+                Debug.WriteLine($"[MainWindow] 音声認識結果: {text}");
+            });
+        }
+
+        /// <summary>
+        /// 音声認識状態変更を処理
+        /// </summary>
+        private void OnVoiceStateChanged(VoiceRecognitionState state)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                // 音声認識状態変更はログのみ
+                string statusMessage = state switch
+                {
+                    VoiceRecognitionState.SLEEPING => "ウェイクアップワード待機中",
+                    VoiceRecognitionState.ACTIVE => "会話モード開始",
+                    VoiceRecognitionState.PROCESSING => "音声認識処理中",
+                    _ => ""
+                };
+
+                if (!string.IsNullOrEmpty(statusMessage))
+                {
+                    Debug.WriteLine($"[VoiceRecognition] {statusMessage}");
+                }
+            });
+        }
+
+        /// <summary>
+        /// 音声レベル変更を処理
+        /// </summary>
+        private void OnVoiceLevelChanged(float level, bool isAboveThreshold)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                ChatControlInstance.UpdateVoiceLevel(level, isAboveThreshold);
+            });
+        }
+
+        /// <summary>
+        /// CocoroCoreMにメッセージを送信
+        /// </summary>
+        private async void SendMessageToCocoroCore(string message, string? imageData)
+        {
+            try
+            {
+                if (_communicationService != null)
+                {
+                    var currentCharacter = GetStoredCharacterSetting();
+                    if (currentCharacter != null && currentCharacter.isUseLLM)
+                    {
+                        await _communicationService.SendChatToCoreUnifiedAsync(message, currentCharacter.modelName, imageData);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MainWindow] CocoroCoreM送信エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// CocoroCoreMのAPI起動完了を監視（無限ループ）
+        /// </summary>
+        private async Task WaitForCocoroCoreMStartupAsync()
+        {
+            var delay = TimeSpan.FromSeconds(1); // 1秒間隔でチェック
+
+            while (true)
+            {
+                try
+                {
+                    if (_communicationService != null)
+                    {
+                        // StatusPollingServiceのステータスで起動状態を確認
+                        if (_communicationService.CurrentStatus == CocoroCoreMStatus.Normal ||
+                            _communicationService.CurrentStatus == CocoroCoreMStatus.ProcessingMessage ||
+                            _communicationService.CurrentStatus == CocoroCoreMStatus.ProcessingImage)
+                        {
+                            // 起動成功時はログ出力のみ
+                            Debug.WriteLine("[MainWindow] CocoroCoreM起動完了");
+                            return; // 起動完了で監視終了
+                        }
+                    }
+                }
+                catch
+                {
+                    // API未応答時は継続してチェック
+                }
+                await Task.Delay(delay);
+            }
         }
 
         /// <summary>
@@ -940,7 +1151,190 @@ namespace CocoroDock
                 {
                     _screenshotService.Dispose();
                 }
+
+                if (_voiceRecognitionService != null)
+                {
+                    _voiceRecognitionService.Dispose();
+                }
+
                 base.OnClosing(e);
+            }
+        }
+
+        /// <summary>
+        /// 指定されたポート番号を使用しているプロセスIDを取得します
+        /// </summary>
+        /// <param name="port">ポート番号</param>
+        /// <returns>プロセスID（見つからない場合はnull）</returns>
+        private static int? GetProcessIdByPort(int port)
+        {
+            try
+            {
+                var processInfo = new ProcessStartInfo("netstat", "-ano")
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                };
+
+                using var process = Process.Start(processInfo);
+                if (process == null) return null;
+
+                using var reader = process.StandardOutput;
+                string? line;
+
+                while ((line = reader.ReadLine()) != null)
+                {
+                    // ポート番号を含む行でLISTENING状態のものを探す
+                    if (line.Contains($":{port} ") && line.Contains("LISTENING"))
+                    {
+                        // 行の最後の数字（PID）を抽出
+                        var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length > 0 && int.TryParse(parts[^1], out int pid))
+                        {
+                            return pid;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"プロセスID取得中にエラーが発生しました: {ex.Message}");
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 指定されたプロセスIDのプロセスが実行中かどうかを確認します
+        /// </summary>
+        /// <param name="processId">プロセスID</param>
+        /// <returns>実行中の場合true、終了している場合false</returns>
+        private static bool IsProcessRunning(int processId)
+        {
+            try
+            {
+                Process.GetProcessById(processId);
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                // プロセスが見つからない（終了している）場合
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 正常なシャットダウン処理を実行
+        /// </summary>
+        public async Task PerformGracefulShutdownAsync()
+        {
+            try
+            {
+                // ウィンドウを最前面に表示
+                this.Show();
+                if (WindowState == WindowState.Minimized)
+                {
+                    WindowState = WindowState.Normal;
+                }
+                this.Topmost = true;
+                this.Activate();
+
+                // LLMが有効かどうかを確認してシャットダウンメッセージを設定
+                var currentCharacter = GetStoredCharacterSetting();
+                bool isLLMEnabled = currentCharacter?.isUseLLM ?? false;
+
+                if (!isLLMEnabled)
+                {
+                    // LLMが無効の場合は「記憶を整理しています」を非表示に
+                    if (ShutdownOverlay.FindName("MemoryCleanupText") is System.Windows.Controls.TextBlock memoryText)
+                    {
+                        memoryText.Visibility = Visibility.Collapsed;
+                    }
+                }
+
+                // シャットダウンオーバーレイを表示
+                ShutdownOverlay.Visibility = Visibility.Visible;
+
+                // CocoroCoreMのプロセスIDを事前に取得
+                int? CocoroCoreMProcessId = GetProcessIdByPort(_appSettings.CocoroCorePort);
+                Debug.WriteLine($"CocoroCoreMプロセスID: {CocoroCoreMProcessId?.ToString() ?? "見つかりません"}");
+
+                // CocoroShellとCocoroCoreMにシャットダウン要求を送信
+                Debug.WriteLine("CocoroShellとCocoroCoreMに終了要求を送信中...");
+
+                // CocoroShellとCocoroCoreMに並行してシャットダウン要求を送信
+                var shutdownTasks = new[]
+                {
+                    Task.Run(() => ProcessHelper.ExitProcess("CocoroShell", ProcessOperation.Terminate)),
+                    Task.Run(() => ProcessHelper.ExitProcess("CocoroCoreM", ProcessOperation.Terminate))
+                };
+
+                // すべてのシャットダウン要求の完了を待つ（最大5秒）
+                try
+                {
+                    await Task.WhenAll(shutdownTasks).WaitAsync(TimeSpan.FromSeconds(5));
+                }
+                catch (TimeoutException)
+                {
+                    Debug.WriteLine("一部のシャットダウン要求がタイムアウトしました。");
+                }
+
+                // CocoroCoreMプロセスの確実な終了を待機
+                if (CocoroCoreMProcessId.HasValue)
+                {
+                    Debug.WriteLine("CocoroCoreMプロセスの終了を監視中...");
+                    var maxWaitTime = TimeSpan.FromSeconds(120);
+                    var startTime = DateTime.Now;
+
+                    while (IsProcessRunning(CocoroCoreMProcessId.Value))
+                    {
+                        if (DateTime.Now - startTime > maxWaitTime)
+                        {
+                            Debug.WriteLine("CocoroCoreMの終了待機がタイムアウトしました。");
+                            break;
+                        }
+
+                        await Task.Delay(500); // 0.5秒間隔でチェック
+                    }
+
+                    Debug.WriteLine("CocoroCoreMプロセスの終了を確認しました。");
+                }
+                else
+                {
+                    Debug.WriteLine("CocoroCoreMプロセスが見つからなかったため、通常の監視を実行します。");
+
+                    // プロセスIDが取得できない場合は疎通確認で監視
+                    var maxWaitTime = TimeSpan.FromSeconds(120);
+                    var startTime = DateTime.Now;
+
+                    while (_communicationService != null && _communicationService.CurrentStatus != CocoroCoreMStatus.WaitingForStartup)
+                    {
+                        if (DateTime.Now - startTime > maxWaitTime)
+                        {
+                            Debug.WriteLine("CocoroCoreMの終了待機がタイムアウトしました。");
+                            break;
+                        }
+
+                        await Task.Delay(100);
+                    }
+
+                    Debug.WriteLine("CocoroCoreMの動作停止を確認しました。");
+                }
+
+                // オーバーレイを非表示
+                ShutdownOverlay.Visibility = Visibility.Collapsed;
+
+                // アプリケーションを終了
+                Application.Current.Shutdown();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"シャットダウン処理中にエラーが発生しました: {ex.Message}");
+
+                // エラーが発生してもオーバーレイを非表示
+                ShutdownOverlay.Visibility = Visibility.Collapsed;
+
+                Application.Current.Shutdown();
             }
         }
     }

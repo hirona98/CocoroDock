@@ -1,12 +1,3 @@
-◆ つくよみちゃん ◆
-本ソフトウェアでは、フリー素材キャラクター「つくよみちゃん」（© Rei Yumesaki）を使用しています。
-つくよみちゃん公式サイト
-https://tyc.rei-yumesaki.net/
-
-◆ つくよみちゃん3Dモデル ◆
-本ソフトウェアに収録されているつくよみちゃんの3Dモデルの利用規約は、「つくよみちゃん公式3Dモデル タイプA」の利用規約に準じます。
-https://tyc.rei-yumesaki.net/material/avatar/3d-a/
-
 ◆ 初音ミク ◆
 このソフトウェアは、ピアプロ・キャラクター・ライセンスに基づいて、クリプトン・フューチャー・メディア株式会社のキャラクター「初音ミク」を組み込んでいます。
 https://piapro.jp/license/pcl/summary
@@ -21,17 +12,12 @@ https://digitalmotion.booth.pm/
 Copyright (c) naokimiku39
 https://naokimiku39.booth.pm/items/4366008
 
-◆ AIAvatarKit ◆
-Copyright (c) uezo
-https://github.com/uezo/aiavatarkit/blob/main/LICENSE
-
 ◆ ChatdollKit ◆
 Copyright (c) uezo
 https://github.com/uezo/ChatdollKit/blob/master/LICENSE
-
-◆ ChatMemory ◆
-Copyright (c) uezo
-https://github.com/uezo/chatmemory/blob/main/LICENSE
+　※以下変更を加えています
+　 * CocoroAI環境に組み込むための変更（通信/モーション制御/モジュール読み込み/TTS切り替え）
+　 * ブレンドシェイプ検索処理に"angry", "fun", "←", "目"を追加
 
 ◆ UniWindowController ◆
 Copyright (c) 2020 Kirurobo
@@ -64,5 +50,4 @@ https://alice-encoder.booth.pm/
 
 
 ============================================================
-LLM関連機能ライセンス: CocoroCoreフォルダを参照願います
-長期記憶機能ライセンス: CocoroMemoryフォルダを参照願います
+LLM関連機能ライセンス: CocoroCoreMフォルダを参照願います

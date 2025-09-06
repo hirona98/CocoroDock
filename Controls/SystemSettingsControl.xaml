@@ -1,11 +1,12 @@
 <UserControl x:Class="CocoroDock.Controls.SystemSettingsControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             mc:Ignorable="d" 
-             d:DesignHeight="800" d:DesignWidth="800">
-    
+             mc:Ignorable="d"
+             d:DesignHeight="800"
+             d:DesignWidth="800">
+
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
@@ -16,25 +17,32 @@
                     <StackPanel>
                         <!-- 説明テキスト -->
                         <TextBlock TextWrapping="Wrap"
-                                   Foreground="#666666"
-                                   Margin="0,0,0,10">
+                                   Foreground="#666666">
                             REST APIで受信した通知をキャラクターが教えてくれます
                         </TextBlock>
 
                         <!-- 通知要求を受けるチェックボックス -->
                         <CheckBox x:Name="IsEnableNotificationApiCheckBox"
-                                  Content="通知要求を受ける"
-                                  Margin="0,5,0,15"
+                                  Content="通知要求を受ける（要再起動）"
+                                  Margin="0,10,0,0"
                                   Foreground="#FF4873CF"
                                   ToolTip="Enable notification API"/>
-                        <!-- API説明 -->
-                        <TextBox x:Name="ApiDescriptionTextBox"
-                                 IsReadOnly="True"
-                                 BorderThickness="0"
-                                 VerticalScrollBarVisibility="Auto"
-                                 Foreground="#FF4873CF"
-                                 TextWrapping="Wrap"
-                                 AcceptsReturn="True"/>
+                        <!-- API詳細（エンドポイント/ボディ/レスポンス/使用例をすべて折りたたみ） -->
+                        <Expander x:Name="ApiDetailsExpander"
+                                  Header="API詳細"
+                                  Foreground="#666666"
+                                  IsExpanded="False"
+                                  Margin="0,10,0,0">
+                            <TextBox x:Name="ApiDetailsTextBox"
+                                     IsReadOnly="True"
+                                     BorderThickness="0"
+                                     VerticalScrollBarVisibility="Auto"
+                                     Foreground="#666666"
+                                     Padding="2"
+                                     TextWrapping="Wrap"
+                                     AcceptsReturn="True"
+                                     Margin="0,10,0,0"/>
+                        </Expander>
                     </StackPanel>
                 </GroupBox>
 
@@ -48,6 +56,8 @@
                                    Foreground="#666666"
                                    Margin="0,0,0,10">
                             デスクトップの画面を定期的に取得し、内容に応じたコメントをします。マルチモーダルモデルが必要です。
+                            <LineBreak/>
+                            意図せずともセンシティブな画像を送るとアカウント停止の可能性がありますので注意してください。
                         </TextBlock>
 
                         <!-- ウォッチ機能の有効/無効設定 -->
@@ -78,6 +88,7 @@
                             <TextBox Grid.Column="1"
                                      x:Name="ScreenshotIntervalTextBox"
                                      Foreground="#FF0078D7"
+                                     Padding="2"
                                      VerticalAlignment="Center"
                                      Width="50"
                                      HorizontalAlignment="Left"
@@ -101,6 +112,7 @@
                             <TextBox Grid.Column="1"
                                      x:Name="IdleTimeoutTextBox"
                                      Foreground="#FF0078D7"
+                                     Padding="2"
                                      VerticalAlignment="Center"
                                      Width="50"
                                      HorizontalAlignment="Left"
@@ -113,9 +125,32 @@
 
                         <!-- アイドルタイムアウト説明テキスト -->
                         <TextBlock TextWrapping="Wrap"
-                                   Margin="0,0,0,10"
-                                   Foreground="#FF4873CF">
+                                   Foreground="#666666"
+                                   Margin="0,0,0,10">
                             ※マウスやキーボードの操作がない時間が設定値を超えると、デスクトップウォッチを一時停止します。
+                        </TextBlock>
+
+                        <!-- 除外パターン設定 -->
+                        <TextBlock Text="除外パターン（正規表現）:"
+                                   Margin="0,5,0,5"
+                                   VerticalAlignment="Center"/>
+                        <TextBox x:Name="ExcludePatternsTextBox"
+                                 Foreground="#FF0078D7"
+                                 Padding="2"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 Height="80"
+                                 Margin="0,0,0,5"
+                                 ToolTip="ウィンドウタイトルにマッチする正規表現パターン（1行に1つ）"/>
+
+                        <!-- 除外パターン説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="#666666"
+                                   Margin="0,0,0,5">
+                            ※ウィンドウタイトルが指定パターンにマッチした場合、スクリーンショットを取得しません。
+                            <LineBreak/>
+                            　例: .*パスワード.* （パスワードを含むタイトルを除外）
                         </TextBlock>
                     </StackPanel>
                 </GroupBox>
@@ -129,17 +164,10 @@
                         <TextBlock TextWrapping="Wrap"
                                    Foreground="#666666"
                                    Margin="0,0,0,10">
-                            音声認識時のマイク入力感度を調整します。STTが有効なキャラクターに適用されます。
+                            音声認識時のマイク入力感度を調整します。音声認識が有効なキャラクターに適用されます。
                         </TextBlock>
 
-                        <!-- 自動調節設定 -->
-                        <CheckBox x:Name="MicAutoAdjustmentCheckBox"
-                                  Content="マイクしきい値の自動調節を有効にする"
-                                  Margin="0,5,0,15"
-                                  Foreground="#FF4873CF"
-                                  ToolTip="Enable microphone threshold auto adjustment"/>
-
-                        <!-- 手動しきい値設定 -->
+                        <!-- しきい値設定 -->
                         <Grid Margin="0,5,0,5">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="150"/>
@@ -147,7 +175,7 @@
                                 <ColumnDefinition Width="60"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
-                                       Text="入力しきい値（手動）:"
+                                       Text="入力しきい値:"
                                        VerticalAlignment="Center"/>
                             <Slider Grid.Column="1"
                                     x:Name="MicThresholdSlider"
@@ -165,10 +193,125 @@
 
                         <!-- しきい値説明テキスト -->
                         <TextBlock TextWrapping="Wrap"
-                                   Margin="0,0,0,10"
-                                   Foreground="#FF4873CF">
-                            ※値が低いほど（-50dBに近いほど）音声を拾いやすくなりますが、環境音も拾いやすくなります。自動調節時は無効です。
+                                   Foreground="#666666">
+                            ※値が低いほど（-50dBに近いほど）音声を拾いやすくなりますが、環境音も拾いやすくなります。
                         </TextBlock>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- インターネット検索設定 -->
+                <GroupBox Header="インターネット検索設定（未実装）"
+                          Margin="0,0,20,20"
+                          Padding="10">
+                    <StackPanel>
+                        <!-- インターネット検索設定 -->
+                        <CheckBox x:Name="EnableInternetRetrievalCheckBox"
+                                  Content="インターネット検索を有効にする"
+                                  Margin="0,10,0,0"
+                                  Foreground="#FF4873CF"
+                                  ToolTip="Enable internet search capability"
+                                  IsEnabled="False"/>
+
+                        <!-- Google API Key -->
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Google API Key:"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="GoogleApiKeyTextBox"
+                                     Foreground="#FF0078D7"
+                                     Padding="2"
+                                     VerticalAlignment="Center"
+                                     Margin="10,0,0,0"/>
+                        </Grid>
+
+                        <!-- Google Search Engine ID -->
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Search Engine ID:"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="GoogleSearchEngineIdTextBox"
+                                     Foreground="#FF0078D7"
+                                     Padding="2"
+                                     VerticalAlignment="Center"
+                                     Margin="10,0,0,0"/>
+                        </Grid>
+
+                        <!-- 最大検索結果数 -->
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="最大検索結果数:"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="InternetMaxResultsTextBox"
+                                     Foreground="#FF0078D7"
+                                     Padding="2"
+                                     VerticalAlignment="Center"
+                                     Margin="10,0,10,0"/>
+                            <TextBlock Grid.Column="2"
+                                       Text="（1-10）"
+                                       VerticalAlignment="Center"
+                                       Foreground="#666666"/>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- 記憶管理設定 -->
+                <GroupBox Header="記憶管理"
+                          Margin="0,0,20,20"
+                          Padding="10">
+                    <StackPanel>
+                        <!-- 説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="#666666"
+                                   Margin="0,0,0,10">
+                            選択している Memory ID を使用している全キャラクターの記憶を初期化します。この操作は取り消すことができません。
+                        </TextBlock>
+
+                        <!-- キャラクター選択 -->
+                        <Grid Margin="0,5,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Text="Memory ID:"
+                                       VerticalAlignment="Center"/>
+
+                            <ComboBox Grid.Column="1"
+                                      x:Name="MemoryComboBox"
+                                      Margin="0,5,10,5"
+                                      Foreground="#FF4873CF"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectionChanged="MemoryComboBox_SelectionChanged"/>
+
+                            <Button Grid.Column="2"
+                                    x:Name="DeleteMemoryButton"
+                                    Content="記憶を初期化"
+                                    Width="100"
+                                    Margin="5,5,0,5"
+                                    Padding="10,5"
+                                    Style="{StaticResource DeleteButtonStyle}"
+                                    IsEnabled="False"
+                                    Click="DeleteMemoryButton_Click"
+                                    ToolTip="選択中の Memory ID を使用している全キャラクターの全記憶を削除"/>
+                        </Grid>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>

@@ -80,7 +80,7 @@ namespace CocoroDock.Controls
         /// <summary>
         /// 通信サービス
         /// </summary>
-        private readonly ICommunicationService _communicationService;
+        private ICommunicationService? _communicationService;
 
         /// <summary>
         /// 設定が変更されたときに発生するイベント
@@ -90,7 +90,18 @@ namespace CocoroDock.Controls
         public EscapePositionControl()
         {
             InitializeComponent();
-            _communicationService = new CommunicationService(AppSettings.Instance);
+        }
+
+        public EscapePositionControl(ICommunicationService communicationService)
+        {
+            InitializeComponent();
+            _communicationService = communicationService;
+            InitializeEscapePositions();
+        }
+
+        public void SetCommunicationService(ICommunicationService communicationService)
+        {
+            _communicationService = communicationService;
             InitializeEscapePositions();
         }
 
@@ -163,6 +174,7 @@ namespace CocoroDock.Controls
                     try
                     {
                         // CocoroShellから現在位置を取得
+                        if (_communicationService == null) return;
                         var response = await _communicationService.GetShellPositionAsync();
                         if (response?.position != null)
                         {
@@ -210,7 +222,7 @@ namespace CocoroDock.Controls
                 if (sender is Button button && button.Tag is EscapePositionViewModel position)
                 {
                     EscapePositionsCollection.Remove(position);
-                    
+
                     // 設定変更イベントを発生
                     SettingsChanged?.Invoke(this, EventArgs.Empty);
                 }
@@ -231,7 +243,7 @@ namespace CocoroDock.Controls
             {
                 // 確認ダイアログなしで直接削除
                 EscapePositionsCollection.Clear();
-                
+
                 // 設定変更イベントを発生
                 SettingsChanged?.Invoke(this, EventArgs.Empty);
             }

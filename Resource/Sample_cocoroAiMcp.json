@@ -11,7 +11,6 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "C:\\Users\\hiro9\\Desktop",
         "D:\\_TMP"
       ]
     }
