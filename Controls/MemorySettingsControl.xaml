@@ -1,0 +1,157 @@
+<UserControl x:Class="CocoroDock.Controls.MemorySettingsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="600"
+             d:DesignWidth="600">
+
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- 記憶の設定（初回起動時のみ反映可能） -->
+                <GroupBox Header="記憶の設定"
+                          Margin="0,0,20,20"
+                          Padding="10">
+                    <StackPanel>
+                        <!-- 埋め込みモデル設定 -->
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="埋め込みモデル:"
+                                       VerticalAlignment="Center"
+                                       ToolTip="Embedded Model"
+                                       Foreground="#FF4873CF"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="EmbeddedModelTextBox"
+                                     Foreground="#FF0078D7"
+                                     Padding="2"
+                                     Text=""/>
+                        </Grid>
+                        <TextBlock Foreground="#666666"
+                                   TextWrapping="Wrap"
+                                   Margin="120,0,0,0">
+                            <TextBlock.Inlines>
+                                <Run Text="※初回以外は変更しないでください"
+                                     Foreground="Red"/>
+                                <LineBreak/>
+                                <Run Text="記憶DBで使うモデルを設定します。LiteLLM の書式で入力してください。"/>
+                                <LineBreak/>
+                                <Run Text="ex) openai/text-embedding-3-large, gemini/gemini-embedding-001"/>
+                                <LineBreak/>
+                                <Run Text="詳細は "/>
+                                <Hyperlink NavigateUri="https://docs.litellm.ai/docs/embedding/supported_embedding"
+                                           RequestNavigate="Hyperlink_RequestNavigate">
+                                    <Run Text="https://docs.litellm.ai/docs/embedding/supported_embedding"/>
+                                </Hyperlink>
+                                <Run Text=" を参照してください"/>
+                            </TextBlock.Inlines>
+                        </TextBlock>
+
+                        <!-- 埋め込みモデル次元数設定 -->
+                        <Grid Margin="0,20,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="次元数:"
+                                       VerticalAlignment="Center"
+                                       ToolTip="Embedded Dimension"
+                                       Foreground="#FF4873CF"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="EmbeddedDimensionTextBox"
+                                     Foreground="#FF0078D7"
+                                     Padding="2"
+                                     Text=""
+                                     ToolTip="埋め込みモデルの次元数（例: 3072, 1536）"/>
+                        </Grid>
+                        <TextBlock Foreground="#666666"
+                                   TextWrapping="Wrap"
+                                   Margin="120,0,0,0">
+                            <Run Text="※初回以外は変更しないでください。"
+                                 Foreground="Red"/>
+                            <LineBreak/>
+                            埋め込みモデルの次元数を設定します。モデルごとに使用可能な次元が異なります。
+                            <LineBreak/>
+                            text-embedding-3-large や gemini-embedding-001 は 3072 などが使えます。
+                            <LineBreak/>
+                        </TextBlock>
+
+                        <!-- 埋め込みモデルAPIキーの設定 -->
+                        <Grid Margin="0,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="API Key:"
+                                       VerticalAlignment="Center"
+                                       ToolTip="API Key"
+                                       Foreground="#FF4873CF"/>
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <TextBox x:Name="EmbeddedApiKeyPasswordBox"
+                                         Foreground="#FF0078D7"
+                                         Padding="2"
+                                         Width="200"
+                                         HorizontalAlignment="Left"/>
+                                <Button Content="上書き貼付け"
+                                        Margin="10,0,0,0"
+                                        Padding="10,0,10,0"
+                                        Click="EmbeddedApiKeyPasteOverrideButton_Click"
+                                        ToolTip="クリップボードのテキストで上書き"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- 記憶の削除 -->
+                <GroupBox Header="記憶の削除"
+                          Margin="0,0,20,20"
+                          Padding="10">
+                    <StackPanel>
+                        <TextBlock Foreground="#666666"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,10">
+                            <Run Text="全キャラクターのデータが完全に削除されます。"
+                                 Foreground="Red"/>
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="BackupMemoryButton"
+                                    Content="記憶をバックアップ"
+                                    Background="#FF0078D7"
+                                    Foreground="White"
+                                    Padding="10,5"
+                                    Margin="0,0,10,0"
+                                    Click="BackupMemoryButton_Click"
+                                    ToolTip="すべての記憶データをバックアップします"/>
+
+                            <Button x:Name="RestoreMemoryButton"
+                                    Content="記憶を復元"
+                                    Background="#FF228B22"
+                                    Foreground="White"
+                                    Padding="10,5"
+                                    Margin="0,0,10,0"
+                                    Click="RestoreMemoryButton_Click"
+                                    ToolTip="バックアップから記憶データを復元します"/>
+
+                            <Button x:Name="DeleteMemoryButton"
+                                    Content="記憶を削除"
+                                    Background="#FFD50000"
+                                    Foreground="White"
+                                    Padding="10,5"
+                                    HorizontalAlignment="Left"
+                                    Click="DeleteMemoryButton_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

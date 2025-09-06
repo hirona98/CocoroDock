@@ -321,129 +321,27 @@
                                      VerticalScrollBarVisibility="Auto"/>
                         </Grid>
 
-                        <!-- 記憶の設定（初回起動時のみ反映可能） -->
-                        <Expander x:Name="MemorySettingsExpander"
-                                  Margin="0,10,0,0"
-                                  IsExpanded="False">
-                            <Expander.Header>
-                                <TextBlock Text="記憶の設定"
-                                           Foreground="#FF4873CF"/>
-                            </Expander.Header>
-                            <StackPanel>
-                                <!-- 記憶のユーザーIDの設定 -->
-                                <Grid Margin="0,10,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0"
-                                               Text="Memory ID:"
-                                               VerticalAlignment="Center"
-                                               Foreground="#FF4873CF"/>
-                                    <TextBox Grid.Column="1"
-                                             x:Name="MemoryIdTextBox"
-                                             Foreground="#FF0078D7"
-                                             Padding="2"
-                                             Text=""/>
-                                </Grid>
-                                <TextBlock TextWrapping="Wrap"
-                                           Foreground="#666666"
-                                           Margin="100,0,0,0">
-                                    あなたとキャラクターの記憶を紐づけるIDです。キャラクター毎に別の名前にすることを推奨します。
-                                </TextBlock>
-
-                                <!-- 埋め込みモデル設定 -->
-                                <Grid Margin="0,10,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0"
-                                               Text="埋め込みモデル:"
-                                               VerticalAlignment="Center"
-                                               ToolTip="Embedded Model"
-                                               Foreground="#FF4873CF"/>
-                                    <TextBox Grid.Column="1"
-                                             x:Name="EmbeddedModelTextBox"
-                                             Foreground="#FF0078D7"
-                                             Padding="2"
-                                             Text=""/>
-                                </Grid>
-                                <TextBlock Foreground="#666666"
-                                           TextWrapping="Wrap"
-                                           Margin="100,0,0,0">
-                                    <TextBlock.Inlines>
-                                        <Run Text="長期記憶をベクトル化するための埋め込みモデルを設定します。LiteLLM の書式で記載してください。"/>
-                                        <LineBreak/>
-                                        <Run Text="ex) openai/text-embedding-3-large, openai/text-embedding-3-small, gemini/text-embedding-004"/>
-                                        <LineBreak/>
-                                        <Run Text="詳細は "/>
-                                        <Hyperlink NavigateUri="https://docs.litellm.ai/docs/embedding/supported_embedding"
-                                                   RequestNavigate="Hyperlink_RequestNavigate">
-                                            <Run Text="https://docs.litellm.ai/docs/embedding/supported_embedding"/>
-                                        </Hyperlink>
-                                        <Run Text=" を参照してください"/>
-                                        <LineBreak/>
-                                        <Run Text="※初回以外は変更しないでください"
-                                             Foreground="Red"/>
-                                    </TextBlock.Inlines>
-                                </TextBlock>
-
-                                <!-- 埋め込みモデル次元数設定 -->
-                                <Grid Margin="0,10,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0"
-                                               Text="次元数:"
-                                               VerticalAlignment="Center"
-                                               ToolTip="Embedded Dimension"
-                                               Foreground="#FF4873CF"/>
-                                    <TextBox Grid.Column="1"
-                                             x:Name="EmbeddedDimensionTextBox"
-                                             Foreground="#FF0078D7"
-                                             Padding="2"
-                                             Text=""
-                                             ToolTip="埋め込みモデルの次元数（例: 3072, 1536）"/>
-                                </Grid>
-                                <TextBlock Foreground="#666666"
-                                           TextWrapping="Wrap"
-                                           Margin="100,0,0,0">
-                                    埋め込みモデルの次元数を設定します。text-embedding-3-large は 3072、text-embedding-3-small は 1536 です。
-                                    <LineBreak/>
-                                    <Run Text="※初回以外は変更しないでください。"
-                                         Foreground="Red"/>
-                                </TextBlock>
-
-                                <!-- 埋め込みモデルAPIキーの設定 -->
-                                <Grid Margin="0,10,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0"
-                                               Text="API Key:"
-                                               VerticalAlignment="Center"
-                                               ToolTip="API Key"
-                                               Foreground="#FF4873CF"/>
-                                    <StackPanel Grid.Column="1"
-                                                Orientation="Horizontal"
-                                                VerticalAlignment="Center">
-                                        <TextBox x:Name="EmbeddedApiKeyPasswordBox"
-                                                 Foreground="#FF0078D7"
-                                                 Padding="2"
-                                                 Width="200"
-                                                 HorizontalAlignment="Left"/>
-                                        <Button Content="上書き貼付け"
-                                                Margin="10,0,0,0"
-                                                Padding="10,0,10,0"
-                                                Click="EmbeddedApiKeyPasteOverrideButton_Click"
-                                                ToolTip="クリップボードのテキストで上書き"/>
-                                    </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                        </Expander>
+                        <!-- Memory IDの設定 -->
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Memory ID:"
+                                       VerticalAlignment="Center"
+                                       Foreground="#FF4873CF"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="MemoryIdTextBox"
+                                     Foreground="#FF0078D7"
+                                     Padding="2"
+                                     Text=""/>
+                        </Grid>
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="#666666"
+                                   Margin="100,0,0,0">
+                            あなたとキャラクターの記憶を紐づけるIDです。キャラクター毎に別の名前にすることを推奨します。
+                        </TextBlock>
                     </StackPanel>
                 </GroupBox>
 
@@ -492,7 +390,7 @@
                                            Text="Endpoint URL:"
                                            VerticalAlignment="Center"/>
                                 <TextBox Grid.Column="1"
-                                         x:Name="TTSEndpointURLTextBox"
+                                         x:Name="VoicevoxEndpointUrlTextBox"
                                          Foreground="#FF0078D7"
                                          Padding="2"
                                          Text=""/>
@@ -508,11 +406,207 @@
                                            Text="Speaker ID:"
                                            VerticalAlignment="Center"/>
                                 <TextBox Grid.Column="1"
-                                         x:Name="TTSSperkerIDTextBox"
+                                         x:Name="VoicevoxSpeakerIdTextBox"
                                          Foreground="#FF0078D7"
                                          Padding="2"
                                          Text=""/>
                             </Grid>
+
+                            <!-- VOICEVOX詳細設定 -->
+                            <Expander x:Name="VoicevoxAdvancedSettingsPanel"
+                                      Margin="0,10,0,0"
+                                      IsExpanded="False">
+                                <Expander.Header>
+                                    <TextBlock Text="VOICEVOX詳細設定"
+                                               Foreground="#FF4873CF"/>
+                                </Expander.Header>
+                                <StackPanel>
+                                    <!-- Speed Scale -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="話速:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <Slider Grid.Column="1"
+                                                x:Name="VoicevoxSpeedScaleSlider"
+                                                Minimum="0.5"
+                                                Maximum="2.0"
+                                                Value="1.0"
+                                                TickFrequency="0.1"
+                                                IsSnapToTickEnabled="True"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding ElementName=VoicevoxSpeedScaleSlider, Path=Value, StringFormat=F1}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                    </Grid>
+                                    <!-- Pitch Scale -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="音高:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <Slider Grid.Column="1"
+                                                x:Name="VoicevoxPitchScaleSlider"
+                                                Minimum="-0.15"
+                                                Maximum="0.15"
+                                                Value="0.0"
+                                                TickFrequency="0.01"
+                                                IsSnapToTickEnabled="True"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding ElementName=VoicevoxPitchScaleSlider, Path=Value, StringFormat=F2}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                    </Grid>
+                                    <!-- Intonation Scale -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="抑揚:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <Slider Grid.Column="1"
+                                                x:Name="VoicevoxIntonationScaleSlider"
+                                                Minimum="0.0"
+                                                Maximum="2.0"
+                                                Value="1.0"
+                                                TickFrequency="0.1"
+                                                IsSnapToTickEnabled="True"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding ElementName=VoicevoxIntonationScaleSlider, Path=Value, StringFormat=F1}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                    </Grid>
+                                    <!-- Volume Scale -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="音量:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <Slider Grid.Column="1"
+                                                x:Name="VoicevoxVolumeScaleSlider"
+                                                Minimum="0.0"
+                                                Maximum="2.0"
+                                                Value="1.0"
+                                                TickFrequency="0.1"
+                                                IsSnapToTickEnabled="True"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding ElementName=VoicevoxVolumeScaleSlider, Path=Value, StringFormat=F1}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                    </Grid>
+                                    <!-- Pre Phoneme Length -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="前無音:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <Slider Grid.Column="1"
+                                                x:Name="VoicevoxPrePhonemeLengthSlider"
+                                                Minimum="0.0"
+                                                Maximum="1.5"
+                                                Value="0.1"
+                                                TickFrequency="0.05"
+                                                IsSnapToTickEnabled="True"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding ElementName=VoicevoxPrePhonemeLengthSlider, Path=Value, StringFormat=F2}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                    </Grid>
+                                    <!-- Post Phoneme Length -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="後無音:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <Slider Grid.Column="1"
+                                                x:Name="VoicevoxPostPhonemeLengthSlider"
+                                                Minimum="0.0"
+                                                Maximum="1.5"
+                                                Value="0.1"
+                                                TickFrequency="0.05"
+                                                IsSnapToTickEnabled="True"
+                                                VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding ElementName=VoicevoxPostPhonemeLengthSlider, Path=Value, StringFormat=F2}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                    </Grid>
+                                    <!-- Output Sampling Rate -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="サンプリング:"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#FF4873CF"/>
+                                        <ComboBox Grid.Column="1"
+                                                  x:Name="VoicevoxOutputSamplingRateComboBox"
+                                                  SelectedValue="24000">
+                                            <ComboBoxItem Content="16000 Hz"
+                                                          Tag="16000"/>
+                                            <ComboBoxItem Content="22050 Hz"
+                                                          Tag="22050"/>
+                                            <ComboBoxItem Content="24000 Hz"
+                                                          Tag="24000"/>
+                                            <ComboBoxItem Content="44100 Hz"
+                                                          Tag="44100"/>
+                                            <ComboBoxItem Content="48000 Hz"
+                                                          Tag="48000"/>
+                                        </ComboBox>
+                                    </Grid>
+                                    <!-- Output Stereo -->
+                                    <Grid Margin="0,10,0,0">
+                                        <CheckBox Grid.Column="1"
+                                                  x:Name="VoicevoxOutputStereoCheckBox"
+                                                  Content="ステレオ出力を有効にする"
+                                                  Foreground="#FF4873CF"
+                                                  VerticalAlignment="Center"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
+
                         </StackPanel>
 
                         <!-- Style-Bert-VITS2用設定：基本設定 -->

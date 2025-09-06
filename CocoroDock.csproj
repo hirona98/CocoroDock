@@ -6,7 +6,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-    <Version>4.0.0</Version>
+    <Version>4.1.0</Version>
     <Authors>Hirona</Authors>
     <Company>AliceEncoder</Company>
     <Description>CocoroAIのチャット及び設定画面</Description>
@@ -47,6 +47,8 @@
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       <TargetPath>UserDataM\SystemPrompts\初音ミクSD_26db7924-4efb-50ff-927e-fbeffe9f3e1a.txt</TargetPath>
     </None>
+    <!-- Silero VAD ONNXモデル（exe内に組み込み） -->
+    <EmbeddedResource Include="Resource\silero_vad.onnx" />
     <EmbeddedResource Include="Resource\License.txt" />
   </ItemGroup>
 
@@ -84,6 +86,7 @@
     <PackageReference Include="SharpVectors" Version="1.8.4" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="System.Text.Json" Version="8.0.6" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.19.2" />
   </ItemGroup>
 
 

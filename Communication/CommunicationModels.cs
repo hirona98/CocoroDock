@@ -18,6 +18,20 @@ namespace CocoroDock.Communication
     /// <summary>
     /// Style-Bert-VITS2の設定を保持するクラス
     /// </summary>
+    public class VoicevoxConfig
+    {
+        public string endpointUrl { get; set; } = "http://127.0.0.1:50021";
+        public int speakerId { get; set; } = 0;
+        public float speedScale { get; set; } = 1.0f;        // 話速 (0.5 - 2.0)
+        public float pitchScale { get; set; } = 0.0f;        // 音高 (-0.15 - 0.15)
+        public float intonationScale { get; set; } = 1.0f;   // 抑揚 (0.0 - 2.0)
+        public float volumeScale { get; set; } = 1.0f;       // 音量 (0.0 - 2.0)
+        public float prePhonemeLength { get; set; } = 0.1f;  // 音声の前の無音時間 (0.0 - 1.5)
+        public float postPhonemeLength { get; set; } = 0.1f; // 音声の後の無音時間 (0.0 - 1.5)
+        public int outputSamplingRate { get; set; } = 24000;  // 出力サンプリングレート
+        public bool outputStereo { get; set; } = false;       // ステレオ出力するか
+    }
+
     public class StyleBertVits2Config
     {
         public string endpointUrl { get; set; } = "http://127.0.0.1:5000";
@@ -66,6 +80,46 @@ namespace CocoroDock.Communication
     /// <summary>
     /// キャラクター設定クラス
     /// </summary>
+    /// <summary>
+    /// マイグレーション前の旧CharacterSettings構造体
+    /// </summary>
+    public class CharacterSettingsV1
+    {
+        public bool isReadOnly { get; set; }
+        public string modelName { get; set; } = string.Empty;
+        public string vrmFilePath { get; set; } = string.Empty;
+        public bool isUseLLM { get; set; }
+        public string apiKey { get; set; } = string.Empty;
+        public string llmModel { get; set; } = "openai/gpt-4o-mini";
+        public string visionApiKey { get; set; } = string.Empty;
+        public string visionModel { get; set; } = "openai/gpt-4o-mini";
+        public string localLLMBaseUrl { get; set; } = string.Empty;
+        public string systemPromptFilePath { get; set; } = string.Empty;
+        public bool isUseTTS { get; set; }
+        public string ttsType { get; set; } = "voicevox";
+
+        // 旧設定フィールド
+        public string ttsEndpointURL { get; set; } = string.Empty;
+        public string ttsSperkerID { get; set; } = string.Empty;
+
+        // その他の設定は新しい構造体と同じ
+        public StyleBertVits2Config styleBertVits2Config { get; set; } = new StyleBertVits2Config();
+        public AivisCloudConfig aivisCloudConfig { get; set; } = new AivisCloudConfig();
+        public bool isEnableMemory { get; set; } = true;
+        public string memoryId { get; set; } = "";
+        public string embeddedApiKey { get; set; } = string.Empty;
+        public string embeddedModel { get; set; } = "openai/text-embedding-3-large";
+        public string embeddedDimension { get; set; } = "3072";
+        public bool isUseSTT { get; set; } = false;
+        public string sttEngine { get; set; } = "amivoice";
+        public string sttWakeWord { get; set; } = string.Empty;
+        public string sttApiKey { get; set; } = string.Empty;
+        public string sttLanguage { get; set; } = "ja";
+        public bool isConvertMToon { get; set; } = false;
+        public bool isEnableShadowOff { get; set; } = true;
+        public string shadowOffMesh { get; set; } = "Face, U_Char_1";
+    }
+
     public class CharacterSettings
     {
         public bool isReadOnly { get; set; }
@@ -80,11 +134,14 @@ namespace CocoroDock.Communication
         public string localLLMBaseUrl { get; set; } = string.Empty; // ローカルLLMのベースURL
         public string systemPromptFilePath { get; set; } = string.Empty;
         public bool isUseTTS { get; set; }
-        public string ttsEndpointURL { get; set; } = string.Empty;
-        public string ttsSperkerID { get; set; } = string.Empty;
+
         public string ttsType { get; set; } = "voicevox"; // "voicevox" or "style-bert-vits2" or "aivis-cloud"
+
+        // TTS詳細設定
+        public VoicevoxConfig voicevoxConfig { get; set; } = new VoicevoxConfig();
         public StyleBertVits2Config styleBertVits2Config { get; set; } = new StyleBertVits2Config();
         public AivisCloudConfig aivisCloudConfig { get; set; } = new AivisCloudConfig();
+
         public bool isEnableMemory { get; set; } = true; // メモリ機能の有効/無効
         public string memoryId { get; set; } = "";
         public string embeddedApiKey { get; set; } = string.Empty; // 埋め込みモデル用APIキー
@@ -98,6 +155,7 @@ namespace CocoroDock.Communication
         public bool isConvertMToon { get; set; } = false; // UnlitをMToonに変換するかどうか
         public bool isEnableShadowOff { get; set; } = true; // 影オフ機能の有効/無効（デフォルト: true）
         public string shadowOffMesh { get; set; } = "Face, U_Char_1"; // 影を落とさないメッシュ名
+
 
         /// <summary>
         /// このCharacterSettingsオブジェクトのディープコピーを作成
@@ -118,9 +176,22 @@ namespace CocoroDock.Communication
                 localLLMBaseUrl = this.localLLMBaseUrl,
                 systemPromptFilePath = this.systemPromptFilePath,
                 isUseTTS = this.isUseTTS,
-                ttsEndpointURL = this.ttsEndpointURL,
-                ttsSperkerID = this.ttsSperkerID,
                 ttsType = this.ttsType,
+
+                // VoicevoxConfigのディープコピー
+                voicevoxConfig = new VoicevoxConfig
+                {
+                    endpointUrl = this.voicevoxConfig.endpointUrl,
+                    speakerId = this.voicevoxConfig.speakerId,
+                    speedScale = this.voicevoxConfig.speedScale,
+                    pitchScale = this.voicevoxConfig.pitchScale,
+                    intonationScale = this.voicevoxConfig.intonationScale,
+                    volumeScale = this.voicevoxConfig.volumeScale,
+                    prePhonemeLength = this.voicevoxConfig.prePhonemeLength,
+                    postPhonemeLength = this.voicevoxConfig.postPhonemeLength,
+                    outputSamplingRate = this.voicevoxConfig.outputSamplingRate,
+                    outputStereo = this.voicevoxConfig.outputStereo
+                },
 
                 // StyleBertVits2Configのディープコピー
                 styleBertVits2Config = new StyleBertVits2Config
@@ -468,7 +539,7 @@ namespace CocoroDock.Communication
     /// </summary>
     public class ShellControlRequest
     {
-        public string command { get; set; } = string.Empty;
+        public string action { get; set; } = string.Empty;
         public Dictionary<string, object>? @params { get; set; }
     }
 
@@ -549,33 +620,6 @@ namespace CocoroDock.Communication
         public string message { get; set; } = string.Empty;
     }
 
-    // ========================================
-    // 記憶削除関連モデル
-    // ========================================
-
-
-
-
-    /// <summary>
-    /// メモリ一覧取得レスポンス
-    /// </summary>
-    public class MemoryListResponse
-    {
-        public string status { get; set; } = string.Empty;
-        public string message { get; set; } = string.Empty;
-        public List<MemoryInfo>? data { get; set; }
-    }
-
-    /// <summary>
-    /// メモリ情報
-    /// </summary>
-    public class MemoryInfo
-    {
-        public string memory_id { get; set; } = string.Empty;
-        public string memory_name { get; set; } = string.Empty;
-        public string role { get; set; } = string.Empty;
-        public bool created { get; set; }
-    }
 
     // ========================================
     // CocoroCoreM チャットAPI関連モデル

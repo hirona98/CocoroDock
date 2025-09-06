@@ -92,7 +92,7 @@ namespace CocoroDock.Communication
                     return result ?? new StandardResponse
                     {
                         status = "success",
-                        message = "Animation command sent"
+                        message = "Animation sent"
                     };
                 }
                 else
@@ -111,8 +111,8 @@ namespace CocoroDock.Communication
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"アニメーションコマンド送信エラー: {ex.Message}");
-                throw new InvalidOperationException($"Failed to send animation command: {ex.Message}", ex);
+                Debug.WriteLine($"アニメーションアクション送信エラー: {ex.Message}");
+                throw new InvalidOperationException($"Failed to send animation action: {ex.Message}", ex);
             }
         }
 
@@ -131,7 +131,7 @@ namespace CocoroDock.Communication
                     return result ?? new StandardResponse
                     {
                         status = "success",
-                        message = "Control command sent"
+                        message = "Control action sent"
                     };
                 }
                 else
@@ -151,7 +151,7 @@ namespace CocoroDock.Communication
             catch (Exception ex)
             {
                 Debug.WriteLine($"制御コマンド送信エラー: {ex.Message}");
-                throw new InvalidOperationException($"Failed to send control command: {ex.Message}", ex);
+                throw new InvalidOperationException($"Failed to send control action: {ex.Message}", ex);
             }
         }
 

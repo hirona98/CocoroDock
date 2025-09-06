@@ -21,7 +21,8 @@ namespace CocoroDock.ViewModels
     {
         private readonly IAppSettings _appSettings;
         private readonly CocoroCoreClient _cocoroCoreClient;
-        private readonly DispatcherTimer? _statusUpdateTimer;
+        // TODO: MCP関連のポーリング処理を一時的にコメントアウト
+        // private readonly DispatcherTimer? _statusUpdateTimer;
         private readonly string _mcpConfigPath;
 
         private bool _isMcpEnabled;
@@ -51,7 +52,6 @@ namespace CocoroDock.ViewModels
             };
             _statusUpdateTimer.Tick += async (s, e) => await RetryUpdateIfDataMissing();
             */
-            _statusUpdateTimer = null;
 
             // コマンドの初期化
             // TODO: MCP関連のポーリング処理を一時的にコメントアウト

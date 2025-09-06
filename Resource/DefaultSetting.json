@@ -63,9 +63,19 @@
       "localLLMBaseUrl": "",
       "systemPromptFilePath": "初音ミクSD_26db7924-4efb-50ff-927e-fbeffe9f3e1a.txt",
       "isUseTTS": false,
-      "ttsEndpointURL": "",
-      "ttsSperkerID": "",
       "ttsType": "voicevox",
+      "voicevoxConfig": {
+        "endpointUrl": "http://127.0.0.1:50021",
+        "speakerId": 0,
+        "speedScale": 1.0,
+        "pitchScale": 0.0,
+        "intonationScale": 1.0,
+        "volumeScale": 1.0,
+        "prePhonemeLength": 0.1,
+        "postPhonemeLength": 0.1,
+        "outputSamplingRate": 24000,
+        "outputStereo": false
+      },
       "styleBertVits2Config": {
         "endpointUrl": "http://127.0.0.1:5000",
         "modelName": "amitaro",

@@ -5,6 +5,10 @@ CocoroDock は デスクトップマスコット CocoroAI のチャットおよ�
 CocoroAI
 https://alice-encoder.booth.pm/items/6821221
 
+masterはVer4系です
+
+Ver3系はCocoroDock1という名前のブランチで残してあります
+
 ----
 
 CocoroCore に合わせてそのうち作り直すと思うので、かな～り雑に作ってます
@@ -63,7 +67,7 @@ CocoroAI全体構成は CocoroCoreMリポジトリの CocoroAI全体構成.drawi
 
 - POST /api/control
 	- 目的: アプリ制御コマンド
-	- リクエスト: { command: "shutdown"|"restart"|"reloadConfig", params?: object, reason?: string }
+	- リクエスト: { action: "shutdown"|"restart"|"reloadConfig", params?: object, reason?: string }
 	- 200: { status: "success", message }
 
 - POST /api/status

@@ -14,22 +14,16 @@ namespace CocoroDock.Services
         private readonly List<byte> _audioBuffer = new();
         private readonly VoiceRecognitionStateMachine _stateMachine;
         private readonly AmiVoiceSyncClient _amiVoiceClient;
-
-        // 音声検出パラメータ
-        private readonly float _voiceThreshold;
-        private readonly int _silenceTimeoutMs;
-        private const int MIN_VOICE_DURATION_MS = 200;
+        private readonly SileroVadService _sileroVad;
 
         // マイクゲイン設定
-        private float _microphoneGain = 2.0f; // デフォルト2倍（ハードコーディング）
+        private float _microphoneGain = 1f; // デフォルト2倍（ハードコーディング）
 
         // プリバッファリング（言葉の頭切れ対策）
         private readonly Queue<byte[]> _preBuffer = new();
         private const int PRE_BUFFER_MS = 500; // 0.5秒分のプリバッファ
 
-        private DateTime _lastVoiceTime = DateTime.Now;
         private bool _isRecordingVoice = false;
-        private Timer? _silenceTimer;
         private bool _isDisposed = false;
 
 
@@ -44,16 +38,22 @@ namespace CocoroDock.Services
         public RealtimeVoiceRecognitionService(
             string apiKey,
             string wakeWords,
-            float voiceThreshold = 0.02f,
+            float vadThreshold = 0.5f,
             int silenceTimeoutMs = 300,
             int activeTimeoutMs = 60000,
             bool startActive = false)
         {
-            _voiceThreshold = voiceThreshold;
-            _silenceTimeoutMs = silenceTimeoutMs;
-
             _amiVoiceClient = new AmiVoiceSyncClient(apiKey);
             _stateMachine = new VoiceRecognitionStateMachine(wakeWords, activeTimeoutMs, startActive);
+
+            // Silero VADの初期化
+            _sileroVad = new SileroVadService(
+                sampleRate: 16000,
+                threshold: vadThreshold,
+                minSilenceDurationMs: silenceTimeoutMs,
+                speechPadMs: 30);
+
+            System.Diagnostics.Debug.WriteLine("[VoiceService] Silero VAD initialized");
 
             // イベントの転送
             _stateMachine.OnRecognizedText += (text) => OnRecognizedText?.Invoke(text);
@@ -78,9 +78,6 @@ namespace CocoroDock.Services
                 _waveIn.RecordingStopped += OnRecordingStopped;
                 _waveIn.StartRecording();
 
-                // 無音タイマー初期化
-                _silenceTimer = new Timer(OnSilenceDetected, null, Timeout.Infinite, Timeout.Infinite);
-
                 IsListening = true;
                 System.Diagnostics.Debug.WriteLine("[VoiceService] Started listening");
             }
@@ -104,9 +101,6 @@ namespace CocoroDock.Services
                 _waveIn?.Dispose();
                 _waveIn = null;
 
-                _silenceTimer?.Dispose();
-                _silenceTimer = null;
-
                 _isRecordingVoice = false;
                 _audioBuffer.Clear();
                 _preBuffer.Clear(); // プリバッファもクリア
@@ -126,66 +120,57 @@ namespace CocoroDock.Services
 
             try
             {
-                // マイクゲインを適用して音声データを増幅
+                // マイクゲインを適用
                 var amplifiedBuffer = ApplyMicrophoneGain(e.Buffer, e.BytesRecorded);
 
-                // プリバッファに常に追加（言葉の頭切れ対策）
+                // プリバッファに追加
                 _preBuffer.Enqueue(amplifiedBuffer);
-
-                // プリバッファサイズを制限（0.5秒分 = 10バッファ分）
-                int maxBuffers = PRE_BUFFER_MS / 50; // 50ms間隔なので
+                int maxBuffers = PRE_BUFFER_MS / 50;
                 while (_preBuffer.Count > maxBuffers)
                 {
                     _preBuffer.Dequeue();
                 }
 
-                // 音量バー表示用レベル計算（固定閾値）
-                float displayLevel = CalculateDisplayLevel(e.Buffer, e.BytesRecorded);
+                // 表示用レベル計算
+                float displayLevel = CalculateDisplayLevel(amplifiedBuffer, e.BytesRecorded);
 
-                // 無音区間判定用レベル計算
-                float voiceLevel = CalculateVoiceLevel(e.Buffer, e.BytesRecorded);
+                // Silero VADで音声検出
+                bool isSpeechStart, isSpeechEnd;
+                bool isSpeaking = _sileroVad.ProcessAudio(amplifiedBuffer, e.BytesRecorded, out isSpeechStart, out isSpeechEnd);
 
-                // しきい値を超えているかどうかの情報も一緒に渡す
-                bool isAboveThreshold = voiceLevel > _voiceThreshold;
-                OnVoiceLevel?.Invoke(displayLevel, isAboveThreshold);
+                OnVoiceLevel?.Invoke(displayLevel, isSpeaking);
 
-                if (voiceLevel > _voiceThreshold)
+                if (isSpeechStart)
                 {
-                    // 音声検出
-                    if (!_isRecordingVoice)
-                    {
-                        _isRecordingVoice = true;
-                        _audioBuffer.Clear();
-                        AddWavHeader();
+                    _isRecordingVoice = true;
+                    _audioBuffer.Clear();
+                    AddWavHeader();
 
-                        // プリバッファの内容を録音に含める（言葉の頭切れ対策）
-                        foreach (var preBufferData in _preBuffer)
-                        {
-                            _audioBuffer.AddRange(preBufferData);
-                        }
-
-                        System.Diagnostics.Debug.WriteLine($"[VoiceService] Started recording voice with {_preBuffer.Count} pre-buffers");
-                    }
-                    else
+                    // プリバッファの内容を録音に含める
+                    foreach (var preBufferData in _preBuffer)
                     {
-                        // 既に録音中の場合は通常通り追加
-                        _audioBuffer.AddRange(amplifiedBuffer);
+                        _audioBuffer.AddRange(preBufferData);
                     }
 
-                    _lastVoiceTime = DateTime.Now;
-
-                    // 無音タイマーリセット
-                    _silenceTimer?.Change(_silenceTimeoutMs, Timeout.Infinite);
+                    System.Diagnostics.Debug.WriteLine($"[VoiceService] Speech started with {_preBuffer.Count} pre-buffers");
                 }
                 else if (_isRecordingVoice)
                 {
-                    // 音声中の無音部分も録音に含める
                     _audioBuffer.AddRange(amplifiedBuffer);
+                }
+
+                if (isSpeechEnd && _isRecordingVoice)
+                {
+                    _isRecordingVoice = false;
+                    System.Diagnostics.Debug.WriteLine($"[VoiceService] Speech ended, processing {_audioBuffer.Count} bytes");
+
+                    // 非同期で音声認識実行
+                    _ = ProcessAudioBuffer();
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[VoiceService] Error in audio data processing: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[VoiceService] Error in audio processing: {ex.Message}");
             }
         }
 
@@ -195,25 +180,6 @@ namespace CocoroDock.Services
             {
                 System.Diagnostics.Debug.WriteLine($"[VoiceService] Recording stopped with error: {e.Exception.Message}");
             }
-        }
-
-        private async void OnSilenceDetected(object? state)
-        {
-            if (!_isRecordingVoice || _isDisposed)
-                return;
-
-            var duration = DateTime.Now - _lastVoiceTime;
-            if (duration.TotalMilliseconds < MIN_VOICE_DURATION_MS)
-            {
-                System.Diagnostics.Debug.WriteLine($"[VoiceService] Voice too short: {duration.TotalMilliseconds}ms");
-                return;
-            }
-
-            _isRecordingVoice = false;
-            System.Diagnostics.Debug.WriteLine($"[VoiceService] Silence detected, processing {_audioBuffer.Count} bytes");
-
-            // 音声認識実行
-            await ProcessAudioBuffer();
         }
 
         private async Task ProcessAudioBuffer()
@@ -233,7 +199,7 @@ namespace CocoroDock.Services
                 // WAVヘッダーを更新してから送信
                 UpdateWavHeader(audioData);
 
-                // デバッグ用音声ファイル保存
+                // デバッグ用音声ファイル保存（デスクトップに保存）
                 // SaveAudioFileForDebug(audioData);
 
                 // AmiVoice API呼び出し（並列処理でブロックしない）
@@ -293,26 +259,6 @@ namespace CocoroDock.Services
             return 0;
         }
 
-        /// <summary>
-        /// 無音区間判定用レベル計算（inputThreshold設定を使用）
-        /// </summary>
-        private float CalculateVoiceLevel(byte[] buffer, int bytesRecorded)
-        {
-            if (bytesRecorded == 0)
-                return 0;
-
-            // 平均振幅を計算（無音区間判定用）
-            float sum = 0;
-            for (int i = 0; i < bytesRecorded; i += 2)
-            {
-                if (i + 1 < bytesRecorded)
-                {
-                    short sample = (short)((buffer[i + 1] << 8) | buffer[i]);
-                    sum += Math.Abs(sample) / 32768f;
-                }
-            }
-            return sum / (bytesRecorded / 2);
-        }
 
         private void AddWavHeader()
         {
@@ -448,6 +394,7 @@ namespace CocoroDock.Services
             StopListening();
             _stateMachine?.Dispose();
             _amiVoiceClient?.Dispose();
+            _sileroVad?.Dispose();
 
             System.Diagnostics.Debug.WriteLine("[VoiceService] Disposed");
         }

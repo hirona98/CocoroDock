@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text;
 
 namespace CocoroDock.Services
 {
@@ -329,7 +330,10 @@ namespace CocoroDock.Services
         /// </summary>
         private void ProcessCurrentFormatSettings(string configJson, ConfigSettings defaultSettings)
         {
-            var userSettings = MessageHelper.DeserializeFromJson<ConfigSettings>(configJson);
+            // マイグレーション処理：JSONから旧形式を検出して変換
+            string migratedJson = MigrateJsonIfNeeded(configJson);
+
+            var userSettings = MessageHelper.DeserializeFromJson<ConfigSettings>(migratedJson);
             if (userSettings != null)
             {
                 // デシリアライズされた設定をそのまま使用（デフォルト値は自動適用済み）
@@ -337,6 +341,254 @@ namespace CocoroDock.Services
                 SaveAppSettings();
             }
         }
+
+        private string MigrateJsonIfNeeded(string configJson)
+        {
+            try
+            {
+                using (JsonDocument doc = JsonDocument.Parse(configJson))
+                {
+                    var root = doc.RootElement;
+
+                    if (root.TryGetProperty("characterList", out JsonElement characterListElement))
+                    {
+                        bool needsMigration = false;
+                        var characterArray = characterListElement.EnumerateArray();
+
+                        // 旧形式が存在するかチェック
+                        foreach (var character in characterArray)
+                        {
+                            if (character.TryGetProperty("ttsEndpointURL", out _) ||
+                                character.TryGetProperty("ttsSperkerID", out _))
+                            {
+                                needsMigration = true;
+                                break;
+                            }
+                        }
+
+                        if (needsMigration)
+                        {
+                            return PerformJsonMigration(configJson);
+                        }
+                    }
+                }
+            }
+            catch (JsonException ex)
+            {
+                Debug.WriteLine($"JSON解析エラー（マイグレーション処理）: {ex.Message}");
+                Debug.WriteLine("元の設定を保持します。");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"マイグレーション処理で予期しないエラー: {ex.Message}");
+            }
+
+            return configJson;
+        }
+
+        private string PerformJsonMigration(string configJson)
+        {
+            try
+            {
+                using (JsonDocument doc = JsonDocument.Parse(configJson))
+                {
+                    var root = doc.RootElement;
+                    var options = new JsonWriterOptions { Indented = true };
+
+                    using (var stream = new MemoryStream())
+                    using (var writer = new Utf8JsonWriter(stream, options))
+                    {
+                        writer.WriteStartObject();
+
+                        foreach (var property in root.EnumerateObject())
+                        {
+                            if (property.Name == "characterList")
+                            {
+                                writer.WritePropertyName("characterList");
+                                writer.WriteStartArray();
+
+                                foreach (var character in property.Value.EnumerateArray())
+                                {
+                                    MigrateCharacterJson(character, writer);
+                                }
+
+                                writer.WriteEndArray();
+                            }
+                            else
+                            {
+                                property.WriteTo(writer);
+                            }
+                        }
+
+                        writer.WriteEndObject();
+                        writer.Flush();
+
+                        var migratedJson = Encoding.UTF8.GetString(stream.ToArray());
+
+                        // マイグレーション結果の完全性チェック
+                        if (ValidateMigratedJson(migratedJson))
+                        {
+                            Debug.WriteLine("VOICEVOXマイグレーションが正常に完了しました。");
+                            return migratedJson;
+                        }
+                        else
+                        {
+                            Debug.WriteLine("マイグレーション結果の検証に失敗しました。元の設定を保持します。");
+                            return configJson;
+                        }
+                    }
+                }
+            }
+            catch (JsonException ex)
+            {
+                Debug.WriteLine($"JSONマイグレーションエラー: {ex.Message}");
+                return configJson;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"マイグレーション処理で予期しないエラー: {ex.Message}");
+                return configJson;
+            }
+        }
+
+        /// <summary>
+        /// マイグレーション後のJSONの完全性を検証
+        /// </summary>
+        private bool ValidateMigratedJson(string migratedJson)
+        {
+            try
+            {
+                using (JsonDocument doc = JsonDocument.Parse(migratedJson))
+                {
+                    var root = doc.RootElement;
+
+                    if (!root.TryGetProperty("characterList", out JsonElement characterListElement))
+                    {
+                        Debug.WriteLine("characterList プロパティが見つかりません。");
+                        return false;
+                    }
+
+                    foreach (var character in characterListElement.EnumerateArray())
+                    {
+                        // voicevoxConfigが正しく作成されているかチェック
+                        if (!character.TryGetProperty("voicevoxConfig", out JsonElement voicevoxConfig))
+                        {
+                            Debug.WriteLine("voicevoxConfig プロパティが見つかりません。");
+                            return false;
+                        }
+
+                        // 必須プロパティの存在チェック
+                        string[] requiredProperties = { "endpointUrl", "speakerId", "speedScale", "pitchScale",
+                                                      "intonationScale", "volumeScale", "prePhonemeLength",
+                                                      "postPhonemeLength", "outputSamplingRate", "outputStereo" };
+
+                        foreach (var prop in requiredProperties)
+                        {
+                            if (!voicevoxConfig.TryGetProperty(prop, out _))
+                            {
+                                Debug.WriteLine($"voicevoxConfig の必須プロパティ '{prop}' が見つかりません。");
+                                return false;
+                            }
+                        }
+
+                        // 旧プロパティが削除されているかチェック
+                        if (character.TryGetProperty("ttsEndpointURL", out _) ||
+                            character.TryGetProperty("ttsSperkerID", out _))
+                        {
+                            Debug.WriteLine("旧プロパティが残存しています。");
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"検証処理でエラー: {ex.Message}");
+                return false;
+            }
+        }
+
+        private void MigrateCharacterJson(JsonElement character, Utf8JsonWriter writer)
+        {
+            try
+            {
+                writer.WriteStartObject();
+
+                // 旧設定値を収集
+                string? oldEndpointUrl = null;
+                int oldSpeakerId = -1;
+
+                foreach (var property in character.EnumerateObject())
+                {
+                    if (property.Name == "ttsEndpointURL")
+                    {
+                        oldEndpointUrl = property.Value.GetString();
+                    }
+                    else if (property.Name == "ttsSperkerID")
+                    {
+                        if (property.Value.ValueKind == JsonValueKind.String)
+                        {
+                            int.TryParse(property.Value.GetString(), out oldSpeakerId);
+                        }
+                        else if (property.Value.ValueKind == JsonValueKind.Number)
+                        {
+                            oldSpeakerId = property.Value.GetInt32();
+                        }
+                    }
+                }
+
+                // 旧フィールド以外をコピー、voicevoxConfigは新規作成
+                foreach (var property in character.EnumerateObject())
+                {
+                    if (property.Name == "ttsEndpointURL" || property.Name == "ttsSperkerID")
+                    {
+                        continue; // 旧フィールドはスキップ
+                    }
+                    else
+                    {
+                        property.WriteTo(writer);
+                    }
+                }
+
+                // voicevoxConfigを新規作成
+                writer.WritePropertyName("voicevoxConfig");
+                writer.WriteStartObject();
+                writer.WritePropertyName("endpointUrl");
+                writer.WriteStringValue(string.IsNullOrEmpty(oldEndpointUrl) ? "http://127.0.0.1:50021" : oldEndpointUrl);
+                writer.WritePropertyName("speakerId");
+                writer.WriteNumberValue(oldSpeakerId >= 0 ? oldSpeakerId : 0);
+                writer.WritePropertyName("speedScale");
+                writer.WriteNumberValue(1.0);
+                writer.WritePropertyName("pitchScale");
+                writer.WriteNumberValue(0.0);
+                writer.WritePropertyName("intonationScale");
+                writer.WriteNumberValue(1.0);
+                writer.WritePropertyName("volumeScale");
+                writer.WriteNumberValue(1.0);
+                writer.WritePropertyName("prePhonemeLength");
+                writer.WriteNumberValue(0.1);
+                writer.WritePropertyName("postPhonemeLength");
+                writer.WriteNumberValue(0.1);
+                writer.WritePropertyName("outputSamplingRate");
+                writer.WriteNumberValue(24000);
+                writer.WritePropertyName("outputStereo");
+                writer.WriteBooleanValue(false);
+                writer.WriteEndObject();
+
+                writer.WriteEndObject();
+
+                Debug.WriteLine($"キャラクター設定をマイグレーション: endpointUrl={oldEndpointUrl ?? "デフォルト"}, speakerId={oldSpeakerId}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"キャラクター設定マイグレーションでエラー: {ex.Message}");
+                throw; // 上位でハンドリング
+            }
+        }
+
+
 
         /// <summary>
         /// デフォルト設定ファイルを読み込む

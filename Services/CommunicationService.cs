@@ -456,7 +456,7 @@ namespace CocoroDock.Services
             {
                 var request = new ShellControlRequest
                 {
-                    command = "ttsControl",
+                    action = "ttsControl",
                     @params = new Dictionary<string, object>
                     {
                         { "enabled", isUseTTS }
