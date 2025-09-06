@@ -128,6 +128,9 @@ namespace CocoroDock.Controls
 
                 // アニメーション設定を更新
                 AnimationSettingsControl.Initialize();
+
+                // Memory設定を更新
+                InitializeMemorySettings();
             };
 
             // 現在のキャラクターインデックスを取得
@@ -145,6 +148,22 @@ namespace CocoroDock.Controls
             {
                 // 設定変更の記録（必要に応じて処理を追加）
             };
+
+            // MemorySettingsControlの初期化
+            InitializeMemorySettings();
+        }
+
+        /// <summary>
+        /// MemorySettingsControlを初期化する
+        /// </summary>
+        private void InitializeMemorySettings()
+        {
+            if (AppSettings.Instance.CharacterList != null && _currentCharacterIndex >= 0 && _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
+            {
+                var currentCharacter = AppSettings.Instance.CharacterList[_currentCharacterIndex];
+                // 無理やり全キャラクター共通設定にしています
+                MemorySettingsControl.LoadCharacterSettings(currentCharacter);
+            }
         }
 
         // EscapePositionControl は DisplaySettingsControl 内で取り扱う
@@ -501,6 +520,9 @@ namespace CocoroDock.Controls
                 var currentIndex = CharacterManagementControl.GetCurrentCharacterIndex();
                 if (currentIndex >= 0 && currentIndex < appSettings.CharacterList.Count)
                 {
+                    // Memory設定を反映（無理やり全キャラクター共通設定にしています）
+                    MemorySettingsControl.SaveToCharacterSettings(currentCharacterSetting);
+
                     appSettings.CharacterList[currentIndex] = currentCharacterSetting;
                 }
             }

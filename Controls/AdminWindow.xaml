@@ -118,6 +118,14 @@
                 </Grid>
             </TabItem>
 
+            <TabItem Header="Memory"
+                     Style="{StaticResource AdminTabItemStyle}"
+                     ToolTip="Memory setting">
+                <Grid Margin="20,20,0,20">
+                    <local:MemorySettingsControl x:Name="MemorySettingsControl"/>
+                </Grid>
+            </TabItem>
+
             <TabItem Header="Animation"
                      Style="{StaticResource AdminTabItemStyle}"
                      ToolTip="Animation setting">

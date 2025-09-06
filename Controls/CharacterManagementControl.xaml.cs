@@ -105,10 +105,6 @@ namespace CocoroDock.Controls
             PasteFromClipboardIntoTextBox(VisionApiKeyPasswordBox);
         }
 
-        private void EmbeddedApiKeyPasteOverrideButton_Click(object sender, RoutedEventArgs e)
-        {
-            PasteFromClipboardIntoTextBox(EmbeddedApiKeyPasswordBox);
-        }
 
         private void AivisCloudApiKeyPasteOverrideButton_Click(object sender, RoutedEventArgs e)
         {
@@ -286,9 +282,6 @@ namespace CocoroDock.Controls
                 character.systemPromptFilePath = newFileName;
             }
             character.memoryId = MemoryIdTextBox.Text;
-            character.embeddedApiKey = EmbeddedApiKeyPasswordBox.Text;
-            character.embeddedModel = EmbeddedModelTextBox.Text;
-            character.embeddedDimension = EmbeddedDimensionTextBox.Text;
             character.isUseSTT = IsUseSTTCheckBox.IsChecked ?? false;
             character.sttEngine = STTEngineComboBox.SelectedItem is ComboBoxItem selectedSttEngine ? selectedSttEngine.Tag?.ToString() ?? "amivoice" : "amivoice";
             character.sttWakeWord = STTWakeWordTextBox.Text;
@@ -414,9 +407,6 @@ namespace CocoroDock.Controls
 
             // 記憶機能
             MemoryIdTextBox.Text = character.memoryId;
-            EmbeddedApiKeyPasswordBox.Text = character.embeddedApiKey;
-            EmbeddedModelTextBox.Text = character.embeddedModel;
-            EmbeddedDimensionTextBox.Text = character.embeddedDimension;
 
             // STT設定
             IsUseSTTCheckBox.IsChecked = character.isUseSTT;
@@ -661,9 +651,6 @@ namespace CocoroDock.Controls
                     },
                     isEnableMemory = sourceCharacter.isEnableMemory,
                     memoryId = sourceCharacter.memoryId,
-                    embeddedApiKey = sourceCharacter.embeddedApiKey,
-                    embeddedModel = sourceCharacter.embeddedModel,
-                    embeddedDimension = sourceCharacter.embeddedDimension,
                     isUseSTT = sourceCharacter.isUseSTT,
                     sttEngine = sourceCharacter.sttEngine,
                     sttWakeWord = sourceCharacter.sttWakeWord,
