@@ -155,7 +155,9 @@ namespace CocoroDock.Controls
         /// </summary>
         private void InitializeMemorySettings()
         {
-            if (AppSettings.Instance.CharacterList != null && _currentCharacterIndex >= 0 && _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
+            if (AppSettings.Instance.CharacterList != null &&
+                _currentCharacterIndex >= 0 &&
+                _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
             {
                 var currentCharacter = AppSettings.Instance.CharacterList[_currentCharacterIndex];
                 // 無理やり全キャラクター共通設定にしています
@@ -491,7 +493,8 @@ namespace CocoroDock.Controls
             if (currentCharacterSetting != null)
             {
                 var currentIndex = CharacterManagementControl.GetCurrentCharacterIndex();
-                if (currentIndex >= 0 && currentIndex < appSettings.CharacterList.Count)
+                if (currentIndex >= 0 &&
+                    currentIndex < appSettings.CharacterList.Count)
                 {
                     // Memory設定を反映（無理やり全キャラクター共通設定にしています）
                     MemorySettingsControl.SaveToCharacterSettings(currentCharacterSetting);

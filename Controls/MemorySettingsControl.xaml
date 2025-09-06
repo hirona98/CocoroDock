@@ -110,6 +110,27 @@
                         </Grid>
                     </StackPanel>
                 </GroupBox>
+
+                <!-- 記憶の削除 -->
+                <GroupBox Header="記憶の削除"
+                          Margin="0,0,20,20"
+                          Padding="10">
+                    <StackPanel>
+                        <TextBlock Foreground="#666666"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,10">
+                            <Run Text="全キャラクターのデータが完全に削除されます。"
+                                 Foreground="Red"/>
+                        </TextBlock>
+                        <Button x:Name="DeleteMemoryButton"
+                                Content="記憶を削除"
+                                Background="#FFD50000"
+                                Foreground="White"
+                                Padding="10,5"
+                                HorizontalAlignment="Left"
+                                Click="DeleteMemoryButton_Click"/>
+                    </StackPanel>
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
     </Grid>
