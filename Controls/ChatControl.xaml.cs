@@ -377,7 +377,7 @@ namespace CocoroDock.Controls
                     image.MouseLeftButtonUp += (s, e) =>
                     {
                         var previewWindow = new ImagePreviewWindow(bitmapImage);
-                        previewWindow.ShowDialog();
+                        previewWindow.Show();
                     };
 
                     messageContent.Children.Add(image);
