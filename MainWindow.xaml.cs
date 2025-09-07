@@ -398,10 +398,6 @@ namespace CocoroDock
             {
                 // スクリーンショットサービスの設定を更新
                 UpdateScreenshotService();
-                // 最前面表示の設定を適用
-                Topmost = _appSettings.IsTopmost;
-
-                // その他の設定はここに追加（必要に応じて）
             });
         }
 
