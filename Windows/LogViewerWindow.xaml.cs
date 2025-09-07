@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Data;
 
 namespace CocoroDock.Windows
@@ -25,6 +26,10 @@ namespace CocoroDock.Windows
         private const int MaxDisplayedLogs = 1000;
         public bool IsClosed { get; private set; } = false;
 
+        // スクロール位置保持用
+        private ScrollViewer? _scrollViewer;
+        private double _lastVerticalOffset = 0;
+
         public LogViewerWindow()
         {
             InitializeComponent();
@@ -36,6 +41,9 @@ namespace CocoroDock.Windows
 
             // 非同期でログ監視開始
             StartLogWatching();
+
+            // DataGridがロードされた後にScrollViewerの参照を取得
+            LogDataGrid.Loaded += (s, e) => InitializeScrollViewer();
         }
 
         /// <summary>
@@ -52,6 +60,64 @@ namespace CocoroDock.Windows
         }
 
         /// <summary>
+        /// ScrollViewerの参照を初期化
+        /// </summary>
+        private void InitializeScrollViewer()
+        {
+            if (_scrollViewer == null)
+            {
+                _scrollViewer = GetScrollViewer(LogDataGrid);
+            }
+        }
+
+        /// <summary>
+        /// DataGridからScrollViewerを取得
+        /// </summary>
+        /// <param name="dataGrid">対象のDataGrid</param>
+        /// <returns>ScrollViewer</returns>
+        private ScrollViewer? GetScrollViewer(DataGrid dataGrid)
+        {
+            if (dataGrid == null) return null;
+
+            // VisualTreeからScrollViewerを探す
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(dataGrid); i++)
+            {
+                var child = VisualTreeHelper.GetChild(dataGrid, i);
+                var scrollViewer = FindScrollViewer(child);
+                if (scrollViewer != null)
+                {
+                    return scrollViewer;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// VisualTree内でScrollViewerを再帰的に検索
+        /// </summary>
+        /// <param name="visual">検索対象</param>
+        /// <returns>ScrollViewer</returns>
+        private ScrollViewer? FindScrollViewer(DependencyObject visual)
+        {
+            if (visual is ScrollViewer scrollViewer)
+            {
+                return scrollViewer;
+            }
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(visual); i++)
+            {
+                var child = VisualTreeHelper.GetChild(visual, i);
+                var result = FindScrollViewer(child);
+                if (result != null)
+                {
+                    return result;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// ログメッセージを追加（最大1000件まで）
         /// </summary>
         /// <param name="logMessage">ログメッセージ</param>
@@ -59,21 +125,53 @@ namespace CocoroDock.Windows
         {
             Dispatcher.BeginInvoke(() =>
             {
+                // 自動スクロールがOFFの場合、現在のスクロール位置を保存
+                bool shouldPreservePosition = AutoScrollCheckBox.IsChecked != true;
+                double savedOffset = 0;
+
+                if (shouldPreservePosition && _scrollViewer != null)
+                {
+                    savedOffset = _scrollViewer.VerticalOffset;
+                    _lastVerticalOffset = savedOffset;
+                }
+
                 _allLogs.Add(logMessage);
 
                 // 最大件数を超えた場合、古いログを削除
+                bool itemsRemoved = false;
                 while (_allLogs.Count > MaxDisplayedLogs)
                 {
                     _allLogs.RemoveAt(0);
+                    itemsRemoved = true;
                 }
 
                 UpdateLogCount();
                 UpdateStatus($"最新ログ: {logMessage.timestamp:HH:mm:ss} [{logMessage.level}] {logMessage.component}");
 
-                // 自動スクロール
+                // スクロール位置の処理
                 if (AutoScrollCheckBox.IsChecked == true && LogDataGrid.Items.Count > 0)
                 {
+                    // 自動スクロールが有効の場合、最新アイテムまでスクロール
                     LogDataGrid.ScrollIntoView(LogDataGrid.Items[LogDataGrid.Items.Count - 1]);
+                }
+                else if (shouldPreservePosition && _scrollViewer != null)
+                {
+                    // 自動スクロールが無効の場合、スクロール位置を復元
+                    Dispatcher.BeginInvoke(() =>
+                    {
+                        // アイテムが削除された場合、位置を調整
+                        if (itemsRemoved)
+                        {
+                            // 削除されたアイテム分だけ上にスクロール位置を調整
+                            // （削除された数 × 大体のアイテム高さ）を差し引く
+                            var adjustedOffset = Math.Max(0, savedOffset - 20); // 20は大体のアイテム高さ
+                            _scrollViewer.ScrollToVerticalOffset(adjustedOffset);
+                        }
+                        else
+                        {
+                            _scrollViewer.ScrollToVerticalOffset(savedOffset);
+                        }
+                    }, System.Windows.Threading.DispatcherPriority.Loaded);
                 }
             });
         }
@@ -105,7 +203,7 @@ namespace CocoroDock.Windows
                 UpdateStatus("ログファイルは空です");
             }
 
-            // 自動スクロール
+            // 自動スクロール（初期ロード時は常に最新にスクロール）
             if (AutoScrollCheckBox.IsChecked == true && LogDataGrid.Items.Count > 0)
             {
                 LogDataGrid.ScrollIntoView(LogDataGrid.Items[LogDataGrid.Items.Count - 1]);
@@ -173,9 +271,25 @@ namespace CocoroDock.Windows
             // UIが完全に初期化されていない場合は何もしない
             if (LevelFilterComboBox?.SelectedItem is ComboBoxItem selectedItem)
             {
+                // フィルター変更時のスクロール位置保持
+                double savedOffset = 0;
+                if (_scrollViewer != null && AutoScrollCheckBox.IsChecked != true)
+                {
+                    savedOffset = _scrollViewer.VerticalOffset;
+                }
+
                 _levelFilter = selectedItem.Tag?.ToString() ?? "";
                 _filteredLogs?.Refresh();
                 UpdateLogCount();
+
+                // スクロール位置の復元
+                if (_scrollViewer != null && AutoScrollCheckBox.IsChecked != true)
+                {
+                    Dispatcher.BeginInvoke(() =>
+                    {
+                        _scrollViewer.ScrollToVerticalOffset(savedOffset);
+                    }, System.Windows.Threading.DispatcherPriority.Loaded);
+                }
             }
         }
 
@@ -187,9 +301,25 @@ namespace CocoroDock.Windows
             // UIが完全に初期化されていない場合は何もしない
             if (ComponentFilterComboBox?.SelectedItem is ComboBoxItem selectedItem)
             {
+                // フィルター変更時のスクロール位置保持
+                double savedOffset = 0;
+                if (_scrollViewer != null && AutoScrollCheckBox.IsChecked != true)
+                {
+                    savedOffset = _scrollViewer.VerticalOffset;
+                }
+
                 _componentFilter = selectedItem.Tag?.ToString() ?? "";
                 _filteredLogs?.Refresh();
                 UpdateLogCount();
+
+                // スクロール位置の復元
+                if (_scrollViewer != null && AutoScrollCheckBox.IsChecked != true)
+                {
+                    Dispatcher.BeginInvoke(() =>
+                    {
+                        _scrollViewer.ScrollToVerticalOffset(savedOffset);
+                    }, System.Windows.Threading.DispatcherPriority.Loaded);
+                }
             }
         }
 
