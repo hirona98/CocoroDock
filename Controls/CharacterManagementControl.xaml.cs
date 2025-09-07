@@ -527,9 +527,58 @@ namespace CocoroDock.Controls
                     characterNumber++;
                 }
 
+                // 既存のキャラクターから記憶用設定を取得（現在選択中のキャラクターまたは最初のキャラクター）
+                string inheritedEmbeddedApiKey = string.Empty;
+                string inheritedEmbeddedModel = "openai/text-embedding-3-large";
+                string inheritedEmbeddedDimension = "3072";
+
+                if (_currentCharacterIndex >= 0 && _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
+                {
+                    // 現在選択中のキャラクターから引き継ぐ
+                    var currentChar = AppSettings.Instance.CharacterList[_currentCharacterIndex];
+                    inheritedEmbeddedApiKey = currentChar.embeddedApiKey;
+                    inheritedEmbeddedModel = currentChar.embeddedModel;
+                    inheritedEmbeddedDimension = currentChar.embeddedDimension;
+                }
+                else if (AppSettings.Instance.CharacterList.Count > 0)
+                {
+                    // 最初のキャラクターから引き継ぐ
+                    var firstChar = AppSettings.Instance.CharacterList[0];
+                    inheritedEmbeddedApiKey = firstChar.embeddedApiKey;
+                    inheritedEmbeddedModel = firstChar.embeddedModel;
+                    inheritedEmbeddedDimension = firstChar.embeddedDimension;
+                }
+
                 var newCharacter = new CharacterSettings
                 {
                     modelName = newName,
+                    vrmFilePath = string.Empty,
+                    isUseLLM = false,
+                    apiKey = string.Empty,
+                    llmModel = "openai/gpt-4o-mini",
+                    localLLMBaseUrl = string.Empty,
+                    visionApiKey = string.Empty,
+                    visionModel = "openai/gpt-4o-mini",
+                    systemPromptFilePath = string.Empty,
+                    isUseTTS = false,
+                    ttsType = "voicevox",
+                    voicevoxConfig = new VoicevoxConfig(),
+                    styleBertVits2Config = new StyleBertVits2Config(),
+                    aivisCloudConfig = new AivisCloudConfig(),
+                    isEnableMemory = true,
+                    memoryId = "",
+                    // 既存のキャラクターから記憶用埋め込みモデル設定を引き継ぐ
+                    embeddedApiKey = inheritedEmbeddedApiKey,
+                    embeddedModel = inheritedEmbeddedModel,
+                    embeddedDimension = inheritedEmbeddedDimension,
+                    isUseSTT = false,
+                    sttEngine = "amivoice",
+                    sttWakeWord = string.Empty,
+                    sttApiKey = string.Empty,
+                    sttLanguage = "ja",
+                    isConvertMToon = false,
+                    isEnableShadowOff = true,
+                    shadowOffMesh = "Face, U_Char_1",
                     isReadOnly = false
                 };
 
@@ -699,6 +748,10 @@ namespace CocoroDock.Controls
                     },
                     isEnableMemory = sourceCharacter.isEnableMemory,
                     memoryId = sourceCharacter.memoryId,
+                    // 記憶用埋め込みモデル設定のコピー
+                    embeddedApiKey = sourceCharacter.embeddedApiKey,
+                    embeddedModel = sourceCharacter.embeddedModel,
+                    embeddedDimension = sourceCharacter.embeddedDimension,
                     isUseSTT = sourceCharacter.isUseSTT,
                     sttEngine = sourceCharacter.sttEngine,
                     sttWakeWord = sourceCharacter.sttWakeWord,

@@ -496,10 +496,23 @@ namespace CocoroDock.Controls
                 if (currentIndex >= 0 &&
                     currentIndex < appSettings.CharacterList.Count)
                 {
-                    // Memory設定を反映（無理やり全キャラクター共通設定にしています）
+                    // 現在のキャラクターの設定を更新
+                    appSettings.CharacterList[currentIndex] = currentCharacterSetting;
+
+                    // Memory設定を現在のキャラクターから取得
                     MemorySettingsControl.SaveToCharacterSettings(currentCharacterSetting);
 
-                    appSettings.CharacterList[currentIndex] = currentCharacterSetting;
+                    // 全キャラクターに記憶用設定を適用
+                    string embeddedApiKey = currentCharacterSetting.embeddedApiKey;
+                    string embeddedModel = currentCharacterSetting.embeddedModel;
+                    string embeddedDimension = currentCharacterSetting.embeddedDimension;
+
+                    foreach (var character in appSettings.CharacterList)
+                    {
+                        character.embeddedApiKey = embeddedApiKey;
+                        character.embeddedModel = embeddedModel;
+                        character.embeddedDimension = embeddedDimension;
+                    }
                 }
             }
 
