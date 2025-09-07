@@ -685,10 +685,8 @@ namespace CocoroDock.Controls
                     localLLMBaseUrl = sourceCharacter.localLLMBaseUrl,
                     visionApiKey = sourceCharacter.visionApiKey,
                     visionModel = sourceCharacter.visionModel,
-                    // systemPromptは複製時に即座にファイル作成（複製は即座実行）
-                    systemPromptFilePath = !string.IsNullOrEmpty(sourceCharacter.systemPromptFilePath)
-                        ? CopySystemPromptFile(sourceCharacter.systemPromptFilePath, newName)
-                        : AppSettings.Instance.GenerateSystemPromptFilePath(newName),
+                    // systemPromptFilePathは空にして、ConfirmSettings時に生成（追加と同じ動作）
+                    systemPromptFilePath = string.Empty,
                     isUseTTS = sourceCharacter.isUseTTS,
                     ttsType = sourceCharacter.ttsType,
 
@@ -767,6 +765,7 @@ namespace CocoroDock.Controls
                 AppSettings.Instance.CharacterList.Add(newCharacter);
 
                 // 新しいキャラクターを辞書に追加（複製元のプロンプト内容を使用）
+                // ファイル作成とパス生成は ConfirmSettings時に統一実行
                 int newIndex = AppSettings.Instance.CharacterList.Count - 1;
                 string sourcePromptContent = _allCharacterSystemPrompts.ContainsKey(_currentCharacterIndex)
                     ? _allCharacterSystemPrompts[_currentCharacterIndex]
@@ -786,6 +785,8 @@ namespace CocoroDock.Controls
 
                 // 設定変更イベントを発生
                 SettingsChanged?.Invoke(this, EventArgs.Empty);
+
+                Debug.WriteLine($"キャラクター複製: {sourceCharacter.modelName} -> {newName}（ファイル作成とパス生成は遅延実行）");
             }
             catch (Exception ex)
             {
@@ -1001,34 +1002,6 @@ namespace CocoroDock.Controls
             }
         }
 
-        /// <summary>
-        /// systemPromptファイルをコピーして新しいUUIDファイル名で保存
-        /// </summary>
-        /// <param name="sourceFilePath">コピー元のファイルパス</param>
-        /// <param name="newModelName">新しいモデル名</param>
-        /// <returns>新しいファイルパス</returns>
-        private string CopySystemPromptFile(string sourceFilePath, string newModelName)
-        {
-            try
-            {
-                // 元のプロンプトを読み込み
-                string promptContent = AppSettings.Instance.LoadSystemPrompt(sourceFilePath);
-
-                // 新しいファイルパスを生成（新しいUUID）
-                string newFilePath = AppSettings.Instance.GenerateSystemPromptFilePath(newModelName);
-
-                // 新しいファイルに保存
-                AppSettings.Instance.SaveSystemPrompt(newFilePath, promptContent);
-
-                return newFilePath;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"systemPromptファイルコピーエラー: {ex.Message}");
-                // エラーの場合は新しいファイルを生成
-                return AppSettings.Instance.GenerateSystemPromptFilePath(newModelName);
-            }
-        }
 
         /// <summary>
         /// systemPromptファイルを削除
@@ -1155,6 +1128,51 @@ namespace CocoroDock.Controls
             catch (Exception ex)
             {
                 Debug.WriteLine($"キャンセル処理エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// キャラクターリストのUIを更新（キャンセル時の復元用）
+        /// </summary>
+        public void RefreshCharacterList()
+        {
+            try
+            {
+                // システムプロンプト辞書を_originalから復元（ファイル読み込みはしない）
+                _allCharacterSystemPrompts.Clear();
+                foreach (var kvp in _originalCharacterSystemPrompts)
+                {
+                    _allCharacterSystemPrompts[kvp.Key] = kvp.Value;
+                }
+
+                // ComboBoxのItemsSourceを更新
+                CharacterSelectComboBox.ItemsSource = null;
+                CharacterSelectComboBox.ItemsSource = AppSettings.Instance.CharacterList;
+
+                // 最初のキャラクターを選択（または既存のインデックスを維持）
+                if (AppSettings.Instance.CharacterList.Count > 0)
+                {
+                    int indexToSelect = Math.Min(_currentCharacterIndex, AppSettings.Instance.CharacterList.Count - 1);
+                    if (indexToSelect < 0) indexToSelect = 0;
+
+                    _currentCharacterIndex = indexToSelect;
+                    CharacterSelectComboBox.SelectedIndex = indexToSelect;
+                    UpdateCharacterUI(); // 引数なしで呼び出し
+                }
+                else
+                {
+                    _currentCharacterIndex = -1;
+                    // キャラクターが存在しない場合はUIをクリア
+                    CharacterNameTextBox.Text = string.Empty;
+                    VRMFilePathTextBox.Text = string.Empty;
+                    SystemPromptTextBox.Text = string.Empty;
+                }
+
+                Debug.WriteLine($"キャラクターリスト復元完了: {AppSettings.Instance.CharacterList.Count}件（プロンプト内容はバックアップから復元）");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"キャラクターリスト復元エラー: {ex.Message}");
             }
         }
 

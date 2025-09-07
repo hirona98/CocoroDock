@@ -26,6 +26,7 @@ namespace CocoroDock.Controls
     {
         // Display 設定は DisplaySettingsControl に委譲
         private Dictionary<string, object> _originalDisplaySettings = new Dictionary<string, object>();
+        private List<CharacterSettings> _originalCharacterList = new List<CharacterSettings>();
 
         // 現在選択されているキャラクターのインデックス
         private int _currentCharacterIndex = 0;
@@ -175,6 +176,13 @@ namespace CocoroDock.Controls
             // 表示設定のバックアップ
             DisplaySettingsControl.SaveToSnapshot();
             _originalDisplaySettings = DisplaySettingsControl.GetSnapshot();
+
+            // キャラクターリストのバックアップ（Deep Copy）
+            _originalCharacterList.Clear();
+            foreach (var character in AppSettings.Instance.CharacterList)
+            {
+                _originalCharacterList.Add(DeepCopyCharacterSettings(character));
+            }
         }
 
         #endregion
@@ -425,6 +433,16 @@ namespace CocoroDock.Controls
             // Display の復元
             DisplaySettingsControl.ApplySnapshotToAppSettings(_originalDisplaySettings);
             DisplaySettingsControl.InitializeFromAppSettings();
+
+            // キャラクターリストの復元
+            AppSettings.Instance.CharacterList.Clear();
+            foreach (var character in _originalCharacterList)
+            {
+                AppSettings.Instance.CharacterList.Add(DeepCopyCharacterSettings(character));
+            }
+
+            // CharacterManagementControlのUIを更新
+            CharacterManagementControl.RefreshCharacterList();
         }
 
         #endregion
@@ -434,6 +452,95 @@ namespace CocoroDock.Controls
         /// <summary>
         /// ウィンドウが閉じられる前に呼び出されるイベントハンドラ
         /// </summary>
+
+        /// <summary>
+        /// キャラクター設定のディープコピーを作成
+        /// </summary>
+        private CharacterSettings DeepCopyCharacterSettings(CharacterSettings source)
+        {
+            return new CharacterSettings
+            {
+                modelName = source.modelName,
+                vrmFilePath = source.vrmFilePath,
+                isUseLLM = source.isUseLLM,
+                apiKey = source.apiKey,
+                llmModel = source.llmModel,
+                localLLMBaseUrl = source.localLLMBaseUrl,
+                visionApiKey = source.visionApiKey,
+                visionModel = source.visionModel,
+                systemPromptFilePath = source.systemPromptFilePath,
+                isUseTTS = source.isUseTTS,
+                ttsType = source.ttsType,
+                voicevoxConfig = new VoicevoxConfig
+                {
+                    endpointUrl = source.voicevoxConfig.endpointUrl,
+                    speakerId = source.voicevoxConfig.speakerId,
+                    speedScale = source.voicevoxConfig.speedScale,
+                    pitchScale = source.voicevoxConfig.pitchScale,
+                    intonationScale = source.voicevoxConfig.intonationScale,
+                    volumeScale = source.voicevoxConfig.volumeScale,
+                    prePhonemeLength = source.voicevoxConfig.prePhonemeLength,
+                    postPhonemeLength = source.voicevoxConfig.postPhonemeLength,
+                    outputSamplingRate = source.voicevoxConfig.outputSamplingRate,
+                    outputStereo = source.voicevoxConfig.outputStereo
+                },
+                styleBertVits2Config = new StyleBertVits2Config
+                {
+                    endpointUrl = source.styleBertVits2Config.endpointUrl,
+                    modelName = source.styleBertVits2Config.modelName,
+                    modelId = source.styleBertVits2Config.modelId,
+                    speakerName = source.styleBertVits2Config.speakerName,
+                    speakerId = source.styleBertVits2Config.speakerId,
+                    style = source.styleBertVits2Config.style,
+                    styleWeight = source.styleBertVits2Config.styleWeight,
+                    language = source.styleBertVits2Config.language,
+                    sdpRatio = source.styleBertVits2Config.sdpRatio,
+                    noise = source.styleBertVits2Config.noise,
+                    noiseW = source.styleBertVits2Config.noiseW,
+                    length = source.styleBertVits2Config.length,
+                    autoSplit = source.styleBertVits2Config.autoSplit,
+                    splitInterval = source.styleBertVits2Config.splitInterval,
+                    assistText = source.styleBertVits2Config.assistText,
+                    assistTextWeight = source.styleBertVits2Config.assistTextWeight,
+                    referenceAudioPath = source.styleBertVits2Config.referenceAudioPath
+                },
+                aivisCloudConfig = new AivisCloudConfig
+                {
+                    apiKey = source.aivisCloudConfig.apiKey,
+                    endpointUrl = source.aivisCloudConfig.endpointUrl,
+                    modelUuid = source.aivisCloudConfig.modelUuid,
+                    speakerUuid = source.aivisCloudConfig.speakerUuid,
+                    styleId = source.aivisCloudConfig.styleId,
+                    styleName = source.aivisCloudConfig.styleName,
+                    useSSML = source.aivisCloudConfig.useSSML,
+                    language = source.aivisCloudConfig.language,
+                    speakingRate = source.aivisCloudConfig.speakingRate,
+                    emotionalIntensity = source.aivisCloudConfig.emotionalIntensity,
+                    tempoDynamics = source.aivisCloudConfig.tempoDynamics,
+                    pitch = source.aivisCloudConfig.pitch,
+                    volume = source.aivisCloudConfig.volume,
+                    outputFormat = source.aivisCloudConfig.outputFormat,
+                    outputBitrate = source.aivisCloudConfig.outputBitrate,
+                    outputSamplingRate = source.aivisCloudConfig.outputSamplingRate,
+                    outputAudioChannels = source.aivisCloudConfig.outputAudioChannels
+                },
+                isEnableMemory = source.isEnableMemory,
+                memoryId = source.memoryId,
+                embeddedApiKey = source.embeddedApiKey,
+                embeddedModel = source.embeddedModel,
+                embeddedDimension = source.embeddedDimension,
+                isUseSTT = source.isUseSTT,
+                sttEngine = source.sttEngine,
+                sttWakeWord = source.sttWakeWord,
+                sttApiKey = source.sttApiKey,
+                sttLanguage = source.sttLanguage,
+                isConvertMToon = source.isConvertMToon,
+                isEnableShadowOff = source.isEnableShadowOff,
+                shadowOffMesh = source.shadowOffMesh,
+                isReadOnly = source.isReadOnly
+            };
+        }
+
         protected override void OnClosed(EventArgs e)
         {
             // MCPタブのViewModelを破棄
