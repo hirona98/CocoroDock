@@ -69,6 +69,9 @@ namespace CocoroDock.Controls
                 GoogleSearchEngineIdTextBox.Text = appSettings.GoogleSearchEngineId;
                 InternetMaxResultsTextBox.Text = appSettings.InternetMaxResults.ToString();
 
+                // リマインダーUI初期化
+                ReminderDateTimeTextBox.Text = DateTime.Now.AddHours(1).ToString("yyyy/MM/dd HH:mm");
+
                 // リマインダーを読み込み
                 await LoadRemindersAsync();
 
