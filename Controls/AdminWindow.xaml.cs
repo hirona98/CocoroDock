@@ -61,7 +61,7 @@ namespace CocoroDock.Controls
             McpSettingsControl.Initialize();
 
             // システム設定コントロールを初期化
-            SystemSettingsControl.Initialize();
+            _ = SystemSettingsControl.InitializeAsync();
 
             // システム設定変更イベントを登録
             SystemSettingsControl.SettingsChanged += (sender, args) =>

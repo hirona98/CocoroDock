@@ -27,7 +27,7 @@ namespace CocoroDock.Services
         public static event EventHandler? SettingsSaved;
 
         // UserDataMディレクトリのパスを取得
-        private string UserDataDirectory => FindUserDataDirectory();
+        public string UserDataDirectory => FindUserDataDirectory();
 
         // アプリケーション設定ファイルのパス
         private string AppSettingsFilePath => Path.Combine(UserDataDirectory, "Setting.json");

@@ -1,4 +1,5 @@
 using CocoroDock.Communication;
+using CocoroDock.Models;
 using CocoroDock.Services;
 using CocoroDock.Windows;
 using System;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -27,16 +29,21 @@ namespace CocoroDock.Controls
         /// </summary>
         private bool _isInitialized = false;
 
+        /// <summary>
+        /// リマインダーサービス
+        /// </summary>
+        private IReminderService _reminderService;
 
         public SystemSettingsControl()
         {
             InitializeComponent();
+            _reminderService = new ReminderService(AppSettings.Instance);
         }
 
         /// <summary>
         /// 初期化処理
         /// </summary>
-        public void Initialize()
+        public async Task InitializeAsync()
         {
             try
             {
@@ -61,6 +68,9 @@ namespace CocoroDock.Controls
                 GoogleApiKeyTextBox.Text = appSettings.GoogleApiKey;
                 GoogleSearchEngineIdTextBox.Text = appSettings.GoogleSearchEngineId;
                 InternetMaxResultsTextBox.Text = appSettings.InternetMaxResults.ToString();
+
+                // リマインダーを読み込み
+                await LoadRemindersAsync();
 
                 // イベントハンドラーを設定
                 SetupEventHandlers();
@@ -268,5 +278,206 @@ namespace CocoroDock.Controls
             GoogleSearchEngineIdTextBox.Text = googleSearchEngineId;
             InternetMaxResultsTextBox.Text = internetMaxResults.ToString();
         }
+
+        #region リマインダー関連メソッド
+
+        /// <summary>
+        /// リマインダーリストを読み込み
+        /// </summary>
+        private async Task LoadRemindersAsync()
+        {
+            try
+            {
+                var reminders = await _reminderService.GetAllRemindersAsync();
+
+                // UIスレッドで実行
+                Dispatcher.Invoke(() =>
+                {
+                    RemindersItemsControl.ItemsSource = reminders;
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"リマインダー読み込みエラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 現在時刻設定ボタンクリック
+        /// </summary>
+        private void SetCurrentTimeButton_Click(object sender, RoutedEventArgs e)
+        {
+            ReminderDateTimeTextBox.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+        }
+
+        /// <summary>
+        /// リマインダー追加ボタンクリック
+        /// </summary>
+        private async void AddReminderButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dateTimeText = ReminderDateTimeTextBox.Text.Trim();
+                var messageText = ReminderMessageTextBox.Text.Trim();
+
+                if (string.IsNullOrEmpty(dateTimeText))
+                {
+                    MessageBox.Show("予定日時を入力してください。", "入力エラー",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(messageText))
+                {
+                    MessageBox.Show("メッセージを入力してください。", "入力エラー",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // YYYY/MM/DD HH:MM 形式の解析
+                DateTime scheduledAt;
+                if (!DateTime.TryParseExact(dateTimeText, new[] { "yyyy/MM/dd HH:mm", "yyyy/M/d H:mm", "yyyy/MM/dd H:mm", "yyyy/M/d HH:mm" },
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None,
+                    out scheduledAt))
+                {
+                    MessageBox.Show("日時の形式が正しくありません。\nYYYY/MM/DD HH:MM の形式で入力してください。",
+                        "入力エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (scheduledAt <= DateTime.Now)
+                {
+                    MessageBox.Show("過去の時刻は設定できません。", "入力エラー",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var reminder = new Reminder
+                {
+                    RemindDatetime = scheduledAt.ToString("yyyy/MM/dd HH:mm"),
+                    Requirement = messageText
+                };
+
+                await _reminderService.CreateReminderAsync(reminder);
+                await LoadRemindersAsync();
+
+                // フィールドをクリア
+                ReminderDateTimeTextBox.Text = "";
+                ReminderMessageTextBox.Text = "";
+
+                MessageBox.Show("リマインダーを追加しました。", "成功",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"リマインダー追加エラー: {ex.Message}", "エラー",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// リマインダー削除ボタンクリック
+        /// </summary>
+        private async void DeleteReminderButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is Button button && button.Tag is int reminderId)
+                {
+                    var result = MessageBox.Show("このリマインダーを削除しますか？", "確認",
+                        MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        await _reminderService.DeleteReminderAsync(reminderId);
+                        await LoadRemindersAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"リマインダー削除エラー: {ex.Message}", "エラー",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// リマインダーリスト更新ボタンクリック
+        /// </summary>
+        private async void RefreshRemindersButton_Click(object sender, RoutedEventArgs e)
+        {
+            await LoadRemindersAsync();
+        }
+
+        /// <summary>
+        /// リマインダー入力テキストをパース
+        /// </summary>
+        /// <param name="input">入力文字列</param>
+        /// <returns>予定時刻とメッセージのタプル</returns>
+        private (DateTime?, string) ParseReminderInput(string input)
+        {
+            try
+            {
+                // 「○時間後に〜」「○分後に〜」形式
+                var relativeMatch = Regex.Match(input, @"^(\d+)(時間|分)後に(.+)$");
+                if (relativeMatch.Success)
+                {
+                    var amount = int.Parse(relativeMatch.Groups[1].Value);
+                    var unit = relativeMatch.Groups[2].Value;
+                    var message = relativeMatch.Groups[3].Value;
+
+                    var scheduledAt = unit == "時間"
+                        ? DateTime.Now.AddHours(amount)
+                        : DateTime.Now.AddMinutes(amount);
+
+                    return (scheduledAt, message);
+                }
+
+                // 「HH:mmに〜」形式
+                var timeMatch = Regex.Match(input, @"^(\d{1,2}):(\d{2})に(.+)$");
+                if (timeMatch.Success)
+                {
+                    var hour = int.Parse(timeMatch.Groups[1].Value);
+                    var minute = int.Parse(timeMatch.Groups[2].Value);
+                    var message = timeMatch.Groups[3].Value;
+
+                    if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59)
+                    {
+                        var now = DateTime.Now;
+                        var scheduledAt = new DateTime(now.Year, now.Month, now.Day, hour, minute, 0);
+
+                        // 指定時刻が現在時刻より前の場合は翌日に設定
+                        if (scheduledAt <= now)
+                        {
+                            scheduledAt = scheduledAt.AddDays(1);
+                        }
+
+                        return (scheduledAt, message);
+                    }
+                }
+
+                // 「yyyy-MM-dd HH:mmに〜」形式
+                var fullDateMatch = Regex.Match(input, @"^(\d{4}-\d{2}-\d{2} \d{1,2}:\d{2})に(.+)$");
+                if (fullDateMatch.Success)
+                {
+                    var dateTimeStr = fullDateMatch.Groups[1].Value;
+                    var message = fullDateMatch.Groups[2].Value;
+
+                    if (DateTime.TryParse(dateTimeStr, out var scheduledAt))
+                    {
+                        return (scheduledAt, message);
+                    }
+                }
+
+                return (null, input);
+            }
+            catch
+            {
+                return (null, input);
+            }
+        }
+
+        #endregion
     }
 }

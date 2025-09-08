@@ -257,5 +257,10 @@ namespace CocoroDock.Services
         /// <param name="newModelName">新しいモデル名</param>
         /// <returns>新しいファイル名</returns>
         string UpdateSystemPromptFileName(string oldFileName, string newModelName);
+
+        /// <summary>
+        /// ユーザーデータディレクトリを取得
+        /// </summary>
+        string UserDataDirectory { get; }
     }
 }
