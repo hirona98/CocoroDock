@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CocoroDock.Services
@@ -22,6 +23,9 @@ namespace CocoroDock.Services
         private readonly IAppSettings _appSettings;
         private readonly NotificationApiServer? _notificationApiServer;
         private readonly StatusPollingService _statusPollingService;
+
+        // メッセージ順序保証用セマフォ
+        private readonly SemaphoreSlim _forwardMessageSemaphore = new SemaphoreSlim(1, 1);
 
         // セッション管理用
         private string? _currentSessionId;
@@ -726,6 +730,8 @@ namespace CocoroDock.Services
         /// <param name="currentCharacter">現在のキャラクター設定</param>
         private async void ForwardMessageToShellAsync(string content, CharacterSettings? currentCharacter)
         {
+            // メッセージ順序を保証するためセマフォで制御
+            await _forwardMessageSemaphore.WaitAsync();
             try
             {
                 if (string.IsNullOrEmpty(content))
@@ -753,6 +759,11 @@ namespace CocoroDock.Services
                 Debug.WriteLine($"[Shell Forward] CocoroShellへの転送エラー: {ex.Message}");
                 // エラーログは出力するが、メインの処理は継続させる
             }
+            finally
+            {
+                // 必ずセマフォを解放
+                _forwardMessageSemaphore.Release();
+            }
         }
 
         #endregion
@@ -764,6 +775,9 @@ namespace CocoroDock.Services
         {
             // イベント購読解除
             AppSettings.SettingsSaved -= OnSettingsSaved;
+
+            // セマフォの解放
+            _forwardMessageSemaphore?.Dispose();
 
             _statusPollingService?.Dispose();
             _notificationApiServer?.Dispose();
