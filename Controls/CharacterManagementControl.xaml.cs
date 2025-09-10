@@ -263,6 +263,8 @@ namespace CocoroDock.Controls
             character.isUseLLM = IsUseLLMCheckBox.IsChecked ?? false;
             character.apiKey = ApiKeyPasswordBox.Text;
             character.llmModel = LlmModelTextBox.Text;
+            if (int.TryParse(MaxTurnsWindowTextBox.Text, out int maxTurns))
+                character.max_turns_window = maxTurns;
             character.localLLMBaseUrl = BaseUrlTextBox.Text;
             // 画像分析用設定
             character.visionApiKey = VisionApiKeyPasswordBox.Text;
@@ -404,6 +406,7 @@ namespace CocoroDock.Controls
             IsUseLLMCheckBox.IsChecked = character.isUseLLM;
             ApiKeyPasswordBox.Text = character.apiKey;
             LlmModelTextBox.Text = character.llmModel;
+            MaxTurnsWindowTextBox.Text = character.max_turns_window.ToString();
             BaseUrlTextBox.Text = character.localLLMBaseUrl;
             UpdateBaseUrlPlaceholder(); // プレースホルダー更新
 
@@ -556,6 +559,7 @@ namespace CocoroDock.Controls
                     isUseLLM = false,
                     apiKey = string.Empty,
                     llmModel = "openai/gpt-4o-mini",
+                    max_turns_window = 200,
                     localLLMBaseUrl = string.Empty,
                     visionApiKey = string.Empty,
                     visionModel = "openai/gpt-4o-mini",
@@ -682,6 +686,7 @@ namespace CocoroDock.Controls
                     isUseLLM = sourceCharacter.isUseLLM,
                     apiKey = sourceCharacter.apiKey,
                     llmModel = sourceCharacter.llmModel,
+                    max_turns_window = sourceCharacter.max_turns_window,
                     localLLMBaseUrl = sourceCharacter.localLLMBaseUrl,
                     visionApiKey = sourceCharacter.visionApiKey,
                     visionModel = sourceCharacter.visionModel,

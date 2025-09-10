@@ -30,9 +30,6 @@ namespace CocoroDock.Services
         // セッション管理用
         private string? _currentSessionId;
 
-        // WebSocket即座表示用
-
-
         // 設定キャッシュ用
         private ConfigSettings? _cachedConfigSettings;
         private readonly Dictionary<string, string> _cachedSystemPrompts = new Dictionary<string, string>();

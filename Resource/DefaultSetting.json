@@ -58,6 +58,7 @@
       "isUseLLM": false,
       "apiKey": "",
       "llmModel": "openai/gpt-4o-mini",
+      "max_turns_window": 100,
       "visionApiKey": "",
       "visionModel": "openai/gpt-4o-mini",
       "localLLMBaseUrl": "",
