@@ -947,6 +947,7 @@ namespace CocoroDock.Controls
                 if (current.isUseLLM != previous.isUseLLM ||
                     current.apiKey != previous.apiKey ||
                     current.llmModel != previous.llmModel ||
+                    current.max_turns_window != previous.max_turns_window ||
                     current.visionApiKey != previous.visionApiKey ||
                     current.visionModel != previous.visionModel ||
                     current.localLLMBaseUrl != previous.localLLMBaseUrl ||
