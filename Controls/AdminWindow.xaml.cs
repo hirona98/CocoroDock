@@ -194,6 +194,7 @@ namespace CocoroDock.Controls
         private Dictionary<string, object> CollectSystemAndMcpSettings()
         {
             var dict = new Dictionary<string, object>();
+            dict["IsEnableWebService"] = SystemSettingsControl.GetIsEnableWebService();
             dict["IsEnableNotificationApi"] = SystemSettingsControl.GetIsEnableNotificationApi();
 
             var screenshotSettings = SystemSettingsControl.GetScreenshotSettings();
@@ -567,6 +568,7 @@ namespace CocoroDock.Controls
         private void ApplySystemSnapshotToAppSettings(Dictionary<string, object> snapshot)
         {
             var appSettings = AppSettings.Instance;
+            appSettings.IsEnableWebService = (bool)snapshot["IsEnableWebService"];
             appSettings.IsEnableNotificationApi = (bool)snapshot["IsEnableNotificationApi"];
             appSettings.IsEnableMcp = (bool)snapshot["IsEnableMcp"];
 
