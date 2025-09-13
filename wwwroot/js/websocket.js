@@ -25,8 +25,7 @@ class WebSocketManager {
         const host = window.location.hostname;
         const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
         
-        // 実際のポートは55607（設定書通り）だが、開発時は現在のポートを使用
-        const wsPort = window.location.port || '55607';
+        const wsPort = window.location.port || '80';
         const wsUrl = `${protocol}//${host}:${wsPort}/mobile`;
         
         console.log(`[WebSocket] 接続試行: ${wsUrl}`);
