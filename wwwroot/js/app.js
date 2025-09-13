@@ -102,6 +102,51 @@ class CocoroAIApp {
     initialize() {
         this.updateSendButton();
         this.connectToServer();
+        this.setupViewportHandler();
+    }
+
+    /**
+     * モバイルビューポート調整
+     */
+    setupViewportHandler() {
+        // VirtualKeyboard API 設定（Chrome Android対応）
+        if ('virtualKeyboard' in navigator) {
+            try {
+                // キーボードがコンテンツをオーバーレイするように設定
+                navigator.virtualKeyboard.overlaysContent = true;
+                console.log('VirtualKeyboard API enabled');
+            } catch (error) {
+                console.log('VirtualKeyboard API setup failed:', error);
+            }
+        }
+
+        // 基本的なビューポート高さ設定
+        const setViewportHeight = () => {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        };
+
+        // 初期設定
+        setViewportHeight();
+
+        // リサイズ時の調整（デバウンス処理）
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(setViewportHeight, 100);
+        });
+
+        // オリエンテーション変更時の調整
+        window.addEventListener('orientationchange', () => {
+            setTimeout(setViewportHeight, 500);
+        });
+
+        // 入力フォーカス時のスクロール調整
+        this.elements.messageInput.addEventListener('focus', () => {
+            setTimeout(() => {
+                this.scrollToBottom();
+            }, 300);
+        });
     }
 
     /**
