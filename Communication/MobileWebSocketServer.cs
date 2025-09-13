@@ -202,6 +202,13 @@ namespace CocoroDock.Communication
                     return;
                 }
 
+                // 静的ファイル配信（PWA）
+                if (request.HttpMethod == "GET")
+                {
+                    await HandleStaticFileRequest(context);
+                    return;
+                }
+
                 // その他のリクエストは404
                 response.StatusCode = 404;
                 response.Close();
@@ -515,6 +522,90 @@ namespace CocoroDock.Communication
                 }
                 catch { }
             }
+        }
+
+        /// <summary>
+        /// 静的ファイル配信処理（PWA用）
+        /// </summary>
+        private async Task HandleStaticFileRequest(HttpListenerContext context)
+        {
+            try
+            {
+                var request = context.Request;
+                var response = context.Response;
+                var path = request.Url?.AbsolutePath ?? "/";
+
+                // ルートパスは index.html にリダイレクト
+                if (path == "/")
+                {
+                    path = "/index.html";
+                }
+
+                // パストラバーサル攻撃防止
+                var fileName = path.TrimStart('/');
+                if (fileName.Contains("..") || fileName.Contains("\\"))
+                {
+                    response.StatusCode = 400;
+                    response.Close();
+                    return;
+                }
+
+                // ファイルパス構築
+                var basePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                var filePath = Path.Combine(basePath, fileName);
+
+                // ファイル存在確認
+                if (!File.Exists(filePath))
+                {
+                    response.StatusCode = 404;
+                    response.Close();
+                    return;
+                }
+
+                // MIME タイプ設定
+                var contentType = GetMimeType(fileName);
+                response.ContentType = contentType;
+
+                // ファイル配信
+                using var fileStream = File.OpenRead(filePath);
+                response.ContentLength64 = fileStream.Length;
+                response.StatusCode = 200;
+
+                await fileStream.CopyToAsync(response.OutputStream);
+                response.Close();
+
+                Debug.WriteLine($"[MobileWebSocketServer] 静的ファイル配信: {fileName}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] 静的ファイル配信エラー: {ex.Message}");
+                try
+                {
+                    context.Response.StatusCode = 500;
+                    context.Response.Close();
+                }
+                catch { }
+            }
+        }
+
+        /// <summary>
+        /// ファイル拡張子からMIMEタイプを取得
+        /// </summary>
+        private static string GetMimeType(string fileName)
+        {
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            return extension switch
+            {
+                ".html" => "text/html; charset=utf-8",
+                ".js" => "application/javascript; charset=utf-8",
+                ".css" => "text/css; charset=utf-8",
+                ".json" => "application/json; charset=utf-8",
+                ".png" => "image/png",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".ico" => "image/x-icon",
+                ".svg" => "image/svg+xml",
+                _ => "application/octet-stream"
+            };
         }
 
         /// <summary>

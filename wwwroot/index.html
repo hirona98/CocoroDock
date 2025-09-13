@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CocoroAI Mobile</title>
+    
+    <!-- PWA設定 -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4873CF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="CocoroAI">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- ヘッダー -->
+        <header class="header">
+            <h1>CocoroAI</h1>
+            <div id="connection-status" class="status">接続中...</div>
+        </header>
+
+        <!-- メッセージエリア -->
+        <main class="main">
+            <div id="messages" class="messages">
+                <div class="message system">
+                    <div class="message-content">CocoroAIに接続中です...</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 入力エリア -->
+        <footer class="footer">
+            <div class="input-container">
+                <input 
+                    type="text" 
+                    id="message-input" 
+                    placeholder="メッセージを入力してください..." 
+                    maxlength="1000"
+                    autocomplete="off"
+                >
+                <button id="send-button" disabled>送信</button>
+            </div>
+        </footer>
+
+        <!-- エラー表示 -->
+        <div id="error-overlay" class="error-overlay hidden">
+            <div class="error-content">
+                <div id="error-message">エラーが発生しました</div>
+                <button id="error-close">閉じる</button>
+            </div>
+        </div>
+
+        <!-- ローディング表示 -->
+        <div id="loading" class="loading hidden">
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/js/websocket.js"></script>
+    <script src="/js/app.js"></script>
+    
+    <!-- Service Worker 登録 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(error => console.log('SW registration failed'));
+            });
+        }
+    </script>
+</body>
+</html>
