@@ -127,13 +127,91 @@ class WebSocketManager {
         };
 
         console.log('[WebSocket] メッセージ送信:', chatMessage);
-        
+
         try {
             this.ws.send(JSON.stringify(chatMessage));
         } catch (error) {
             console.error('[WebSocket] 送信エラー:', error);
             throw error;
         }
+    }
+
+    /**
+     * 音声メッセージ送信 (RNNoise統合版)
+     */
+    sendVoiceMessage(voiceMessage) {
+        if (!this.isConnected || !this.ws) {
+            console.error('[WebSocket] 音声データ送信: 未接続');
+            throw new Error('WebSocket未接続');
+        }
+
+        // 音声データサイズチェック
+        const audioData = voiceMessage.data.audio_data;
+        if (!audioData || audioData.length === 0) {
+            throw new Error('音声データが空です');
+        }
+
+        // サイズ制限チェック (10MB)
+        const maxSize = 10 * 1024 * 1024;
+        const estimatedSize = JSON.stringify(voiceMessage).length;
+        if (estimatedSize > maxSize) {
+            throw new Error(`音声データが大きすぎます: ${estimatedSize}bytes (上限: ${maxSize}bytes)`);
+        }
+
+        console.log(`[WebSocket] 音声データ送信: ${audioData.length}bytes, 形式: ${voiceMessage.data.format}`);
+
+        try {
+            // 音声データ送信
+            this.ws.send(JSON.stringify(voiceMessage));
+
+            // 統計情報記録
+            this.recordVoiceStats(audioData.length, voiceMessage.data.format);
+
+        } catch (error) {
+            console.error('[WebSocket] 音声データ送信エラー:', error);
+
+            // より詳細なエラー情報
+            if (error.name === 'InvalidStateError') {
+                throw new Error('WebSocket接続状態エラー');
+            } else if (error.name === 'SyntaxError') {
+                throw new Error('音声データ形式エラー');
+            } else {
+                throw new Error(`音声送信失敗: ${error.message}`);
+            }
+        }
+    }
+
+    /**
+     * 音声統計情報記録
+     */
+    recordVoiceStats(dataSize, format) {
+        if (!this.voiceStats) {
+            this.voiceStats = {
+                totalMessages: 0,
+                totalBytes: 0,
+                formats: {},
+                lastSent: null
+            };
+        }
+
+        this.voiceStats.totalMessages++;
+        this.voiceStats.totalBytes += dataSize;
+        this.voiceStats.formats[format] = (this.voiceStats.formats[format] || 0) + 1;
+        this.voiceStats.lastSent = new Date().toISOString();
+
+        console.log(`[WebSocket] 音声統計: ${this.voiceStats.totalMessages}回送信, ${(this.voiceStats.totalBytes / 1024).toFixed(1)}KB`);
+    }
+
+    /**
+     * 音声統計情報取得
+     */
+    getVoiceStats() {
+        return this.voiceStats || {
+            totalMessages: 0,
+            totalBytes: 0,
+            formats: {},
+            lastSent: null
+        };
     }
 
     /**

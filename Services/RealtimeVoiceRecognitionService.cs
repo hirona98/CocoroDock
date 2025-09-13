@@ -384,6 +384,42 @@ namespace CocoroDock.Services
             System.Diagnostics.Debug.WriteLine($"[VoiceService] Microphone gain set to: {_microphoneGain:F1}x");
         }
 
+        /// <summary>
+        /// WebSocket音声データの認識（リアルタイム処理なし）
+        /// </summary>
+        public async Task<string> RecognizeAudioDataAsync(byte[] audioData)
+        {
+            if (_isDisposed)
+                throw new ObjectDisposedException(nameof(RealtimeVoiceRecognitionService));
+
+            if (audioData == null || audioData.Length == 0)
+                return string.Empty;
+
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[VoiceService] WebSocket音声データ認識開始: {audioData.Length}bytes");
+
+                // AmiVoice API呼び出し
+                var recognizedText = await _amiVoiceClient.RecognizeAsync(audioData);
+
+                if (!string.IsNullOrEmpty(recognizedText))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[VoiceService] WebSocket音声認識完了: {recognizedText}");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[VoiceService] WebSocket音声認識結果が空");
+                }
+
+                return recognizedText ?? string.Empty;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[VoiceService] WebSocket音声認識エラー: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
         public void Dispose()
         {
             if (_isDisposed)

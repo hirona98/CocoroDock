@@ -365,16 +365,61 @@ namespace CocoroDock.Communication
         }
 
         /// <summary>
-        /// モバイルからのメッセージ処理
+        /// モバイルからのメッセージ処理（統合版）
         /// </summary>
         private async Task ProcessMobileMessage(string connectionId, string json)
+        {
+            try
+            {
+                // メッセージタイプを事前判定
+                using var jsonDoc = JsonDocument.Parse(json);
+                var root = jsonDoc.RootElement;
+
+                if (!root.TryGetProperty("type", out var typeElement))
+                {
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, "Message type not specified");
+                    return;
+                }
+
+                var messageType = typeElement.GetString();
+
+                switch (messageType)
+                {
+                    case "chat":
+                        await ProcessChatMessage(connectionId, json);
+                        break;
+
+                    case "voice":
+                        await ProcessVoiceMessage(connectionId, json);
+                        break;
+
+                    default:
+                        await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, $"Unsupported message type: {messageType}");
+                        break;
+                }
+            }
+            catch (JsonException)
+            {
+                await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, "Invalid JSON format");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] メッセージ処理エラー: {ex.Message}");
+                await SendErrorToMobile(connectionId, MobileErrorCodes.ServerError, "Message processing error");
+            }
+        }
+
+        /// <summary>
+        /// チャットメッセージ処理（従来機能）
+        /// </summary>
+        private async Task ProcessChatMessage(string connectionId, string json)
         {
             try
             {
                 var message = JsonSerializer.Deserialize<MobileChatMessage>(json);
                 if (message?.Data == null)
                 {
-                    await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, "Invalid message format");
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, "Invalid chat message format");
                     return;
                 }
 
@@ -408,8 +453,191 @@ namespace CocoroDock.Communication
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[MobileWebSocketServer] メッセージ処理エラー: {ex.Message}");
-                await SendErrorToMobile(connectionId, MobileErrorCodes.ServerError, "Message processing error");
+                Debug.WriteLine($"[MobileWebSocketServer] チャットメッセージ処理エラー: {ex.Message}");
+                await SendErrorToMobile(connectionId, MobileErrorCodes.ServerError, "Chat message processing error");
+            }
+        }
+
+        /// <summary>
+        /// 音声メッセージ処理（RNNoise統合版）
+        /// </summary>
+        private async Task ProcessVoiceMessage(string connectionId, string json)
+        {
+            try
+            {
+                var message = JsonSerializer.Deserialize<MobileVoiceMessage>(json);
+                if (message?.Data == null)
+                {
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceDataError, "Invalid voice message format");
+                    return;
+                }
+
+                Debug.WriteLine($"[MobileWebSocketServer] 音声データ受信: {message.Data.AudioData.Count}bytes, {message.Data.Format}, {message.Data.Processing}");
+
+                // STT設定の事前チェック
+                var currentCharacter = _appSettings.GetCurrentCharacter();
+                if (currentCharacter == null)
+                {
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.ServerError, "No character configured");
+                    return;
+                }
+
+                if (!currentCharacter.isUseSTT)
+                {
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceRecognitionError, "Speech-to-text is disabled for current character");
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(currentCharacter.sttApiKey))
+                {
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceRecognitionError, "STT API key not configured for current character");
+                    return;
+                }
+
+                // CocoroDockに音声メッセージを通知
+                MobileMessageReceived?.Invoke(this, $"🎤 音声データ ({message.Data.AudioData.Count}bytes, {message.Data.Processing})");
+
+                // 音声データ変換
+                var audioBytes = message.Data.AudioData.Select(i => (byte)i).ToArray();
+
+                // 音声認識実行
+                var recognizedText = await ProcessVoiceData(
+                    audioBytes,
+                    message.Data.SampleRate,
+                    message.Data.Channels,
+                    message.Data.Format);
+
+                if (!string.IsNullOrWhiteSpace(recognizedText))
+                {
+                    Debug.WriteLine($"[MobileWebSocketServer] 音声認識結果: {recognizedText}");
+
+                    // 認識されたテキストをチャットメッセージとして処理
+                    await ProcessRecognizedVoiceAsChat(connectionId, recognizedText);
+                }
+                else
+                {
+                    Debug.WriteLine("[MobileWebSocketServer] 音声認識結果が空でした");
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceRecognitionError, "No text recognized from voice data");
+                }
+            }
+            catch (ArgumentException argEx)
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] 音声データ検証エラー: {argEx.Message}");
+                await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceDataError, argEx.Message);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] 音声メッセージ処理エラー: {ex.Message}");
+                await SendErrorToMobile(connectionId, MobileErrorCodes.AudioProcessingError, $"Voice processing error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 音声データ処理（RealtimeVoiceRecognitionServiceを使用）
+        /// </summary>
+        private async Task<string> ProcessVoiceData(byte[] audioData, int sampleRate, int channels, string format)
+        {
+            try
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] 音声処理開始: {audioData.Length}bytes, {sampleRate}Hz, {channels}ch, {format}");
+
+                // 現在のキャラクターのSTT設定を取得
+                var currentCharacter = _appSettings.GetCurrentCharacter();
+                if (currentCharacter?.sttApiKey == null || string.IsNullOrEmpty(currentCharacter.sttApiKey))
+                {
+                    throw new ArgumentException("STT API key not configured for current character");
+                }
+
+                // クライアント側で16kHzに変換済みのデータを期待
+                if (sampleRate != 16000)
+                {
+                    Debug.WriteLine($"[MobileWebSocketServer] 警告: 予期しないサンプルレート {sampleRate}Hz (16kHzを期待)");
+                }
+
+                // RealtimeVoiceRecognitionServiceを使用してWebSocket音声データを認識
+                using var voiceService = new RealtimeVoiceRecognitionService(
+                    currentCharacter.sttApiKey,
+                    "", // ウェイクワードは不要
+                    0.5f, // VAD閾値（使用されない）
+                    300, // サイレンスタイムアウト（使用されない）
+                    60000, // アクティブタイムアウト（使用されない）
+                    false // 自動開始しない
+                );
+
+                var recognizedText = await voiceService.RecognizeAudioDataAsync(audioData);
+
+                if (string.IsNullOrWhiteSpace(recognizedText))
+                {
+                    Debug.WriteLine("[MobileWebSocketServer] 音声認識結果が空");
+                    return string.Empty;
+                }
+
+                Debug.WriteLine($"[MobileWebSocketServer] 音声認識完了: {recognizedText}");
+                return recognizedText;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] 音声データ処理エラー: {ex.Message}");
+                throw new Exception($"Voice data processing failed: {ex.Message}");
+            }
+        }
+
+
+        /// <summary>
+        /// WAVファイル形式の検証
+        /// </summary>
+        private bool IsValidWavFile(byte[] audioData)
+        {
+            try
+            {
+                if (audioData.Length < 44) return false;
+
+                // RIFFヘッダー確認
+                var riffHeader = System.Text.Encoding.ASCII.GetString(audioData, 0, 4);
+                var waveHeader = System.Text.Encoding.ASCII.GetString(audioData, 8, 4);
+
+                return riffHeader == "RIFF" && waveHeader == "WAVE";
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 認識された音声をチャットメッセージとして処理
+        /// </summary>
+        private async Task ProcessRecognizedVoiceAsChat(string connectionId, string recognizedText)
+        {
+            try
+            {
+                // チャットメッセージとして処理
+                var chatRequest = new WebSocketChatRequest
+                {
+                    query = recognizedText,
+                    chat_type = "voice_to_text",
+                    images = null
+                };
+
+                // セッションIDの生成と管理
+                var sessionId = $"voice_{connectionId}_{DateTime.Now:yyyyMMddHHmmss}";
+                _sessionMappings[sessionId] = connectionId;
+
+                // CocoreCoreM にメッセージ送信
+                if (_cocoroClient != null && _cocoroClient.IsConnected)
+                {
+                    await _cocoroClient.SendChatAsync(sessionId, chatRequest);
+                    Debug.WriteLine($"[MobileWebSocketServer] 音声認識結果をCocoreCoreM送信: {recognizedText}");
+                }
+                else
+                {
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.CoreMError, "CocoreCoreM connection not available");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] 音声チャット処理エラー: {ex.Message}");
+                await SendErrorToMobile(connectionId, MobileErrorCodes.ServerError, "Voice chat processing error");
             }
         }
 

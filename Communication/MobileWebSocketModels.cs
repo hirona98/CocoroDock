@@ -58,6 +58,44 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
+    /// 音声メッセージ（RNNoise統合版）
+    /// </summary>
+    public class MobileVoiceMessage : MobileWebSocketMessage
+    {
+        public MobileVoiceMessage()
+        {
+            Type = "voice";
+        }
+
+        [JsonPropertyName("data")]
+        public MobileVoiceData Data { get; set; } = new();
+    }
+
+    /// <summary>
+    /// 音声データ（RNNoise統合版）
+    /// </summary>
+    public class MobileVoiceData
+    {
+        [JsonPropertyName("audio_data")]
+        public List<int> AudioData { get; set; } = new();
+
+        [JsonPropertyName("sample_rate")]
+        public int SampleRate { get; set; } = 16000;
+
+        [JsonPropertyName("channels")]
+        public int Channels { get; set; } = 1;
+
+        [JsonPropertyName("format")]
+        public string Format { get; set; } = "wav";
+
+        [JsonPropertyName("processing")]
+        public string Processing { get; set; } = "rnnoise";
+
+        [JsonPropertyName("session_id")]
+        public string? SessionId { get; set; }
+    }
+
+    /// <summary>
     /// CocoroDockからスマートフォンへの応答メッセージ
     /// </summary>
     public class MobileResponseMessage : MobileWebSocketMessage
@@ -125,5 +163,8 @@ namespace CocoroDock.Communication
         public const string NetworkError = "NETWORK_ERROR";
         public const string InvalidMessage = "INVALID_MESSAGE";
         public const string ServerError = "SERVER_ERROR";
+        public const string VoiceRecognitionError = "VOICE_RECOGNITION_ERROR";
+        public const string AudioProcessingError = "AUDIO_PROCESSING_ERROR";
+        public const string VoiceDataError = "VOICE_DATA_ERROR";
     }
 }
