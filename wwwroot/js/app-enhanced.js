@@ -9,6 +9,7 @@ class CocoroAIApp {
         // RNNoise音声システム
         this.voiceSystem = null;
         this.isVoiceEnabled = false;
+        this.isPlayingAudio = false; // 音声再生中フラグ
 
         // 初期化
         this.initializeElements();
@@ -213,6 +214,12 @@ class CocoroAIApp {
      */
     async handleVoiceData(wavData) {
         try {
+            // 音声再生中は認識データを破棄
+            if (this.isPlayingAudio) {
+                this.log('🔇 音声再生中のため認識データを破棄');
+                return;
+            }
+
             this.log(`音声データ受信: ${wavData.length}bytes`);
 
             // WebSocketで音声データ送信
@@ -452,11 +459,37 @@ class CocoroAIApp {
                 try {
                     console.log('音声再生開始:', audioUrl);
                     const audio = new Audio(audioUrl);
+
+                    // 音声再生中フラグを設定
+                    this.isPlayingAudio = true;
+                    this.log('🔊 音声再生開始 - 音声認識を一時停止');
+
+                    // 音声再生終了時の処理
+                    audio.addEventListener('ended', () => {
+                        this.isPlayingAudio = false;
+                        this.log('🔊 音声再生終了 - 音声認識を再開');
+                    });
+
+                    // 音声再生エラー時の処理
+                    audio.addEventListener('error', (error) => {
+                        this.isPlayingAudio = false;
+                        this.log('🔊 音声再生エラー - 音声認識を再開');
+                        console.warn('音声再生エラー:', error);
+                    });
+
+                    // 音声再生中断時の処理
+                    audio.addEventListener('pause', () => {
+                        this.isPlayingAudio = false;
+                        this.log('🔊 音声再生中断 - 音声認識を再開');
+                    });
+
                     audio.play().catch(error => {
+                        this.isPlayingAudio = false;
                         console.warn('音声再生エラー:', error);
                         // 音声再生に失敗してもアプリケーションは継続
                     });
                 } catch (error) {
+                    this.isPlayingAudio = false;
                     console.warn('音声オブジェクト作成エラー:', error);
                     // エラーが発生してもアプリケーションは継続
                 }
