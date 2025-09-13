@@ -94,7 +94,11 @@ class CocoroAIApp {
         };
 
         this.voiceRecognition.recognition.onerror = (event) => {
-            // エラーは表示しない（要件通り）
+            // モバイルデバッグ用（一時的）
+            console.log('音声認識エラー:', event.error);
+            if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                this.addSystemMessage('マイク権限が必要です');
+            }
             this.stopVoiceRecognition();
         };
     }
@@ -452,7 +456,7 @@ class CocoroAIApp {
     /**
      * 音声認識トグル
      */
-    toggleVoiceRecognition() {
+    async toggleVoiceRecognition() {
         if (!this.voiceRecognition) {
             return;
         }
@@ -460,8 +464,15 @@ class CocoroAIApp {
         this.voiceRecognition.isEnabled = !this.voiceRecognition.isEnabled;
 
         if (this.voiceRecognition.isEnabled) {
-            this.updateVoiceButton('active');
-            this.startVoiceRecognition();
+            // モバイルでは事前にマイク権限を要求
+            const hasPermission = await this.requestMicrophonePermission();
+            if (hasPermission) {
+                this.updateVoiceButton('active');
+                this.startVoiceRecognition();
+            } else {
+                this.voiceRecognition.isEnabled = false;
+                this.addSystemMessage('マイク権限を許可してください');
+            }
         } else {
             this.updateVoiceButton('inactive');
             this.stopVoiceRecognition();
@@ -594,6 +605,24 @@ class CocoroAIApp {
         }
     }
 
+    /**
+     * マイク権限要求（モバイル対応）
+     */
+    async requestMicrophonePermission() {
+        try {
+            // MediaDevices APIでマイク権限を要求
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // ストリームを即座停止（権限確認のみ）
+                stream.getTracks().forEach(track => track.stop());
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.log('マイク権限エラー:', error);
+            return false;
+        }
+    }
 }
 
 // DOM読み込み完了後にアプリケーション開始
