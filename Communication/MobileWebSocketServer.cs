@@ -382,35 +382,46 @@ namespace CocoroDock.Communication
             try
             {
                 // セッションIDから接続IDを取得
-                var connectionId = _sessionMappings.Keys.FirstOrDefault(sessionId =>
-                    response.session_id?.StartsWith($"mobile_{sessionId}") == true);
-
-                if (connectionId == null)
+                if (!_sessionMappings.TryGetValue(response.session_id ?? "", out var connectionId))
                 {
-                    Debug.WriteLine($"[MobileWebSocketServer] 対応する接続が見つかりません: {response.session_id}");
                     return;
                 }
 
                 // 応答タイプに応じて処理
-                if (response.type == "end" && response.data is WebSocketEndData endData)
+                if (response.type == "end")
                 {
-                    // 最終応答: 音声合成して送信
-                    await HandleFinalResponse(connectionId, endData.final_text);
+                    // JsonElementから最終応答データを取得
+                    var finalText = ExtractFinalText(response.data);
+                    if (!string.IsNullOrEmpty(finalText))
+                    {
+                        await HandleFinalResponse(connectionId, finalText);
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"[MobileWebSocketServer] Null or empty finalText received for connectionId: {connectionId}");
+                    }
                 }
-                else if (response.type == "text" && response.data is WebSocketTextData textData)
+                else if (response.type == "text")
                 {
-                    // ストリーミング応答: テキストのみ送信
-                    await SendPartialResponseToMobile(connectionId, textData.content);
+                    // JsonElementからテキストデータを取得
+                    var textContent = ExtractTextContent(response.data);
+                    if (!string.IsNullOrEmpty(textContent))
+                    {
+                        await SendPartialResponseToMobile(connectionId, textContent);
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"[MobileWebSocketServer] Null or empty textContent received for connectionId: {connectionId}");
+                    }
                 }
                 else if (response.type == "error")
                 {
-                    // エラー応答
                     await SendErrorToMobile(connectionId, MobileErrorCodes.CoreMError, "CocoreCoreM processing error");
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[MobileWebSocketServer] CocoreCoreメッセージ処理エラー: {ex.Message}");
+                Debug.WriteLine($"[MobileWebSocketServer] メッセージ処理エラー: {ex.Message}");
             }
         }
 
@@ -506,7 +517,7 @@ namespace CocoroDock.Communication
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[MobileWebSocketServer] JSON送信エラー: {ex.Message}");
+                Debug.WriteLine($"[MobileWebSocketServer] 送信エラー: {ex.Message}");
             }
         }
 
@@ -553,6 +564,52 @@ namespace CocoroDock.Communication
                     await SendErrorToMobile(connectionId, MobileErrorCodes.CoreMError, error);
                 }
             });
+        }
+
+        /// <summary>
+        /// JsonElementから最終テキストを抽出
+        /// </summary>
+        private string? ExtractFinalText(object? data)
+        {
+            try
+            {
+                if (data is JsonElement jsonElement && jsonElement.TryGetProperty("final_text", out var finalTextElement))
+                {
+                    return finalTextElement.GetString();
+                }
+                else if (data is WebSocketEndData endData)
+                {
+                    return endData.final_text;
+                }
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// JsonElementからテキストコンテンツを抽出
+        /// </summary>
+        private string? ExtractTextContent(object? data)
+        {
+            try
+            {
+                if (data is JsonElement jsonElement && jsonElement.TryGetProperty("content", out var contentElement))
+                {
+                    return contentElement.GetString();
+                }
+                else if (data is WebSocketTextData textData)
+                {
+                    return textData.content;
+                }
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>
