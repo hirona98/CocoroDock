@@ -51,6 +51,8 @@ namespace CocoroDock.Services
         public int CocoroMemoryWebPort { get; set; } = 55606;
         public int CocoroShellPort { get; set; } = 55605;
         public int NotificationApiPort { get; set; } = 55604;
+        public int CocoroWebPort { get; set; } = 55607;
+        public bool IsEnableWebService { get; set; } = false;
         // 通知API設定
         public bool IsEnableNotificationApi { get; set; } = true;
         // MCP設定
@@ -153,8 +155,10 @@ namespace CocoroDock.Services
             CocoroMemoryWebPort = config.cocoroMemoryWebPort;
             CocoroShellPort = config.cocoroShellPort;
             NotificationApiPort = config.notificationApiPort;
+            CocoroWebPort = config.cocoroWebPort;
             IsEnableNotificationApi = config.isEnableNotificationApi;
             IsEnableMcp = config.isEnableMcp;
+            IsEnableWebService = config.isEnableWebService;
             IsRestoreWindowPosition = config.isRestoreWindowPosition;
             IsTopmost = config.isTopmost;
             IsEscapeCursor = config.isEscapeCursor;
@@ -219,8 +223,10 @@ namespace CocoroDock.Services
                 cocoroMemoryWebPort = CocoroMemoryWebPort,
                 cocoroShellPort = CocoroShellPort,
                 notificationApiPort = NotificationApiPort,
+                cocoroWebPort = CocoroWebPort,
                 isEnableNotificationApi = IsEnableNotificationApi,
                 isEnableMcp = IsEnableMcp,
+                isEnableWebService = IsEnableWebService,
                 isRestoreWindowPosition = IsRestoreWindowPosition,
                 isTopmost = IsTopmost,
                 isEscapeCursor = IsEscapeCursor,
@@ -956,6 +962,21 @@ namespace CocoroDock.Services
                 Debug.WriteLine($"ファイル名更新エラー: {ex.Message}");
                 return oldFileName;
             }
+        }
+
+        /// <summary>
+        /// 現在選択されているキャラクター設定を取得
+        /// </summary>
+        /// <returns>現在のキャラクター設定、存在しない場合はnull</returns>
+        public CharacterSettings? GetCurrentCharacter()
+        {
+            if (CharacterList == null || CharacterList.Count == 0)
+                return null;
+
+            if (CurrentCharacterIndex < 0 || CurrentCharacterIndex >= CharacterList.Count)
+                return null;
+
+            return CharacterList[CurrentCharacterIndex];
         }
     }
 
