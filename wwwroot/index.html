@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
     <title>CocoroAI Mobile</title>
     
-    <!-- PWA設定 -->
-    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#4873CF">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="CocoroAI">
     
     <!-- CSS -->
     <link rel="stylesheet" href="/css/style.css">
@@ -64,15 +59,5 @@
     <script src="/js/websocket.js"></script>
     <script src="/js/app.js"></script>
     
-    <!-- Service Worker 登録 -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(registration => console.log('SW registered'))
-                    .catch(error => console.log('SW registration failed'));
-            });
-        }
-    </script>
 </body>
 </html>
