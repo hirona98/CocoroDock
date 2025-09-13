@@ -395,26 +395,22 @@ namespace CocoroDock.Communication
                 }
 
                 // 応答タイプに応じて処理
-                if (response.type == "end")
-                {
-                    // JsonElementから最終応答データを取得
-                    var finalText = ExtractFinalText(response.data);
-                    if (!string.IsNullOrEmpty(finalText))
-                    {
-                        await HandleFinalResponse(connectionId, finalText);
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"[MobileWebSocketServer] Null or empty finalText received for connectionId: {connectionId}");
-                    }
-                }
-                else if (response.type == "text")
+                if (response.type == "text")
                 {
                     // JsonElementからテキストデータを取得
                     var textContent = ExtractTextContent(response.data);
                     if (!string.IsNullOrEmpty(textContent))
                     {
-                        await SendPartialResponseToMobile(connectionId, textContent);
+                        // 音声合成処理
+                        string? audioUrl = null;
+                        if (_voicevoxClient != null && !string.IsNullOrWhiteSpace(textContent))
+                        {
+                            var currentChar = _appSettings.GetCurrentCharacter();
+                            var speakerId = currentChar?.voicevoxConfig?.speakerId ?? 3;
+                            audioUrl = await _voicevoxClient.SynthesizeAsync(textContent, speakerId);
+                        }
+
+                        await SendPartialResponseToMobile(connectionId, textContent, audioUrl);
                         // CocoroDockに応答を通知
                         MobileResponseSent?.Invoke(this, textContent);
                     }
@@ -434,63 +430,23 @@ namespace CocoroDock.Communication
             }
         }
 
-        /// <summary>
-        /// 最終応答処理（音声合成含む）
-        /// </summary>
-        private async Task HandleFinalResponse(string connectionId, string text)
-        {
-            try
-            {
-                var currentChar = _appSettings.GetCurrentCharacter();
-                var speakerId = currentChar?.voicevoxConfig?.speakerId ?? 3;
-
-                // 音声合成
-                string? audioUrl = null;
-                if (_voicevoxClient != null && !string.IsNullOrWhiteSpace(text))
-                {
-                    audioUrl = await _voicevoxClient.SynthesizeAsync(text, speakerId);
-                }
-
-                // 応答メッセージ作成
-                var response = new MobileResponseMessage
-                {
-                    Data = new MobileResponseData
-                    {
-                        Text = text,
-                        AudioUrl = audioUrl,
-                        SpeakerId = speakerId,
-                        Source = "cocoro_core_m"
-                    }
-                };
-
-                await SendJsonToMobile(connectionId, response);
-
-                // CocoroDockに最終応答を通知（テキストがある場合のみ）
-                if (!string.IsNullOrWhiteSpace(text))
-                {
-                    MobileResponseSent?.Invoke(this, text);
-                }
-
-                Debug.WriteLine($"[MobileWebSocketServer] 最終応答送信完了: audioUrl={audioUrl}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[MobileWebSocketServer] 最終応答処理エラー: {ex.Message}");
-                await SendErrorToMobile(connectionId, MobileErrorCodes.ServerError, "Final response processing error");
-            }
-        }
 
         /// <summary>
         /// 部分応答送信（ストリーミング）
         /// </summary>
         private async Task SendPartialResponseToMobile(string connectionId, string text)
         {
+            await SendPartialResponseToMobile(connectionId, text, null);
+        }
+
+        private async Task SendPartialResponseToMobile(string connectionId, string text, string? audioUrl)
+        {
             var response = new MobileResponseMessage
             {
                 Data = new MobileResponseData
                 {
                     Text = text,
-                    AudioUrl = null,
+                    AudioUrl = audioUrl,
                     Source = "cocoro_core_m"
                 }
             };
@@ -582,28 +538,6 @@ namespace CocoroDock.Communication
             });
         }
 
-        /// <summary>
-        /// JsonElementから最終テキストを抽出
-        /// </summary>
-        private string? ExtractFinalText(object? data)
-        {
-            try
-            {
-                if (data is JsonElement jsonElement && jsonElement.TryGetProperty("final_text", out var finalTextElement))
-                {
-                    return finalTextElement.GetString();
-                }
-                else if (data is WebSocketEndData endData)
-                {
-                    return endData.final_text;
-                }
-                return null;
-            }
-            catch
-            {
-                return null;
-            }
-        }
 
         /// <summary>
         /// JsonElementからテキストコンテンツを抽出

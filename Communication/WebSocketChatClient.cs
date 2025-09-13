@@ -249,7 +249,7 @@ namespace CocoroDock.Communication
                         try
                         {
                             var json = Encoding.UTF8.GetString(messageBuffer.ToArray());
-                            Debug.WriteLine($"[WebSocket] 完全メッセージ受信: Size={messageBuffer.Count} bytes");
+                            // Debug.WriteLine($"[WebSocket] 完全メッセージ受信: Size={messageBuffer.Count} bytes");
                             ProcessReceivedMessage(json);
                         }
                         catch (Exception ex)
@@ -290,7 +290,7 @@ namespace CocoroDock.Communication
                 var message = MessageHelper.DeserializeFromJson<WebSocketResponseMessage>(json);
                 if (message != null)
                 {
-                    Debug.WriteLine($"[WebSocket] メッセージ受信: type={message.type}, session={message.session_id}");
+                    // Debug.WriteLine($"[WebSocket] メッセージ受信: type={message.type}, session={message.session_id}");
                     MessageReceived?.Invoke(this, message);
                 }
                 else

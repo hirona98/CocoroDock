@@ -193,9 +193,25 @@ class CocoroAIApp {
      */
     handleResponse(message) {
         this.hideLoading();
-        
+
         if (message.data && message.data.text) {
             this.addAIMessage(message.data.text);
+
+            // 音声再生機能（VOICEVOX統合）
+            const audioUrl = message.data.audioUrl || message.data.AudioUrl;
+            if (audioUrl) {
+                try {
+                    console.log('音声再生開始:', audioUrl);
+                    const audio = new Audio(audioUrl);
+                    audio.play().catch(error => {
+                        console.warn('音声再生エラー:', error);
+                        // 音声再生に失敗してもアプリケーションは継続
+                    });
+                } catch (error) {
+                    console.warn('音声オブジェクト作成エラー:', error);
+                    // エラーが発生してもアプリケーションは継続
+                }
+            }
         }
     }
 
