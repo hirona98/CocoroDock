@@ -40,6 +40,12 @@ html, body {
     min-height: 60px;
 }
 
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .header h1 {
     font-size: 20px;
     font-weight: 600;
@@ -60,6 +66,59 @@ html, body {
 
 .status.disconnected {
     background: rgba(244, 67, 54, 0.8);
+}
+
+/* 音声ボタン */
+.voice-button {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.voice-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.voice-button.active {
+    background: rgba(76, 175, 80, 0.8);
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.4);
+}
+
+.voice-button.listening {
+    background: rgba(244, 67, 54, 0.8);
+    animation: pulse 1.5s infinite;
+}
+
+.voice-button.disabled {
+    background: rgba(255, 255, 255, 0.1);
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.mic-icon {
+    transition: all 0.3s ease;
+}
+
+/* アニメーション */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(244, 67, 54, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
+    }
 }
 
 /* メインエリア */
@@ -103,7 +162,7 @@ html, body {
 }
 
 .message.ai .message-content {
-    background: #f1f3f5;
+    background: #b5c7eb;
     color: #333;
     border-radius: 18px 18px 18px 4px;
     border: 1px solid #e9ecef;
@@ -115,8 +174,9 @@ html, body {
 }
 
 .message.system .message-content {
-    background: #fff3cd;
-    color: #856404;
+    background: white;
+    color: #4873CF;
+    border: 1px solid #4873CF;
     border-radius: 12px;
     font-size: 14px;
     text-align: center;

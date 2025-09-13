@@ -15,7 +15,21 @@
         <!-- ヘッダー -->
         <header class="header">
             <h1>CocoroAI</h1>
-            <div id="connection-status" class="status">接続中...</div>
+            <div class="header-controls">
+                <button id="voice-button" class="voice-button" title="音声入力">
+                    <svg id="mic-icon" class="mic-icon" viewBox="0 0 24 24" width="20" height="20">
+                        <!-- マイク本体 -->
+                        <rect x="9" y="2" width="6" height="12" rx="3" fill="currentColor"/>
+                        <!-- マイクスタンド -->
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <!-- ミュート線（非表示） -->
+                        <line id="mute-line" x1="2" y1="2" x2="22" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display: none;"/>
+                    </svg>
+                </button>
+                <div id="connection-status" class="status">接続中...</div>
+            </div>
         </header>
 
         <!-- メッセージエリア -->

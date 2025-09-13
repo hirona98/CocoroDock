@@ -5,8 +5,10 @@ class CocoroAIApp {
     constructor() {
         this.elements = {};
         this.isLoading = false;
+        this.voiceRecognition = null;
 
         this.initializeElements();
+        this.setupVoiceRecognition();
         this.setupEventListeners();
         this.setupWebSocket();
         this.initialize();
@@ -24,7 +26,76 @@ class CocoroAIApp {
             errorOverlay: document.getElementById('error-overlay'),
             errorMessage: document.getElementById('error-message'),
             errorClose: document.getElementById('error-close'),
-            loading: document.getElementById('loading')
+            loading: document.getElementById('loading'),
+            voiceButton: document.getElementById('voice-button'),
+            micIcon: document.getElementById('mic-icon'),
+            muteLine: document.getElementById('mute-line')
+        };
+    }
+
+    /**
+     * 音声認識設定
+     */
+    setupVoiceRecognition() {
+        // Web Speech APIサポート確認
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            console.warn('Web Speech API is not supported');
+            return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        try {
+            const recognition = new SpeechRecognition();
+
+            // 認識設定（根本修正）
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'ja-JP';
+            recognition.maxAlternatives = 1;
+            recognition.serviceURI = undefined; // デフォルトサービスを使用
+
+            this.voiceRecognition = {
+                recognition: recognition,
+                isListening: false,
+                isEnabled: false,
+                silenceTimer: null,
+                finalTranscript: ''
+            };
+
+        } catch (error) {
+            console.error('Web Speech API初期化エラー:', error);
+            return;
+        }
+
+        // イベントハンドラー
+        this.voiceRecognition.recognition.onstart = () => {
+            this.updateVoiceButton('listening');
+        };
+
+        this.voiceRecognition.recognition.onresult = (event) => {
+            this.handleVoiceResult(event);
+        };
+
+        this.voiceRecognition.recognition.onend = () => {
+            this.voiceRecognition.isListening = false;
+
+            if (this.voiceRecognition.silenceTimer) {
+                clearTimeout(this.voiceRecognition.silenceTimer);
+                this.voiceRecognition.silenceTimer = null;
+            }
+
+            // マイクON状態であれば自動再開
+            if (this.voiceRecognition.isEnabled) {
+                setTimeout(() => {
+                    this.startVoiceRecognition();
+                }, 100);
+            }
+        };
+
+        this.voiceRecognition.recognition.onerror = (event) => {
+            // エラーは表示しない（要件通り）
+            this.stopVoiceRecognition();
         };
     }
 
@@ -36,6 +107,13 @@ class CocoroAIApp {
         this.elements.sendButton.addEventListener('click', () => {
             this.sendMessage();
         });
+
+        // 音声ボタン
+        if (this.elements.voiceButton) {
+            this.elements.voiceButton.addEventListener('click', () => {
+                this.toggleVoiceRecognition();
+            });
+        }
 
         // Enter キーで送信
         this.elements.messageInput.addEventListener('keypress', (e) => {
@@ -103,6 +181,10 @@ class CocoroAIApp {
         this.updateSendButton();
         this.connectToServer();
         this.setupViewportHandler();
+        // 音声ボタンの初期状態をOFFに設定
+        if (this.voiceRecognition) {
+            this.updateVoiceButton('inactive');
+        }
     }
 
     /**
@@ -339,7 +421,7 @@ class CocoroAIApp {
      */
     showLoading() {
         this.isLoading = true;
-        this.elements.loading.classList.remove('hidden');
+        this.addSystemMessage('処理中...');
         this.updateSendButton();
     }
 
@@ -348,7 +430,7 @@ class CocoroAIApp {
      */
     hideLoading() {
         this.isLoading = false;
-        this.elements.loading.classList.add('hidden');
+        this.clearSystemMessage();
         this.updateSendButton();
     }
 
@@ -366,6 +448,152 @@ class CocoroAIApp {
     hideError() {
         this.elements.errorOverlay.classList.add('hidden');
     }
+
+    /**
+     * 音声認識トグル
+     */
+    toggleVoiceRecognition() {
+        if (!this.voiceRecognition) {
+            return;
+        }
+
+        this.voiceRecognition.isEnabled = !this.voiceRecognition.isEnabled;
+
+        if (this.voiceRecognition.isEnabled) {
+            this.updateVoiceButton('active');
+            this.startVoiceRecognition();
+        } else {
+            this.updateVoiceButton('inactive');
+            this.stopVoiceRecognition();
+        }
+    }
+
+    /**
+     * 音声認識開始
+     */
+    startVoiceRecognition() {
+        if (!this.voiceRecognition || this.voiceRecognition.isListening || !this.voiceRecognition.isEnabled) {
+            return;
+        }
+
+        try {
+            this.voiceRecognition.isListening = true;
+            this.voiceRecognition.recognition.start();
+        } catch (error) {
+            console.error('音声認識開始エラー:', error);
+            this.voiceRecognition.isListening = false;
+        }
+    }
+
+    /**
+     * 音声認識停止
+     */
+    stopVoiceRecognition() {
+        if (!this.voiceRecognition || !this.voiceRecognition.isListening) {
+            return;
+        }
+
+        try {
+            this.voiceRecognition.recognition.stop();
+        } catch (error) {
+            console.error('音声認識停止エラー:', error);
+        }
+
+        if (this.voiceRecognition.silenceTimer) {
+            clearTimeout(this.voiceRecognition.silenceTimer);
+            this.voiceRecognition.silenceTimer = null;
+        }
+    }
+
+    /**
+     * 音声認識結果処理
+     */
+    handleVoiceResult(event) {
+        let interimTranscript = '';
+        let finalTranscript = this.voiceRecognition.finalTranscript;
+        let hasFinalResult = false;
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const result = event.results[i];
+            const isFinal = result.isFinal;
+
+            if (result.length > 0) {
+                const transcript = result[0].transcript;
+
+                if (isFinal) {
+                    finalTranscript += transcript;
+                    hasFinalResult = true;
+                } else {
+                    interimTranscript += transcript;
+                }
+            }
+        }
+
+        // 入力欄更新
+        this.elements.messageInput.value = finalTranscript + interimTranscript;
+        this.updateSendButton();
+
+        // 最終結果が更新された場合、無音タイマーをリセット
+        if (hasFinalResult) {
+            this.voiceRecognition.finalTranscript = finalTranscript;
+            this.resetSilenceTimer();
+        }
+    }
+
+    /**
+     * 無音タイマーリセット（1秒後自動送信）
+     */
+    resetSilenceTimer() {
+        if (this.voiceRecognition.silenceTimer) {
+            clearTimeout(this.voiceRecognition.silenceTimer);
+        }
+
+        this.voiceRecognition.silenceTimer = setTimeout(() => {
+            // 音声認識結果をローカル変数に保存
+            const voiceMessage = this.voiceRecognition.finalTranscript.trim();
+
+            // メッセージがある場合のみ送信
+            if (voiceMessage) {
+                this.elements.messageInput.value = voiceMessage;
+                this.sendMessage();
+
+                // 送信後は新しい認識を準備
+                this.voiceRecognition.finalTranscript = '';
+            }
+        }, 500); // 0.5秒
+    }
+
+    /**
+     * 音声ボタン状態更新
+     */
+    updateVoiceButton(state) {
+        if (!this.elements.voiceButton) return;
+
+        const button = this.elements.voiceButton;
+        const muteLine = this.elements.muteLine;
+
+        // すべてのクラスをリセット
+        button.classList.remove('active', 'listening', 'disabled');
+
+        switch (state) {
+            case 'active':
+                button.classList.add('active');
+                muteLine.style.display = 'none';
+                break;
+            case 'listening':
+                button.classList.add('listening');
+                muteLine.style.display = 'none';
+                break;
+            case 'inactive':
+                muteLine.style.display = 'block';
+                break;
+            case 'disabled':
+                button.classList.add('disabled');
+                muteLine.style.display = 'block';
+                break;
+        }
+    }
+
 }
 
 // DOM読み込み完了後にアプリケーション開始
