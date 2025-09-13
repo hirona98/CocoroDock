@@ -35,6 +35,7 @@ namespace CocoroDock.Communication
         // 接続管理（スマホ1台想定だが複数接続対応）
         private readonly ConcurrentDictionary<string, WebSocket> _connections = new();
         private readonly ConcurrentDictionary<string, string> _sessionMappings = new();
+        private readonly ConcurrentDictionary<string, string> _connectionAudioFiles = new(); // 接続IDごとの現在のオーディオファイル
 
         public bool IsRunning => _app != null;
 
@@ -46,6 +47,10 @@ namespace CocoroDock.Communication
         {
             _port = port;
             _appSettings = appSettings;
+
+            // 起動時に古い音声ファイルをクリーンアップ
+            CleanupAudioFilesOnStartup();
+
             Debug.WriteLine($"[MobileWebSocketServer] 初期化: ポート={port}");
         }
 
@@ -297,6 +302,9 @@ namespace CocoroDock.Communication
                     _sessionMappings.TryRemove(sessionId, out _);
                 }
 
+                // 接続終了時に関連する音声ファイルを削除
+                DeleteAudioFileForConnection(connectionId);
+
                 Debug.WriteLine($"[MobileWebSocketServer] WebSocket接続終了: {connectionId}");
             }
         }
@@ -419,9 +427,18 @@ namespace CocoroDock.Communication
                             string? audioUrl = null;
                             if (_voicevoxClient != null && !string.IsNullOrWhiteSpace(textContent))
                             {
+                                // 新しいファイル生成前に古いファイルを削除
+                                DeleteAudioFileForConnection(connectionId);
+
                                 var currentChar = _appSettings.GetCurrentCharacter();
                                 var speakerId = currentChar?.voicevoxConfig?.speakerId ?? 3;
                                 audioUrl = await _voicevoxClient.SynthesizeAsync(textContent, speakerId);
+
+                                // 新しいファイルを記録
+                                if (!string.IsNullOrEmpty(audioUrl))
+                                {
+                                    _connectionAudioFiles[connectionId] = audioUrl;
+                                }
                             }
 
                             await SendPartialResponseToMobile(connectionId, textContent, audioUrl);
@@ -598,6 +615,85 @@ namespace CocoroDock.Communication
             }
             _connections.Clear();
             _sessionMappings.Clear();
+            _connectionAudioFiles.Clear();
+        }
+
+        /// <summary>
+        /// 起動時に古い音声ファイルをすべて削除
+        /// </summary>
+        private void CleanupAudioFilesOnStartup()
+        {
+            try
+            {
+                var audioDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "audio");
+
+                if (!Directory.Exists(audioDirectory))
+                {
+                    Debug.WriteLine("[MobileWebSocketServer] 音声ディレクトリが存在しません");
+                    return;
+                }
+
+                var audioFiles = Directory.GetFiles(audioDirectory, "*.wav");
+                var deletedCount = 0;
+
+                foreach (var filePath in audioFiles)
+                {
+                    try
+                    {
+                        File.Delete(filePath);
+                        deletedCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[MobileWebSocketServer] 起動時ファイル削除エラー {Path.GetFileName(filePath)}: {ex.Message}");
+                    }
+                }
+
+                Debug.WriteLine($"[MobileWebSocketServer] 起動時クリーンアップ完了: {deletedCount}個のファイルを削除");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] 起動時クリーンアップエラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 接続IDに関連付けられた音声ファイルを削除
+        /// </summary>
+        private void DeleteAudioFileForConnection(string connectionId)
+        {
+            if (_connectionAudioFiles.TryRemove(connectionId, out var audioFileName))
+            {
+                DeleteAudioFile(audioFileName);
+            }
+        }
+
+        /// <summary>
+        /// 音声ファイルを安全に削除
+        /// </summary>
+        private void DeleteAudioFile(string audioFileName)
+        {
+            if (string.IsNullOrEmpty(audioFileName)) return;
+
+            try
+            {
+                // /audio/filename.wav から filename.wav を抽出
+                var fileName = Path.GetFileName(audioFileName);
+                if (string.IsNullOrEmpty(fileName)) return;
+
+                var audioDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "audio");
+                var filePath = Path.Combine(audioDirectory, fileName);
+
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                    Debug.WriteLine($"[MobileWebSocketServer] 音声ファイル削除: {fileName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] 音声ファイル削除エラー: {ex.Message}");
+            }
         }
 
         public void Dispose()
