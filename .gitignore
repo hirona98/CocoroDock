@@ -9,6 +9,7 @@ context.db
 .claude/
 .github/
 CLAUDE.md
+wwwroot/audio/
 
 # dotenv files
 .env

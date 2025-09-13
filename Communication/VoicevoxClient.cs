@@ -52,8 +52,6 @@ namespace CocoroDock.Communication
                     return null;
                 }
 
-                Debug.WriteLine($"[VoicevoxClient] 音声合成開始: text={text.Substring(0, Math.Min(50, text.Length))}..., speaker={speakerId}");
-
                 // 1. audio_query API 呼び出し
                 var audioQuery = await GetAudioQueryAsync(text, speakerId);
                 if (audioQuery == null)
@@ -74,7 +72,6 @@ namespace CocoroDock.Communication
                 await File.WriteAllBytesAsync(filePath, audioData);
 
                 var audioUrl = $"/audio/{fileName}";
-                Debug.WriteLine($"[VoicevoxClient] 音声合成完了: {audioUrl}");
                 return audioUrl;
             }
             catch (Exception ex)
@@ -103,7 +100,6 @@ namespace CocoroDock.Communication
                 }
 
                 var audioQuery = await response.Content.ReadAsStringAsync();
-                Debug.WriteLine($"[VoicevoxClient] audio_query API 成功");
                 return audioQuery;
             }
             catch (Exception ex)
@@ -132,7 +128,6 @@ namespace CocoroDock.Communication
                 }
 
                 var audioData = await response.Content.ReadAsByteArrayAsync();
-                Debug.WriteLine($"[VoicevoxClient] synthesis API 成功: {audioData.Length} bytes");
                 return audioData;
             }
             catch (Exception ex)

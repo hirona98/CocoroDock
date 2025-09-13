@@ -51,7 +51,7 @@ namespace CocoroDock.Services
         public int CocoroMemoryWebPort { get; set; } = 55606;
         public int CocoroShellPort { get; set; } = 55605;
         public int NotificationApiPort { get; set; } = 55604;
-        public int CocoroWebPort { get; set; } = 80;
+        public int CocoroWebPort { get; set; } = 55607;
         public bool IsEnableWebService { get; set; } = false;
         // 通知API設定
         public bool IsEnableNotificationApi { get; set; } = true;

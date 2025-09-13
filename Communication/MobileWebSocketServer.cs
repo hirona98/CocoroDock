@@ -3,7 +3,10 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.WebSockets;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -16,6 +19,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace CocoroDock.Communication
 {
@@ -51,7 +55,8 @@ namespace CocoroDock.Communication
             // 起動時に古い音声ファイルをクリーンアップ
             CleanupAudioFilesOnStartup();
 
-            Debug.WriteLine($"[MobileWebSocketServer] 初期化: ポート={port}");
+            var httpsPort = _appSettings.GetConfigSettings().cocoroWebPort;
+            Debug.WriteLine($"[MobileWebSocketServer] 初期化: HTTPS ポート={httpsPort}");
         }
 
         /// <summary>
@@ -69,12 +74,22 @@ namespace CocoroDock.Communication
             {
                 _cts = new CancellationTokenSource();
 
+                // 設定からHTTPSポートを取得（cocoroWebPort、デフォルト55607）
+                var httpsPort = _appSettings.GetConfigSettings().cocoroWebPort;
+
                 var builder = WebApplication.CreateBuilder();
 
-                // Kestrelサーバーの設定（外部アクセス対応・管理者権限不要）
+                // ログレベルを設定してHTTPリクエストログを無効化
+                builder.Logging.ClearProviders();
+                builder.Logging.SetMinimumLevel(LogLevel.Warning);
+
+                // Kestrelサーバーの設定（HTTPS対応・外部アクセス対応・管理者権限不要）
                 builder.WebHost.ConfigureKestrel(serverOptions =>
                 {
-                    serverOptions.ListenAnyIP(_port);
+                    serverOptions.ListenAnyIP(httpsPort, listenOptions =>
+                    {
+                        listenOptions.UseHttps(GenerateSelfSignedCertificate());
+                    });
                 });
 
                 // サービスの登録
@@ -111,7 +126,7 @@ namespace CocoroDock.Communication
                     }
                 });
 
-                Debug.WriteLine($"[MobileWebSocketServer] サーバー開始: http://0.0.0.0:{_port}/");
+                Debug.WriteLine($"[MobileWebSocketServer] HTTPS サーバー開始: https://0.0.0.0:{httpsPort}/");
             }
             catch (Exception ex)
             {
@@ -363,8 +378,6 @@ namespace CocoroDock.Communication
                     return;
                 }
 
-                Debug.WriteLine($"[MobileWebSocketServer] モバイルメッセージ受信: {message.Data.Message.Substring(0, Math.Min(50, message.Data.Message.Length))}...");
-
                 // CocoroDockにモバイルメッセージを通知
                 MobileMessageReceived?.Invoke(this, $"📱 {message.Data.Message}");
 
@@ -544,7 +557,6 @@ namespace CocoroDock.Communication
                     return Task.FromResult(Results.NotFound());
                 }
 
-                Debug.WriteLine($"[MobileWebSocketServer] 音声ファイル配信: {filename}");
                 return Task.FromResult(Results.File(fileStream, "audio/wav"));
             }
             catch (Exception ex)
@@ -687,12 +699,86 @@ namespace CocoroDock.Communication
                 if (File.Exists(filePath))
                 {
                     File.Delete(filePath);
-                    Debug.WriteLine($"[MobileWebSocketServer] 音声ファイル削除: {fileName}");
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[MobileWebSocketServer] 音声ファイル削除エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// HTTPS用の自己証明書を生成
+        /// </summary>
+        private static X509Certificate2 GenerateSelfSignedCertificate()
+        {
+            try
+            {
+                using var rsa = RSA.Create(2048);
+                var request = new CertificateRequest(
+                    "CN=CocoroAI",
+                    rsa,
+                    HashAlgorithmName.SHA256,
+                    RSASignaturePadding.Pkcs1);
+
+                // 証明書の拡張設定
+                request.CertificateExtensions.Add(
+                    new X509KeyUsageExtension(
+                        X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment,
+                        true));
+
+                // SubjectAlternativeName - 複数のIPアドレス/ホスト名対応
+                var sanBuilder = new SubjectAlternativeNameBuilder();
+                sanBuilder.AddDnsName("localhost");
+                sanBuilder.AddDnsName(Environment.MachineName);
+                sanBuilder.AddDnsName("*.local");
+                sanBuilder.AddIpAddress(IPAddress.Loopback);
+                sanBuilder.AddIpAddress(IPAddress.IPv6Loopback);
+
+                // ローカルIPアドレスを追加
+                try
+                {
+                    var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+                    foreach (var ip in host.AddressList)
+                    {
+                        if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                        {
+                            sanBuilder.AddIpAddress(ip);
+                        }
+                    }
+                }
+                catch { }
+
+                request.CertificateExtensions.Add(sanBuilder.Build());
+
+                // Enhanced Key Usage
+                request.CertificateExtensions.Add(
+                    new X509EnhancedKeyUsageExtension(
+                        new OidCollection
+                        {
+                            new Oid("1.3.6.1.5.5.7.3.1"), // Server Authentication
+                            new Oid("1.3.6.1.5.5.7.3.2")  // Client Authentication
+                        },
+                        true));
+
+                // 5年間有効な証明書を作成
+                var certificate = request.CreateSelfSigned(
+                    DateTimeOffset.Now.AddDays(-1),
+                    DateTimeOffset.Now.AddYears(5));
+
+                // エクスポートして再インポート（Windows互換性のため）
+                var exportedCert = certificate.Export(X509ContentType.Pfx, "temp");
+                var finalCert = new X509Certificate2(
+                    exportedCert,
+                    "temp",
+                    X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet);
+
+                return finalCert;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] 証明書生成エラー: {ex.Message}");
+                throw;
             }
         }
 

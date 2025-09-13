@@ -187,8 +187,6 @@ namespace CocoroDock.Communication
                 var json = MessageHelper.SerializeToJson(message);
                 var bytes = Encoding.UTF8.GetBytes(json);
 
-                Debug.WriteLine($"[WebSocket] メッセージ送信: session_id={sessionId}, query={request.query.Substring(0, Math.Min(50, request.query.Length))}...");
-
                 await _webSocket.SendAsync(
                     new ArraySegment<byte>(bytes),
                     WebSocketMessageType.Text,
