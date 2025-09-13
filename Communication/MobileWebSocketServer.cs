@@ -285,7 +285,18 @@ namespace CocoroDock.Communication
             finally
             {
                 _connections.TryRemove(connectionId, out _);
-                _sessionMappings.TryRemove(connectionId, out _);
+
+                // セッションマッピングから該当のconnectionIdを持つエントリを削除
+                var sessionIdsToRemove = _sessionMappings
+                    .Where(kvp => kvp.Value == connectionId)
+                    .Select(kvp => kvp.Key)
+                    .ToList();
+
+                foreach (var sessionId in sessionIdsToRemove)
+                {
+                    _sessionMappings.TryRemove(sessionId, out _);
+                }
+
                 Debug.WriteLine($"[MobileWebSocketServer] WebSocket接続終了: {connectionId}");
             }
         }
@@ -384,50 +395,54 @@ namespace CocoroDock.Communication
         /// <summary>
         /// CocoreCoreM からのメッセージ受信イベント
         /// </summary>
-        private async void OnCocoroCoreMessageReceived(object? sender, WebSocketResponseMessage response)
+        private void OnCocoroCoreMessageReceived(object? sender, WebSocketResponseMessage response)
         {
-            try
+            // async voidの問題を回避するため、Task.Runで包む
+            _ = Task.Run(async () =>
             {
-                // セッションIDから接続IDを取得
-                if (!_sessionMappings.TryGetValue(response.session_id ?? "", out var connectionId))
+                try
                 {
-                    return;
-                }
-
-                // 応答タイプに応じて処理
-                if (response.type == "text")
-                {
-                    // JsonElementからテキストデータを取得
-                    var textContent = ExtractTextContent(response.data);
-                    if (!string.IsNullOrEmpty(textContent))
+                    // セッションIDから接続IDを取得
+                    if (!_sessionMappings.TryGetValue(response.session_id ?? "", out var connectionId))
                     {
-                        // 音声合成処理
-                        string? audioUrl = null;
-                        if (_voicevoxClient != null && !string.IsNullOrWhiteSpace(textContent))
+                        return;
+                    }
+
+                    // 応答タイプに応じて処理
+                    if (response.type == "text")
+                    {
+                        // JsonElementからテキストデータを取得
+                        var textContent = ExtractTextContent(response.data);
+                        if (!string.IsNullOrEmpty(textContent))
                         {
-                            var currentChar = _appSettings.GetCurrentCharacter();
-                            var speakerId = currentChar?.voicevoxConfig?.speakerId ?? 3;
-                            audioUrl = await _voicevoxClient.SynthesizeAsync(textContent, speakerId);
-                        }
+                            // 音声合成処理
+                            string? audioUrl = null;
+                            if (_voicevoxClient != null && !string.IsNullOrWhiteSpace(textContent))
+                            {
+                                var currentChar = _appSettings.GetCurrentCharacter();
+                                var speakerId = currentChar?.voicevoxConfig?.speakerId ?? 3;
+                                audioUrl = await _voicevoxClient.SynthesizeAsync(textContent, speakerId);
+                            }
 
-                        await SendPartialResponseToMobile(connectionId, textContent, audioUrl);
-                        // CocoroDockに応答を通知
-                        MobileResponseSent?.Invoke(this, textContent);
+                            await SendPartialResponseToMobile(connectionId, textContent, audioUrl);
+                            // CocoroDockに応答を通知
+                            MobileResponseSent?.Invoke(this, textContent);
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"[MobileWebSocketServer] Null or empty textContent received for connectionId: {connectionId}");
+                        }
                     }
-                    else
+                    else if (response.type == "error")
                     {
-                        Debug.WriteLine($"[MobileWebSocketServer] Null or empty textContent received for connectionId: {connectionId}");
+                        await SendErrorToMobile(connectionId, MobileErrorCodes.CoreMError, "CocoreCoreM processing error");
                     }
                 }
-                else if (response.type == "error")
+                catch (Exception ex)
                 {
-                    await SendErrorToMobile(connectionId, MobileErrorCodes.CoreMError, "CocoreCoreM processing error");
+                    Debug.WriteLine($"[MobileWebSocketServer] メッセージ処理エラー: {ex.Message}");
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[MobileWebSocketServer] メッセージ処理エラー: {ex.Message}");
-            }
+            });
         }
 
 
@@ -506,7 +521,7 @@ namespace CocoroDock.Communication
                     return Task.FromResult(Results.NotFound());
                 }
 
-                using var fileStream = _voicevoxClient?.GetAudioFileStream(filename);
+                var fileStream = _voicevoxClient?.GetAudioFileStream(filename);
                 if (fileStream == null)
                 {
                     return Task.FromResult(Results.NotFound());

@@ -5,7 +5,7 @@ class CocoroAIApp {
     constructor() {
         this.elements = {};
         this.isLoading = false;
-        
+
         this.initializeElements();
         this.setupEventListeners();
         this.setupWebSocket();
@@ -198,7 +198,7 @@ class CocoroAIApp {
             this.addAIMessage(message.data.text);
 
             // 音声再生機能（VOICEVOX統合）
-            const audioUrl = message.data.audioUrl || message.data.AudioUrl;
+            const audioUrl = message.data.audio_url || message.data.audioUrl || message.data.AudioUrl;
             if (audioUrl) {
                 try {
                     console.log('音声再生開始:', audioUrl);
