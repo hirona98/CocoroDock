@@ -38,6 +38,10 @@ namespace CocoroDock.Communication
 
         public bool IsRunning => _app != null;
 
+        // モバイルチャットのイベント
+        public event EventHandler<string>? MobileMessageReceived;
+        public event EventHandler<string>? MobileResponseSent;
+
         public MobileWebSocketServer(int port, IAppSettings appSettings)
         {
             _port = port;
@@ -342,6 +346,9 @@ namespace CocoroDock.Communication
 
                 Debug.WriteLine($"[MobileWebSocketServer] モバイルメッセージ受信: {message.Data.Message.Substring(0, Math.Min(50, message.Data.Message.Length))}...");
 
+                // CocoroDockにモバイルメッセージを通知
+                MobileMessageReceived?.Invoke(this, $"📱 {message.Data.Message}");
+
                 // CocoreCoreM に送信するためのリクエスト作成
                 var chatRequest = new WebSocketChatRequest
                 {
@@ -408,6 +415,8 @@ namespace CocoroDock.Communication
                     if (!string.IsNullOrEmpty(textContent))
                     {
                         await SendPartialResponseToMobile(connectionId, textContent);
+                        // CocoroDockに応答を通知
+                        MobileResponseSent?.Invoke(this, textContent);
                     }
                     else
                     {
@@ -455,6 +464,13 @@ namespace CocoroDock.Communication
                 };
 
                 await SendJsonToMobile(connectionId, response);
+
+                // CocoroDockに最終応答を通知（テキストがある場合のみ）
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    MobileResponseSent?.Invoke(this, text);
+                }
+
                 Debug.WriteLine($"[MobileWebSocketServer] 最終応答送信完了: audioUrl={audioUrl}");
             }
             catch (Exception ex)

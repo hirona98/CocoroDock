@@ -1037,7 +1037,11 @@ namespace CocoroDock
                 }
 
                 _mobileWebSocketServer = new MobileWebSocketServer(_appSettings.CocoroWebPort, _appSettings);
-                
+
+                // モバイルチャットのイベントハンドラを設定
+                _mobileWebSocketServer.MobileMessageReceived += OnMobileMessageReceived;
+                _mobileWebSocketServer.MobileResponseSent += OnMobileResponseSent;
+
                 // 非同期で起動
                 _ = Task.Run(async () =>
                 {
@@ -1049,14 +1053,14 @@ namespace CocoroDock
                     catch (Exception ex)
                     {
                         Debug.WriteLine($"[MainWindow] MobileWebSocketServer起動エラー: {ex.Message}");
-                        
+
                         // UIスレッドでエラー表示
                         Dispatcher.Invoke(() =>
                         {
-                            UIHelper.ShowError("Web機能初期化エラー", 
+                            UIHelper.ShowError("Web機能初期化エラー",
                                 $"MobileWebSocketServerの起動に失敗しました:\n{ex.Message}\n\nWeb機能は無効になります。");
                         });
-                        
+
                         _mobileWebSocketServer?.Dispose();
                         _mobileWebSocketServer = null;
                     }
@@ -1067,6 +1071,36 @@ namespace CocoroDock
                 Debug.WriteLine($"[MainWindow] MobileWebSocketServer初期化エラー: {ex.Message}");
                 UIHelper.ShowError("Web機能初期化エラー", $"MobileWebSocketServerの初期化に失敗しました: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// モバイルメッセージ受信イベント
+        /// </summary>
+        private void OnMobileMessageReceived(object? sender, string message)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                // チャットにモバイルメッセージを表示
+                ChatControlInstance.AddUserMessage(message);
+                
+                // ステータスバーにLLM処理中を表示
+                UpdateCocoroCoreMStatusDisplay(CocoroCoreMStatus.ProcessingMessage);
+            });
+        }
+
+        /// <summary>
+        /// モバイル応答送信イベント
+        /// </summary>
+        private void OnMobileResponseSent(object? sender, string response)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                // チャットにAI応答を表示
+                ChatControlInstance.AddAiMessage(response);
+                
+                // ステータスバーを正常に戻す
+                UpdateCocoroCoreMStatusDisplay(CocoroCoreMStatus.Normal);
+            });
         }
 
         /// <summary>
@@ -1307,6 +1341,10 @@ namespace CocoroDock
                     Debug.WriteLine("MobileWebSocketServerを停止中...");
                     try
                     {
+                        // イベント購読解除
+                        _mobileWebSocketServer.MobileMessageReceived -= OnMobileMessageReceived;
+                        _mobileWebSocketServer.MobileResponseSent -= OnMobileResponseSent;
+
                         await _mobileWebSocketServer.StopAsync();
                         _mobileWebSocketServer.Dispose();
                         _mobileWebSocketServer = null;
