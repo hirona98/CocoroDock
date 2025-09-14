@@ -481,10 +481,10 @@ class RNNoiseProcessor {
      * ログ出力
      */
     log(message) {
-        const logEntry = `[RNNoiseProcessor] ${new Date().toISOString()}: ${message}`;
-        console.log(logEntry);
-
+        // デバッグログを停止
         if (this.debugMode) {
+            const logEntry = `[RNNoiseProcessor] ${new Date().toISOString()}: ${message}`;
+            console.log(logEntry);
             this.debugLog.push(logEntry);
             if (this.debugLog.length > 1000) {
                 this.debugLog.shift();

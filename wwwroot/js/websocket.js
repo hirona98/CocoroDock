@@ -76,7 +76,16 @@ class WebSocketManager {
         this.ws.onmessage = (event) => {
             try {
                 const message = JSON.parse(event.data);
-                console.log('[WebSocket] メッセージ受信:', message);
+                // エラーメッセージの場合は詳細を出力
+                if (message.type === 'error') {
+                    console.error('[WebSocket] エラーメッセージ受信:', {
+                        code: message.data?.code,
+                        message: message.data?.message,
+                        details: message.data
+                    });
+                } else {
+                    console.log('[WebSocket] メッセージ受信:', message);
+                }
                 
                 this.handleMessage(message);
                 
@@ -145,9 +154,19 @@ class WebSocketManager {
             throw new Error('WebSocket未接続');
         }
 
-        // 音声データサイズチェック
+        // 音声データサイズチェック（Base64とList<int>の両方に対応）
         const audioData = voiceMessage.data.audio_data;
-        if (!audioData || audioData.length === 0) {
+        const audioDataBase64 = voiceMessage.data.audio_data_base64;
+
+        if (!audioData && !audioDataBase64) {
+            throw new Error('音声データが空です');
+        }
+
+        if (audioData && audioData.length === 0) {
+            throw new Error('音声データが空です');
+        }
+
+        if (audioDataBase64 && audioDataBase64.length === 0) {
             throw new Error('音声データが空です');
         }
 
@@ -158,14 +177,25 @@ class WebSocketManager {
             throw new Error(`音声データが大きすぎます: ${estimatedSize}bytes (上限: ${maxSize}bytes)`);
         }
 
-        console.log(`[WebSocket] 音声データ送信: ${audioData.length}bytes, 形式: ${voiceMessage.data.format}`);
+        // 音声データのバイト数を計算
+        let actualBytes;
+        if (audioDataBase64) {
+            // Base64の場合は約1.33倍なので元のサイズを推定
+            actualBytes = Math.floor(audioDataBase64.length * 0.75);
+            console.log(`[WebSocket] 音声データ送信(Base64): ${actualBytes}bytes (推定), 形式: ${voiceMessage.data.format}`);
+        } else {
+            actualBytes = audioData.length;
+            console.log(`[WebSocket] 音声データ送信(Array): ${actualBytes}bytes, 形式: ${voiceMessage.data.format}`);
+        }
 
         try {
             // 音声データ送信
-            this.ws.send(JSON.stringify(voiceMessage));
+            const jsonString = JSON.stringify(voiceMessage);
+            console.log(`[WebSocket] JSON文字列サイズ: ${jsonString.length}文字 (約${Math.round(jsonString.length/1024)}KB)`);
+            this.ws.send(jsonString);
 
-            // 統計情報記録
-            this.recordVoiceStats(audioData.length, voiceMessage.data.format);
+            // 統計情報記録（実際のバイト数を使用）
+            this.recordVoiceStats(actualBytes, voiceMessage.data.format);
 
         } catch (error) {
             console.error('[WebSocket] 音声データ送信エラー:', error);

@@ -329,7 +329,8 @@ namespace CocoroDock.Communication
         /// </summary>
         private async Task HandleWebSocketCommunication(string connectionId, WebSocket webSocket)
         {
-            var buffer = new byte[1024 * 4];
+            var buffer = new byte[1024 * 16]; // 16KBに増加（音声データ効率化）
+            using var messageBuffer = new MemoryStream(); // メモリ効率化
 
             while (webSocket.State == WebSocketState.Open && !_cts!.Token.IsCancellationRequested)
             {
@@ -339,8 +340,16 @@ namespace CocoroDock.Communication
 
                     if (result.MessageType == WebSocketMessageType.Text)
                     {
-                        var json = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                        await ProcessMobileMessage(connectionId, json);
+                        // メッセージの断片を蓄積
+                        messageBuffer.Write(buffer, 0, result.Count);
+
+                        // メッセージが完了した場合のみ処理
+                        if (result.EndOfMessage)
+                        {
+                            var json = Encoding.UTF8.GetString(messageBuffer.ToArray());
+                            await ProcessMobileMessage(connectionId, json);
+                            messageBuffer.SetLength(0); // バッファをクリア
+                        }
                     }
                     else if (result.MessageType == WebSocketMessageType.Close)
                     {
@@ -371,6 +380,7 @@ namespace CocoroDock.Communication
         {
             try
             {
+
                 // メッセージタイプを事前判定
                 using var jsonDoc = JsonDocument.Parse(json);
                 var root = jsonDoc.RootElement;
@@ -398,8 +408,9 @@ namespace CocoroDock.Communication
                         break;
                 }
             }
-            catch (JsonException)
+            catch (JsonException jsonEx)
             {
+                Console.WriteLine($"[MobileWebSocketServer] ProcessMobileMessage JSONエラー: {jsonEx.Message}");
                 await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, "Invalid JSON format");
             }
             catch (Exception ex)
@@ -465,14 +476,42 @@ namespace CocoroDock.Communication
         {
             try
             {
-                var message = JsonSerializer.Deserialize<MobileVoiceMessage>(json);
+                MobileVoiceMessage message;
+                try
+                {
+                    message = JsonSerializer.Deserialize<MobileVoiceMessage>(json);
+                }
+                catch (JsonException jsonEx)
+                {
+                    Debug.WriteLine($"[MobileWebSocketServer] JSONデシリアライズエラー: {jsonEx.Message}");
+                    Debug.WriteLine($"[MobileWebSocketServer] エラー位置: Line {jsonEx.LineNumber}, Position {jsonEx.BytePositionInLine}");
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceDataError, $"JSON parse error: {jsonEx.Message}");
+                    return;
+                }
                 if (message?.Data == null)
                 {
                     await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceDataError, "Invalid voice message format");
                     return;
                 }
 
-                Debug.WriteLine($"[MobileWebSocketServer] 音声データ受信: {message.Data.AudioData.Count}bytes, {message.Data.Format}, {message.Data.Processing}");
+                // Base64とList<int>の両方に対応
+                byte[] audioBytes;
+                if (!string.IsNullOrEmpty(message.Data.AudioDataBase64))
+                {
+                    // Base64デコード
+                    audioBytes = Convert.FromBase64String(message.Data.AudioDataBase64);
+                }
+                else if (message.Data.AudioData != null && message.Data.AudioData.Count > 0)
+                {
+                    // 後方互換性: List<int>から変換
+                    audioBytes = message.Data.AudioData.Select(x => (byte)x).ToArray();
+                    Debug.WriteLine($"[MobileWebSocketServer] 整数配列音声データ受信: {audioBytes.Length}bytes, {message.Data.Format}, {message.Data.Processing}");
+                }
+                else
+                {
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceDataError, "No audio data provided");
+                    return;
+                }
 
                 // STT設定の事前チェック
                 var currentCharacter = _appSettings.GetCurrentCharacter();
@@ -482,23 +521,21 @@ namespace CocoroDock.Communication
                     return;
                 }
 
-                if (!currentCharacter.isUseSTT)
-                {
-                    await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceRecognitionError, "Speech-to-text is disabled for current character");
-                    return;
-                }
+                // Web経由の音声認識要求では isUseSTT 設定を無視
+                // if (!currentCharacter.isUseSTT)
+                // {
+                //     await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceRecognitionError, "Speech-to-text is disabled for current character");
+                //     return;
+                // }
 
                 if (string.IsNullOrEmpty(currentCharacter.sttApiKey))
                 {
-                    await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceRecognitionError, "STT API key not configured for current character");
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceRecognitionError, "音声認識APIキーが設定されていません");
                     return;
                 }
 
                 // CocoroDockに音声メッセージを通知
-                MobileMessageReceived?.Invoke(this, $"🎤 音声データ ({message.Data.AudioData.Count}bytes, {message.Data.Processing})");
-
-                // 音声データ変換
-                var audioBytes = message.Data.AudioData.Select(i => (byte)i).ToArray();
+                MobileMessageReceived?.Invoke(this, $"🎤 音声データ ({audioBytes.Length}bytes, {message.Data.Processing})");
 
                 // 音声認識実行
                 var recognizedText = await ProcessVoiceData(
@@ -509,26 +546,26 @@ namespace CocoroDock.Communication
 
                 if (!string.IsNullOrWhiteSpace(recognizedText))
                 {
-                    Debug.WriteLine($"[MobileWebSocketServer] 音声認識結果: {recognizedText}");
-
+                    // 音声認識結果をWebUIにユーザーメッセージとして表示
+                    await SendUserMessageToMobile(connectionId, recognizedText);
                     // 認識されたテキストをチャットメッセージとして処理
                     await ProcessRecognizedVoiceAsChat(connectionId, recognizedText);
                 }
-                else
-                {
-                    Debug.WriteLine("[MobileWebSocketServer] 音声認識結果が空でした");
-                    await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceRecognitionError, "No text recognized from voice data");
-                }
+            }
+            catch (FormatException formatEx)
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] Base64デコードエラー: {formatEx.Message}");
+                await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceDataError, "音声データの形式が正しくありません");
             }
             catch (ArgumentException argEx)
             {
                 Debug.WriteLine($"[MobileWebSocketServer] 音声データ検証エラー: {argEx.Message}");
-                await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceDataError, argEx.Message);
+                await SendErrorToMobile(connectionId, MobileErrorCodes.VoiceDataError, "音声データに問題があります");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[MobileWebSocketServer] 音声メッセージ処理エラー: {ex.Message}");
-                await SendErrorToMobile(connectionId, MobileErrorCodes.AudioProcessingError, $"Voice processing error: {ex.Message}");
+                await SendErrorToMobile(connectionId, MobileErrorCodes.AudioProcessingError, "音声処理中にエラーが発生しました");
             }
         }
 
@@ -568,7 +605,6 @@ namespace CocoroDock.Communication
 
                 if (string.IsNullOrWhiteSpace(recognizedText))
                 {
-                    Debug.WriteLine("[MobileWebSocketServer] 音声認識結果が空");
                     return string.Empty;
                 }
 
@@ -742,6 +778,35 @@ namespace CocoroDock.Communication
             };
 
             await SendJsonToMobile(connectionId, error);
+        }
+
+        /// <summary>
+        /// WebUIにユーザーメッセージを送信（音声認識結果用）
+        /// </summary>
+        private async Task SendUserMessageToMobile(string connectionId, string message)
+        {
+            try
+            {
+                Console.WriteLine($"[MobileWebSocketServer] SendUserMessageToMobile開始: connectionId={connectionId}, message={message}");
+
+                var chatMessage = new MobileChatMessage
+                {
+                    Data = new MobileChatData
+                    {
+                        Message = message,
+                        ChatType = "voice_recognition_user",
+                        Images = null
+                    }
+                };
+
+                Console.WriteLine($"[MobileWebSocketServer] ユーザーメッセージJSON作成完了");
+                await SendJsonToMobile(connectionId, chatMessage);
+                Console.WriteLine($"[MobileWebSocketServer] ユーザーメッセージ送信完了");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MobileWebSocketServer] SendUserMessageToMobileエラー: {ex.Message}");
+            }
         }
 
         /// <summary>

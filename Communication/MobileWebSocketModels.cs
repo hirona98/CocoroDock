@@ -76,8 +76,25 @@ namespace CocoroDock.Communication
     /// </summary>
     public class MobileVoiceData
     {
+        /// <summary>
+        /// 既存のList<int>型（後方互換性のため残す）
+        /// </summary>
         [JsonPropertyName("audio_data")]
-        public List<int> AudioData { get; set; } = new();
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<int>? AudioData { get; set; }
+
+        /// <summary>
+        /// Base64エンコードされた音声データ（新規追加）
+        /// </summary>
+        [JsonPropertyName("audio_data_base64")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? AudioDataBase64 { get; set; }
+
+        /// <summary>
+        /// エンコーディング形式（新規追加）
+        /// </summary>
+        [JsonPropertyName("encoding")]
+        public string? Encoding { get; set; }
 
         [JsonPropertyName("sample_rate")]
         public int SampleRate { get; set; } = 16000;

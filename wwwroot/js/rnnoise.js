@@ -496,4 +496,4 @@ if (typeof global !== 'undefined') {
   global.createRNNWasmModule = createRNNWasmModule;
 }
 
-export default createRNNWasmModule;
+// export default createRNNWasmModule; // ES6構文をコメントアウト

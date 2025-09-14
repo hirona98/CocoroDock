@@ -1082,7 +1082,7 @@ namespace CocoroDock
             {
                 // チャットにモバイルメッセージを表示
                 ChatControlInstance.AddUserMessage(message);
-                
+
                 // ステータスバーにLLM処理中を表示
                 UpdateCocoroCoreMStatusDisplay(CocoroCoreMStatus.ProcessingMessage);
             });
@@ -1097,7 +1097,7 @@ namespace CocoroDock
             {
                 // チャットにAI応答を表示
                 ChatControlInstance.AddAiMessage(response);
-                
+
                 // ステータスバーを正常に戻す
                 UpdateCocoroCoreMStatusDisplay(CocoroCoreMStatus.Normal);
             });
@@ -1118,8 +1118,6 @@ namespace CocoroDock
 
                 // CocoroCoreMに送信
                 SendMessageToCocoroCore(text, null);
-
-                Debug.WriteLine($"[MainWindow] 音声認識結果: {text}");
             });
         }
 

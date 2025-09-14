@@ -397,20 +397,8 @@ namespace CocoroDock.Services
 
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[VoiceService] WebSocket音声データ認識開始: {audioData.Length}bytes");
-
                 // AmiVoice API呼び出し
                 var recognizedText = await _amiVoiceClient.RecognizeAsync(audioData);
-
-                if (!string.IsNullOrEmpty(recognizedText))
-                {
-                    System.Diagnostics.Debug.WriteLine($"[VoiceService] WebSocket音声認識完了: {recognizedText}");
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine("[VoiceService] WebSocket音声認識結果が空");
-                }
-
                 return recognizedText ?? string.Empty;
             }
             catch (Exception ex)

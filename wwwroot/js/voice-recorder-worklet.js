@@ -436,8 +436,9 @@ class VoiceRecorderWorklet {
      * ログ出力
      */
     log(message) {
-        const logEntry = `[VoiceRecorderWorklet] ${new Date().toISOString()}: ${message}`;
-        console.log(logEntry);
+        // デバッグログを停止 - エラーのみ出力
+        // const logEntry = `[VoiceRecorderWorklet] ${new Date().toISOString()}: ${message}`;
+        // console.log(logEntry);
     }
 
     logError(message, error = null) {
