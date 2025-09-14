@@ -207,6 +207,60 @@ class WebSocketManager {
     }
 
     /**
+     * 画像メッセージ送信
+     */
+    sendImageMessage(imageMessage) {
+        if (!this.isConnected || !this.ws) {
+            console.error('[WebSocket] 画像データ送信: 未接続');
+            throw new Error('WebSocket未接続');
+        }
+
+        // 画像データチェック
+        const imageData = imageMessage.data.image_data_base64;
+        if (!imageData || imageData.length === 0) {
+            throw new Error('画像データが空です');
+        }
+
+        // サイズ制限チェック (10MB)
+        const maxSize = 10 * 1024 * 1024;
+        const estimatedSize = JSON.stringify(imageMessage).length;
+        if (estimatedSize > maxSize) {
+            throw new Error(`画像データが大きすぎます: ${estimatedSize}bytes (上限: ${maxSize}bytes)`);
+        }
+
+        // Base64データサイズを計算（約1.33倍なので元のサイズを推定）
+        const actualBytes = Math.floor(imageData.length * 0.75);
+
+        try {
+            // 画像データ送信
+            const jsonString = JSON.stringify(imageMessage);
+            this.ws.send(jsonString);
+
+            console.log('[WebSocket] 画像データ送信成功:', {
+                size: actualBytes,
+                format: imageMessage.data.format,
+                width: imageMessage.data.width,
+                height: imageMessage.data.height
+            });
+
+            // 統計情報記録
+            this.recordImageStats(actualBytes, imageMessage.data.format);
+
+        } catch (error) {
+            console.error('[WebSocket] 画像データ送信エラー:', error);
+
+            // より詳細なエラー情報
+            if (error.name === 'InvalidStateError') {
+                throw new Error('WebSocket接続状態エラー');
+            } else if (error.name === 'SyntaxError') {
+                throw new Error('画像データ形式エラー');
+            } else {
+                throw new Error(`画像送信失敗: ${error.message}`);
+            }
+        }
+    }
+
+    /**
      * 音声統計情報記録
      */
     recordVoiceStats(dataSize, format) {
@@ -223,6 +277,25 @@ class WebSocketManager {
         this.voiceStats.totalBytes += dataSize;
         this.voiceStats.formats[format] = (this.voiceStats.formats[format] || 0) + 1;
         this.voiceStats.lastSent = new Date().toISOString();
+    }
+
+    /**
+     * 画像統計情報記録
+     */
+    recordImageStats(dataSize, format) {
+        if (!this.imageStats) {
+            this.imageStats = {
+                totalMessages: 0,
+                totalBytes: 0,
+                formats: {},
+                lastSent: null
+            };
+        }
+
+        this.imageStats.totalMessages++;
+        this.imageStats.totalBytes += dataSize;
+        this.imageStats.formats[format] = (this.imageStats.formats[format] || 0) + 1;
+        this.imageStats.lastSent = new Date().toISOString();
     }
 
     /**

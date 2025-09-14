@@ -50,11 +50,34 @@ namespace CocoroDock.Communication
     /// </summary>
     public class MobileImageData
     {
+        [JsonPropertyName("image_data_base64")]
+        public string ImageDataBase64 { get; set; } = "";
+
+        [JsonPropertyName("encoding")]
+        public string Encoding { get; set; } = "base64";
+
+        [JsonPropertyName("format")]
+        public string Format { get; set; } = "jpeg";
+
+        [JsonPropertyName("width")]
+        public int Width { get; set; }
+
+        [JsonPropertyName("height")]
+        public int Height { get; set; }
+
+        [JsonPropertyName("camera_facing")]
+        public string CameraFacing { get; set; } = "user";
+
+        // 後方互換性のため既存のプロパティも保持
         [JsonPropertyName("image_data")]
         public string ImageData { get; set; } = "";
 
         [JsonPropertyName("source")]
         public string Source { get; set; } = "camera";
+
+        // メッセージ付き画像送信用
+        [JsonPropertyName("message")]
+        public string Message { get; set; } = "";
     }
 
     /// <summary>
@@ -69,6 +92,20 @@ namespace CocoroDock.Communication
 
         [JsonPropertyName("data")]
         public MobileVoiceData Data { get; set; } = new();
+    }
+
+    /// <summary>
+    /// 画像メッセージ
+    /// </summary>
+    public class MobileImageMessage : MobileWebSocketMessage
+    {
+        public MobileImageMessage()
+        {
+            Type = "image";
+        }
+
+        [JsonPropertyName("data")]
+        public MobileImageData Data { get; set; } = new();
     }
 
     /// <summary>

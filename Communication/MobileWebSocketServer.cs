@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -42,12 +43,15 @@ namespace CocoroDock.Communication
         private readonly ConcurrentDictionary<string, WebSocket> _connections = new();
         private readonly ConcurrentDictionary<string, string> _sessionMappings = new();
         private readonly ConcurrentDictionary<string, string> _connectionAudioFiles = new(); // 接続IDごとの現在のオーディオファイル
+        private readonly ConcurrentDictionary<string, string> _sessionImageData = new(); // セッションIDごとの画像データ（Base64）
 
         public bool IsRunning => _app != null;
 
         // モバイルチャットのイベント
         public event EventHandler<string>? MobileMessageReceived;
+        public event EventHandler<(string message, string imageBase64)>? MobileImageMessageReceived;
         public event EventHandler<string>? MobileResponseSent;
+        public event EventHandler<(string text, string? imageBase64)>? MobileAiResponseReceived;
 
         public MobileWebSocketServer(int port, IAppSettings appSettings)
         {
@@ -431,6 +435,10 @@ namespace CocoroDock.Communication
                         await ProcessVoiceMessage(connectionId, json);
                         break;
 
+                    case "image":
+                        await ProcessImageMessage(connectionId, json);
+                        break;
+
                     default:
                         await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, $"Unsupported message type: {messageType}");
                         break;
@@ -504,7 +512,7 @@ namespace CocoroDock.Communication
         {
             try
             {
-                MobileVoiceMessage message;
+                MobileVoiceMessage? message;
                 try
                 {
                     message = JsonSerializer.Deserialize<MobileVoiceMessage>(json);
@@ -590,6 +598,211 @@ namespace CocoroDock.Communication
             {
                 Debug.WriteLine($"[MobileWebSocketServer] 音声メッセージ処理エラー: {ex.Message}");
                 await SendErrorToMobile(connectionId, MobileErrorCodes.AudioProcessingError, "音声処理中にエラーが発生しました");
+            }
+        }
+
+        /// <summary>
+        /// 画像メッセージの処理
+        /// </summary>
+        private async Task ProcessImageMessage(string connectionId, string json)
+        {
+            try
+            {
+                MobileImageMessage? message;
+                try
+                {
+                    message = JsonSerializer.Deserialize<MobileImageMessage>(json);
+                    if (message == null)
+                    {
+                        await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, "Deserialized message is null");
+                        return;
+                    }
+                }
+                catch (JsonException jsonEx)
+                {
+                    Debug.WriteLine($"[MobileWebSocketServer] JSON デシリアライズエラー: {jsonEx.Message}");
+                    Debug.WriteLine($"[MobileWebSocketServer] エラー位置: Line {jsonEx.LineNumber}, Position {jsonEx.BytePositionInLine}");
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, $"JSON parse error: {jsonEx.Message}");
+                    return;
+                }
+
+                if (message?.Data == null)
+                {
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, "Invalid image message format");
+                    return;
+                }
+
+                // Base64画像データの検証
+                string base64ImageData = message.Data.ImageDataBase64;
+                if (string.IsNullOrEmpty(base64ImageData))
+                {
+                    // 後方互換性のために既存のプロパティもチェック
+                    base64ImageData = message.Data.ImageData;
+                }
+
+                if (string.IsNullOrEmpty(base64ImageData))
+                {
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, "No image data provided");
+                    return;
+                }
+
+                byte[] imageBytes;
+                try
+                {
+                    // Base64デコード
+                    imageBytes = Convert.FromBase64String(base64ImageData);
+                }
+                catch (FormatException)
+                {
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, "Invalid base64 image data format");
+                    return;
+                }
+
+                // 画像サイズの検証（10MB制限）
+                const int maxImageSize = 10 * 1024 * 1024; // 10MB
+                if (imageBytes.Length > maxImageSize)
+                {
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, $"Image too large: {imageBytes.Length} bytes (max: {maxImageSize} bytes)");
+                    return;
+                }
+
+                // 画像形式の検証（JPEG, PNG, WebPをサポート）
+                string imageFormat = message.Data.Format?.ToLower() ?? "jpeg";
+                if (!IsValidImageFormat(imageFormat))
+                {
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, $"Unsupported image format: {imageFormat}");
+                    return;
+                }
+
+                // 画像ファイルを一時保存
+                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss_fff");
+                string fileName = $"mobile_image_{timestamp}.{imageFormat}";
+                string imagePath = Path.Combine(Path.GetTempPath(), fileName);
+
+                try
+                {
+                    await File.WriteAllBytesAsync(imagePath, imageBytes);
+                    Debug.WriteLine($"[MobileWebSocketServer] 画像ファイル保存: {imagePath}");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[MobileWebSocketServer] 画像ファイル保存エラー: {ex.Message}");
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.ServerError, "Failed to save image file");
+                    return;
+                }
+
+                // メッセージ付き画像の場合は組み合わせる
+                string userMessage = !string.IsNullOrEmpty(message.Data.Message) ? message.Data.Message : "";
+                // 「画像を受信しました」のメッセージは不要なので、ユーザーメッセージと画像パスのみ
+                string imageMessage = !string.IsNullOrEmpty(userMessage)
+                    ? userMessage  // ユーザーメッセージのみ
+                    : "";          // 画像のみの場合は空文字
+
+                try
+                {
+                    // チャットメッセージとして処理（画像パスは別途CocoreCoreに渡される）
+                    await ProcessRecognizedImageAsChat(connectionId, imageMessage, imagePath);
+
+                    Debug.WriteLine($"[MobileWebSocketServer] 画像処理完了: {fileName} ({imageBytes.Length} bytes, {message.Data.Width}x{message.Data.Height})");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[MobileWebSocketServer] 画像メッセージ処理エラー: {ex.Message}");
+
+                    // 失敗した場合は一時ファイルを削除
+                    try
+                    {
+                        File.Delete(imagePath);
+                    }
+                    catch
+                    {
+                        // ファイル削除失敗は無視
+                    }
+
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.ServerError, "Failed to process image message");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] 画像メッセージ処理エラー: {ex.Message}");
+                await SendErrorToMobile(connectionId, MobileErrorCodes.ServerError, "Image processing error");
+            }
+        }
+
+        /// <summary>
+        /// 画像形式の検証
+        /// </summary>
+        private bool IsValidImageFormat(string format)
+        {
+            var validFormats = new[] { "jpeg", "jpg", "png", "webp", "gif" };
+            return validFormats.Contains(format?.ToLower());
+        }
+
+        /// <summary>
+        /// 認識された画像をチャットメッセージとして処理
+        /// </summary>
+        private async Task ProcessRecognizedImageAsChat(string connectionId, string message, string imagePath)
+        {
+            try
+            {
+                // 不要な「画像を受信しました」メッセージは表示しない
+                // await SendUserMessageToMobile(connectionId, message);
+
+                // CocoroDockに画像受信を通知は行わない（MobileImageMessageReceivedで行う）
+                // if (!string.IsNullOrEmpty(message))
+                // {
+                //     MobileMessageReceived?.Invoke(this, $"📱 {message}");
+                // }
+
+                // 画像ファイルをBase64データに変換
+                byte[] imageBytes = await File.ReadAllBytesAsync(imagePath);
+                string base64String = Convert.ToBase64String(imageBytes);
+
+                // セッションIDの生成と管理
+                var sessionId = $"image_{connectionId}_{DateTime.Now:yyyyMMddHHmmss}";
+                _sessionMappings[sessionId] = connectionId;
+                _sessionImageData[sessionId] = base64String; // 画像データをセッションに関連付け
+
+                // デスクトップアプリに画像付きメッセージを通知
+                MobileImageMessageReceived?.Invoke(this, (message, base64String));
+
+                string extension = Path.GetExtension(imagePath).ToLower().TrimStart('.');
+                string mimeType = extension switch
+                {
+                    "jpg" or "jpeg" => "image/jpeg",
+                    "png" => "image/png",
+                    "webp" => "image/webp",
+                    "gif" => "image/gif",
+                    _ => "image/jpeg"
+                };
+                string dataUrl = $"data:{mimeType};base64,{base64String}";
+
+                // チャットメッセージとして処理
+                var chatRequest = new WebSocketChatRequest
+                {
+                    query = message, // 空文字の場合もある
+                    chat_type = "image_upload",
+                    images = new List<ImageData>
+                    {
+                        new ImageData { data = dataUrl }
+                    }
+                };
+
+                // CocoreCoreM にメッセージ送信
+                if (_cocoroClient != null && _cocoroClient.IsConnected)
+                {
+                    await _cocoroClient.SendChatAsync(sessionId, chatRequest);
+                }
+                else
+                {
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.ServerError, "CocoroCore connection not available");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] 画像チャットメッセージ処理エラー: {ex.Message}");
+                await SendErrorToMobile(connectionId, MobileErrorCodes.ServerError, "Failed to process image chat message");
+                throw;
             }
         }
 
@@ -735,8 +948,22 @@ namespace CocoroDock.Communication
                             }
 
                             await SendPartialResponseToMobile(connectionId, textContent, audioUrl);
-                            // CocoroDockに応答を通知
-                            MobileResponseSent?.Invoke(this, textContent);
+
+                            // セッションに関連付けられた画像データがあるかチェック
+                            string? imageBase64 = null;
+                            if (_sessionImageData.TryGetValue(response.session_id ?? "", out imageBase64))
+                            {
+                                // 画像データが見つかった場合、デスクトップアプリに画像付きAI応答を通知
+                                MobileAiResponseReceived?.Invoke(this, (textContent, imageBase64));
+
+                                // 使用済み画像データを削除
+                                _sessionImageData.TryRemove(response.session_id ?? "", out _);
+                            }
+                            else
+                            {
+                                // 通常のAI応答（画像なし）
+                                MobileAiResponseReceived?.Invoke(this, (textContent, null));
+                            }
                         }
                         else
                         {
@@ -746,6 +973,9 @@ namespace CocoroDock.Communication
                     else if (response.type == "error")
                     {
                         await SendErrorToMobile(connectionId, MobileErrorCodes.CoreMError, "CocoreCoreM processing error");
+
+                        // エラー時もセッション画像データをクリーンアップ
+                        _sessionImageData.TryRemove(response.session_id ?? "", out _);
                     }
                 }
                 catch (Exception ex)
@@ -933,6 +1163,7 @@ namespace CocoroDock.Communication
             _connections.Clear();
             _sessionMappings.Clear();
             _connectionAudioFiles.Clear();
+            _sessionImageData.Clear(); // セッション画像データもクリア
         }
 
         /// <summary>

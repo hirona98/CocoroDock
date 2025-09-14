@@ -174,6 +174,105 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
+        /// AIレスポンスを画像付きでUIに追加
+        /// </summary>
+        /// <param name="message">レスポンスメッセージ</param>
+        /// <param name="imageBase64">Base64エンコードされた画像データ（オプション）</param>
+        public void AddAiMessage(string message, string? imageBase64 = null)
+        {
+            var messageContainer = new StackPanel();
+
+            var bubble = new Border
+            {
+                Style = (Style)Resources["AiBubbleStyle"]
+            };
+
+            var messageContent = new StackPanel();
+
+            // 画像がある場合は先に表示（上に配置）
+            if (!string.IsNullOrEmpty(imageBase64))
+            {
+                try
+                {
+                    // Base64データをBitmapImageに変換
+                    var imageBytes = Convert.FromBase64String(imageBase64);
+                    using (var stream = new MemoryStream(imageBytes))
+                    {
+                        var bitmapImage = new BitmapImage();
+                        bitmapImage.BeginInit();
+                        bitmapImage.StreamSource = stream;
+                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage.EndInit();
+                        bitmapImage.Freeze();
+
+                        var imageBorder = new Border
+                        {
+                            BorderBrush = new SolidColorBrush(Color.FromRgb(181, 199, 235)), // AIバブルと同じ色
+                            BorderThickness = new Thickness(1),
+                            CornerRadius = new CornerRadius(8),
+                            Margin = new Thickness(0, 0, 0, 8), // 下にマージン
+                            Cursor = Cursors.Hand
+                        };
+
+                        var image = new Image
+                        {
+                            Source = bitmapImage,
+                            MaxHeight = 200,
+                            MaxWidth = 200,
+                            Stretch = Stretch.Uniform
+                        };
+
+                        imageBorder.Child = image;
+
+                        // クリックイベントで拡大表示
+                        imageBorder.MouseLeftButtonUp += (s, e) =>
+                        {
+                            var previewWindow = new ImagePreviewWindow(bitmapImage);
+                            previewWindow.Show();
+                        };
+
+                        messageContent.Children.Add(imageBorder);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"画像表示エラー: {ex.Message}");
+                    // 画像表示に失敗した場合はエラー表示を追加
+                    var errorText = new TextBox
+                    {
+                        Style = (Style)Resources["AiMessageTextStyle"],
+                        Text = "[画像を表示できませんでした]",
+                        Margin = new Thickness(0, 0, 0, 8)
+                    };
+                    messageContent.Children.Add(errorText);
+                }
+            }
+
+            // テキストメッセージ（空でない場合のみ）
+            if (!string.IsNullOrEmpty(message))
+            {
+                // 表情タグを削除してからテキストを設定
+                var cleanMessage = RemoveFaceTags(message);
+
+                var messageText = new TextBox
+                {
+                    Style = (Style)Resources["AiMessageTextStyle"],
+                    Text = cleanMessage
+                };
+
+                messageContent.Children.Add(messageText);
+            }
+
+            bubble.Child = messageContent;
+            messageContainer.Children.Add(bubble);
+
+            ChatMessagesPanel.Children.Add(messageContainer);
+
+            // 自動スクロール
+            ChatScrollViewer.ScrollToEnd();
+        }
+
+        /// <summary>
         /// 最後のAIメッセージにテキストを追記
         /// </summary>
         /// <param name="additionalText">追記するテキスト</param>

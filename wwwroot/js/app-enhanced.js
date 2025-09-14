@@ -1,4 +1,201 @@
 /**
+ * カメラ管理クラス
+ */
+class CameraManager {
+    constructor() {
+        this.stream = null;
+        this.currentFacingMode = 'environment'; // デフォルトは背面カメラ
+        this.elements = {};
+        this.isInitialized = false;
+        this.onImageCaptured = null; // コールバック関数
+    }
+
+    /**
+     * DOM要素を初期化
+     */
+    initializeElements() {
+        this.elements = {
+            modal: document.getElementById('camera-modal'),
+            preview: document.getElementById('camera-preview'),
+            canvas: document.getElementById('camera-canvas'),
+            captureButton: document.getElementById('camera-capture'),
+            switchButton: document.getElementById('camera-switch'),
+            closeButton: document.getElementById('camera-close')
+        };
+    }
+
+    /**
+     * カメラを初期化
+     */
+    async initialize() {
+        this.initializeElements();
+        this.setupEventListeners();
+        this.isInitialized = true;
+    }
+
+    /**
+     * イベントリスナーを設定
+     */
+    setupEventListeners() {
+        if (this.elements.captureButton) {
+            this.elements.captureButton.addEventListener('click', () => this.captureImage());
+        }
+        if (this.elements.switchButton) {
+            this.elements.switchButton.addEventListener('click', () => this.switchCamera());
+        }
+        if (this.elements.closeButton) {
+            this.elements.closeButton.addEventListener('click', () => this.closeCamera());
+        }
+        if (this.elements.modal) {
+            this.elements.modal.addEventListener('click', (e) => {
+                if (e.target === this.elements.modal) {
+                    this.closeCamera();
+                }
+            });
+        }
+    }
+
+    /**
+     * カメラを開く
+     */
+    async openCamera() {
+        try {
+            // 既存のストリームがあれば停止
+            if (this.stream) {
+                this.stopCamera();
+            }
+
+            // カメラアクセス権限を要求
+            this.stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: this.currentFacingMode,
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                }
+            });
+
+            // プレビューに表示
+            if (this.elements.preview) {
+                this.elements.preview.srcObject = this.stream;
+            }
+
+            // モーダルを表示
+            if (this.elements.modal) {
+                this.elements.modal.classList.remove('hidden');
+            }
+
+            return true;
+        } catch (error) {
+            console.error('カメラアクセスエラー:', error);
+            throw new Error(`カメラアクセスに失敗しました: ${error.message}`);
+        }
+    }
+
+    /**
+     * カメラを閉じる
+     */
+    closeCamera() {
+        this.stopCamera();
+        if (this.elements.modal) {
+            this.elements.modal.classList.add('hidden');
+        }
+    }
+
+    /**
+     * カメラストリームを停止
+     */
+    stopCamera() {
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
+        }
+        if (this.elements.preview) {
+            this.elements.preview.srcObject = null;
+        }
+    }
+
+    /**
+     * カメラを切り替え（フロント/バック）
+     */
+    async switchCamera() {
+        try {
+            // フェイシングモードを切り替え
+            this.currentFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
+
+            // カメラを再初期化
+            if (this.stream) {
+                await this.openCamera();
+            }
+        } catch (error) {
+            console.error('カメラ切り替えエラー:', error);
+            // 切り替えに失敗した場合は元に戻す
+            this.currentFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
+            throw error;
+        }
+    }
+
+    /**
+     * 画像をキャプチャしてBase64で返す
+     */
+    async captureImage() {
+        try {
+            if (!this.stream || !this.elements.preview || !this.elements.canvas) {
+                throw new Error('カメラが初期化されていません');
+            }
+
+            // Canvasに現在のフレームを描画
+            const canvas = this.elements.canvas;
+            const context = canvas.getContext('2d');
+            const video = this.elements.preview;
+
+            // キャンバスサイズを動画サイズに合わせる
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+
+            // 動画フレームをキャンバスに描画
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Base64形式で画像データを取得
+            const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+
+            // Base64プレフィックスを除去
+            const base64Data = base64Image.split(',')[1];
+
+            // 画像データを作成
+            const imageData = {
+                base64: base64Data,
+                width: canvas.width,
+                height: canvas.height,
+                format: 'jpeg',
+                facingMode: this.currentFacingMode
+            };
+
+            // コールバック関数があれば実行
+            if (this.onImageCaptured) {
+                this.onImageCaptured(imageData);
+            }
+
+            // カメラを閉じる
+            this.closeCamera();
+
+            return imageData;
+
+        } catch (error) {
+            console.error('画像キャプチャエラー:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * リソースを解放
+     */
+    destroy() {
+        this.stopCamera();
+        this.isInitialized = false;
+    }
+}
+
+/**
  * CocoroAI Mobile アプリケーション (RNNoise専用版)
  */
 class CocoroAIApp {
@@ -14,6 +211,12 @@ class CocoroAIApp {
         // 音声再生キューシステム
         this.audioQueue = [];
         this.isProcessingAudioQueue = false;
+
+        // カメラシステム
+        this.cameraManager = null;
+
+        // 撮影済み画像データ
+        this.capturedImageData = null;
 
         // 初期化
         this.initializeElements();
@@ -37,7 +240,12 @@ class CocoroAIApp {
             loading: document.getElementById('loading'),
             voiceButton: document.getElementById('voice-button'),
             micIcon: document.getElementById('mic-icon'),
-            muteLine: document.getElementById('mute-line')
+            muteLine: document.getElementById('mute-line'),
+            cameraButton: document.getElementById('camera-button'),
+            cameraIcon: document.getElementById('camera-icon'),
+            imagePreviewArea: document.getElementById('image-preview-area'),
+            previewImage: document.getElementById('preview-image'),
+            removeImageButton: document.getElementById('remove-image')
         };
     }
 
@@ -58,8 +266,43 @@ class CocoroAIApp {
         // 音声ボタンの初期状態をOFFに設定
         this.updateVoiceButton('inactive');
 
+        // カメラシステム初期化
+        await this.initializeCameraSystem();
+
     }
 
+    /**
+     * カメラシステム初期化
+     */
+    async initializeCameraSystem() {
+        try {
+            this.cameraManager = new CameraManager();
+            await this.cameraManager.initialize();
+
+            // カメラ画像キャプチャ時のコールバックを設定
+            this.cameraManager.onImageCaptured = (imageData) => {
+                this.handleCameraImage(imageData);
+            };
+
+            // カメラボタンの初期状態を設定
+            this.updateCameraButton('inactive');
+
+            console.log('[DEBUG] カメラシステム初期化完了');
+            this.log('カメラシステム初期化完了');
+            return true;
+
+        } catch (error) {
+            console.error('[DEBUG] カメラ初期化失敗:', error);
+            this.logError('カメラ初期化失敗:', error);
+
+            // カメラボタンを無効化
+            if (this.elements.cameraButton) {
+                console.log('[DEBUG] カメラボタン無効化中...');
+                this.elements.cameraButton.style.display = 'none';
+            }
+            return false;
+        }
+    }
 
     /**
      * RNNoise音声システム初期化
@@ -301,6 +544,112 @@ class CocoroAIApp {
         }
     }
 
+    // ==== カメラ関連メソッド ====
+
+    /**
+     * カメラを開く
+     */
+    async openCamera() {
+        if (!this.cameraManager) {
+            this.showError('カメラシステムが利用できません');
+            return;
+        }
+
+        try {
+            this.updateCameraButton('active');
+            await this.cameraManager.openCamera();
+            this.log('📷 カメラを開きました');
+
+        } catch (error) {
+            console.error('カメラオープンエラー:', error);
+            this.logError('カメラオープンエラー:', error);
+            this.showError(`カメラアクセス失敗: ${error.message}`);
+            this.updateCameraButton('inactive');
+        }
+    }
+
+    /**
+     * カメラ画像データを処理（プレビュー表示）
+     */
+    async handleCameraImage(imageData) {
+        try {
+            console.log('[DEBUG] カメラ画像データ受信:', imageData);
+
+            // 画像データを保存
+            this.capturedImageData = imageData;
+
+            // Base64データをdata URLに変換してプレビュー表示
+            const mimeType = imageData.format === 'jpeg' ? 'image/jpeg' : `image/${imageData.format}`;
+            const dataUrl = `data:${mimeType};base64,${imageData.base64}`;
+
+            // プレビューエリアを表示
+            this.showImagePreview(dataUrl);
+
+            this.log('📷 画像をプレビュー表示しました');
+
+        } catch (error) {
+            this.logError('画像データ処理エラー:', error);
+            this.showError(`画像処理エラー: ${error.message}`);
+        }
+    }
+
+    /**
+     * 画像プレビューを表示
+     */
+    showImagePreview(dataUrl) {
+        if (this.elements.previewImage && this.elements.imagePreviewArea) {
+            this.elements.previewImage.src = dataUrl;
+            this.elements.imagePreviewArea.classList.remove('hidden');
+
+            // 送信ボタンの状態を更新（画像だけでも送信可能）
+            this.updateSendButton();
+        }
+    }
+
+    /**
+     * プレビュー画像を削除
+     */
+    removePreviewImage() {
+        this.capturedImageData = null;
+
+        if (this.elements.imagePreviewArea) {
+            this.elements.imagePreviewArea.classList.add('hidden');
+        }
+
+        if (this.elements.previewImage) {
+            this.elements.previewImage.src = '';
+        }
+
+        // 送信ボタンの状態を更新
+        this.updateSendButton();
+
+        this.log('📷 プレビュー画像を削除しました');
+    }
+
+    /**
+     * カメラボタン状態更新
+     */
+    updateCameraButton(state) {
+        if (!this.elements.cameraButton) return;
+
+        const button = this.elements.cameraButton;
+
+        // すべてのクラスをリセット
+        button.classList.remove('active', 'disabled');
+
+        switch (state) {
+            case 'active':
+                button.classList.add('active');
+                break;
+            case 'inactive':
+                // デフォルト状態
+                break;
+            case 'disabled':
+                button.classList.add('disabled');
+                break;
+        }
+    }
+
     /**
      * ログ出力
      */
@@ -328,6 +677,20 @@ class CocoroAIApp {
         if (this.elements.voiceButton) {
             this.elements.voiceButton.addEventListener('click', () => {
                 this.toggleVoiceRecognition();
+            });
+        }
+
+        // カメラボタン
+        if (this.elements.cameraButton) {
+            this.elements.cameraButton.addEventListener('click', () => {
+                this.openCamera();
+            });
+        }
+
+        // 画像削除ボタン
+        if (this.elements.removeImageButton) {
+            this.elements.removeImageButton.addEventListener('click', () => {
+                this.removePreviewImage();
             });
         }
 
@@ -446,33 +809,96 @@ class CocoroAIApp {
     }
 
     /**
-     * メッセージ送信
+     * メッセージ送信（画像との組み合わせにも対応）
      */
     sendMessage() {
         const message = this.elements.messageInput.value.trim();
+        const hasImage = this.capturedImageData !== null;
 
-        if (!message || this.isLoading) {
+        // メッセージまたは画像のいずれかが必要
+        if (!message && !hasImage) {
+            return;
+        }
+
+        if (this.isLoading) {
             return;
         }
 
         try {
-            // ユーザーメッセージを表示
-            this.addUserMessage(message);
-
-            // 入力欄をクリア
-            this.elements.messageInput.value = '';
-            this.updateSendButton();
-
-            // ローディング開始
-            this.showLoading();
-
-            // WebSocketで送信
-            window.wsManager.sendChatMessage(message);
+            // 画像がある場合は画像メッセージとして送信
+            if (hasImage) {
+                this.sendImageWithMessage(message);
+            } else {
+                // テキストのみの場合は従来通り
+                this.sendTextMessage(message);
+            }
 
         } catch (error) {
             console.error('メッセージ送信エラー:', error);
             this.hideLoading();
             this.showError('メッセージの送信に失敗しました');
+        }
+    }
+
+    /**
+     * テキストメッセージのみ送信
+     */
+    sendTextMessage(message) {
+        // ユーザーメッセージを表示
+        this.addUserMessage(message);
+
+        // 入力欄をクリア
+        this.elements.messageInput.value = '';
+        this.updateSendButton();
+
+        // ローディング開始
+        this.showLoading();
+
+        // WebSocketで送信
+        window.wsManager.sendChatMessage(message);
+    }
+
+    /**
+     * 画像とメッセージを組み合わせて送信
+     */
+    sendImageWithMessage(message) {
+        // 画像付きメッセージを表示（画像は後でaddUserMessageWithImageで表示）
+        const mimeType = this.capturedImageData.format === 'jpeg' ? 'image/jpeg' : `image/${this.capturedImageData.format}`;
+        const imageDataUrl = `data:${mimeType};base64,${this.capturedImageData.base64}`;
+
+        this.addUserMessageWithImage(message || '', imageDataUrl);
+
+        // 画像メッセージを作成
+        const imageMessage = {
+            type: 'image',
+            timestamp: new Date().toISOString(),
+            data: {
+                image_data_base64: this.capturedImageData.base64,
+                encoding: 'base64',
+                format: this.capturedImageData.format,
+                width: this.capturedImageData.width,
+                height: this.capturedImageData.height,
+                camera_facing: this.capturedImageData.facingMode,
+                message: message || '' // テキストメッセージも含める
+            }
+        };
+
+        // UI をクリア
+        this.elements.messageInput.value = '';
+        this.removePreviewImage();
+        this.updateSendButton();
+
+        // ローディング開始
+        this.showLoading();
+
+        // WebSocketで送信
+        if (window.wsManager && window.wsManager.isConnected) {
+            window.wsManager.sendImageMessage(imageMessage);
+            this.log('📷 画像とメッセージを送信しました');
+        } else {
+            this.hideLoading();
+            this.logError('WebSocket未接続のため画像データ送信失敗');
+            this.showError('接続が切断されています');
         }
     }
 
@@ -616,6 +1042,15 @@ class CocoroAIApp {
     }
 
     /**
+     * 画像付きユーザーメッセージ追加
+     */
+    addUserMessageWithImage(text, imageDataUrl) {
+        const messageDiv = this.createMessageElementWithImage('user', text, imageDataUrl);
+        this.elements.messages.appendChild(messageDiv);
+        this.scrollToBottom();
+    }
+
+    /**
      * AIメッセージ追加
      */
     addAIMessage(text) {
@@ -653,6 +1088,44 @@ class CocoroAIApp {
         // [face:～] パターンを非表示にする
         const filteredText = text.replace(/\[face:[^\]]*\]/g, '');
         contentDiv.textContent = filteredText;
+
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'message-time';
+        timeDiv.textContent = this.formatTime(new Date());
+
+        messageDiv.appendChild(contentDiv);
+        if (type !== 'system') {
+            messageDiv.appendChild(timeDiv);
+        }
+
+        return messageDiv;
+    }
+
+    /**
+     * 画像付きメッセージ要素作成
+     */
+    createMessageElementWithImage(type, text, imageDataUrl) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content with-image';
+
+        // 画像要素を作成（上部に配置）
+        const imageElement = document.createElement('img');
+        imageElement.className = 'message-image';
+        imageElement.src = imageDataUrl;
+        imageElement.alt = '送信した画像';
+        contentDiv.appendChild(imageElement);
+
+        // テキストがある場合のみテキスト要素を追加（下部に配置）
+        if (text && text.trim()) {
+            // [face:～] パターンを非表示にする
+            const filteredText = text.replace(/\[face:[^\]]*\]/g, '');
+            const textElement = document.createElement('div');
+            textElement.textContent = filteredText;
+            contentDiv.appendChild(textElement);
+        }
 
         const timeDiv = document.createElement('div');
         timeDiv.className = 'message-time';
@@ -712,9 +1185,11 @@ class CocoroAIApp {
      */
     updateSendButton() {
         const hasMessage = this.elements.messageInput.value.trim().length > 0;
+        const hasImage = this.capturedImageData !== null;
         const isConnected = window.wsManager.isConnected;
 
-        this.elements.sendButton.disabled = !hasMessage || !isConnected || this.isLoading;
+        // メッセージまたは画像のいずれかがあれば送信可能
+        this.elements.sendButton.disabled = (!hasMessage && !hasImage) || !isConnected || this.isLoading;
     }
 
     /**
@@ -798,6 +1273,12 @@ class CocoroAIApp {
         if (this.voiceSystem) {
             await this.voiceSystem.destroy();
             this.voiceSystem = null;
+        }
+
+        // カメラシステム解放
+        if (this.cameraManager) {
+            this.cameraManager.destroy();
+            this.cameraManager = null;
         }
 
         this.log('アプリケーション終了完了');
