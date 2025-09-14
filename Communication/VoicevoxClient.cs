@@ -14,12 +14,14 @@ namespace CocoroDock.Communication
     /// <summary>
     /// VOICEVOX API クライアント
     /// </summary>
-    public class VoicevoxClient : IDisposable
+    public class VoicevoxClient : ISpeechSynthesizerClient
     {
         private readonly HttpClient _httpClient;
         private readonly string _endpointUrl;
         private readonly string _audioDirectory;
         private Timer? _cleanupTimer;
+
+        public string ProviderName => "VOICEVOX";
 
         public VoicevoxClient(string endpointUrl = "http://127.0.0.1:50021", string audioDirectory = "wwwroot/audio")
         {
@@ -41,9 +43,9 @@ namespace CocoroDock.Communication
         /// 音声合成を実行し、音声ファイルのURLを返す
         /// </summary>
         /// <param name="text">合成するテキスト</param>
-        /// <param name="speakerId">話者ID</param>
+        /// <param name="characterSettings">キャラクター設定</param>
         /// <returns>音声ファイルのURL（失敗時はnull）</returns>
-        public async Task<string?> SynthesizeAsync(string text, int speakerId = 3)
+        public async Task<string?> SynthesizeAsync(string text, CharacterSettings characterSettings)
         {
             try
             {
@@ -62,6 +64,9 @@ namespace CocoroDock.Communication
                     return null;
                 }
 
+                var config = characterSettings.voicevoxConfig ?? new VoicevoxConfig();
+                var speakerId = config.speakerId;
+
                 // 1. audio_query API 呼び出し
                 var audioQuery = await GetAudioQueryAsync(filteredText, speakerId);
                 if (audioQuery == null)
@@ -69,8 +74,15 @@ namespace CocoroDock.Communication
                     return null;
                 }
 
-                // 2. synthesis API 呼び出し
-                var audioData = await SynthesizeAudioAsync(audioQuery, speakerId);
+                // 2. パラメータを適用してaudio_queryを編集
+                var modifiedAudioQuery = ApplyVoicevoxParameters(audioQuery, config);
+                if (modifiedAudioQuery == null)
+                {
+                    return null;
+                }
+
+                // 3. synthesis API 呼び出し
+                var audioData = await SynthesizeAudioAsync(modifiedAudioQuery, speakerId);
                 if (audioData == null)
                 {
                     return null;
@@ -88,6 +100,73 @@ namespace CocoroDock.Communication
             {
                 Debug.WriteLine($"[VoicevoxClient] 音声合成エラー: {ex.Message}");
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// VOICEVOX パラメータをaudio_query JSONに適用
+        /// </summary>
+        private string? ApplyVoicevoxParameters(string audioQuery, VoicevoxConfig config)
+        {
+            try
+            {
+                using var jsonDoc = JsonDocument.Parse(audioQuery);
+                using var stream = new MemoryStream();
+                using var writer = new Utf8JsonWriter(stream);
+
+                writer.WriteStartObject();
+
+                // 元のJSONからすべてのプロパティをコピーし、パラメータを更新
+                foreach (var property in jsonDoc.RootElement.EnumerateObject())
+                {
+                    switch (property.Name)
+                    {
+                        case "speedScale":
+                            writer.WriteNumber("speedScale", config.speedScale);
+                            Debug.WriteLine($"[VoicevoxClient] speedScale適用: {config.speedScale}");
+                            break;
+                        case "pitchScale":
+                            writer.WriteNumber("pitchScale", config.pitchScale);
+                            Debug.WriteLine($"[VoicevoxClient] pitchScale適用: {config.pitchScale}");
+                            break;
+                        case "intonationScale":
+                            writer.WriteNumber("intonationScale", config.intonationScale);
+                            Debug.WriteLine($"[VoicevoxClient] intonationScale適用: {config.intonationScale}");
+                            break;
+                        case "volumeScale":
+                            writer.WriteNumber("volumeScale", config.volumeScale);
+                            Debug.WriteLine($"[VoicevoxClient] volumeScale適用: {config.volumeScale}");
+                            break;
+                        case "prePhonemeLength":
+                            writer.WriteNumber("prePhonemeLength", config.prePhonemeLength);
+                            break;
+                        case "postPhonemeLength":
+                            writer.WriteNumber("postPhonemeLength", config.postPhonemeLength);
+                            break;
+                        case "outputSamplingRate":
+                            writer.WriteNumber("outputSamplingRate", config.outputSamplingRate);
+                            break;
+                        case "outputStereo":
+                            writer.WriteBoolean("outputStereo", config.outputStereo);
+                            break;
+                        default:
+                            // その他のプロパティはそのままコピー
+                            writer.WritePropertyName(property.Name);
+                            property.Value.WriteTo(writer);
+                            break;
+                    }
+                }
+
+                writer.WriteEndObject();
+                writer.Flush();
+
+                var modifiedJson = Encoding.UTF8.GetString(stream.ToArray());
+                return modifiedJson;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[VoicevoxClient] パラメータ適用エラー: {ex.Message}");
+                return audioQuery; // エラー時は元のクエリを返す
             }
         }
 

@@ -33,7 +33,7 @@ namespace CocoroDock.Communication
         private readonly int _port;
         private readonly IAppSettings _appSettings;
         private WebSocketChatClient? _cocoroClient;
-        private VoicevoxClient? _voicevoxClient;
+        private ISpeechSynthesizerClient? _ttsClient;
         private ISpeechToTextService? _sttService;
         private string? _currentSttApiKey;
         private CancellationTokenSource? _cts;
@@ -107,8 +107,8 @@ namespace CocoroDock.Communication
                 // CocoreCoreM クライアント初期化
                 InitializeCocoroCoreClient();
 
-                // VOICEVOX クライアント初期化
-                InitializeVoicevoxClient();
+                // TTS クライアント初期化
+                InitializeTtsClient();
 
                 // バックグラウンドでサーバーを起動
                 _ = Task.Run(async () =>
@@ -162,9 +162,9 @@ namespace CocoroDock.Communication
                     _cocoroClient = null;
                 }
 
-                // VOICEVOX クライアント停止
-                _voicevoxClient?.Dispose();
-                _voicevoxClient = null;
+                // TTS クライアント停止
+                _ttsClient?.Dispose();
+                _ttsClient = null;
 
                 // STTサービス停止
                 _sttService?.Dispose();
@@ -279,18 +279,39 @@ namespace CocoroDock.Communication
         /// <summary>
         /// VOICEVOX クライアント初期化
         /// </summary>
-        private void InitializeVoicevoxClient()
+        private void InitializeTtsClient()
         {
             try
             {
                 var currentChar = _appSettings.GetCurrentCharacter();
-                var voicevoxUrl = currentChar?.voicevoxConfig?.endpointUrl ?? "http://0.0.0.0:50021";
-                _voicevoxClient = new VoicevoxClient(voicevoxUrl);
-                Debug.WriteLine("[MobileWebSocketServer] VOICEVOX初期化完了");
+                if (currentChar == null)
+                {
+                    Debug.WriteLine("[MobileWebSocketServer] 現在のキャラクター設定が見つかりません");
+                    return;
+                }
+
+                // 既存のクライアントがある場合は破棄
+                _ttsClient?.Dispose();
+
+                // ファクトリーを使って適切なTTSクライアントを作成
+                _ttsClient = SpeechSynthesizerFactory.CreateClient(currentChar);
+
+                Debug.WriteLine($"[MobileWebSocketServer] {_ttsClient.ProviderName}クライアント初期化完了");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[MobileWebSocketServer] VOICEVOX初期化エラー: {ex.Message}");
+                Debug.WriteLine($"[MobileWebSocketServer] TTSクライアント初期化エラー: {ex.Message}");
+
+                // フォールバック: デフォルトのVOICEVOXクライアントを作成
+                try
+                {
+                    _ttsClient = new VoicevoxClient();
+                    Debug.WriteLine("[MobileWebSocketServer] フォールバック: デフォルトVOICEVOXクライアントを使用");
+                }
+                catch (Exception fallbackEx)
+                {
+                    Debug.WriteLine($"[MobileWebSocketServer] フォールバック初期化エラー: {fallbackEx.Message}");
+                }
             }
         }
 
@@ -695,14 +716,16 @@ namespace CocoroDock.Communication
                         {
                             // 音声合成処理
                             string? audioUrl = null;
-                            if (_voicevoxClient != null && !string.IsNullOrWhiteSpace(textContent))
+                            if (_ttsClient != null && !string.IsNullOrWhiteSpace(textContent))
                             {
                                 // 新しいファイル生成前に古いファイルを削除
                                 DeleteAudioFileForConnection(connectionId);
 
                                 var currentChar = _appSettings.GetCurrentCharacter();
-                                var speakerId = currentChar?.voicevoxConfig?.speakerId ?? 3;
-                                audioUrl = await _voicevoxClient.SynthesizeAsync(textContent, speakerId);
+                                if (currentChar != null)
+                                {
+                                    audioUrl = await _ttsClient.SynthesizeAsync(textContent, currentChar);
+                                }
 
                                 // 新しいファイルを記録
                                 if (!string.IsNullOrEmpty(audioUrl))
@@ -833,7 +856,7 @@ namespace CocoroDock.Communication
                     return Task.FromResult(Results.NotFound());
                 }
 
-                var fileStream = _voicevoxClient?.GetAudioFileStream(filename);
+                var fileStream = _ttsClient?.GetAudioFileStream(filename);
                 if (fileStream == null)
                 {
                     return Task.FromResult(Results.NotFound());
