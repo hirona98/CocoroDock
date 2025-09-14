@@ -1001,7 +1001,7 @@ namespace CocoroDock
                 const int activeTimeoutMs = 60000;
 
                 _voiceRecognitionService = new RealtimeVoiceRecognitionService(
-                    currentCharacter.sttApiKey,
+                    new AmiVoiceSpeechToTextService(currentCharacter.sttApiKey),
                     currentCharacter.sttWakeWord,
                     voiceThreshold,
                     silenceTimeoutMs,

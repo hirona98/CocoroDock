@@ -480,6 +480,11 @@ namespace CocoroDock.Communication
                 try
                 {
                     message = JsonSerializer.Deserialize<MobileVoiceMessage>(json);
+                    if (message == null)
+                    {
+                        await SendErrorToMobile(connectionId, MobileErrorCodes.InvalidMessage, "Deserialized message is null");
+                        return;
+                    }
                 }
                 catch (JsonException jsonEx)
                 {
@@ -500,12 +505,6 @@ namespace CocoroDock.Communication
                 {
                     // Base64デコード
                     audioBytes = Convert.FromBase64String(message.Data.AudioDataBase64);
-                }
-                else if (message.Data.AudioData != null && message.Data.AudioData.Count > 0)
-                {
-                    // 後方互換性: List<int>から変換
-                    audioBytes = message.Data.AudioData.Select(x => (byte)x).ToArray();
-                    Debug.WriteLine($"[MobileWebSocketServer] 整数配列音声データ受信: {audioBytes.Length}bytes, {message.Data.Format}, {message.Data.Processing}");
                 }
                 else
                 {
@@ -586,17 +585,8 @@ namespace CocoroDock.Communication
                     Debug.WriteLine($"[MobileWebSocketServer] 警告: 予期しないサンプルレート {sampleRate}Hz (16kHzを期待)");
                 }
 
-                // RealtimeVoiceRecognitionServiceを使用してWebSocket音声データを認識
-                using var voiceService = new RealtimeVoiceRecognitionService(
-                    currentCharacter.sttApiKey,
-                    "", // ウェイクワードは不要
-                    0.5f, // VAD閾値（使用されない）
-                    300, // サイレンスタイムアウト（使用されない）
-                    60000, // アクティブタイムアウト（使用されない）
-                    false // 自動開始しない
-                );
-
-                var recognizedText = await voiceService.RecognizeAudioDataAsync(audioData);
+                // WebSocket音声データの音声認識（SileroVADは使用しない）
+                var recognizedText = await RecognizeWebSocketAudioAsync(currentCharacter.sttApiKey, audioData);
 
                 if (string.IsNullOrWhiteSpace(recognizedText))
                 {
@@ -1062,6 +1052,53 @@ namespace CocoroDock.Communication
                 Debug.WriteLine($"[MobileWebSocketServer] 証明書生成エラー: {ex.Message}");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// WebSocket音声データの音声認識（SileroVAD回避、STTサービス抽象化対応）
+        /// </summary>
+        private async Task<string> RecognizeWebSocketAudioAsync(string apiKey, byte[] audioData)
+        {
+            try
+            {
+                // STTサービスを作成（現在はAmiVoiceのみ、将来的にはWhisperなど追加可能）
+                using var sttService = CreateSttService(apiKey);
+                
+                if (!sttService.IsAvailable)
+                {
+                    Debug.WriteLine($"[MobileWebSocketServer] STTサービス利用不可: {sttService.ServiceName}");
+                    return string.Empty;
+                }
+
+                var recognizedText = await sttService.RecognizeAsync(audioData);
+                Debug.WriteLine($"[MobileWebSocketServer] STT認識結果 ({sttService.ServiceName}): {recognizedText?.Length ?? 0}文字");
+                
+                return recognizedText ?? string.Empty;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] WebSocket音声認識エラー: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// STTサービスファクトリー（将来的な拡張用）
+        /// </summary>
+        private ISpeechToTextService CreateSttService(string apiKey)
+        {
+            // 現在はAmiVoiceのみ対応
+            // 将来的には設定や条件に応じてWhisperやその他のSTTサービスを選択可能
+            return new AmiVoiceSpeechToTextService(apiKey);
+            
+            // 将来の拡張例:
+            // var sttType = appSettings?.SttServiceType ?? "AmiVoice";
+            // return sttType switch
+            // {
+            //     "Whisper" => new WhisperSpeechToTextService(apiKey),
+            //     "AmiVoice" => new AmiVoiceSpeechToTextService(apiKey),
+            //     _ => new AmiVoiceSpeechToTextService(apiKey)
+            // };
         }
 
         public void Dispose()

@@ -13,11 +13,11 @@ namespace CocoroDock.Services
         private WaveInEvent? _waveIn;
         private readonly List<byte> _audioBuffer = new();
         private readonly VoiceRecognitionStateMachine _stateMachine;
-        private readonly AmiVoiceSyncClient _amiVoiceClient;
+        private readonly ISpeechToTextService _sttService;
         private readonly SileroVadService _sileroVad;
 
         // マイクゲイン設定
-        private float _microphoneGain = 1f; // デフォルト2倍（ハードコーディング）
+        private float _microphoneGain = 1f; // デフォルト1倍
 
         // プリバッファリング（言葉の頭切れ対策）
         private readonly Queue<byte[]> _preBuffer = new();
@@ -25,7 +25,6 @@ namespace CocoroDock.Services
 
         private bool _isRecordingVoice = false;
         private bool _isDisposed = false;
-
 
         // イベント
         public event Action<string>? OnRecognizedText;
@@ -35,25 +34,25 @@ namespace CocoroDock.Services
         public VoiceRecognitionState CurrentState => _stateMachine.CurrentState;
         public bool IsListening { get; private set; }
 
+
+        /// <summary>
+        /// STTサービスを指定するコンストラクタ
+        /// </summary>
         public RealtimeVoiceRecognitionService(
-            string apiKey,
+            ISpeechToTextService sttService,
             string wakeWords,
             float vadThreshold = 0.5f,
             int silenceTimeoutMs = 300,
             int activeTimeoutMs = 60000,
             bool startActive = false)
         {
-            _amiVoiceClient = new AmiVoiceSyncClient(apiKey);
+            _sttService = sttService ?? throw new ArgumentNullException(nameof(sttService));
             _stateMachine = new VoiceRecognitionStateMachine(wakeWords, activeTimeoutMs, startActive);
 
-            // Silero VADの初期化
-            _sileroVad = new SileroVadService(
-                sampleRate: 16000,
-                threshold: vadThreshold,
-                minSilenceDurationMs: silenceTimeoutMs,
-                speechPadMs: 30);
+            // 新しいSileroVAD設計：個別インスタンス作成（プール管理付き）
+            _sileroVad = new SileroVadService(vadThreshold, silenceTimeoutMs);
 
-            System.Diagnostics.Debug.WriteLine("[VoiceService] Silero VAD initialized");
+            System.Diagnostics.Debug.WriteLine($"[VoiceService] Initialized with STT: {_sttService.ServiceName}");
 
             // イベントの転送
             _stateMachine.OnRecognizedText += (text) => OnRecognizedText?.Invoke(text);
@@ -202,8 +201,8 @@ namespace CocoroDock.Services
                 // デバッグ用音声ファイル保存（デスクトップに保存）
                 // SaveAudioFileForDebug(audioData);
 
-                // AmiVoice API呼び出し（並列処理でブロックしない）
-                var recognitionTask = _amiVoiceClient.RecognizeAsync(audioData);
+                // STTサービス呼び出し（並列処理でブロックしない）
+                var recognitionTask = _sttService.RecognizeAsync(audioData);
                 string recognizedText = await recognitionTask.ConfigureAwait(false);
 
                 // 元の状態に戻してから結果を処理
@@ -258,7 +257,6 @@ namespace CocoroDock.Services
             }
             return 0;
         }
-
 
         private void AddWavHeader()
         {
@@ -397,8 +395,8 @@ namespace CocoroDock.Services
 
             try
             {
-                // AmiVoice API呼び出し
-                var recognizedText = await _amiVoiceClient.RecognizeAsync(audioData);
+                // STTサービス呼び出し
+                var recognizedText = await _sttService.RecognizeAsync(audioData);
                 return recognizedText ?? string.Empty;
             }
             catch (Exception ex)
@@ -417,8 +415,8 @@ namespace CocoroDock.Services
 
             StopListening();
             _stateMachine?.Dispose();
-            _amiVoiceClient?.Dispose();
-            _sileroVad?.Dispose();
+            _sttService?.Dispose();
+            _sileroVad?.Dispose(); // 新しい設計では個別インスタンスなのでDispose必要
 
             System.Diagnostics.Debug.WriteLine("[VoiceService] Disposed");
         }
