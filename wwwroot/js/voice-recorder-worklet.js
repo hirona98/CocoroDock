@@ -46,26 +46,48 @@ class VoiceRecorderWorklet {
      * 初期化
      */
     async initialize() {
+        console.log('[VOICE-DEBUG] === VoiceRecorderWorklet初期化開始 ===');
+
         if (this.isInitialized) {
+            console.log('[VOICE-DEBUG] 既に初期化済み');
             this.log('既に初期化済み');
             return true;
         }
 
         try {
+            console.log('[VOICE-DEBUG] VoiceRecorderWorklet初期化開始...');
             this.log('VoiceRecorderWorklet初期化開始...');
 
             // AudioContextの作成
+            console.log('[VOICE-DEBUG] AudioContext作成中...');
+            console.log('[VOICE-DEBUG] window.AudioContext:', typeof window.AudioContext);
+            console.log('[VOICE-DEBUG] window.webkitAudioContext:', typeof window.webkitAudioContext);
+
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
                 sampleRate: 48000,
                 latencyHint: 'interactive'
             });
+            console.log('[VOICE-DEBUG] AudioContext作成完了, state:', this.audioContext.state);
+            console.log('[VOICE-DEBUG] AudioContext.sampleRate:', this.audioContext.sampleRate);
 
             // AudioWorkletモジュール登録
-            await this.audioContext.audioWorklet.addModule('/js/rnnoise-worklet-processor.js');
-            this.log('AudioWorkletモジュール登録完了');
+            console.log('[VOICE-DEBUG] AudioWorkletモジュール登録中...');
+            console.log('[VOICE-DEBUG] audioWorklet存在確認:', typeof this.audioContext.audioWorklet);
+
+            try {
+                await this.audioContext.audioWorklet.addModule('/js/rnnoise-worklet-processor.js');
+                console.log('[VOICE-DEBUG] AudioWorkletモジュール登録完了');
+                this.log('AudioWorkletモジュール登録完了');
+            } catch (moduleError) {
+                console.error('[VOICE-DEBUG] AudioWorkletモジュール登録エラー:', moduleError);
+                throw new Error(`AudioWorkletモジュール登録失敗: ${moduleError.message}`);
+            }
 
             // RNNoiseProcessor初期化（メインスレッド）
+            console.log('[VOICE-DEBUG] RNNoiseProcessor作成中...');
+            console.log('[VOICE-DEBUG] RNNoiseProcessorクラス確認:', typeof RNNoiseProcessor);
             this.rnnoiseProcessor = new RNNoiseProcessor();
+            console.log('[VOICE-DEBUG] RNNoiseProcessor作成完了');
 
             this.rnnoiseProcessor.onError = (error) => {
                 this.logError('RNNoise エラー:', error);
@@ -78,29 +100,61 @@ class VoiceRecorderWorklet {
                 this.log('RNNoise初期化完了');
             };
 
+            // RNNoiseProcessorのイベントハンドラーを設定
+            this.rnnoiseProcessor.onVoiceDetected = () => {
+                this.log('音声開始検出');
+                if (this.onVoiceDetected) {
+                    this.onVoiceDetected();
+                }
+            };
+
+            // onVoiceEndedは重複を避けるためコメントアウト（processFrameQueueで処理）
+            // this.rnnoiseProcessor.onVoiceEnded = (recordedAudio) => {
+            //     this.log('音声終了検出');
+            //     this.handleVoiceSegmentCompleted(recordedAudio);
+            // };
+
+            this.rnnoiseProcessor.onAudioLevel = (level, isSpeech, vadProbability) => {
+                if (this.onAudioLevel) {
+                    this.onAudioLevel(level, isSpeech, vadProbability);
+                }
+            };
+
             this.rnnoiseProcessor.setDebugMode(this.debugMode);
 
             // RNNoise初期化
+            console.log('[VOICE-DEBUG] RNNoiseProcessor.initialize()実行中...');
             const success = await this.rnnoiseProcessor.initialize();
+            console.log('[VOICE-DEBUG] RNNoiseProcessor.initialize()結果:', success);
+
             if (!success) {
+                console.error('[VOICE-DEBUG] RNNoise初期化失敗');
                 throw new Error('RNNoise初期化失敗');
             }
 
             // フレーム処理開始
+            console.log('[VOICE-DEBUG] フレーム処理開始中...');
             this.startFrameProcessing();
+            console.log('[VOICE-DEBUG] フレーム処理開始完了');
 
             this.isInitialized = true;
+            console.log('[VOICE-DEBUG] VoiceRecorderWorklet初期化完了');
             this.log('VoiceRecorderWorklet初期化完了');
 
             if (this.onInitialized) {
+                console.log('[VOICE-DEBUG] onInitializedコールバック実行中...');
                 this.onInitialized();
             }
 
+            console.log('[VOICE-DEBUG] === VoiceRecorderWorklet初期化完了 ===');
             return true;
 
         } catch (error) {
+            console.error('[VOICE-DEBUG] VoiceRecorderWorklet初期化エラー:', error);
+            console.error('[VOICE-DEBUG] エラースタック:', error.stack);
             this.logError('初期化エラー:', error);
             if (this.onError) {
+                console.log('[VOICE-DEBUG] onErrorコールバック実行中...');
                 this.onError(error);
             }
             return false;
@@ -111,20 +165,31 @@ class VoiceRecorderWorklet {
      * 録音開始
      */
     async startRecording() {
+        console.log('[VOICE-DEBUG] === 録音開始処理 ===');
+        console.log('[VOICE-DEBUG] 初期化状態:', this.isInitialized);
+        console.log('[VOICE-DEBUG] 録音状態:', this.isRecording);
+
         if (!this.isInitialized) {
+            console.error('[VOICE-DEBUG] 初期化されていません');
             throw new Error('初期化されていません');
         }
 
         if (this.isRecording) {
+            console.log('[VOICE-DEBUG] 既に録音中');
             this.log('既に録音中');
             return;
         }
 
         try {
+            console.log('[VOICE-DEBUG] 録音開始処理...');
             this.log('録音開始処理...');
 
             // マイクアクセス
-            this.mediaStream = await navigator.mediaDevices.getUserMedia({
+            console.log('[VOICE-DEBUG] マイクアクセス要求中...');
+            console.log('[VOICE-DEBUG] navigator.mediaDevices:', typeof navigator.mediaDevices);
+            console.log('[VOICE-DEBUG] getUserMedia:', typeof navigator.mediaDevices?.getUserMedia);
+
+            const constraints = {
                 audio: {
                     sampleRate: 48000,
                     channelCount: 1,
@@ -132,42 +197,70 @@ class VoiceRecorderWorklet {
                     noiseSuppression: false, // RNNoiseで処理
                     autoGainControl: false
                 }
-            });
+            };
+            console.log('[VOICE-DEBUG] マイク制約:', constraints);
 
+            this.mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+            console.log('[VOICE-DEBUG] マイクアクセス成功, tracks:', this.mediaStream.getTracks().length);
+            console.log('[VOICE-DEBUG] オーディオトラック詳細:', this.mediaStream.getAudioTracks()[0]?.getSettings());
+
+            console.log('[VOICE-DEBUG] AudioContext状態確認:', this.audioContext.state);
             await this.audioContext.resume();
+            console.log('[VOICE-DEBUG] AudioContext resume完了, 新状態:', this.audioContext.state);
 
             // AudioWorkletNode作成
-            this.workletNode = new AudioWorkletNode(
-                this.audioContext,
-                'rnnoise-worklet-processor',
-                {
-                    numberOfInputs: 1,
-                    numberOfOutputs: 0,
-                    channelCount: 1
-                }
-            );
+            console.log('[VOICE-DEBUG] AudioWorkletNode作成中...');
+            try {
+                this.workletNode = new AudioWorkletNode(
+                    this.audioContext,
+                    'rnnoise-worklet-processor',
+                    {
+                        numberOfInputs: 1,
+                        numberOfOutputs: 0,
+                        channelCount: 1
+                    }
+                );
+                console.log('[VOICE-DEBUG] AudioWorkletNode作成完了');
+            } catch (workletError) {
+                console.error('[VOICE-DEBUG] AudioWorkletNode作成エラー:', workletError);
+                throw new Error(`AudioWorkletNode作成失敗: ${workletError.message}`);
+            }
 
             // Workletからのメッセージ処理
+            console.log('[VOICE-DEBUG] Workletメッセージハンドラー設定中...');
             this.workletNode.port.onmessage = (event) => {
+                console.log('[VOICE-DEBUG] Workletメッセージ受信:', event.data?.type || 'unknown');
                 this.handleWorkletMessage(event.data);
             };
 
             // オーディオソース接続
+            console.log('[VOICE-DEBUG] オーディオソース作成中...');
             this.sourceNode = this.audioContext.createMediaStreamSource(this.mediaStream);
+            console.log('[VOICE-DEBUG] オーディオソース作成完了');
+
+            console.log('[VOICE-DEBUG] オーディオノード接続中...');
             this.sourceNode.connect(this.workletNode);
+            console.log('[VOICE-DEBUG] オーディオノード接続完了');
 
             // Workletに初期化メッセージ送信
+            console.log('[VOICE-DEBUG] Worklet初期化メッセージ送信中...');
             this.workletNode.port.postMessage({
                 type: 'initWasm',
                 wasmModule: null // 実際の実装では適切なデータを送信
             });
+            console.log('[VOICE-DEBUG] Worklet初期化メッセージ送信完了');
 
             this.isRecording = true;
+            console.log('[VOICE-DEBUG] 録音フラグをtrueに設定');
             this.log('録音開始完了');
+            console.log('[VOICE-DEBUG] === 録音開始処理完了 ===');
 
         } catch (error) {
-            this.logError('録音開始エラー:', error);
+            console.error('[VOICE-DEBUG] 録音開始エラー:', error);
+            console.error('[VOICE-DEBUG] エラースタック:', error.stack);
+            this.logError('録音開始エメー:', error);
             if (this.onError) {
+                console.log('[VOICE-DEBUG] onErrorコールバック実行中...');
                 this.onError(error);
             }
             throw error;
@@ -217,17 +310,19 @@ class VoiceRecorderWorklet {
     }
 
     /**
-     * Workletからのメッセージ処理（最適化版）
+     * Workletからのメッセージ処理（循環バッファ対応版）
      */
     handleWorkletMessage(message) {
         switch (message.type) {
             case 'processFrame':
-                // フレームデータと音声レベル情報を含めてキューに追加
+                console.log('[VOICE-DEBUG] 循環バッファからフレーム受信:', message.frameIndex);
+                // 循環バッファからの連続フレームデータをキューに追加
                 this.queueFrameForProcessing({
                     frameData: message.frameData,
                     frameIndex: message.frameIndex,
                     audioLevel: message.audioLevel,
-                    timestamp: message.timestamp
+                    timestamp: message.timestamp,
+                    isCircularBuffer: true // 循環バッファ由来であることを明示
                 });
                 break;
 
@@ -240,6 +335,12 @@ class VoiceRecorderWorklet {
 
             case 'stats':
                 this.updateStats(message.stats);
+                // 循環バッファ統計情報もログ出力
+                if (message.stats.circularBuffer) {
+                    if (this.stats.processedFrames % 100 === 0) {
+                        console.log('[VOICE-DEBUG] 循環バッファ統計:', message.stats.circularBuffer);
+                    }
+                }
                 break;
 
             case 'log':
@@ -257,22 +358,35 @@ class VoiceRecorderWorklet {
     }
 
     /**
-     * フレーム処理キューに追加（最適化版）
+     * フレーム処理キューに追加（循環バッファ対応版）
      */
     queueFrameForProcessing(frameInfo) {
-        this.frameQueue.push({
+        // 循環バッファからの連続フレームであることを記録
+        const frameData = {
             data: new Float32Array(frameInfo.frameData),
             index: frameInfo.frameIndex,
             audioLevel: frameInfo.audioLevel || 0,
-            timestamp: frameInfo.timestamp || performance.now()
-        });
+            timestamp: frameInfo.timestamp || performance.now(),
+            isCircularBuffer: frameInfo.isCircularBuffer || false
+        };
 
+        this.frameQueue.push(frameData);
         this.stats.totalFrames++;
 
-        // キューサイズ制限
-        if (this.frameQueue.length > 100) {
-            this.frameQueue.shift();
+        // 循環バッファ由来フレームの統計
+        if (frameInfo.isCircularBuffer) {
+            this.stats.circularBufferFrames = (this.stats.circularBufferFrames || 0) + 1;
+        }
+
+        // キューサイズ制限（循環バッファの安定性を考慮して緩やかに）
+        if (this.frameQueue.length > 50) {
+            const dropped = this.frameQueue.shift();
             this.stats.droppedFrames++;
+
+            // ドロップ率が高い場合の警告
+            if (this.stats.droppedFrames % 10 === 0) {
+                console.warn('[VOICE-DEBUG] フレームドロップ発生:', this.stats.droppedFrames, '個');
+            }
         }
     }
 
@@ -289,9 +403,11 @@ class VoiceRecorderWorklet {
     }
 
     /**
-     * フレーム処理ループ（最適化版）
+     * フレーム処理ループ（循環バッファ対応版）
      */
     async processFrameQueue() {
+        console.log('[VOICE-DEBUG] 循環バッファ対応フレーム処理ループ開始');
+
         while (this.processingFrames) {
             if (this.frameQueue.length > 0) {
                 const frame = this.frameQueue.shift();
@@ -308,19 +424,39 @@ class VoiceRecorderWorklet {
 
                         this.stats.processedFrames++;
 
+                        // 循環バッファ由来フレームの特別ログ
+                        if (frame.isCircularBuffer && this.stats.processedFrames % 25 === 0) {
+                            console.log('[VOICE-DEBUG] 循環バッファフレーム処理:', {
+                                processedFrames: this.stats.processedFrames,
+                                circularBufferFrames: this.stats.circularBufferFrames,
+                                processingTime: processingTime.toFixed(2) + 'ms',
+                                queueLength: this.frameQueue.length
+                            });
+                        }
+
+                        // デバッグ: フレーム処理の詳細ログ
+                        if (this.stats.processedFrames % 50 === 0) {
+                            this.log(`循環バッファフレーム処理中: ${this.stats.processedFrames}フレーム処理済み (循環: ${this.stats.circularBufferFrames || 0})`);
+                        }
+
                         // 音声セグメントが完了した場合の処理
                         if (voiceResult && Array.isArray(voiceResult)) {
+                            console.log('[VOICE-DEBUG] 循環バッファから音声セグメント検出:', voiceResult.length, 'フレーム');
                             this.handleVoiceSegmentCompleted(voiceResult);
+                        }
+                    } else {
+                        if (this.stats.processedFrames % 100 === 0) {
+                            this.log(`RNNoiseProcessor未初期化または使用不可: initialized=${this.rnnoiseProcessor?.isInitialized}`);
                         }
                     }
 
                 } catch (error) {
-                    this.logError('フレーム処理エラー:', error);
+                    this.logError('循環バッファフレーム処理エラー:', error);
                 }
             }
 
-            // 次の処理まで少し待機
-            await new Promise(resolve => setTimeout(resolve, 1));
+            // CPU負荷を軽減するための短い待機
+            await new Promise(resolve => setTimeout(resolve, 0));
         }
     }
 
@@ -461,9 +597,9 @@ class VoiceRecorderWorklet {
      * ログ出力
      */
     log(message) {
-        // デバッグログを停止 - エラーのみ出力
-        // const logEntry = `[VoiceRecorderWorklet] ${new Date().toISOString()}: ${message}`;
-        // console.log(logEntry);
+        // 一時的にログを有効化してデバッグ
+        const logEntry = `[VoiceRecorderWorklet] ${new Date().toISOString()}: ${message}`;
+        console.log(logEntry);
     }
 
     logError(message, error = null) {

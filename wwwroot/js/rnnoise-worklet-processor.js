@@ -9,15 +9,18 @@ class RNNoiseWorkletProcessor extends AudioWorkletProcessor {
     constructor(options) {
         super();
 
-        console.log('[RNNoiseWorkletProcessor] 初期化開始');
+        console.log('[RNNoiseWorkletProcessor] 循環バッファ版初期化開始');
 
         // RNNoise設定
         this.frameSize = 480; // 10ms @ 48kHz
         this.sampleRate = 48000;
 
-        // バッファリング
-        this.inputBuffer = new Float32Array(0);
-        this.outputBuffer = new Float32Array(0);
+        // 循環バッファ設定（Jitsi方式）
+        this.bufferSize = this.frameSize * 4; // 1920サンプル（4フレーム分）
+        this.circularBuffer = new Float32Array(this.bufferSize);
+        this.writeIndex = 0; // 書き込みポインタ
+        this.readIndex = 0;  // 読み込みポインタ
+        this.availableSamples = 0; // 利用可能サンプル数
 
         // フレーム送信設定
         this.frameCounter = 0;
@@ -113,8 +116,8 @@ class RNNoiseWorkletProcessor extends AudioWorkletProcessor {
     }
 
     /**
-     * 音声処理メイン関数
-     * リアルタイムで音声データを処理
+     * 音声処理メイン関数（循環バッファ版）
+     * 高性能な循環バッファによるリアルタイム音声処理
      */
     process(inputs, outputs, parameters) {
         const input = inputs[0];
@@ -124,24 +127,64 @@ class RNNoiseWorkletProcessor extends AudioWorkletProcessor {
 
         const inputData = input[0];
 
-        // 入力バッファに蓄積
-        const newBuffer = new Float32Array(this.inputBuffer.length + inputData.length);
-        newBuffer.set(this.inputBuffer);
-        newBuffer.set(inputData, this.inputBuffer.length);
-        this.inputBuffer = newBuffer;
+        // 循環バッファに書き込み
+        this.writeToCircularBuffer(inputData);
 
-        // フレームサイズ（480サンプル）ごとに処理
-        while (this.inputBuffer.length >= this.frameSize) {
-            const frame = this.inputBuffer.slice(0, this.frameSize);
-
-            // フレーム処理（簡略化版）
-            this.processFrame(frame);
-
-            // バッファから処理済み分を削除
-            this.inputBuffer = this.inputBuffer.slice(this.frameSize);
+        // 480サンプルフレームが利用可能な間、処理を続行
+        while (this.availableSamples >= this.frameSize) {
+            const frame = this.readFrameFromCircularBuffer();
+            if (frame) {
+                this.processFrame(frame);
+            }
         }
 
         return true;
+    }
+
+    /**
+     * 循環バッファへの書き込み（高性能版）
+     */
+    writeToCircularBuffer(inputData) {
+        const inputLength = inputData.length;
+
+        for (let i = 0; i < inputLength; i++) {
+            this.circularBuffer[this.writeIndex] = inputData[i];
+            this.writeIndex = (this.writeIndex + 1) % this.bufferSize;
+            this.availableSamples = Math.min(this.availableSamples + 1, this.bufferSize);
+
+            // バッファオーバーフロー防止
+            if (this.availableSamples === this.bufferSize) {
+                this.readIndex = (this.readIndex + 1) % this.bufferSize;
+                this.availableSamples--;
+
+                // オーバーフロー警告（デバッグ用）
+                if (this.stats.framesProcessed % 1000 === 0) {
+                    this.port.postMessage({
+                        type: 'log',
+                        message: '循環バッファオーバーフロー: データ処理が追いついていません'
+                    });
+                }
+            }
+        }
+    }
+
+    /**
+     * 循環バッファからのフレーム読み込み（連続性保証）
+     */
+    readFrameFromCircularBuffer() {
+        if (this.availableSamples < this.frameSize) {
+            return null;
+        }
+
+        const frame = new Float32Array(this.frameSize);
+
+        for (let i = 0; i < this.frameSize; i++) {
+            frame[i] = this.circularBuffer[this.readIndex];
+            this.readIndex = (this.readIndex + 1) % this.bufferSize;
+        }
+
+        this.availableSamples -= this.frameSize;
+        return frame;
     }
 
     /**
@@ -195,12 +238,19 @@ class RNNoiseWorkletProcessor extends AudioWorkletProcessor {
 
 
     /**
-     * 統計情報取得
+     * 統計情報取得（循環バッファ版）
      */
     getStats() {
         return {
             ...this.stats,
-            framesSentPercentage: (this.stats.framesSent / this.stats.framesProcessed * 100).toFixed(1)
+            framesSentPercentage: (this.stats.framesSent / this.stats.framesProcessed * 100).toFixed(1),
+            circularBuffer: {
+                bufferSize: this.bufferSize,
+                availableSamples: this.availableSamples,
+                writeIndex: this.writeIndex,
+                readIndex: this.readIndex,
+                bufferUtilization: ((this.availableSamples / this.bufferSize) * 100).toFixed(1) + '%'
+            }
         };
     }
 }

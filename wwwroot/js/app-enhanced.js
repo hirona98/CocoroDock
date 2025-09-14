@@ -45,118 +45,130 @@ class CocoroAIApp {
      * アプリケーション初期化
      */
     async initialize() {
+        console.log('[DEBUG] === アプリケーション初期化開始 ===');
+
+        console.log('[DEBUG] 1. 送信ボタン状態更新中...');
         this.updateSendButton();
+
+        console.log('[DEBUG] 2. サーバー接続中...');
         this.connectToServer();
+
+        console.log('[DEBUG] 3. ビューポートハンドラー設定中...');
         this.setupViewportHandler();
 
+        console.log('[DEBUG] 4. RNNoise音声システム初期化開始...');
         // RNNoise音声システム初期化
-        await this.initializeRNNoiseSystem();
+        const initResult = await this.initializeRNNoiseSystem();
+        console.log('[DEBUG] RNNoise初期化結果:', initResult);
 
+        console.log('[DEBUG] 5. 音声ボタン初期状態設定中...');
         // 音声ボタンの初期状態をOFFに設定
         this.updateVoiceButton('inactive');
+
+        console.log('[DEBUG] === アプリケーション初期化完了 ===');
     }
+
 
     /**
      * RNNoise音声システム初期化
      */
     async initializeRNNoiseSystem() {
-        this.log('RNNoise音声システム初期化開始...');
+        console.log('[DEBUG] === RNNoise音声システム初期化開始 ===');
 
-        try {
-            // VoiceRecorderWorkletを初期化
-            this.voiceSystem = new VoiceRecorderWorklet();
+        // クラス存在確認
+        console.log('[DEBUG] RNNoiseProcessor存在確認:', typeof RNNoiseProcessor !== 'undefined');
+        console.log('[DEBUG] VoiceRecorderWorklet存在確認:', typeof VoiceRecorderWorklet !== 'undefined');
+        console.log('[DEBUG] createRNNWasmModule存在確認:', typeof createRNNWasmModule !== 'undefined');
 
-            // 音声検出イベント設定
-            this.voiceSystem.onVoiceDetected = (wavData) => {
-                this.handleRNNoiseVoice(wavData);
-            };
-
-            this.voiceSystem.onError = (error) => {
-                this.logError('RNNoise音声システムエラー:', error);
-                this.showError('音声システムエラー: ' + error.message);
-            };
-
-            this.log('RNNoise音声システム初期化完了');
-            return true;
-
-        } catch (error) {
-            this.logError('RNNoise初期化失敗:', error);
-            this.showError('音声システムの初期化に失敗しました');
-
-            // 音声ボタンを無効化
-            if (this.elements.voiceButton) {
-                this.elements.voiceButton.style.display = 'none';
-            }
-            return false;
-        }
-    }
-
-    /**
-     * RNNoise音声システム初期化
-     */
-    async initializeRNNoiseSystem() {
         // RNNoiseの必要なファイルが存在するかチェック
         if (typeof RNNoiseProcessor === 'undefined' ||
             typeof VoiceRecorderWorklet === 'undefined') {
+            console.error('[DEBUG] RNNoise関連クラスが読み込まれていません');
             throw new Error('RNNoise関連クラスが読み込まれていません');
         }
 
         // AudioWorkletサポート確認
-        if (!window.AudioContext || !window.AudioWorkletNode) {
+        console.log('[DEBUG] AudioContext存在確認:', typeof window.AudioContext !== 'undefined');
+        console.log('[DEBUG] webkitAudioContext存在確認:', typeof window.webkitAudioContext !== 'undefined');
+        console.log('[DEBUG] AudioWorkletNode存在確認:', typeof window.AudioWorkletNode !== 'undefined');
+
+        if (!window.AudioContext && !window.webkitAudioContext) {
+            console.error('[DEBUG] AudioContext未サポート');
+            throw new Error('AudioContext未サポート');
+        }
+        if (!window.AudioWorkletNode) {
+            console.error('[DEBUG] AudioWorklet未サポート');
             throw new Error('AudioWorklet未サポート');
         }
 
         try {
+            console.log('[DEBUG] VoiceRecorderWorkletインスタンス作成中...');
             this.voiceSystem = new VoiceRecorderWorklet();
+            console.log('[DEBUG] VoiceRecorderWorkletインスタンス作成完了');
 
             // イベントハンドラー設定
+            console.log('[DEBUG] イベントハンドラー設定中...');
             this.voiceSystem.onVoiceData = (wavData) => {
+                console.log('[DEBUG] 音声データ受信:', wavData ? wavData.length : 'null');
                 this.handleVoiceData(wavData);
             };
 
             this.voiceSystem.onAudioLevel = (level, isSpeech, vadProb) => {
+                // console.log('[DEBUG] 音声レベル:', level, 'Speech:', isSpeech, 'VAD:', vadProb);
                 this.updateVoiceVisualization(level, isSpeech, vadProb);
             };
 
             this.voiceSystem.onVoiceDetected = () => {
-                // this.log('🎤 音声開始'); // 詳細ログ停止
+                console.log('[DEBUG] 🎤 音声開始検出');
                 this.updateVoiceButton('listening');
             };
 
             this.voiceSystem.onVoiceEnded = (audioFrames) => {
-                // this.log(`🔊 音声終了: ${audioFrames.length}フレーム`); // 詳細ログ停止
+                console.log('[DEBUG] 🔊 音声終了検出:', audioFrames ? audioFrames.length : 0, 'フレーム');
                 this.updateVoiceButton('active');
             };
 
             this.voiceSystem.onError = (error) => {
+                console.error('[DEBUG] RNNoise エラー:', error);
                 this.logError('RNNoise エラー:', error);
                 this.showError(`音声処理エラー: ${error.message}`);
             };
 
             this.voiceSystem.onInitialized = () => {
+                console.log('[DEBUG] ✅ RNNoise音声システム準備完了');
                 this.log('✅ RNNoise音声システム準備完了');
             };
 
+            console.log('[DEBUG] イベントハンドラー設定完了');
+
             // 初期化実行
+            console.log('[DEBUG] VoiceRecorderWorklet.initialize()実行中...');
             const success = await this.voiceSystem.initialize();
+            console.log('[DEBUG] VoiceRecorderWorklet.initialize()結果:', success);
+
             if (!success) {
+                console.error('[DEBUG] VoiceRecorderWorklet初期化失敗');
                 throw new Error('VoiceRecorderWorklet初期化失敗');
             }
 
+            console.log('[DEBUG] RNNoise音声システム初期化完了');
             this.log('RNNoise音声システム初期化完了');
             return true;
 
         } catch (error) {
+            console.error('[DEBUG] RNNoise初期化失敗:', error);
             this.logError('RNNoise初期化失敗:', error);
             this.showError('音声システムの初期化に失敗しました');
 
             if (this.voiceSystem) {
+                console.log('[DEBUG] VoiceRecorderWorkletクリーンアップ中...');
                 await this.voiceSystem.destroy();
                 this.voiceSystem = null;
             }
 
             // 音声ボタンを無効化
             if (this.elements.voiceButton) {
+                console.log('[DEBUG] 音声ボタン無効化中...');
                 this.elements.voiceButton.style.display = 'none';
             }
             return false;
@@ -168,30 +180,48 @@ class CocoroAIApp {
      * RNNoise音声認識トグル
      */
     async toggleVoiceRecognition() {
+        console.log('[DEBUG] === 音声認識トグル開始 ===');
+        console.log('[DEBUG] 現在の音声システム状態:', this.voiceSystem ? 'あり' : 'なし');
+        console.log('[DEBUG] 現在の有効状態:', this.isVoiceEnabled);
+
         if (!this.voiceSystem) {
+            console.error('[DEBUG] 音声システムが利用できません');
             this.showError('音声システムが利用できません');
             return;
         }
 
         this.isVoiceEnabled = !this.isVoiceEnabled;
+        console.log('[DEBUG] 新しい有効状態:', this.isVoiceEnabled);
 
         if (this.isVoiceEnabled) {
+            console.log('[DEBUG] 音声認識開始処理...');
             await this.startVoiceRecognition();
         } else {
+            console.log('[DEBUG] 音声認識停止処理...');
             await this.stopVoiceRecognition();
         }
+
+        console.log('[DEBUG] === 音声認識トグル完了 ===');
     }
 
     /**
      * RNNoise音声認識開始
      */
     async startVoiceRecognition() {
+        console.log('[DEBUG] === 音声認識開始処理 ===');
         try {
+            console.log('[DEBUG] VoiceSystem.startRecording()実行中...');
             await this.voiceSystem.startRecording();
+            console.log('[DEBUG] VoiceSystem.startRecording()完了');
+
             this.updateVoiceButton('active');
+            console.log('[DEBUG] 音声ボタン状態をactiveに更新');
+
             this.log('🎤 RNNoise録音開始');
+            console.log('[DEBUG] === 音声認識開始処理完了 ===');
 
         } catch (error) {
+            console.error('[DEBUG] 音声認識開始エラー:', error);
             this.logError('音声認識開始エラー:', error);
             this.showError(`音声認識開始失敗: ${error.message}`);
             this.isVoiceEnabled = false;
