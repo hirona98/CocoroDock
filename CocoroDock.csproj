@@ -13,6 +13,13 @@
     <ApplicationIcon>Resource/logo.ico</ApplicationIcon>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <AssemblyName>CocoroAI</AssemblyName>
+    <SelfContained>false</SelfContained>
+    <UseAppHost>true</UseAppHost>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Resource\DefaultSetting.json" />
