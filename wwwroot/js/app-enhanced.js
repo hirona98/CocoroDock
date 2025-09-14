@@ -253,7 +253,7 @@ class CocoroAIApp {
             if (window.wsManager && window.wsManager.isConnected) {
                 window.wsManager.sendVoiceMessage(voiceMessage);
             } else {
-                this.logError('WebSocket未接続のため音声データ送信失敗');
+                // this.logError('WebSocket未接続のため音声データ送信失敗');
             }
 
         } catch (error) {
