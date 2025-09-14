@@ -48,6 +48,10 @@ https://github.com/hecomi/uLipSync/blob/main/LICENSE.md
 Copyright (c) 2020-present Silero Team
 https://github.com/snakers4/silero-vad/blob/master/LICENSE
 
+◆ rnnoise-wasm ◆
+Copyright (c) Jitsi
+https://github.com/jitsi/rnnoise-wasm/blob/master/LICENSE
+
 ◆ このソフトウェアについて ◆
 Copyright (c) ヒロナ
 https://alice-encoder.booth.pm/
