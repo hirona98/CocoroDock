@@ -96,17 +96,29 @@ class CocoroAIApp {
             };
 
             this.voiceSystem.onAudioLevel = (level, isSpeech, vadProb) => {
+                // 音声再生中は視覚的フィードバックを停止
+                if (this.isPlayingAudio) {
+                    return;
+                }
                 // console.log('[DEBUG] 音声レベル:', level, 'Speech:', isSpeech, 'VAD:', vadProb);
                 this.updateVoiceVisualization(level, isSpeech, vadProb);
             };
 
             this.voiceSystem.onVoiceDetected = () => {
                 console.log('[DEBUG] 🎤 音声開始検出');
+                // 音声再生中は音声ボタン状態変更を停止
+                if (this.isPlayingAudio) {
+                    return;
+                }
                 this.updateVoiceButton('listening');
             };
 
             this.voiceSystem.onVoiceEnded = (audioFrames) => {
                 console.log('[DEBUG] 🔊 音声終了検出:', audioFrames ? audioFrames.length : 0, 'フレーム');
+                // 音声再生中は音声ボタン状態変更を停止
+                if (this.isPlayingAudio) {
+                    return;
+                }
                 this.updateVoiceButton('active');
             };
 
@@ -485,12 +497,33 @@ class CocoroAIApp {
 
         this.isProcessingAudioQueue = true;
 
-        while (this.audioQueue.length > 0) {
-            const audioUrl = this.audioQueue.shift();
-            await this.playAudioSequentially(audioUrl);
+        // キュー全体の処理中フラグを設定
+        this.isPlayingAudio = true;
+
+        // キュー処理開始時に音声認識を停止
+        if (this.voiceSystem && this.isVoiceEnabled) {
+            this.voiceSystem.setPlaybackMode(true);
         }
 
-        this.isProcessingAudioQueue = false;
+        try {
+            while (this.audioQueue.length > 0) {
+                const audioUrl = this.audioQueue.shift();
+                await this.playAudioSequentially(audioUrl);
+            }
+        } catch (error) {
+            console.error('音声キュー処理エラー:', error);
+            // エラーが発生してもキューをクリア
+            this.audioQueue = [];
+        } finally {
+            // エラー発生時も確実に状態をリセット
+            this.isProcessingAudioQueue = false;
+            this.isPlayingAudio = false;
+
+            // 音声認識を確実に再開
+            if (this.voiceSystem && this.isVoiceEnabled) {
+                this.voiceSystem.setPlaybackMode(false);
+            }
+        }
     }
 
     /**
@@ -502,40 +535,35 @@ class CocoroAIApp {
                 // console.log('音声再生開始:', audioUrl);
                 const audio = new Audio(audioUrl);
 
-                // 音声再生中フラグを設定
-                this.isPlayingAudio = true;
-                // this.log('🔊 音声再生開始 - 音声認識を一時停止');
+                // フラグは processAudioQueue で一括管理
+                // 個別の音声再生では変更しない
+                // this.log('🔊 音声再生開始');
 
                 // 音声再生終了時の処理
                 audio.addEventListener('ended', () => {
-                    this.isPlayingAudio = false;
-                    // this.log('🔊 音声再生終了 - 音声認識を再開');
+                    // this.log('🔊 音声再生終了');
                     resolve();
                 });
 
                 // 音声再生エラー時の処理
                 audio.addEventListener('error', (error) => {
-                    this.isPlayingAudio = false;
-                    this.log('🔊 音声再生エラー - 音声認識を再開');
+                    this.log('🔊 音声再生エラー');
                     console.warn('音声再生エラー:', error);
                     reject(error);
                 });
 
                 // 音声再生中断時の処理
                 audio.addEventListener('pause', () => {
-                    this.isPlayingAudio = false;
-                    // this.log('🔊 音声再生中断 - 音声認識を再開');
+                    // this.log('🔊 音声再生中断');
                     resolve();
                 });
 
                 audio.play().catch(error => {
-                    this.isPlayingAudio = false;
                     console.warn('音声再生エラー:', error);
                     reject(error);
                 });
 
             } catch (error) {
-                this.isPlayingAudio = false;
                 console.warn('音声オブジェクト作成エラー:', error);
                 reject(error);
             }

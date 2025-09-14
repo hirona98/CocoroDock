@@ -37,6 +37,7 @@ class VoiceRecorderWorklet {
 
         // 状態管理
         this.isVoiceDetected = false;
+        this.isPlaybackMode = false; // 音声再生中フラグ
 
         // 設定
         this.debugMode = false;
@@ -404,6 +405,12 @@ class VoiceRecorderWorklet {
                 const startTime = performance.now();
 
                 try {
+                    // 音声再生中はRNNoise処理をスキップ
+                    if (this.isPlaybackMode) {
+                        // フレームは破棄してキューを消化
+                        continue;
+                    }
+
                     // RNNoiseで処理し、VAD結果を取得
                     if (this.rnnoiseProcessor && this.rnnoiseProcessor.isInitialized) {
                         const voiceResult = this.rnnoiseProcessor.processAudioFrame(frame.data);
@@ -413,8 +420,6 @@ class VoiceRecorderWorklet {
                         this.updateProcessingStats(processingTime);
 
                         this.stats.processedFrames++;
-
-
 
                         // 音声セグメントが完了した場合の処理
                         if (voiceResult && Array.isArray(voiceResult)) {
@@ -547,6 +552,14 @@ class VoiceRecorderWorklet {
         if (this.rnnoiseProcessor) {
             this.rnnoiseProcessor.setDebugMode(enabled);
         }
+    }
+
+    /**
+     * 音声再生モード制御
+     */
+    setPlaybackMode(isPlaying) {
+        this.isPlaybackMode = isPlaying;
+        this.log(`音声再生モード: ${isPlaying ? 'ON' : 'OFF'} - RNNoise処理${isPlaying ? '停止' : '再開'}`);
     }
 
     /**
