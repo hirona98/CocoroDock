@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+    <title>CocoroAI Mobile</title>
+    
+    <meta name="theme-color" content="#4873CF">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- ヘッダー -->
+        <header class="header">
+            <h1>CocoroAI</h1>
+            <div class="header-controls">
+                <button id="voice-button" class="voice-button" title="音声入力">
+                    <svg id="mic-icon" class="mic-icon" viewBox="0 0 24 24" width="20" height="20">
+                        <!-- マイク本体 -->
+                        <rect x="9" y="2" width="6" height="12" rx="3" fill="currentColor"/>
+                        <!-- マイクスタンド -->
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <!-- ミュート線（非表示） -->
+                        <line id="mute-line" x1="2" y1="2" x2="22" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display: none;"/>
+                    </svg>
+                </button>
+                <div id="connection-status" class="status">接続中...</div>
+            </div>
+        </header>
+
+        <!-- メッセージエリア -->
+        <main class="main">
+            <div id="messages" class="messages">
+                <div class="message system">
+                    <div class="message-content">CocoroAIに接続中です...</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 入力エリア -->
+        <footer class="footer">
+            <div class="input-container">
+                <input 
+                    type="text" 
+                    id="message-input" 
+                    placeholder="メッセージを入力してください..." 
+                    maxlength="1000"
+                    autocomplete="off"
+                >
+                <button id="send-button" disabled>送信</button>
+            </div>
+        </footer>
+
+        <!-- エラー表示 -->
+        <div id="error-overlay" class="error-overlay hidden">
+            <div class="error-content">
+                <div id="error-message">エラーが発生しました</div>
+                <button id="error-close">閉じる</button>
+            </div>
+        </div>
+
+        <!-- ローディング表示 -->
+        <div id="loading" class="loading hidden">
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/js/websocket.js"></script>
+    <script src="/js/rnnoise.js"></script>
+    <script src="/js/rnnoise-processor.js"></script>
+    <script src="/js/voice-recorder-worklet.js"></script>
+    <script src="/js/app-enhanced.js"></script>
+    
+</body>
+</html>

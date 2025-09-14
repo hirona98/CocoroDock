@@ -43,7 +43,6 @@ namespace CocoroDock.Communication
         {
             _clientId = clientId;
             _webSocketUri = new Uri($"ws://127.0.0.1:{port}/ws/chat/{clientId}");
-            Debug.WriteLine($"[WebSocket] WebSocketChatClient初期化: URI={_webSocketUri}");
         }
 
         /// <summary>
@@ -55,7 +54,6 @@ namespace CocoroDock.Communication
             {
                 if (_isConnected)
                 {
-                    Debug.WriteLine("[WebSocket] 既に接続済みです");
                     return true;
                 }
             }
@@ -84,7 +82,6 @@ namespace CocoroDock.Communication
                     // 受信ループを開始
                     _receiveTask = ReceiveLoopAsync();
 
-                    Debug.WriteLine("[WebSocket] 接続確立完了");
                     ConnectionStateChanged?.Invoke(this, true);
 
                     return true;
@@ -158,7 +155,6 @@ namespace CocoroDock.Communication
 
                 if (wasConnected)
                 {
-                    Debug.WriteLine("[WebSocket] 切断完了");
                     ConnectionStateChanged?.Invoke(this, false);
                 }
             }
@@ -171,7 +167,6 @@ namespace CocoroDock.Communication
         {
             if (!_isConnected || _webSocket?.State != WebSocketState.Open)
             {
-                Debug.WriteLine("[WebSocket] 未接続のため送信できません");
                 return false;
             }
 
@@ -186,8 +181,6 @@ namespace CocoroDock.Communication
 
                 var json = MessageHelper.SerializeToJson(message);
                 var bytes = Encoding.UTF8.GetBytes(json);
-
-                Debug.WriteLine($"[WebSocket] メッセージ送信: session_id={sessionId}, query={request.query.Substring(0, Math.Min(50, request.query.Length))}...");
 
                 await _webSocket.SendAsync(
                     new ArraySegment<byte>(bytes),
@@ -237,7 +230,6 @@ namespace CocoroDock.Communication
                         }
                         else if (result.MessageType == WebSocketMessageType.Close)
                         {
-                            Debug.WriteLine("[WebSocket] サーバーから切断要求を受信");
                             return;
                         }
 
@@ -249,7 +241,7 @@ namespace CocoroDock.Communication
                         try
                         {
                             var json = Encoding.UTF8.GetString(messageBuffer.ToArray());
-                            Debug.WriteLine($"[WebSocket] 完全メッセージ受信: Size={messageBuffer.Count} bytes");
+                            // Debug.WriteLine($"[WebSocket] 完全メッセージ受信: Size={messageBuffer.Count} bytes");
                             ProcessReceivedMessage(json);
                         }
                         catch (Exception ex)
@@ -259,10 +251,6 @@ namespace CocoroDock.Communication
                         }
                     }
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                Debug.WriteLine("[WebSocket] 受信ループがキャンセルされました");
             }
             catch (WebSocketException ex)
             {
@@ -290,7 +278,7 @@ namespace CocoroDock.Communication
                 var message = MessageHelper.DeserializeFromJson<WebSocketResponseMessage>(json);
                 if (message != null)
                 {
-                    Debug.WriteLine($"[WebSocket] メッセージ受信: type={message.type}, session={message.session_id}");
+                    // Debug.WriteLine($"[WebSocket] メッセージ受信: type={message.type}, session={message.session_id}");
                     MessageReceived?.Invoke(this, message);
                 }
                 else

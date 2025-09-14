@@ -26,6 +26,7 @@ namespace CocoroDock
         private ScreenshotService? _screenshotService;
         private bool _isScreenshotPaused = false;
         private RealtimeVoiceRecognitionService? _voiceRecognitionService;
+        private MobileWebSocketServer? _mobileWebSocketServer;
         private AdminWindow? _adminWindow;
         private LogViewerWindow? _logViewerWindow;
 
@@ -74,6 +75,9 @@ namespace CocoroDock
 
                 // 通信サービスを初期化
                 InitializeCommunicationService();
+
+                // MobileWebSocketServerを初期化
+                InitializeMobileWebSocketServer();
 
                 // スクリーンショットサービスを初期化
                 InitializeScreenshotService();
@@ -183,7 +187,6 @@ namespace CocoroDock
             _communicationService.NotificationMessageReceived += OnNotificationMessageReceived;
             _communicationService.ControlCommandReceived += OnControlCommandReceived;
             _communicationService.ErrorOccurred += OnErrorOccurred;
-            _communicationService.StatusUpdateRequested += OnStatusUpdateRequested;
             _communicationService.StatusChanged += OnCocoroCoreMStatusChanged;
         }
 
@@ -569,19 +572,6 @@ namespace CocoroDock
         private void OnErrorOccurred(object? sender, string error)
         {
             UIHelper.ShowError("エラー", error);
-        }
-
-        /// <summary>
-        /// ステータス更新要求時のハンドラ
-        /// </summary>
-        private void OnStatusUpdateRequested(object? sender, StatusUpdateEventArgs e)
-        {
-            // 新仕様では古いステータスメッセージは使用しない
-            // 必要に応じてログ出力のみ
-            if (!string.IsNullOrEmpty(e.Message))
-            {
-                Debug.WriteLine($"[StatusUpdate] {e.Message}");
-            }
         }
 
         /// <summary>
@@ -997,7 +987,7 @@ namespace CocoroDock
                 const int activeTimeoutMs = 60000;
 
                 _voiceRecognitionService = new RealtimeVoiceRecognitionService(
-                    currentCharacter.sttApiKey,
+                    new AmiVoiceSpeechToTextService(currentCharacter.sttApiKey),
                     currentCharacter.sttWakeWord,
                     voiceThreshold,
                     silenceTimeoutMs,
@@ -1020,6 +1010,86 @@ namespace CocoroDock
         }
 
         /// <summary>
+        /// MobileWebSocketServerを初期化
+        /// </summary>
+        private void InitializeMobileWebSocketServer()
+        {
+            try
+            {
+                if (!_appSettings.IsEnableWebService)
+                {
+                    Debug.WriteLine("[MainWindow] Web機能が無効のため、MobileWebSocketServerを起動しません");
+                    return;
+                }
+
+                _mobileWebSocketServer = new MobileWebSocketServer(_appSettings.CocoroWebPort, _appSettings);
+
+                // モバイルチャットのイベントハンドラを設定
+                _mobileWebSocketServer.MobileMessageReceived += OnMobileMessageReceived;
+                _mobileWebSocketServer.MobileResponseSent += OnMobileResponseSent;
+
+                // 非同期で起動
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _mobileWebSocketServer.StartAsync();
+                        Debug.WriteLine($"[MainWindow] MobileWebSocketServer起動完了: ポート{_appSettings.CocoroWebPort}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[MainWindow] MobileWebSocketServer起動エラー: {ex.Message}");
+
+                        // UIスレッドでエラー表示
+                        Dispatcher.Invoke(() =>
+                        {
+                            UIHelper.ShowError("Web機能初期化エラー",
+                                $"MobileWebSocketServerの起動に失敗しました:\n{ex.Message}\n\nWeb機能は無効になります。");
+                        });
+
+                        _mobileWebSocketServer?.Dispose();
+                        _mobileWebSocketServer = null;
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MainWindow] MobileWebSocketServer初期化エラー: {ex.Message}");
+                UIHelper.ShowError("Web機能初期化エラー", $"MobileWebSocketServerの初期化に失敗しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// モバイルメッセージ受信イベント
+        /// </summary>
+        private void OnMobileMessageReceived(object? sender, string message)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                // チャットにモバイルメッセージを表示
+                ChatControlInstance.AddUserMessage(message);
+
+                // ステータスバーにLLM処理中を表示
+                UpdateCocoroCoreMStatusDisplay(CocoroCoreMStatus.ProcessingMessage);
+            });
+        }
+
+        /// <summary>
+        /// モバイル応答送信イベント
+        /// </summary>
+        private void OnMobileResponseSent(object? sender, string response)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                // チャットにAI応答を表示
+                ChatControlInstance.AddAiMessage(response);
+
+                // ステータスバーを正常に戻す
+                UpdateCocoroCoreMStatusDisplay(CocoroCoreMStatus.Normal);
+            });
+        }
+
+        /// <summary>
         /// 音声認識結果を処理
         /// </summary>
         private void OnVoiceRecognized(string text)
@@ -1034,8 +1104,6 @@ namespace CocoroDock
 
                 // CocoroCoreMに送信
                 SendMessageToCocoroCore(text, null);
-
-                Debug.WriteLine($"[MainWindow] 音声認識結果: {text}");
             });
         }
 
@@ -1251,14 +1319,35 @@ namespace CocoroDock
                 // シャットダウンオーバーレイを表示
                 ShutdownOverlay.Visibility = Visibility.Visible;
 
-                // CocoroCoreMのプロセスIDを事前に取得
+                // MobileWebSocketServerを停止
+                if (_mobileWebSocketServer != null)
+                {
+                    Debug.WriteLine("MobileWebSocketServerを停止中...");
+                    try
+                    {
+                        // イベント購読解除
+                        _mobileWebSocketServer.MobileMessageReceived -= OnMobileMessageReceived;
+                        _mobileWebSocketServer.MobileResponseSent -= OnMobileResponseSent;
+
+                        await _mobileWebSocketServer.StopAsync();
+                        _mobileWebSocketServer.Dispose();
+                        _mobileWebSocketServer = null;
+                        Debug.WriteLine("MobileWebSocketServer停止完了");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"MobileWebSocketServer停止エラー: {ex.Message}");
+                    }
+                }
+
+                // CocoreCoreMのプロセスIDを事前に取得
                 int? CocoroCoreMProcessId = GetProcessIdByPort(_appSettings.CocoroCorePort);
-                Debug.WriteLine($"CocoroCoreMプロセスID: {CocoroCoreMProcessId?.ToString() ?? "見つかりません"}");
+                Debug.WriteLine($"CocoroCoreM プロセスID: {CocoroCoreMProcessId?.ToString() ?? "見つかりません"}");
 
-                // CocoroShellとCocoroCoreMにシャットダウン要求を送信
-                Debug.WriteLine("CocoroShellとCocoroCoreMに終了要求を送信中...");
+                // CocoroShellとCoreMに並行してシャットダウン要求を送信
+                Debug.WriteLine("CocoroShellとCocoreCoreMに終了要求を送信中...");
 
-                // CocoroShellとCocoroCoreMに並行してシャットダウン要求を送信
+                // CocoroShellとCocoreCoreMに並行してシャットダウン要求を送信
                 var shutdownTasks = new[]
                 {
                     Task.Run(() => ProcessHelper.ExitProcess("CocoroShell", ProcessOperation.Terminate)),
@@ -1275,10 +1364,10 @@ namespace CocoroDock
                     Debug.WriteLine("一部のシャットダウン要求がタイムアウトしました。");
                 }
 
-                // CocoroCoreMプロセスの確実な終了を待機
+                // CocoreCoreM プロセスの確実な終了を待機
                 if (CocoroCoreMProcessId.HasValue)
                 {
-                    Debug.WriteLine("CocoroCoreMプロセスの終了を監視中...");
+                    Debug.WriteLine("CocoreCoreM プロセスの終了を監視中...");
                     var maxWaitTime = TimeSpan.FromSeconds(120);
                     var startTime = DateTime.Now;
 
@@ -1286,18 +1375,18 @@ namespace CocoroDock
                     {
                         if (DateTime.Now - startTime > maxWaitTime)
                         {
-                            Debug.WriteLine("CocoroCoreMの終了待機がタイムアウトしました。");
+                            Debug.WriteLine("CocoreCoreMの終了待機がタイムアウトしました。");
                             break;
                         }
 
                         await Task.Delay(500); // 0.5秒間隔でチェック
                     }
 
-                    Debug.WriteLine("CocoroCoreMプロセスの終了を確認しました。");
+                    Debug.WriteLine("CocoreCoreM プロセスの終了を確認しました。");
                 }
                 else
                 {
-                    Debug.WriteLine("CocoroCoreMプロセスが見つからなかったため、通常の監視を実行します。");
+                    Debug.WriteLine("CocoreCoreM プロセスが見つからなかったため、通常の監視を実行します。");
 
                     // プロセスIDが取得できない場合は疎通確認で監視
                     var maxWaitTime = TimeSpan.FromSeconds(120);
@@ -1307,14 +1396,14 @@ namespace CocoroDock
                     {
                         if (DateTime.Now - startTime > maxWaitTime)
                         {
-                            Debug.WriteLine("CocoroCoreMの終了待機がタイムアウトしました。");
+                            Debug.WriteLine("CocoreCoreMの終了待機がタイムアウトしました。");
                             break;
                         }
 
                         await Task.Delay(100);
                     }
 
-                    Debug.WriteLine("CocoroCoreMの動作停止を確認しました。");
+                    Debug.WriteLine("CocoreCoreMの動作停止を確認しました。");
                 }
 
                 // オーバーレイを非表示

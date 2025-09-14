@@ -328,8 +328,10 @@ namespace CocoroDock.Communication
         public int cocoroMemoryWebPort { get; set; } = 55606;
         public int cocoroShellPort { get; set; } = 55605;
         public int notificationApiPort { get; set; } = 55604;
+        public int cocoroWebPort { get; set; } = 55607;
         public bool isEnableNotificationApi { get; set; } = false;
         public bool isEnableMcp { get; set; } = false;
+        public bool isEnableWebService { get; set; } = false;
         public bool isRestoreWindowPosition { get; set; } = false;
         public bool isTopmost { get; set; }
         public bool isEscapeCursor { get; set; }
@@ -373,8 +375,10 @@ namespace CocoroDock.Communication
                 cocoroMemoryWebPort = this.cocoroMemoryWebPort,
                 cocoroShellPort = this.cocoroShellPort,
                 notificationApiPort = this.notificationApiPort,
+                cocoroWebPort = this.cocoroWebPort,
                 isEnableNotificationApi = this.isEnableNotificationApi,
                 isEnableMcp = this.isEnableMcp,
+                isEnableWebService = this.isEnableWebService,
                 isRestoreWindowPosition = this.isRestoreWindowPosition,
                 isTopmost = this.isTopmost,
                 isEscapeCursor = this.isEscapeCursor,

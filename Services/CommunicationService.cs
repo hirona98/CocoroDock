@@ -277,7 +277,6 @@ namespace CocoroDock.Services
 
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "WebSocketチャット開始"));
 
-                Debug.WriteLine($"[WebSocket] チャット送信: session_id={_currentSessionId}, query={message.Substring(0, Math.Min(50, message.Length))}...");
 
                 // WebSocketでチャットを送信
                 var success = await _webSocketClient.SendChatAsync(_currentSessionId, request);
@@ -286,7 +285,6 @@ namespace CocoroDock.Services
                     throw new Exception("WebSocketメッセージ送信に失敗しました");
                 }
 
-                Debug.WriteLine("[WebSocket] チャット送信完了、レスポンス待機中...");
             }
             catch (Exception ex)
             {
@@ -409,7 +407,6 @@ namespace CocoroDock.Services
                 // WebSocketメッセージを送信
                 await _webSocketClient.SendChatAsync(_currentSessionId, request);
 
-                Debug.WriteLine($"[WebSocket] 通知送信完了: source={originalSource}, message={originalMessage}");
             }
             catch (Exception ex)
             {
@@ -588,7 +585,6 @@ namespace CocoroDock.Services
         /// </summary>
         private void OnWebSocketConnectionStateChanged(object? sender, bool isConnected)
         {
-            Debug.WriteLine($"[WebSocket] 接続状態変更: {(isConnected ? "接続" : "切断")}");
             StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(isConnected,
                 isConnected ? "WebSocket接続確立" : "WebSocket接続切断"));
         }
@@ -608,7 +604,6 @@ namespace CocoroDock.Services
         private void HandleWebSocketStatusMessage(WebSocketResponseMessage message)
         {
             // ステータス情報の処理（必要に応じて実装）
-            Debug.WriteLine($"[WebSocket] ステータス: {message.data}");
         }
 
         /// <summary>
@@ -638,7 +633,6 @@ namespace CocoroDock.Services
                     // サーバー側でチャンク処理されたメッセージをそのまま表示
                     ChatMessageReceived?.Invoke(this, chatRequest);
 
-                    Debug.WriteLine($"[WebSocket DIRECT] Length: {content.Length}, Content: {content.Substring(0, Math.Min(50, content.Length))}...");
 
                     // CocoroShellにメッセージを転送（ノンブロッキング）
                     ForwardMessageToShellAsync(content, currentCharacter);
@@ -652,7 +646,6 @@ namespace CocoroDock.Services
         private void HandleWebSocketReferenceMessage(WebSocketResponseMessage message)
         {
             // 参照情報の処理（必要に応じて実装）
-            Debug.WriteLine($"[WebSocket] 参照情報受信");
         }
 
         /// <summary>
@@ -661,7 +654,6 @@ namespace CocoroDock.Services
         private void HandleWebSocketTimeMessage(WebSocketResponseMessage message)
         {
             // 時間情報の処理（必要に応じて実装）
-            Debug.WriteLine($"[WebSocket] 処理時間情報受信");
         }
 
         /// <summary>
@@ -670,7 +662,6 @@ namespace CocoroDock.Services
         private void HandleWebSocketEndMessage(WebSocketResponseMessage message)
         {
             var sessionId = message.session_id;
-            Debug.WriteLine($"[WebSocket] ストリーミング完了: session_id={sessionId}");
 
             // 完了イベントを発火
             var finishedEvent = new StreamingChatEventArgs

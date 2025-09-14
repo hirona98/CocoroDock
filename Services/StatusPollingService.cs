@@ -59,7 +59,6 @@ namespace CocoroDock.Services
             // 1秒間隔でポーリングを開始（シンプルなブロッキング実装）
             _pollingTimer = new Timer(_ => PollHealthStatus(), null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
 
-            Debug.WriteLine($"[StatusPollingService] ポーリング開始: {_healthEndpoint}");
         }
 
         /// <summary>
@@ -112,7 +111,6 @@ namespace CocoroDock.Services
             {
                 _currentStatus = newStatus;
                 StatusChanged?.Invoke(this, newStatus);
-                Debug.WriteLine($"[StatusPollingService] ステータス変更: {newStatus}");
             }
         }
 
@@ -149,7 +147,6 @@ namespace CocoroDock.Services
             _pollingTimer?.Dispose();
             _httpClient?.Dispose();
 
-            Debug.WriteLine("[StatusPollingService] ポーリング停止");
         }
     }
 }

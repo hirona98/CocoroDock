@@ -192,6 +192,26 @@
                     </Grid>
                 </GroupBox>
 
+                <!-- Webサービス設定 -->
+                <GroupBox Header="Webサービス"
+                          Margin="0,0,20,20"
+                          Padding="10">
+                    <StackPanel>
+                        <!-- 説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="#666666">
+                            Web API機能を有効にするとブラウザからCocoroAIにアクセスできるようになります
+                        </TextBlock>
+
+                        <!-- Webサービス有効化チェックボックス -->
+                        <CheckBox x:Name="IsEnableWebServiceCheckBox"
+                                  Content="Webサービスを有効にする（要再起動）"
+                                  Margin="0,10,0,0"
+                                  Foreground="#FF4873CF"
+                                  ToolTip="Enable Web Service"/>
+                    </StackPanel>
+                </GroupBox>
+
                 <!-- 通知API設定 -->
                 <GroupBox Header="通知API"
                           Margin="0,0,20,20"

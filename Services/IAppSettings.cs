@@ -47,6 +47,15 @@ namespace CocoroDock.Services
         /// MCP有効/無効
         /// </summary>
         bool IsEnableMcp { get; set; }
+        /// <summary>
+        /// WebSocketサーバーポート
+        /// </summary>
+        int CocoroWebPort { get; set; }
+
+        /// <summary>
+        /// Web機能有効/無効
+        /// </summary>
+        bool IsEnableWebService { get; set; }
 
         /// <summary>
         /// 通知APIポート
@@ -262,5 +271,10 @@ namespace CocoroDock.Services
         /// ユーザーデータディレクトリを取得
         /// </summary>
         string UserDataDirectory { get; }
+        /// <summary>
+        /// 現在選択されているキャラクター設定を取得
+        /// </summary>
+        /// <returns>現在のキャラクター設定、存在しない場合はnull</returns>
+        CharacterSettings? GetCurrentCharacter();
     }
 }
