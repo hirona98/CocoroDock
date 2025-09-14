@@ -203,6 +203,8 @@
                             ブラウザからCocoroAIにアクセスできるようになります（Android版のChromeとEdgeで確認済み）
                             <LineBreak/>
                             https://＜PCのアドレス＞:55607 にアクセスしてください
+                            <LineBreak/>
+                            ※セキュリティ対策をしていないので直接外部に公開しないでください
                         </TextBlock>
 
                         <!-- Webサービス有効化チェックボックス -->
