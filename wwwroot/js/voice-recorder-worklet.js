@@ -35,6 +35,9 @@ class VoiceRecorderWorklet {
         this.onError = null;
         this.onInitialized = null;
 
+        // 状態管理
+        this.isVoiceDetected = false;
+
         // 設定
         this.debugMode = false;
     }
@@ -214,30 +217,25 @@ class VoiceRecorderWorklet {
     }
 
     /**
-     * Workletからのメッセージ処理
+     * Workletからのメッセージ処理（最適化版）
      */
     handleWorkletMessage(message) {
         switch (message.type) {
             case 'processFrame':
-                this.queueFrameForProcessing(message.frameData, message.frameIndex);
+                // フレームデータと音声レベル情報を含めてキューに追加
+                this.queueFrameForProcessing({
+                    frameData: message.frameData,
+                    frameIndex: message.frameIndex,
+                    audioLevel: message.audioLevel,
+                    timestamp: message.timestamp
+                });
                 break;
 
             case 'audioLevel':
+                // 音声レベルのみを通知（VAD判定はRNNoise処理後に実施）
                 if (this.onAudioLevel) {
-                    this.onAudioLevel(message.level, message.isSpeech, message.vadProbability);
+                    this.onAudioLevel(message.level, false, 0); // VAD情報は仮値
                 }
-                break;
-
-            case 'voiceDetected':
-                this.log(`音声開始検出 (セグメント #${message.segmentNumber})`);
-                if (this.onVoiceDetected) {
-                    this.onVoiceDetected();
-                }
-                break;
-
-            case 'voiceEnded':
-                this.log(`音声終了検出: ${message.duration}ms`);
-                this.handleVoiceEnded(message.audioData, message.duration);
                 break;
 
             case 'stats':
@@ -259,13 +257,14 @@ class VoiceRecorderWorklet {
     }
 
     /**
-     * フレーム処理キューに追加
+     * フレーム処理キューに追加（最適化版）
      */
-    queueFrameForProcessing(frameData, frameIndex) {
+    queueFrameForProcessing(frameInfo) {
         this.frameQueue.push({
-            data: new Float32Array(frameData),
-            index: frameIndex,
-            timestamp: performance.now()
+            data: new Float32Array(frameInfo.frameData),
+            index: frameInfo.frameIndex,
+            audioLevel: frameInfo.audioLevel || 0,
+            timestamp: frameInfo.timestamp || performance.now()
         });
 
         this.stats.totalFrames++;
@@ -290,7 +289,7 @@ class VoiceRecorderWorklet {
     }
 
     /**
-     * フレーム処理ループ
+     * フレーム処理ループ（最適化版）
      */
     async processFrameQueue() {
         while (this.processingFrames) {
@@ -299,15 +298,20 @@ class VoiceRecorderWorklet {
                 const startTime = performance.now();
 
                 try {
-                    // RNNoiseで処理
+                    // RNNoiseで処理し、VAD結果を取得
                     if (this.rnnoiseProcessor && this.rnnoiseProcessor.isInitialized) {
-                        const result = this.rnnoiseProcessor.processAudioFrame(frame.data);
+                        const voiceResult = this.rnnoiseProcessor.processAudioFrame(frame.data);
 
                         // 処理時間計算
                         const processingTime = performance.now() - startTime;
                         this.updateProcessingStats(processingTime);
 
                         this.stats.processedFrames++;
+
+                        // 音声セグメントが完了した場合の処理
+                        if (voiceResult && Array.isArray(voiceResult)) {
+                            this.handleVoiceSegmentCompleted(voiceResult);
+                        }
                     }
 
                 } catch (error) {
@@ -341,12 +345,22 @@ class VoiceRecorderWorklet {
     }
 
     /**
-     * 音声終了時の処理
+     * 音声セグメント完了時の処理（最適化版）
      */
-    async handleVoiceEnded(audioFrameArrays, duration) {
+    async handleVoiceSegmentCompleted(voiceSegment) {
         try {
-            // Float32Array配列に変換
-            const audioFrames = audioFrameArrays.map(frameArray => new Float32Array(frameArray));
+            this.log(`音声セグメント完了: ${voiceSegment.length}フレーム`);
+
+            // 音声開始通知（初回のみ）
+            if (!this.isVoiceDetected) {
+                this.isVoiceDetected = true;
+                if (this.onVoiceDetected) {
+                    this.onVoiceDetected();
+                }
+            }
+
+            // 音声フレームから音声データを抽出
+            const audioFrames = voiceSegment.map(item => item.frame || item);
 
             // WAV変換
             const wavData = this.rnnoiseProcessor.convertToWav(audioFrames);
@@ -354,12 +368,16 @@ class VoiceRecorderWorklet {
                 this.onVoiceData(wavData);
             }
 
+            // 音声終了通知
             if (this.onVoiceEnded) {
                 this.onVoiceEnded(audioFrames);
             }
 
+            // 状態リセット
+            this.isVoiceDetected = false;
+
         } catch (error) {
-            this.logError('音声終了処理エラー:', error);
+            this.logError('音声セグメント処理エラー:', error);
         }
     }
 
@@ -381,18 +399,17 @@ class VoiceRecorderWorklet {
     }
 
     /**
-     * 設定変更
+     * 設定変更（最適化版）
      */
     setVADThreshold(threshold) {
         if (this.rnnoiseProcessor) {
             this.rnnoiseProcessor.setVADThreshold(threshold);
         }
+    }
 
-        if (this.workletNode) {
-            this.workletNode.port.postMessage({
-                type: 'setVadThreshold',
-                threshold: threshold
-            });
+    setVADSmoothThreshold(threshold) {
+        if (this.rnnoiseProcessor) {
+            this.rnnoiseProcessor.setVADSmoothThreshold(threshold);
         }
     }
 
@@ -400,11 +417,19 @@ class VoiceRecorderWorklet {
         if (this.rnnoiseProcessor) {
             this.rnnoiseProcessor.setSilenceTimeout(timeoutMs);
         }
+    }
 
+    setVADHistorySize(size) {
+        if (this.rnnoiseProcessor) {
+            this.rnnoiseProcessor.setVADHistorySize(size);
+        }
+    }
+
+    setFrameSendRate(rate) {
         if (this.workletNode) {
             this.workletNode.port.postMessage({
-                type: 'setSilenceTimeout',
-                timeoutMs: timeoutMs
+                type: 'setFrameSendRate',
+                rate: rate
             });
         }
     }

@@ -185,19 +185,22 @@ class RNNoiseProcessor {
                     (this.stats.averageVadProbability * (this.stats.framesProcessed - 1) + vadProbability)
                     / this.stats.framesProcessed;
 
-                // VAD判定と音声レベル計算
-                const audioLevel = this.calculateAudioLevel(denoisedFrame);
-                const isSpeech = vadProbability > this.vadThreshold;
+                // 統計更新
+                this.stats.denoisedFrames++;
 
-                this.log(`VAD: ${(vadProbability * 100).toFixed(1)}%, Level: ${(audioLevel * 100).toFixed(1)}%, Speech: ${isSpeech}`);
+                // VAD判定と音声レベル計算（RNNoise処理後の高精度判定）
+                const audioLevel = this.calculateAudioLevel(denoisedFrame);
+                const isSpeech = this.enhancedVADJudgment(vadProbability, audioLevel);
+
+                this.log(`Enhanced VAD: ${(vadProbability * 100).toFixed(1)}%, Level: ${(audioLevel * 100).toFixed(1)}%, Speech: ${isSpeech}`);
 
                 // 音声レベル通知
                 if (this.onAudioLevel) {
                     this.onAudioLevel(audioLevel, isSpeech, vadProbability);
                 }
 
-                // VAD状態管理
-                const voiceResult = this.updateVADState(isSpeech, denoisedFrame, vadProbability);
+                // VAD状態管理（RNNoise処理後の最適化されたロジック）
+                const voiceResult = this.updateEnhancedVADState(isSpeech, denoisedFrame, vadProbability, audioLevel);
 
                 return voiceResult;
 
@@ -220,14 +223,48 @@ class RNNoiseProcessor {
     }
 
     /**
-     * VAD状態管理と音声データバッファリング
-     * 慎重な状態管理とバッファオーバーフロー防止
+     * 強化されたVAD判定（RNNoise処理後）
+     * VAD確率履歴と音声レベルを組み合わせた高精度判定
      */
-    updateVADState(isSpeech, audioFrame, vadProbability) {
+    enhancedVADJudgment(vadProbability, audioLevel) {
+        // VAD確率履歴を更新
+        if (!this.vadHistory) {
+            this.vadHistory = [];
+        }
+        this.vadHistory.push(vadProbability);
+        if (this.vadHistory.length > this.vadHistorySize) {
+            this.vadHistory.shift();
+        }
+
+        // 基本判定: RNNoise VAD確率
+        const basicVAD = vadProbability > this.vadThreshold;
+
+        // 平滑化判定: 最近のVAD確率の平均
+        const avgVAD = this.vadHistory.reduce((sum, val) => sum + val, 0) / this.vadHistory.length;
+        const smoothVAD = avgVAD > (this.vadSmoothThreshold || this.vadThreshold * 0.8);
+
+        // 音声レベル判定: 最小音声レベル要件
+        const levelVAD = audioLevel > 0.05;
+
+        // 総合判定: 複数条件の組み合わせ
+        const enhancedResult = (basicVAD || smoothVAD) && levelVAD;
+
+        this.log(`VAD判定 - Basic: ${basicVAD}, Smooth: ${smoothVAD}(${avgVAD.toFixed(2)}), Level: ${levelVAD}, Final: ${enhancedResult}`);
+
+        return enhancedResult;
+    }
+
+    /**
+     * 強化されたVAD状態管理と音声データバッファリング
+     * RNNoise処理後の高精度VADに最適化された状態管理
+     */
+    updateEnhancedVADState(isSpeech, audioFrame, vadProbability, audioLevel) {
         // プリバッファに常に追加（メモリリーク防止）
         this.preBuffer.push({
             frame: new Float32Array(audioFrame),
             vad: vadProbability,
+            audioLevel: audioLevel,
+            enhancedVAD: isSpeech,
             timestamp: Date.now()
         });
 
@@ -239,14 +276,16 @@ class RNNoiseProcessor {
             this.speechFrames++;
             this.silenceFrames = 0;
 
-            // 音声開始判定
+            // 音声開始判定（強化されたVADに基づく）
             if (!this.isRecording && this.speechFrames >= this.minSpeechFrames) {
                 this.isRecording = true;
 
-                // プリバッファを含めて録音開始
+                // プリバッファを含めて録音開始（強化されたデータ構造）
                 this.audioBuffer = this.preBuffer.map(item => ({
                     frame: new Float32Array(item.frame),
                     vad: item.vad,
+                    audioLevel: item.audioLevel || 0,
+                    enhancedVAD: item.enhancedVAD || false,
                     timestamp: item.timestamp
                 }));
 
@@ -258,11 +297,13 @@ class RNNoiseProcessor {
                 }
             }
 
-            // 録音中は音声データを蓄積
+            // 録音中は音声データを蓄積（強化されたデータ構造）
             if (this.isRecording) {
                 this.audioBuffer.push({
                     frame: new Float32Array(audioFrame),
                     vad: vadProbability,
+                    audioLevel: audioLevel,
+                    enhancedVAD: isSpeech,
                     timestamp: Date.now()
                 });
             }
@@ -284,11 +325,13 @@ class RNNoiseProcessor {
                 return recordedAudio;
             }
 
-            // 録音中は無音も含める（自然な話し方に対応）
+            // 録音中は無音も含める（自然な話し方に対応、強化されたデータ構造）
             if (this.isRecording) {
                 this.audioBuffer.push({
                     frame: new Float32Array(audioFrame),
                     vad: vadProbability,
+                    audioLevel: audioLevel,
+                    enhancedVAD: isSpeech,
                     timestamp: Date.now()
                 });
             }
@@ -298,7 +341,7 @@ class RNNoiseProcessor {
     }
 
     /**
-     * 録音終了処理
+     * 録音終了処理（強化されたバージョン）
      */
     finalizeRecording() {
         const recordedAudio = this.audioBuffer;
@@ -306,12 +349,18 @@ class RNNoiseProcessor {
 
         this.stats.totalVoiceTime += voiceTime;
 
+        // 録音品質統計の計算
+        const avgVAD = recordedAudio.reduce((sum, frame) => sum + (frame.vad || 0), 0) / recordedAudio.length;
+        const avgAudioLevel = recordedAudio.reduce((sum, frame) => sum + (frame.audioLevel || 0), 0) / recordedAudio.length;
+        const speechFrames = recordedAudio.filter(frame => frame.enhancedVAD).length;
+        const speechRatio = speechFrames / recordedAudio.length;
+
         this.audioBuffer = [];
         this.isRecording = false;
         this.speechFrames = 0;
         this.silenceFrames = 0;
 
-        this.log(`録音終了: ${voiceTime}ms, 累計音声時間: ${this.stats.totalVoiceTime}ms`);
+        this.log(`録音終了: ${voiceTime}ms, VAD平均: ${(avgVAD * 100).toFixed(1)}%, 音声比率: ${(speechRatio * 100).toFixed(1)}%, レベル平均: ${(avgAudioLevel * 100).toFixed(1)}%`);
 
         return recordedAudio;
     }
@@ -440,9 +489,22 @@ class RNNoiseProcessor {
         this.log(`VAD閾値変更: ${this.vadThreshold}`);
     }
 
+    setVADSmoothThreshold(threshold) {
+        this.vadSmoothThreshold = Math.max(0, Math.min(1, threshold));
+        this.log(`VAD平滑化閾値変更: ${this.vadSmoothThreshold}`);
+    }
+
     setSilenceTimeout(timeoutMs) {
         this.maxSilenceFrames = Math.floor(timeoutMs / 10);
         this.log(`無音タイムアウト変更: ${timeoutMs}ms (${this.maxSilenceFrames}フレーム)`);
+    }
+
+    setVADHistorySize(size) {
+        this.vadHistorySize = Math.max(1, Math.min(20, size));
+        if (this.vadHistory) {
+            this.vadHistory = this.vadHistory.slice(-this.vadHistorySize);
+        }
+        this.log(`VAD履歴サイズ変更: ${this.vadHistorySize}フレーム`);
     }
 
     setDebugMode(enabled) {
@@ -454,14 +516,25 @@ class RNNoiseProcessor {
     }
 
     /**
-     * 統計情報取得
+     * 統計情報取得（強化されたバージョン）
      */
     getStats() {
+        const currentVADAvg = this.vadHistory && this.vadHistory.length > 0
+            ? this.vadHistory.reduce((sum, val) => sum + val, 0) / this.vadHistory.length
+            : 0;
+
         return {
             ...this.stats,
             isInitialized: this.isInitialized,
             isRecording: this.isRecording,
-            currentVADThreshold: this.vadThreshold,
+            vadThreshold: this.vadThreshold,
+            vadSmoothThreshold: this.vadSmoothThreshold || this.vadThreshold * 0.8,
+            currentVADAverage: currentVADAvg,
+            vadHistoryLength: this.vadHistory ? this.vadHistory.length : 0,
+            silenceFrames: this.silenceFrames,
+            speechFrames: this.speechFrames,
+            preBufferLength: this.preBuffer ? this.preBuffer.length : 0,
+            audioBufferLength: this.audioBuffer ? this.audioBuffer.length : 0,
             debugLogEntries: this.debugLog.length
         };
     }

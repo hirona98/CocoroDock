@@ -19,24 +19,14 @@ class RNNoiseWorkletProcessor extends AudioWorkletProcessor {
         this.inputBuffer = new Float32Array(0);
         this.outputBuffer = new Float32Array(0);
 
-        // VAD状態
-        this.vadThreshold = 0.6;
-        this.silenceFrames = 0;
-        this.maxSilenceFrames = 50; // 500ms
-        this.speechFrames = 0;
-        this.minSpeechFrames = 3; // 30ms
-        this.isRecording = false;
-
-        // 音声バッファ
-        this.audioBuffer = [];
-        this.preBuffer = [];
-        this.preBufferSize = 10; // 100ms
+        // フレーム送信設定
+        this.frameCounter = 0;
+        this.sendEveryNFrames = 1; // 全フレームを送信
 
         // 統計
         this.stats = {
             framesProcessed: 0,
-            voiceSegments: 0,
-            totalVoiceTime: 0
+            framesSent: 0
         };
 
         // WASM関連（後で初期化）
@@ -64,19 +54,11 @@ class RNNoiseWorkletProcessor extends AudioWorkletProcessor {
                 this.initializeWasm(message.wasmModule);
                 break;
 
-            case 'setVadThreshold':
-                this.vadThreshold = Math.max(0, Math.min(1, message.threshold));
+            case 'setFrameSendRate':
+                this.sendEveryNFrames = Math.max(1, message.rate);
                 this.port.postMessage({
                     type: 'log',
-                    message: `VAD閾値変更: ${this.vadThreshold}`
-                });
-                break;
-
-            case 'setSilenceTimeout':
-                this.maxSilenceFrames = Math.floor(message.timeoutMs / 10);
-                this.port.postMessage({
-                    type: 'log',
-                    message: `無音タイムアウト変更: ${message.timeoutMs}ms`
+                    message: `フレーム送信レート変更: ${this.sendEveryNFrames}フレームごと`
                 });
                 break;
 
@@ -164,42 +146,40 @@ class RNNoiseWorkletProcessor extends AudioWorkletProcessor {
 
     /**
      * 音声フレーム処理（AudioWorklet版）
-     * RNNoiseは実際にはメインスレッドで処理されるため、
-     * ここでは基本的なVADと音声レベル計算のみ
+     * フレーム収集とメインスレッドへの転送に特化
      */
     processFrame(frame) {
         this.stats.framesProcessed++;
+        this.frameCounter++;
 
-        // 簡易音声レベル計算
+        // 音声レベル計算（統計用）
         let sum = 0;
         for (let i = 0; i < frame.length; i++) {
             sum += frame[i] * frame[i];
         }
         const rms = Math.sqrt(sum / frame.length);
-
-        // 簡易VAD（音声レベルベース）
         const audioLevel = this.calculateAudioLevel(rms);
-        const isSpeech = audioLevel > 0.1; // 簡易閾値
 
-        // VAD状態管理
-        this.updateVADState(isSpeech, frame, audioLevel);
+        // 設定されたレートでフレームを送信
+        if (this.frameCounter % this.sendEveryNFrames === 0) {
+            this.stats.framesSent++;
 
-        // メインスレッドに音声レベル通知
-        if (this.stats.framesProcessed % 5 === 0) { // 50msごとに通知
+            // メインスレッドに音声レベルとフレームデータを送信
             this.port.postMessage({
                 type: 'audioLevel',
                 level: audioLevel,
-                isSpeech: isSpeech,
-                vadProbability: audioLevel // 簡易版
+                timestamp: currentTime
+            });
+
+            // メインスレッドにRNNoise処理を依頼
+            this.port.postMessage({
+                type: 'processFrame',
+                frameData: Array.from(frame),
+                frameIndex: this.stats.framesProcessed,
+                audioLevel: audioLevel,
+                timestamp: currentTime
             });
         }
-
-        // メインスレッドに実際のRNNoise処理を依頼
-        this.port.postMessage({
-            type: 'processFrame',
-            frameData: Array.from(frame),
-            frameIndex: this.stats.framesProcessed
-        });
     }
 
     /**
@@ -213,106 +193,15 @@ class RNNoiseWorkletProcessor extends AudioWorkletProcessor {
         return 0;
     }
 
-    /**
-     * VAD状態管理
-     */
-    updateVADState(isSpeech, frame, audioLevel) {
-        // プリバッファ管理
-        this.preBuffer.push({
-            frame: new Float32Array(frame),
-            level: audioLevel,
-            timestamp: currentTime
-        });
-
-        if (this.preBuffer.length > this.preBufferSize) {
-            this.preBuffer.shift();
-        }
-
-        if (isSpeech) {
-            this.speechFrames++;
-            this.silenceFrames = 0;
-
-            // 音声開始判定
-            if (!this.isRecording && this.speechFrames >= this.minSpeechFrames) {
-                this.isRecording = true;
-
-                // プリバッファを含めて音声バッファ開始
-                this.audioBuffer = this.preBuffer.map(item => ({
-                    frame: new Float32Array(item.frame),
-                    level: item.level,
-                    timestamp: item.timestamp
-                }));
-
-                this.stats.voiceSegments++;
-
-                this.port.postMessage({
-                    type: 'voiceDetected',
-                    segmentNumber: this.stats.voiceSegments
-                });
-            }
-
-            // 録音中は音声データを蓄積
-            if (this.isRecording) {
-                this.audioBuffer.push({
-                    frame: new Float32Array(frame),
-                    level: audioLevel,
-                    timestamp: currentTime
-                });
-            }
-
-        } else {
-            this.silenceFrames++;
-            this.speechFrames = Math.max(0, this.speechFrames - 1);
-
-            // 音声終了判定
-            if (this.isRecording && this.silenceFrames >= this.maxSilenceFrames) {
-                const recordedAudio = this.finalizeRecording();
-
-                this.port.postMessage({
-                    type: 'voiceEnded',
-                    audioData: recordedAudio.map(item => Array.from(item.frame)),
-                    duration: recordedAudio.length * 10 // ms
-                });
-            }
-
-            // 録音中は無音も含める
-            if (this.isRecording) {
-                this.audioBuffer.push({
-                    frame: new Float32Array(frame),
-                    level: audioLevel,
-                    timestamp: currentTime
-                });
-            }
-        }
-    }
-
-    /**
-     * 録音終了処理
-     */
-    finalizeRecording() {
-        const recordedAudio = this.audioBuffer;
-        const voiceTime = recordedAudio.length * 10; // ms
-
-        this.stats.totalVoiceTime += voiceTime;
-
-        this.audioBuffer = [];
-        this.isRecording = false;
-        this.speechFrames = 0;
-        this.silenceFrames = 0;
-
-        this.port.postMessage({
-            type: 'log',
-            message: `録音終了: ${voiceTime}ms, 累計: ${this.stats.totalVoiceTime}ms`
-        });
-
-        return recordedAudio;
-    }
 
     /**
      * 統計情報取得
      */
     getStats() {
-        return { ...this.stats, isRecording: this.isRecording };
+        return {
+            ...this.stats,
+            framesSentPercentage: (this.stats.framesSent / this.stats.framesProcessed * 100).toFixed(1)
+        };
     }
 }
 
