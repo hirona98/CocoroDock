@@ -45,12 +45,29 @@ namespace CocoroDock.Communication
         private readonly ConcurrentDictionary<string, string> _connectionAudioFiles = new(); // 接続IDごとの現在のオーディオファイル
         private readonly ConcurrentDictionary<string, string> _sessionImageData = new(); // セッションIDごとの画像データ（Base64）
 
+        private Timer? _reconnectionTimer; // CocoreCoreM再接続用タイマー
+        private volatile bool _isConnecting = false; // ConnectAsync実行中フラグ（並列実行防止）
+
         public bool IsRunning => _app != null;
+
+        /// <summary>
+        /// デバッグログ出力（ファイル+コンソール）
+        /// </summary>
+        private void LogDebug(string message)
+        {
+            var fullMessage = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {message}";
+            Console.WriteLine(fullMessage);
+
+            try
+            {
+                File.AppendAllText("cocoro_mobile_debug.log", fullMessage + "\n");
+            }
+            catch { }
+        }
 
         // モバイルチャットのイベント
         public event EventHandler<string>? MobileMessageReceived;
         public event EventHandler<(string message, string imageBase64)>? MobileImageMessageReceived;
-        public event EventHandler<string>? MobileResponseSent;
         public event EventHandler<(string text, string? imageBase64)>? MobileAiResponseReceived;
 
         public MobileWebSocketServer(int port, IAppSettings appSettings)
@@ -257,26 +274,115 @@ namespace CocoroDock.Communication
             {
                 var cocoroPort = _appSettings.GetConfigSettings().cocoroCorePort;
                 var clientId = $"mobile_{DateTime.Now:yyyyMMddHHmmss}";
+
                 _cocoroClient = new WebSocketChatClient(cocoroPort, clientId);
                 _cocoroClient.MessageReceived += OnCocoroCoreMessageReceived;
                 _cocoroClient.ErrorOccurred += OnCocoroCoreError;
 
+                // 同期的に接続を試行（タイミング問題を回避）
                 _ = Task.Run(async () =>
                 {
+                    // 少し待ってからCocoreCoreM接続を試行（CocoroCoreMの起動を待つ）
+                    await Task.Delay(2000);
+
                     try
                     {
                         await _cocoroClient.ConnectAsync();
-                        Debug.WriteLine("[MobileWebSocketServer] CocoreCoreM接続完了");
+
+                        // 接続に失敗した場合の詳細チェック
+                        if (_cocoroClient?.IsConnected != true)
+                        {
+                            // 再接続を1回試行
+                            await Task.Delay(1000);
+                            
+                            // null チェックを追加してCS8602を修正
+                            if (_cocoroClient != null)
+                            {
+                                await _cocoroClient.ConnectAsync();
+                            }
+                        }
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        Debug.WriteLine($"[MobileWebSocketServer] CocoreCoreM接続エラー: {ex.Message}");
+                        // 接続失敗時は定期的な再接続を開始
+                        StartReconnectionTimer();
                     }
                 });
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[MobileWebSocketServer] CocoreCoreM初期化エラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// CocoreCoreM定期再接続タイマーを開始
+        /// </summary>
+        private void StartReconnectionTimer()
+        {
+            lock (this) // スレッドセーフにする
+            {
+                // 既にタイマーが動いている場合は何もしない
+                if (_reconnectionTimer != null)
+                    return;
+
+                _reconnectionTimer = new Timer(async _ =>
+                {
+                    // 既に接続処理中の場合はスキップ（並列実行防止）
+                    if (_isConnecting)
+                    {
+                        return;
+                    }
+
+                    // 接続状態チェック
+                    if (_cocoroClient?.IsConnected != true)
+                    {
+                        _isConnecting = true; // フラグをセット
+                        try
+                        {
+                            await _cocoroClient!.ConnectAsync();
+
+                            if (_cocoroClient.IsConnected)
+                            {
+                                StopReconnectionTimer();
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            // エラーは無視して次回再試行
+                        }
+                        finally
+                        {
+                            _isConnecting = false; // 必ずフラグをリセット
+                        }
+                    }
+                    else
+                    {
+                        StopReconnectionTimer();
+                    }
+                }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+            }
+        }
+
+        /// <summary>
+        /// CocoreCoreM再接続タイマーを停止
+        /// </summary>
+        private void StopReconnectionTimer()
+        {
+            lock (this) // スレッドセーフにする
+            {
+                if (_reconnectionTimer != null)
+                {
+                    try
+                    {
+                        _reconnectionTimer.Dispose();
+                        _reconnectionTimer = null;
+                    }
+                    catch (Exception)
+                    {
+                        _reconnectionTimer = null; // エラーでも確実にnullにする
+                    }
+                }
             }
         }
 
@@ -495,7 +601,7 @@ namespace CocoroDock.Communication
                 }
                 else
                 {
-                    await SendErrorToMobile(connectionId, MobileErrorCodes.CoreMError, "CocoreCoreM connection not available");
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.CoreMError, "起動中です。しばらくお待ちください...");
                 }
             }
             catch (Exception ex)
@@ -1371,6 +1477,7 @@ namespace CocoroDock.Communication
 
         public void Dispose()
         {
+            StopReconnectionTimer();
             Task.Run(async () => await StopAsync()).Wait(TimeSpan.FromSeconds(10));
         }
     }

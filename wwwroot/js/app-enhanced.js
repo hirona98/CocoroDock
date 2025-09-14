@@ -1019,8 +1019,21 @@ class CocoroAIApp {
     handleError(message) {
         this.hideLoading();
 
+        // CocoreCoreM接続エラーの場合は待機メッセージを表示
+        const errorCode = message.data?.code;
         const errorText = message.data?.message || 'エラーが発生しました';
-        this.showError(errorText);
+
+        if (errorCode === 'CORE_M_ERROR' ||
+            errorText.includes('CocoroCoreM') ||
+            errorText.includes('connection not available') ||
+            errorText.includes('接続が利用できません') ||
+            errorText.includes('The operation was canceled')) {
+            // エラーダイアログではなくシステムメッセージとして表示
+            this.addSystemMessage('起動中です。しばらく待って再度お試しください...');
+        } else {
+            // その他のエラーは従来通りエラーダイアログで表示
+            this.showError(errorText);
+        }
     }
 
     /**

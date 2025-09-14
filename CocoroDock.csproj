@@ -57,6 +57,11 @@
     <!-- Silero VAD ONNXモデル（exe内に組み込み） -->
     <EmbeddedResource Include="Resource\silero_vad.onnx" />
     <EmbeddedResource Include="Resource\License.txt" />
+
+    <!-- wwwrootをリリースに含める（シンプル版） -->
+    <Content Include="wwwroot\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

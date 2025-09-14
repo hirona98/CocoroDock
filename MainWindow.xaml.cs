@@ -1030,7 +1030,6 @@ namespace CocoroDock
                 _mobileWebSocketServer.MobileMessageReceived += OnMobileMessageReceived;
                 _mobileWebSocketServer.MobileImageMessageReceived += OnMobileImageMessageReceived;
                 _mobileWebSocketServer.MobileAiResponseReceived += OnMobileAiResponseReceived;
-                _mobileWebSocketServer.MobileResponseSent += OnMobileResponseSent;
 
                 // 非同期で起動
                 _ = Task.Run(async () =>
@@ -1131,21 +1130,6 @@ namespace CocoroDock
                 {
                     Debug.WriteLine($"[MainWindow] AI応答で画像データを受信したが表示しない: '{data.text}', 画像サイズ: {data.imageBase64.Length} bytes");
                 }
-            });
-        }
-
-        /// <summary>
-        /// モバイル応答送信イベント
-        /// </summary>
-        private void OnMobileResponseSent(object? sender, string response)
-        {
-            UIHelper.RunOnUIThread(() =>
-            {
-                // チャットにAI応答を表示
-                ChatControlInstance.AddAiMessage(response);
-
-                // ステータスバーを正常に戻す
-                UpdateCocoroCoreMStatusDisplay(CocoroCoreMStatus.Normal);
             });
         }
 
@@ -1387,7 +1371,6 @@ namespace CocoroDock
                     {
                         // イベント購読解除
                         _mobileWebSocketServer.MobileMessageReceived -= OnMobileMessageReceived;
-                        _mobileWebSocketServer.MobileResponseSent -= OnMobileResponseSent;
 
                         await _mobileWebSocketServer.StopAsync();
                         _mobileWebSocketServer.Dispose();
