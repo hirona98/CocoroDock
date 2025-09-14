@@ -123,19 +123,15 @@ namespace CocoroDock.Communication
                     {
                         case "speedScale":
                             writer.WriteNumber("speedScale", config.speedScale);
-                            Debug.WriteLine($"[VoicevoxClient] speedScale適用: {config.speedScale}");
                             break;
                         case "pitchScale":
                             writer.WriteNumber("pitchScale", config.pitchScale);
-                            Debug.WriteLine($"[VoicevoxClient] pitchScale適用: {config.pitchScale}");
                             break;
                         case "intonationScale":
                             writer.WriteNumber("intonationScale", config.intonationScale);
-                            Debug.WriteLine($"[VoicevoxClient] intonationScale適用: {config.intonationScale}");
                             break;
                         case "volumeScale":
                             writer.WriteNumber("volumeScale", config.volumeScale);
-                            Debug.WriteLine($"[VoicevoxClient] volumeScale適用: {config.volumeScale}");
                             break;
                         case "prePhonemeLength":
                             writer.WriteNumber("prePhonemeLength", config.prePhonemeLength);

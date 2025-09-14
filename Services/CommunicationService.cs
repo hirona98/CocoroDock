@@ -727,8 +727,6 @@ namespace CocoroDock.Services
                     return;
                 }
 
-                Debug.WriteLine($"[Shell Forward] CocoroShellにメッセージを転送中: {content.Substring(0, Math.Min(50, content.Length))}...");
-
                 // ShellChatRequestを作成
                 var shellRequest = new ShellChatRequest
                 {
@@ -739,8 +737,6 @@ namespace CocoroDock.Services
 
                 // CocoroShellにメッセージを送信（既に非同期なのでそのまま呼び出し）
                 await _shellClient.SendChatMessageAsync(shellRequest);
-
-                Debug.WriteLine($"[Shell Forward] 転送完了: Length={content.Length}");
             }
             catch (Exception ex)
             {
