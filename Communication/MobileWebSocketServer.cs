@@ -34,6 +34,8 @@ namespace CocoroDock.Communication
         private readonly IAppSettings _appSettings;
         private WebSocketChatClient? _cocoroClient;
         private VoicevoxClient? _voicevoxClient;
+        private ISpeechToTextService? _sttService;
+        private string? _currentSttApiKey;
         private CancellationTokenSource? _cts;
 
         // 接続管理（スマホ1台想定だが複数接続対応）
@@ -163,6 +165,11 @@ namespace CocoroDock.Communication
                 // VOICEVOX クライアント停止
                 _voicevoxClient?.Dispose();
                 _voicevoxClient = null;
+
+                // STTサービス停止
+                _sttService?.Dispose();
+                _sttService = null;
+                _currentSttApiKey = null;
 
                 // アプリケーション停止
                 var stopTask = _app.StopAsync(TimeSpan.FromSeconds(5));
@@ -1061,8 +1068,8 @@ namespace CocoroDock.Communication
         {
             try
             {
-                // STTサービスを作成（現在はAmiVoiceのみ、将来的にはWhisperなど追加可能）
-                using var sttService = CreateSttService(apiKey);
+                // STTサービスを取得（クラスレベルでインスタンスを再利用）
+                var sttService = GetOrCreateSttService(apiKey);
                 if (!sttService.IsAvailable)
                 {
                     Debug.WriteLine($"[MobileWebSocketServer] STTサービス利用不可: {sttService.ServiceName}");
@@ -1082,20 +1089,27 @@ namespace CocoroDock.Communication
         /// <summary>
         /// STTサービスファクトリー（将来的な拡張用）
         /// </summary>
-        private ISpeechToTextService CreateSttService(string apiKey)
+        private ISpeechToTextService GetOrCreateSttService(string apiKey)
         {
-            // 現在はAmiVoiceのみ対応
-            // 将来的には設定や条件に応じてWhisperやその他のSTTサービスを選択可能
-            return new AmiVoiceSpeechToTextService(apiKey);
+            // APIキーが変更された場合や、サービスが未初期化の場合は新しいサービスを作成
+            if (_sttService == null || _currentSttApiKey != apiKey || !_sttService.IsAvailable)
+            {
+                _sttService?.Dispose();
 
-            // 将来の拡張例:
-            // var sttType = appSettings?.SttServiceType ?? "AmiVoice";
-            // return sttType switch
-            // {
-            //     "Whisper" => new WhisperSpeechToTextService(apiKey),
-            //     "AmiVoice" => new AmiVoiceSpeechToTextService(apiKey),
-            //     _ => new AmiVoiceSpeechToTextService(apiKey)
-            // };
+                // 現在はAmiVoiceのみ対応
+                _sttService = new AmiVoiceSpeechToTextService(apiKey);
+                _currentSttApiKey = apiKey;
+
+                // 将来的な拡張のためのコメント
+                // var sttType = appSettings?.SttServiceType ?? "AmiVoice";
+                // _sttService = sttType switch
+                // {
+                //     "AmiVoice" => new AmiVoiceSpeechToTextService(apiKey),
+                //     _ => new AmiVoiceSpeechToTextService(apiKey)
+                // };
+            }
+
+            return _sttService;
         }
 
         public void Dispose()
