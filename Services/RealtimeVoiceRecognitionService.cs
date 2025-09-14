@@ -150,8 +150,6 @@ namespace CocoroDock.Services
                     {
                         _audioBuffer.AddRange(preBufferData);
                     }
-
-                    System.Diagnostics.Debug.WriteLine($"[VoiceService] Speech started with {_preBuffer.Count} pre-buffers");
                 }
                 else if (_isRecordingVoice)
                 {
@@ -161,8 +159,6 @@ namespace CocoroDock.Services
                 if (isSpeechEnd && _isRecordingVoice)
                 {
                     _isRecordingVoice = false;
-                    System.Diagnostics.Debug.WriteLine($"[VoiceService] Speech ended, processing {_audioBuffer.Count} bytes");
-
                     // 非同期で音声認識実行
                     _ = ProcessAudioBuffer();
                 }

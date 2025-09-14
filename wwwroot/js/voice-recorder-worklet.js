@@ -46,29 +46,21 @@ class VoiceRecorderWorklet {
      * 初期化
      */
     async initialize() {
-        console.log('[VOICE-DEBUG] === VoiceRecorderWorklet初期化開始 ===');
 
         if (this.isInitialized) {
-            console.log('[VOICE-DEBUG] 既に初期化済み');
             this.log('既に初期化済み');
             return true;
         }
 
         try {
-            console.log('[VOICE-DEBUG] VoiceRecorderWorklet初期化開始...');
             this.log('VoiceRecorderWorklet初期化開始...');
 
             // AudioContextの作成
-            console.log('[VOICE-DEBUG] AudioContext作成中...');
-            console.log('[VOICE-DEBUG] window.AudioContext:', typeof window.AudioContext);
-            console.log('[VOICE-DEBUG] window.webkitAudioContext:', typeof window.webkitAudioContext);
 
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
                 sampleRate: 48000,
                 latencyHint: 'interactive'
             });
-            console.log('[VOICE-DEBUG] AudioContext作成完了, state:', this.audioContext.state);
-            console.log('[VOICE-DEBUG] AudioContext.sampleRate:', this.audioContext.sampleRate);
 
             // AudioWorkletモジュール登録
             console.log('[VOICE-DEBUG] AudioWorkletモジュール登録中...');
@@ -229,7 +221,6 @@ class VoiceRecorderWorklet {
             // Workletからのメッセージ処理
             console.log('[VOICE-DEBUG] Workletメッセージハンドラー設定中...');
             this.workletNode.port.onmessage = (event) => {
-                console.log('[VOICE-DEBUG] Workletメッセージ受信:', event.data?.type || 'unknown');
                 this.handleWorkletMessage(event.data);
             };
 
@@ -315,7 +306,6 @@ class VoiceRecorderWorklet {
     handleWorkletMessage(message) {
         switch (message.type) {
             case 'processFrame':
-                console.log('[VOICE-DEBUG] 循環バッファからフレーム受信:', message.frameIndex);
                 // 循環バッファからの連続フレームデータをキューに追加
                 this.queueFrameForProcessing({
                     frameData: message.frameData,
@@ -424,29 +414,11 @@ class VoiceRecorderWorklet {
 
                         this.stats.processedFrames++;
 
-                        // 循環バッファ由来フレームの特別ログ
-                        if (frame.isCircularBuffer && this.stats.processedFrames % 25 === 0) {
-                            console.log('[VOICE-DEBUG] 循環バッファフレーム処理:', {
-                                processedFrames: this.stats.processedFrames,
-                                circularBufferFrames: this.stats.circularBufferFrames,
-                                processingTime: processingTime.toFixed(2) + 'ms',
-                                queueLength: this.frameQueue.length
-                            });
-                        }
 
-                        // デバッグ: フレーム処理の詳細ログ
-                        if (this.stats.processedFrames % 50 === 0) {
-                            this.log(`循環バッファフレーム処理中: ${this.stats.processedFrames}フレーム処理済み (循環: ${this.stats.circularBufferFrames || 0})`);
-                        }
 
                         // 音声セグメントが完了した場合の処理
                         if (voiceResult && Array.isArray(voiceResult)) {
-                            console.log('[VOICE-DEBUG] 循環バッファから音声セグメント検出:', voiceResult.length, 'フレーム');
                             this.handleVoiceSegmentCompleted(voiceResult);
-                        }
-                    } else {
-                        if (this.stats.processedFrames % 100 === 0) {
-                            this.log(`RNNoiseProcessor未初期化または使用不可: initialized=${this.rnnoiseProcessor?.isInitialized}`);
                         }
                     }
 

@@ -187,7 +187,6 @@ namespace CocoroDock
             _communicationService.NotificationMessageReceived += OnNotificationMessageReceived;
             _communicationService.ControlCommandReceived += OnControlCommandReceived;
             _communicationService.ErrorOccurred += OnErrorOccurred;
-            _communicationService.StatusUpdateRequested += OnStatusUpdateRequested;
             _communicationService.StatusChanged += OnCocoroCoreMStatusChanged;
         }
 
@@ -573,19 +572,6 @@ namespace CocoroDock
         private void OnErrorOccurred(object? sender, string error)
         {
             UIHelper.ShowError("エラー", error);
-        }
-
-        /// <summary>
-        /// ステータス更新要求時のハンドラ
-        /// </summary>
-        private void OnStatusUpdateRequested(object? sender, StatusUpdateEventArgs e)
-        {
-            // 新仕様では古いステータスメッセージは使用しない
-            // 必要に応じてログ出力のみ
-            if (!string.IsNullOrEmpty(e.Message))
-            {
-                Debug.WriteLine($"[StatusUpdate] {e.Message}");
-            }
         }
 
         /// <summary>

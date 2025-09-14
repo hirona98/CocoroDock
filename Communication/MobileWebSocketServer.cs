@@ -1063,16 +1063,13 @@ namespace CocoroDock.Communication
             {
                 // STTサービスを作成（現在はAmiVoiceのみ、将来的にはWhisperなど追加可能）
                 using var sttService = CreateSttService(apiKey);
-                
                 if (!sttService.IsAvailable)
                 {
                     Debug.WriteLine($"[MobileWebSocketServer] STTサービス利用不可: {sttService.ServiceName}");
                     return string.Empty;
                 }
-
                 var recognizedText = await sttService.RecognizeAsync(audioData);
-                Debug.WriteLine($"[MobileWebSocketServer] STT認識結果 ({sttService.ServiceName}): {recognizedText?.Length ?? 0}文字");
-                
+
                 return recognizedText ?? string.Empty;
             }
             catch (Exception ex)
@@ -1090,7 +1087,7 @@ namespace CocoroDock.Communication
             // 現在はAmiVoiceのみ対応
             // 将来的には設定や条件に応じてWhisperやその他のSTTサービスを選択可能
             return new AmiVoiceSpeechToTextService(apiKey);
-            
+
             // 将来の拡張例:
             // var sttType = appSettings?.SttServiceType ?? "AmiVoice";
             // return sttType switch
