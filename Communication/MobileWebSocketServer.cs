@@ -638,6 +638,9 @@ namespace CocoroDock.Communication
         {
             try
             {
+                // CocoroDockに音声認識結果を通知
+                MobileMessageReceived?.Invoke(this, $"📱 {recognizedText}");
+
                 // チャットメッセージとして処理
                 var chatRequest = new WebSocketChatRequest
                 {
