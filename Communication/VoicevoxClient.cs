@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using CocoroDock.Models;
+using CocoroDock.Utils;
 
 namespace CocoroDock.Communication
 {
@@ -52,8 +53,17 @@ namespace CocoroDock.Communication
                     return null;
                 }
 
+                // [face:～] パターンを除去
+                var filteredText = TextFilterHelper.RemoveFacePatterns(text);
+
+                if (string.IsNullOrWhiteSpace(filteredText))
+                {
+                    Debug.WriteLine("[VoicevoxClient] フィルター後のテキストが空のため音声合成をスキップ");
+                    return null;
+                }
+
                 // 1. audio_query API 呼び出し
-                var audioQuery = await GetAudioQueryAsync(text, speakerId);
+                var audioQuery = await GetAudioQueryAsync(filteredText, speakerId);
                 if (audioQuery == null)
                 {
                     return null;

@@ -650,7 +650,9 @@ class CocoroAIApp {
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
-        contentDiv.textContent = text;
+        // [face:～] パターンを非表示にする
+        const filteredText = text.replace(/\[face:[^\]]*\]/g, '');
+        contentDiv.textContent = filteredText;
 
         const timeDiv = document.createElement('div');
         timeDiv.className = 'message-time';
