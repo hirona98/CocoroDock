@@ -83,10 +83,8 @@ class WebSocketManager {
                         message: message.data?.message,
                         details: message.data
                     });
-                } else {
-                    console.log('[WebSocket] メッセージ受信:', message);
                 }
-                
+
                 this.handleMessage(message);
                 
                 if (this.onMessage) {
@@ -182,16 +180,13 @@ class WebSocketManager {
         if (audioDataBase64) {
             // Base64の場合は約1.33倍なので元のサイズを推定
             actualBytes = Math.floor(audioDataBase64.length * 0.75);
-            console.log(`[WebSocket] 音声データ送信(Base64): ${actualBytes}bytes (推定), 形式: ${voiceMessage.data.format}`);
         } else {
             actualBytes = audioData.length;
-            console.log(`[WebSocket] 音声データ送信(Array): ${actualBytes}bytes, 形式: ${voiceMessage.data.format}`);
         }
 
         try {
             // 音声データ送信
             const jsonString = JSON.stringify(voiceMessage);
-            console.log(`[WebSocket] JSON文字列サイズ: ${jsonString.length}文字 (約${Math.round(jsonString.length/1024)}KB)`);
             this.ws.send(jsonString);
 
             // 統計情報記録（実際のバイト数を使用）
@@ -228,8 +223,6 @@ class WebSocketManager {
         this.voiceStats.totalBytes += dataSize;
         this.voiceStats.formats[format] = (this.voiceStats.formats[format] || 0) + 1;
         this.voiceStats.lastSent = new Date().toISOString();
-
-        console.log(`[WebSocket] 音声統計: ${this.voiceStats.totalMessages}回送信, ${(this.voiceStats.totalBytes / 1024).toFixed(1)}KB`);
     }
 
     /**

@@ -534,9 +534,6 @@ namespace CocoroDock.Communication
                     return;
                 }
 
-                // CocoroDockに音声メッセージを通知
-                MobileMessageReceived?.Invoke(this, $"🎤 音声データ ({audioBytes.Length}bytes, {message.Data.Processing})");
-
                 // 音声認識実行
                 var recognizedText = await ProcessVoiceData(
                     audioBytes,
@@ -576,8 +573,6 @@ namespace CocoroDock.Communication
         {
             try
             {
-                Debug.WriteLine($"[MobileWebSocketServer] 音声処理開始: {audioData.Length}bytes, {sampleRate}Hz, {channels}ch, {format}");
-
                 // 現在のキャラクターのSTT設定を取得
                 var currentCharacter = _appSettings.GetCurrentCharacter();
                 if (currentCharacter?.sttApiKey == null || string.IsNullOrEmpty(currentCharacter.sttApiKey))
@@ -608,7 +603,6 @@ namespace CocoroDock.Communication
                     return string.Empty;
                 }
 
-                Debug.WriteLine($"[MobileWebSocketServer] 音声認識完了: {recognizedText}");
                 return recognizedText;
             }
             catch (Exception ex)
@@ -663,7 +657,6 @@ namespace CocoroDock.Communication
                 if (_cocoroClient != null && _cocoroClient.IsConnected)
                 {
                     await _cocoroClient.SendChatAsync(sessionId, chatRequest);
-                    Debug.WriteLine($"[MobileWebSocketServer] 音声認識結果をCocoreCoreM送信: {recognizedText}");
                 }
                 else
                 {
@@ -787,8 +780,6 @@ namespace CocoroDock.Communication
         {
             try
             {
-                Console.WriteLine($"[MobileWebSocketServer] SendUserMessageToMobile開始: connectionId={connectionId}, message={message}");
-
                 var chatMessage = new MobileChatMessage
                 {
                     Data = new MobileChatData
@@ -799,9 +790,7 @@ namespace CocoroDock.Communication
                     }
                 };
 
-                Console.WriteLine($"[MobileWebSocketServer] ユーザーメッセージJSON作成完了");
                 await SendJsonToMobile(connectionId, chatMessage);
-                Console.WriteLine($"[MobileWebSocketServer] ユーザーメッセージ送信完了");
             }
             catch (Exception ex)
             {

@@ -220,7 +220,7 @@ class CocoroAIApp {
         try {
             // 音声再生中は認識データを破棄
             if (this.isPlayingAudio) {
-                this.log('🔇 音声再生中のため認識データを破棄');
+                // this.log('🔇 音声再生中のため認識データを破棄');
                 return;
             }
 
@@ -237,13 +237,6 @@ class CocoroAIApp {
                 binaryString += chunkString;
             }
             const base64Audio = btoa(binaryString);
-
-            // デバッグ: Base64データの最初と最後の部分をログ出力
-            console.log(`[RNNoise] Base64開始部分: ${base64Audio.substring(0, 50)}`);
-            console.log(`[RNNoise] Base64終了部分: ${base64Audio.substring(base64Audio.length - 50)}`);
-
-            console.log(`[RNNoise] WAVデータサイズ: ${wavData.length}bytes -> Base64: ${base64Audio.length}chars`);
-
             const voiceMessage = {
                 type: 'voice',
                 timestamp: new Date().toISOString(),
@@ -474,8 +467,6 @@ class CocoroAIApp {
      */
     addAudioToQueue(audioUrl) {
         this.audioQueue.push(audioUrl);
-        this.log(`🎵 音声をキューに追加: ${audioUrl} (キュー長: ${this.audioQueue.length})`);
-
         // キューが処理中でない場合は処理開始
         if (!this.isProcessingAudioQueue) {
             this.processAudioQueue();
@@ -491,7 +482,6 @@ class CocoroAIApp {
         }
 
         this.isProcessingAudioQueue = true;
-        this.log('🎵 音声キュー処理開始');
 
         while (this.audioQueue.length > 0) {
             const audioUrl = this.audioQueue.shift();
@@ -499,7 +489,6 @@ class CocoroAIApp {
         }
 
         this.isProcessingAudioQueue = false;
-        this.log('🎵 音声キュー処理完了');
     }
 
     /**
@@ -508,17 +497,17 @@ class CocoroAIApp {
     async playAudioSequentially(audioUrl) {
         return new Promise((resolve, reject) => {
             try {
-                console.log('音声再生開始:', audioUrl);
+                // console.log('音声再生開始:', audioUrl);
                 const audio = new Audio(audioUrl);
 
                 // 音声再生中フラグを設定
                 this.isPlayingAudio = true;
-                this.log('🔊 音声再生開始 - 音声認識を一時停止');
+                // this.log('🔊 音声再生開始 - 音声認識を一時停止');
 
                 // 音声再生終了時の処理
                 audio.addEventListener('ended', () => {
                     this.isPlayingAudio = false;
-                    this.log('🔊 音声再生終了 - 音声認識を再開');
+                    // this.log('🔊 音声再生終了 - 音声認識を再開');
                     resolve();
                 });
 
@@ -533,7 +522,7 @@ class CocoroAIApp {
                 // 音声再生中断時の処理
                 audio.addEventListener('pause', () => {
                     this.isPlayingAudio = false;
-                    this.log('🔊 音声再生中断 - 音声認識を再開');
+                    // this.log('🔊 音声再生中断 - 音声認識を再開');
                     resolve();
                 });
 
@@ -583,7 +572,6 @@ class CocoroAIApp {
      */
     handleChatMessage(message) {
         if (message.data?.chat_type === 'voice_recognition_user') {
-            console.log('[CocoroAI] 音声認識結果をユーザーメッセージとして表示:', message.data.message);
             this.addUserMessage(message.data.message);
         }
     }
