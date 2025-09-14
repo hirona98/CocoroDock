@@ -251,8 +251,6 @@ class RNNoiseProcessor {
             const audioLevel = this.calculateAudioLevel(denoisedFrame);
             const isSpeech = this.enhancedVADJudgment(vadProbability, audioLevel);
 
-            this.log(`Enhanced VAD: ${(vadProbability * 100).toFixed(1)}%, Level: ${(audioLevel * 100).toFixed(1)}%, Speech: ${isSpeech}`);
-
             // 音声レベル通知
             if (this.onAudioLevel) {
                 this.onAudioLevel(audioLevel, isSpeech, vadProbability);
@@ -444,11 +442,6 @@ class RNNoiseProcessor {
 
         const rms = Math.sqrt(sum / audioFrame.length);
 
-        // デバッグ情報を定期的に出力
-        if (this.stats.framesProcessed % 100 === 0) {
-            this.log(`音声レベル詳細 - RMS: ${rms.toFixed(6)}, Max: ${maxValue.toFixed(6)}, NonZero: ${nonZeroSamples}/${audioFrame.length}`);
-        }
-
         // より感度の良いレベル計算
         if (rms > 1e-10) { // より小さい値まで検出
             // 線形スケールでも計算（比較用）
@@ -460,11 +453,6 @@ class RNNoiseProcessor {
 
             // より高い感度を持つ方を採用
             const finalLevel = Math.max(linearLevel, dbLevel);
-
-            // 定期的にレベル詳細を出力
-            if (this.stats.framesProcessed % 50 === 0) {
-                this.log(`レベル計算 - Linear: ${(linearLevel * 100).toFixed(2)}%, dB: ${db.toFixed(1)}dB (${(dbLevel * 100).toFixed(2)}%), Final: ${(finalLevel * 100).toFixed(2)}%`);
-            }
 
             return finalLevel;
         }
