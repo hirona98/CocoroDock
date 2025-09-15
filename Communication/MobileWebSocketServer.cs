@@ -226,16 +226,69 @@ namespace CocoroDock.Communication
             // WebSocketサポートを有効化
             app.UseWebSockets();
 
-            // 静的ファイル配信（PWA用）
-            var wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            if (Directory.Exists(wwwrootPath))
+            // 静的ファイル配信（EmbeddedResourceから直接配信）
+            var assembly = typeof(MobileWebSocketServer).Assembly;
+
+            // 埋め込みリソース配信ミドルウェア
+            app.Use(async (context, next) =>
             {
-                app.UseStaticFiles(new StaticFileOptions
+                var path = context.Request.Path.Value?.TrimStart('/') ?? "";
+
+                // APIやWebSocketエンドポイントの場合はスキップ
+                if (context.Request.Path.StartsWithSegments("/mobile") ||
+                    context.Request.Path.StartsWithSegments("/audio") ||
+                    context.WebSockets.IsWebSocketRequest)
                 {
-                    FileProvider = new PhysicalFileProvider(wwwrootPath),
-                    RequestPath = ""
-                });
-            }
+                    await next();
+                    return;
+                }
+
+                // ルートパスの場合はindex.htmlを返す
+                if (string.IsNullOrEmpty(path) || path == "/")
+                {
+                    path = "index.html";
+                }
+
+                // パスからリソース名を構築
+                var resourceName = $"CocoroDock.wwwroot.{path.Replace('/', '.')}";
+
+                using var stream = assembly.GetManifestResourceStream(resourceName);
+                if (stream != null)
+                {
+                    // MIMEタイプを設定
+                    var extension = Path.GetExtension(path).ToLower();
+                    context.Response.ContentType = extension switch
+                    {
+                        ".html" => "text/html",
+                        ".css" => "text/css",
+                        ".js" => "application/javascript",
+                        ".json" => "application/json",
+                        ".png" => "image/png",
+                        ".jpg" or ".jpeg" => "image/jpeg",
+                        ".gif" => "image/gif",
+                        ".ico" => "image/x-icon",
+                        ".wasm" => "application/wasm",
+                        _ => "application/octet-stream"
+                    };
+
+                    await stream.CopyToAsync(context.Response.Body);
+                    return;
+                }
+
+                // ファイルが見つからない場合、拡張子がない場合はindex.htmlを試す
+                if (!Path.HasExtension(path))
+                {
+                    using var indexStream = assembly.GetManifestResourceStream("CocoroDock.wwwroot.index.html");
+                    if (indexStream != null)
+                    {
+                        context.Response.ContentType = "text/html";
+                        await indexStream.CopyToAsync(context.Response.Body);
+                        return;
+                    }
+                }
+
+                await next();
+            });
 
             // WebSocketエンドポイント
             app.Map("/mobile", async context =>
@@ -257,12 +310,7 @@ namespace CocoroDock.Communication
                 return await HandleAudioFileAsync(context);
             });
 
-            // ルートパス処理（index.htmlにリダイレクト）
-            app.MapGet("/", context =>
-            {
-                context.Response.Redirect("/index.html");
-                return Task.CompletedTask;
-            });
+            // 今は不要（上のミドルウェアで処理される）
         }
 
         /// <summary>

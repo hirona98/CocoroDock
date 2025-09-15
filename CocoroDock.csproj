@@ -15,6 +15,7 @@
     <AssemblyName>CocoroAI</AssemblyName>
     <SelfContained>false</SelfContained>
     <UseAppHost>true</UseAppHost>
+    <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -58,10 +59,8 @@
     <EmbeddedResource Include="Resource\silero_vad.onnx" />
     <EmbeddedResource Include="Resource\License.txt" />
 
-    <!-- wwwrootをリリースに含める（シンプル版） -->
-    <Content Include="wwwroot\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <!-- wwwrootをEmbeddedResourceとしてexe内に組み込み -->
+    <EmbeddedResource Include="wwwroot\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -100,6 +99,7 @@
     <PackageReference Include="System.Text.Json" Version="8.0.6" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.19.2" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="8.0.0" />
   </ItemGroup>
 
 
