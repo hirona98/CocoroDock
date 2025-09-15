@@ -23,7 +23,7 @@ namespace CocoroDock.Communication
 
         public string ProviderName => "VOICEVOX";
 
-        public VoicevoxClient(string endpointUrl = "http://127.0.0.1:50021", string audioDirectory = "wwwroot/audio")
+        public VoicevoxClient(string endpointUrl = "http://127.0.0.1:50021", string audioDirectory = "tmp/audio")
         {
             _httpClient = new HttpClient();
             _httpClient.Timeout = TimeSpan.FromSeconds(30);

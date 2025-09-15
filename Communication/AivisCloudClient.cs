@@ -23,7 +23,7 @@ namespace CocoroDock.Communication
 
         public string ProviderName => "AivisCloud";
 
-        public AivisCloudClient(AivisCloudConfig? config, string audioDirectory = "wwwroot/audio")
+        public AivisCloudClient(AivisCloudConfig? config, string audioDirectory = "tmp/audio")
         {
             _config = config ?? new AivisCloudConfig();
             _httpClient = new HttpClient();

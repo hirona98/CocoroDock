@@ -14,7 +14,7 @@ namespace CocoroDock.Communication
         /// <param name="characterSettings">キャラクター設定</param>
         /// <param name="audioDirectory">音声ファイル保存ディレクトリ</param>
         /// <returns>音声合成クライアント</returns>
-        public static ISpeechSynthesizerClient CreateClient(CharacterSettings characterSettings, string audioDirectory = "wwwroot/audio")
+        public static ISpeechSynthesizerClient CreateClient(CharacterSettings characterSettings, string audioDirectory = "tmp/audio")
         {
             if (characterSettings == null)
             {

@@ -22,7 +22,7 @@ namespace CocoroDock.Communication
 
         public string ProviderName => "Style-Bert-VITS2";
 
-        public StyleBertVits2Client(StyleBertVits2Config? config, string audioDirectory = "wwwroot/audio")
+        public StyleBertVits2Client(StyleBertVits2Config? config, string audioDirectory = "tmp/audio")
         {
             _config = config ?? new StyleBertVits2Config();
             _httpClient = new HttpClient();

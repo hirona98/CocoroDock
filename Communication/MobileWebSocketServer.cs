@@ -342,7 +342,7 @@ namespace CocoroDock.Communication
                         {
                             // 再接続を1回試行
                             await Task.Delay(1000);
-                            
+
                             // null チェックを追加してCS8602を修正
                             if (_cocoroClient != null)
                             {
@@ -1327,7 +1327,7 @@ namespace CocoroDock.Communication
         {
             try
             {
-                var audioDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "audio");
+                var audioDirectory = Path.Combine(Directory.GetCurrentDirectory(), "tmp", "audio");
 
                 if (!Directory.Exists(audioDirectory))
                 {
@@ -1383,7 +1383,7 @@ namespace CocoroDock.Communication
                 var fileName = Path.GetFileName(audioFileName);
                 if (string.IsNullOrEmpty(fileName)) return;
 
-                var audioDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "audio");
+                var audioDirectory = Path.Combine(Directory.GetCurrentDirectory(), "tmp", "audio");
                 var filePath = Path.Combine(audioDirectory, fileName);
 
                 if (File.Exists(filePath))
