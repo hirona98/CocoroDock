@@ -910,15 +910,6 @@ namespace CocoroDock.Communication
         {
             try
             {
-                // 不要な「画像を受信しました」メッセージは表示しない
-                // await SendUserMessageToMobile(connectionId, message);
-
-                // CocoroDockに画像受信を通知は行わない（MobileImageMessageReceivedで行う）
-                // if (!string.IsNullOrEmpty(message))
-                // {
-                //     MobileMessageReceived?.Invoke(this, $"📱 {message}");
-                // }
-
                 // 画像ファイルをBase64データに変換
                 byte[] imageBytes = await File.ReadAllBytesAsync(imagePath);
                 string base64String = Convert.ToBase64String(imageBytes);
@@ -927,9 +918,6 @@ namespace CocoroDock.Communication
                 var sessionId = $"image_{connectionId}_{DateTime.Now:yyyyMMddHHmmss}";
                 _sessionMappings[sessionId] = connectionId;
                 _sessionImageData[sessionId] = base64String; // 画像データをセッションに関連付け
-
-                // デスクトップアプリに画像付きメッセージを通知
-                MobileImageMessageReceived?.Invoke(this, (message, base64String));
 
                 string extension = Path.GetExtension(imagePath).ToLower().TrimStart('.');
                 string mimeType = extension switch
