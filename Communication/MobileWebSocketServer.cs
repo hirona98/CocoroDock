@@ -78,6 +78,9 @@ namespace CocoroDock.Communication
             // 起動時に古い音声ファイルをクリーンアップ
             CleanupAudioFilesOnStartup();
 
+            // 起動時に古い画像ファイルをクリーンアップ
+            CleanupImageFilesOnStartup();
+
             var httpsPort = _appSettings.GetConfigSettings().cocoroWebPort;
             Debug.WriteLine($"[MobileWebSocketServer] 初期化: HTTPS ポート={httpsPort}");
         }
@@ -201,6 +204,9 @@ namespace CocoroDock.Communication
 
                 _cts?.Dispose();
                 _cts = null;
+
+                // 終了時に画像ファイルをクリーンアップ
+                CleanupImageFilesOnStartup();
 
                 Debug.WriteLine("[MobileWebSocketServer] サーバー停止完了");
             }
@@ -828,10 +834,14 @@ namespace CocoroDock.Communication
                     return;
                 }
 
+                // tmp/imageディレクトリを作成
+                var imageDirectory = Path.Combine(Directory.GetCurrentDirectory(), "tmp", "image");
+                Directory.CreateDirectory(imageDirectory);
+
                 // 画像ファイルを一時保存
                 string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss_fff");
                 string fileName = $"mobile_image_{timestamp}.{imageFormat}";
-                string imagePath = Path.Combine(Path.GetTempPath(), fileName);
+                string imagePath = Path.Combine(imageDirectory, fileName);
 
                 try
                 {
@@ -845,16 +855,13 @@ namespace CocoroDock.Communication
                     return;
                 }
 
-                // メッセージ付き画像の場合は組み合わせる
-                string userMessage = !string.IsNullOrEmpty(message.Data.Message) ? message.Data.Message : "";
-                // 「画像を受信しました」のメッセージは不要なので、ユーザーメッセージと画像パスのみ
-                string imageMessage = !string.IsNullOrEmpty(userMessage)
-                    ? userMessage  // ユーザーメッセージのみ
-                    : "";          // 画像のみの場合は空文字
+                // CocoroDock に画像メッセージを通知
+                string imageMessage = message.Data.Message ?? "";
+                MobileImageMessageReceived?.Invoke(this, (imageMessage, base64ImageData));
 
                 try
                 {
-                    // チャットメッセージとして処理（画像パスは別途CocoreCoreに渡される）
+                    // 画像処理結果をレスポンスとして送信
                     await ProcessRecognizedImageAsChat(connectionId, imageMessage, imagePath);
 
                     Debug.WriteLine($"[MobileWebSocketServer] 画像処理完了: {fileName} ({imageBytes.Length} bytes, {message.Data.Width}x{message.Data.Height})");
@@ -862,24 +869,28 @@ namespace CocoroDock.Communication
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"[MobileWebSocketServer] 画像メッセージ処理エラー: {ex.Message}");
-
-                    // 失敗した場合は一時ファイルを削除
+                    await SendErrorToMobile(connectionId, MobileErrorCodes.ImageProcessingError, "Image processing failed");
+                }
+                finally
+                {
+                    // 処理完了後にファイルを削除
                     try
                     {
-                        File.Delete(imagePath);
+                        if (File.Exists(imagePath))
+                        {
+                            File.Delete(imagePath);
+                        }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // ファイル削除失敗は無視
+                        Debug.WriteLine($"[MobileWebSocketServer] 画像ファイル削除エラー: {ex.Message}");
                     }
-
-                    await SendErrorToMobile(connectionId, MobileErrorCodes.ServerError, "Failed to process image message");
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[MobileWebSocketServer] 画像メッセージ処理エラー: {ex.Message}");
-                await SendErrorToMobile(connectionId, MobileErrorCodes.ServerError, "Image processing error");
+                await SendErrorToMobile(connectionId, MobileErrorCodes.ImageProcessingError, "Image message processing error");
             }
         }
 
@@ -1356,6 +1367,45 @@ namespace CocoroDock.Communication
             catch (Exception ex)
             {
                 Debug.WriteLine($"[MobileWebSocketServer] 起動時クリーンアップエラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 起動時に古い画像ファイルをクリーンアップ
+        /// </summary>
+        private void CleanupImageFilesOnStartup()
+        {
+            try
+            {
+                var imageDirectory = Path.Combine(Directory.GetCurrentDirectory(), "tmp", "image");
+
+                if (!Directory.Exists(imageDirectory))
+                {
+                    Debug.WriteLine("[MobileWebSocketServer] 画像ディレクトリが存在しません");
+                    return;
+                }
+
+                var imageFiles = Directory.GetFiles(imageDirectory, "*.*");
+                var deletedCount = 0;
+
+                foreach (var filePath in imageFiles)
+                {
+                    try
+                    {
+                        File.Delete(filePath);
+                        deletedCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[MobileWebSocketServer] 起動時画像ファイル削除エラー {Path.GetFileName(filePath)}: {ex.Message}");
+                    }
+                }
+
+                Debug.WriteLine($"[MobileWebSocketServer] 起動時画像クリーンアップ完了: {deletedCount}個のファイルを削除");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MobileWebSocketServer] 起動時画像クリーンアップエラー: {ex.Message}");
             }
         }
 

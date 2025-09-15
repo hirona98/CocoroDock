@@ -220,5 +220,6 @@ namespace CocoroDock.Communication
         public const string VoiceRecognitionError = "VOICE_RECOGNITION_ERROR";
         public const string AudioProcessingError = "AUDIO_PROCESSING_ERROR";
         public const string VoiceDataError = "VOICE_DATA_ERROR";
+        public const string ImageProcessingError = "IMAGE_PROCESSING_ERROR";
     }
 }
