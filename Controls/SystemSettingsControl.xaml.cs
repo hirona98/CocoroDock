@@ -72,8 +72,8 @@ namespace CocoroDock.Controls
                 GoogleSearchEngineIdTextBox.Text = appSettings.GoogleSearchEngineId;
                 InternetMaxResultsTextBox.Text = appSettings.InternetMaxResults.ToString();
 
-                // リマインダーUI初期化
-                ReminderDateTimeTextBox.Text = DateTime.Now.AddHours(1).ToString("yyyy/MM/dd HH:mm");
+                // リマインダーUI初期化（スペース区切り形式）
+                ReminderDateTimeTextBox.Text = DateTime.Now.AddHours(1).ToString("yyyy-MM-dd HH:mm");
 
                 // リマインダーを読み込み
                 await LoadRemindersAsync();
@@ -360,14 +360,14 @@ namespace CocoroDock.Controls
                     return;
                 }
 
-                // YYYY/MM/DD HH:MM 形式の解析
+                // スペース区切り形式の解析（CocoroCoreM/SQLiteが対応）
                 DateTime scheduledAt;
-                if (!DateTime.TryParseExact(dateTimeText, new[] { "yyyy/MM/dd HH:mm", "yyyy/M/d H:mm", "yyyy/MM/dd H:mm", "yyyy/M/d HH:mm" },
+                if (!DateTime.TryParseExact(dateTimeText, new[] { "yyyy-MM-dd HH:mm", "yyyy-M-d H:mm", "yyyy-MM-dd HH:mm:ss", "yyyy-M-d H:mm:ss" },
                     System.Globalization.CultureInfo.InvariantCulture,
                     System.Globalization.DateTimeStyles.None,
                     out scheduledAt))
                 {
-                    MessageBox.Show("日時の形式が正しくありません。\nYYYY/MM/DD HH:MM の形式で入力してください。",
+                    MessageBox.Show("日時の形式が正しくありません。\nYYYY-MM-DD HH:MM の形式で入力してください。",
                         "入力エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
@@ -381,19 +381,12 @@ namespace CocoroDock.Controls
 
                 var reminder = new Reminder
                 {
-                    RemindDatetime = scheduledAt.ToString("yyyy/MM/dd HH:mm"),
+                    RemindDatetime = scheduledAt.ToString("yyyy-MM-dd HH:mm:ss"),
                     Requirement = messageText
                 };
 
                 await _reminderService.CreateReminderAsync(reminder);
                 await LoadRemindersAsync();
-
-                // フィールドをクリア
-                ReminderDateTimeTextBox.Text = "";
-                ReminderMessageTextBox.Text = "";
-
-                MessageBox.Show("リマインダーを追加しました。", "成功",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {

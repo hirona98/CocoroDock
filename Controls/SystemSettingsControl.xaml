@@ -56,7 +56,7 @@
                                      Padding="2"
                                      VerticalAlignment="Center"
                                      Text=""
-                                     ToolTip="YYYY/MM/DD HH:MM形式で入力"/>
+                                     ToolTip="YYYY-MM-DD HH:MM形式で入力（例: 2025-01-18 15:00）"/>
 
                             <TextBlock Grid.Column="2"
                                        Text="内容："
