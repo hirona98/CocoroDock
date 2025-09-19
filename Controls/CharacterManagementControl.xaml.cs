@@ -559,7 +559,7 @@ namespace CocoroDock.Controls
                     isUseLLM = false,
                     apiKey = string.Empty,
                     llmModel = "openai/gpt-4o-mini",
-                    max_turns_window = 200,
+                    max_turns_window = 100,
                     localLLMBaseUrl = string.Empty,
                     visionApiKey = string.Empty,
                     visionModel = "openai/gpt-4o-mini",

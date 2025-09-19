@@ -466,6 +466,7 @@ namespace CocoroDock.Controls
                 isUseLLM = source.isUseLLM,
                 apiKey = source.apiKey,
                 llmModel = source.llmModel,
+                max_turns_window = source.max_turns_window,
                 localLLMBaseUrl = source.localLLMBaseUrl,
                 visionApiKey = source.visionApiKey,
                 visionModel = source.visionModel,
