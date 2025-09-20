@@ -12,6 +12,8 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using CocoroDock.Windows;
 using CocoroDock.Services;
+using System.Windows.Controls.Primitives;
+using System.Windows.Threading;
 
 namespace CocoroDock.Controls
 {
@@ -85,6 +87,9 @@ namespace CocoroDock.Controls
             {
                 Style = (Style)Resources["UserBubbleStyle"]
             };
+
+            // 右クリックでコピー
+            AttachCopyOnRightClick(bubble);
 
             var messageContent = new StackPanel();
 
@@ -179,6 +184,9 @@ namespace CocoroDock.Controls
                     Style = (Style)Resources["AiBubbleStyle"]
                 };
 
+                // 右クリックでコピー
+                AttachCopyOnRightClick(bubble);
+
                 var messageContent = new StackPanel();
 
                 // 表情タグを削除してからテキストを設定
@@ -217,6 +225,9 @@ namespace CocoroDock.Controls
             {
                 Style = (Style)Resources["AiBubbleStyle"]
             };
+
+            // 右クリックでコピー
+            AttachCopyOnRightClick(bubble);
 
             var messageContent = new StackPanel();
 
@@ -395,6 +406,9 @@ namespace CocoroDock.Controls
                 Style = (Style)Resources["SystemMessageBubbleStyle"]
             };
 
+            // 右クリックでコピー
+            AttachCopyOnRightClick(bubble);
+
             var messageContent = new StackPanel();
 
             var messageText = new TextBox
@@ -430,6 +444,9 @@ namespace CocoroDock.Controls
             {
                 Style = (Style)Resources["SystemMessageBubbleStyle"]
             };
+
+            // 右クリックでコピー
+            AttachCopyOnRightClick(bubble);
 
             var messageContent = new StackPanel();
 
@@ -511,6 +528,9 @@ namespace CocoroDock.Controls
                 {
                     Style = (Style)Resources["SystemMessageBubbleStyle"]
                 };
+
+                // 右クリックでコピー
+                AttachCopyOnRightClick(bubble);
 
                 var messageContent = new StackPanel();
 
@@ -1114,6 +1134,9 @@ namespace CocoroDock.Controls
                 Style = (Style)Resources["UserBubbleStyle"]  // テキスト入力と同じスタイル
             };
 
+            // 右クリックでコピー
+            AttachCopyOnRightClick(bubble);
+
             var messageContent = new StackPanel();
 
             var messageText = new TextBox
@@ -1133,6 +1156,109 @@ namespace CocoroDock.Controls
 
             // 最後のメッセージ情報を更新
             UpdateLastMessageInfo(MessageType.User);
+        }
+    }
+}
+
+namespace CocoroDock.Controls
+{
+    public partial class ChatControl
+    {
+        /// <summary>
+        /// バブルに右クリックコピーのハンドラを付与
+        /// </summary>
+        private void AttachCopyOnRightClick(Border bubble)
+        {
+            bubble.MouseRightButtonUp += (s, e) =>
+            {
+                try
+                {
+                    string text = CollectTextFromBubble(bubble);
+                    if (string.IsNullOrWhiteSpace(text))
+                    {
+                        ShowTransientTooltip(bubble, "コピーするテキストがありません");
+                        e.Handled = true;
+                        return;
+                    }
+
+                    Clipboard.SetText(text);
+                    ShowTransientTooltip(bubble, "コピーしました");
+                    e.Handled = true;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Clipboard copy failed: {ex}");
+                    ShowTransientTooltip(bubble, "コピーに失敗しました");
+                    e.Handled = true;
+                }
+            };
+        }
+
+        /// <summary>
+        /// バブル内の TextBox からテキストを収集し連結
+        /// </summary>
+        private string CollectTextFromBubble(Border bubble)
+        {
+            var parts = new List<string>();
+            foreach (var tb in FindVisualChildren<TextBox>(bubble))
+            {
+                if (tb.Visibility == Visibility.Visible && !string.IsNullOrWhiteSpace(tb.Text))
+                {
+                    parts.Add(tb.Text);
+                }
+            }
+            return string.Join(Environment.NewLine, parts.Where(p => !string.IsNullOrWhiteSpace(p)));
+        }
+
+        /// <summary>
+        /// 一時的なツールチップをマウス位置付近に表示
+        /// </summary>
+        private void ShowTransientTooltip(UIElement target, string message, int milliseconds = 1500)
+        {
+            var tooltip = new ToolTip
+            {
+                Content = message,
+                PlacementTarget = target,
+                Placement = PlacementMode.Mouse,
+                StaysOpen = true,
+                Background = new SolidColorBrush(Color.FromArgb(240, 50, 50, 50)),
+                Foreground = Brushes.White,
+                Padding = new Thickness(8, 4, 8, 4)
+            };
+
+            tooltip.IsOpen = true;
+
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(milliseconds) };
+            timer.Tick += (s, e) =>
+            {
+                timer.Stop();
+                tooltip.IsOpen = false;
+                // ToolTipは明示破棄不要だが念のため親から切り離す
+                tooltip.PlacementTarget = null;
+            };
+            timer.Start();
+        }
+
+        /// <summary>
+        /// ビジュアルツリーを走査して子孫要素を列挙
+        /// </summary>
+        private static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
+        {
+            if (depObj == null) yield break;
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+            {
+                var child = VisualTreeHelper.GetChild(depObj, i);
+                if (child is T tChild)
+                {
+                    yield return tChild;
+                }
+
+                foreach (var childOfChild in FindVisualChildren<T>(child))
+                {
+                    yield return childOfChild;
+                }
+            }
         }
     }
 }
