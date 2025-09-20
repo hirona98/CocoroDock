@@ -26,6 +26,19 @@ namespace CocoroDock.Controls
         private List<string> _attachedImageDataUrls = new List<string>();
         private List<BitmapSource> _attachedImageSources = new List<BitmapSource>();
         private const int MaxImageCount = 5;
+        // メッセージタイプの列挙型
+        private enum MessageType
+        {
+            User,
+            AI,
+            System,
+            Notification
+        }
+
+        // 最後のメッセージの情報を記録
+        private MessageType _lastMessageType = MessageType.User;
+        private DateTime _lastMessageTime = DateTime.MinValue;
+        private readonly TimeSpan _continuousMessageThreshold = TimeSpan.FromSeconds(10);
 
         public ChatControl()
         {
@@ -137,6 +150,9 @@ namespace CocoroDock.Controls
 
             // 自動スクロール
             ChatScrollViewer.ScrollToEnd();
+
+            // 最後のメッセージ情報を更新
+            UpdateLastMessageInfo(MessageType.User);
         }
 
         /// <summary>
@@ -145,32 +161,47 @@ namespace CocoroDock.Controls
         /// <param name="message">レスポンスメッセージ</param>
         public void AddAiMessage(string message)
         {
-            var messageContainer = new StackPanel();
+            // 連続AIメッセージ判定
+            bool isContinuous = ShouldContinueLastMessage(MessageType.AI, hasImage: false);
 
-            var bubble = new Border
+            if (isContinuous)
             {
-                Style = (Style)Resources["AiBubbleStyle"]
-            };
-
-            var messageContent = new StackPanel();
-
-            // 表情タグを削除してからテキストを設定
-            var cleanMessage = RemoveFaceTags(message);
-
-            var messageText = new TextBox
+                // 既存のバブルに追記
+                AppendToLastAiMessage(message);
+            }
+            else
             {
-                Style = (Style)Resources["AiMessageTextStyle"],
-                Text = cleanMessage
-            };
+                // 新しいバブルを作成
+                var messageContainer = new StackPanel();
 
-            messageContent.Children.Add(messageText);
-            bubble.Child = messageContent;
-            messageContainer.Children.Add(bubble);
+                var bubble = new Border
+                {
+                    Style = (Style)Resources["AiBubbleStyle"]
+                };
 
-            ChatMessagesPanel.Children.Add(messageContainer);
+                var messageContent = new StackPanel();
 
-            // 自動スクロール
-            ChatScrollViewer.ScrollToEnd();
+                // 表情タグを削除してからテキストを設定
+                var cleanMessage = RemoveFaceTags(message);
+
+                var messageText = new TextBox
+                {
+                    Style = (Style)Resources["AiMessageTextStyle"],
+                    Text = cleanMessage
+                };
+
+                messageContent.Children.Add(messageText);
+                bubble.Child = messageContent;
+                messageContainer.Children.Add(bubble);
+
+                ChatMessagesPanel.Children.Add(messageContainer);
+
+                // 自動スクロール
+                ChatScrollViewer.ScrollToEnd();
+            }
+
+            // 最後のメッセージ情報を更新
+            UpdateLastMessageInfo(MessageType.AI);
         }
 
         /// <summary>
@@ -270,6 +301,9 @@ namespace CocoroDock.Controls
 
             // 自動スクロール
             ChatScrollViewer.ScrollToEnd();
+
+            // 最後のメッセージ情報を更新（画像付きは常に新バブル）
+            UpdateLastMessageInfo(MessageType.AI);
         }
 
         /// <summary>
@@ -303,6 +337,38 @@ namespace CocoroDock.Controls
 
             // 自動スクロール
             ChatScrollViewer.ScrollToEnd();
+        }
+
+        /// <summary>
+        /// 連続メッセージかどうかを判定
+        /// </summary>
+        /// <param name="currentType">現在のメッセージタイプ</param>
+        /// <param name="hasImage">画像が含まれているか</param>
+        /// <returns>連続メッセージの場合はtrue</returns>
+        private bool ShouldContinueLastMessage(MessageType currentType, bool hasImage)
+        {
+            // 画像付きは常に新バブル
+            if (hasImage) return false;
+
+            // 前がAI以外なら新バブル
+            if (_lastMessageType != MessageType.AI) return false;
+
+            // 現在がAI以外なら新バブル
+            if (currentType != MessageType.AI) return false;
+
+            // 10秒以内なら連続
+            var elapsed = DateTime.Now - _lastMessageTime;
+            return elapsed <= _continuousMessageThreshold;
+        }
+
+        /// <summary>
+        /// 最後のメッセージ情報を更新
+        /// </summary>
+        /// <param name="messageType">メッセージタイプ</param>
+        private void UpdateLastMessageInfo(MessageType messageType)
+        {
+            _lastMessageType = messageType;
+            _lastMessageTime = DateTime.Now;
         }
 
         /// <summary>
@@ -345,6 +411,9 @@ namespace CocoroDock.Controls
 
             // 自動スクロール
             ChatScrollViewer.ScrollToEnd();
+
+            // 最後のメッセージ情報を更新
+            UpdateLastMessageInfo(MessageType.System);
         }
 
         /// <summary>
@@ -423,6 +492,9 @@ namespace CocoroDock.Controls
 
             // 自動スクロール
             ChatScrollViewer.ScrollToEnd();
+
+            // 最後のメッセージ情報を更新
+            UpdateLastMessageInfo(MessageType.Notification);
         }
 
         /// <summary>
@@ -489,6 +561,9 @@ namespace CocoroDock.Controls
 
                 // 自動スクロール
                 ChatScrollViewer.ScrollToEnd();
+
+                // 最後のメッセージ情報を更新
+                UpdateLastMessageInfo(MessageType.System);
             }
             catch (Exception ex)
             {
@@ -1055,6 +1130,9 @@ namespace CocoroDock.Controls
 
             // 自動スクロール
             ChatScrollViewer.ScrollToEnd();
+
+            // 最後のメッセージ情報を更新
+            UpdateLastMessageInfo(MessageType.User);
         }
     }
 }
