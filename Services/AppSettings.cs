@@ -97,6 +97,9 @@ namespace CocoroDock.Services
         // マイク設定
         public MicrophoneSettings MicrophoneSettings { get; set; } = new MicrophoneSettings();
 
+        // メッセージウィンドウ設定
+        public MessageWindowSettings MessageWindowSettings { get; set; } = new MessageWindowSettings();
+
         public bool IsLoaded { get; set; } = false;
 
         // コンストラクタはprivate（シングルトンパターン）
@@ -197,6 +200,12 @@ namespace CocoroDock.Services
                 MicrophoneSettings = config.microphoneSettings;
             }
 
+            // メッセージウィンドウ設定を更新
+            if (config.messageWindowSettings != null)
+            {
+                MessageWindowSettings = config.messageWindowSettings;
+            }
+
             // CocoroCoreM用追加設定を更新
             EnableProMode = config.enable_pro_mode;
             EnableInternetRetrieval = config.enable_internet_retrieval;
@@ -246,6 +255,7 @@ namespace CocoroDock.Services
                 windowPositionY = WindowPositionY,
                 screenshotSettings = ScreenshotSettings,
                 microphoneSettings = MicrophoneSettings,
+                messageWindowSettings = MessageWindowSettings,
                 enable_pro_mode = EnableProMode,
                 enable_internet_retrieval = EnableInternetRetrieval,
                 googleApiKey = GoogleApiKey,

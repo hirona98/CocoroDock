@@ -116,6 +116,15 @@ namespace CocoroDock.Controls
             VirtualKeyStringTextBox.Text = appSettings.VirtualKeyString;
             AutoMoveCheckBox.IsChecked = appSettings.IsAutoMove;
             ShowMessageWindowCheckBox.IsChecked = appSettings.ShowMessageWindow;
+
+            // メッセージウィンドウ設定の初期化
+            MaxMessageCountTextBox.Text = appSettings.MessageWindowSettings.maxMessageCount.ToString();
+            MaxTotalCharactersTextBox.Text = appSettings.MessageWindowSettings.maxTotalCharacters.ToString();
+            MinWindowSizeTextBox.Text = appSettings.MessageWindowSettings.minWindowSize.ToString();
+            MaxWindowSizeTextBox.Text = appSettings.MessageWindowSettings.maxWindowSize.ToString();
+            FontSizeTextBox.Text = appSettings.MessageWindowSettings.fontSize.ToString();
+            HorizontalOffsetTextBox.Text = appSettings.MessageWindowSettings.horizontalOffset.ToString();
+            VerticalOffsetTextBox.Text = appSettings.MessageWindowSettings.verticalOffset.ToString();
             AmbientOcclusionCheckBox.IsChecked = appSettings.IsEnableAmbientOcclusion;
 
             foreach (ComboBoxItem item in MSAAComboBox.Items)
@@ -184,6 +193,19 @@ namespace CocoroDock.Controls
             _displaySettings["VirtualKeyString"] = VirtualKeyStringTextBox.Text;
             _displaySettings["AutoMove"] = AutoMoveCheckBox.IsChecked ?? false;
             _displaySettings["ShowMessageWindow"] = ShowMessageWindowCheckBox.IsChecked ?? false;
+
+            // メッセージウィンドウ設定のスナップショット保存
+            var messageWindowSettings = new Dictionary<string, object>
+            {
+                ["maxMessageCount"] = int.TryParse(MaxMessageCountTextBox.Text, out int maxCount) ? maxCount : 3,
+                ["maxTotalCharacters"] = int.TryParse(MaxTotalCharactersTextBox.Text, out int maxChars) ? maxChars : 300,
+                ["minWindowSize"] = float.TryParse(MinWindowSizeTextBox.Text, out float minSize) ? minSize : 200f,
+                ["maxWindowSize"] = float.TryParse(MaxWindowSizeTextBox.Text, out float maxSize) ? maxSize : 600f,
+                ["fontSize"] = float.TryParse(FontSizeTextBox.Text, out float fontSize) ? fontSize : 14f,
+                ["horizontalOffset"] = float.TryParse(HorizontalOffsetTextBox.Text, out float hOffset) ? hOffset : -0.2f,
+                ["verticalOffset"] = float.TryParse(VerticalOffsetTextBox.Text, out float vOffset) ? vOffset : 0f
+            };
+            _displaySettings["MessageWindowSettings"] = messageWindowSettings;
             _displaySettings["IsEnableAmbientOcclusion"] = AmbientOcclusionCheckBox.IsChecked ?? false;
 
             int msaaLevel = 0;
@@ -234,6 +256,25 @@ namespace CocoroDock.Controls
             appSettings.VirtualKeyString = (string)snapshot["VirtualKeyString"];
             appSettings.IsAutoMove = (bool)snapshot["AutoMove"];
             appSettings.ShowMessageWindow = (bool)snapshot["ShowMessageWindow"];
+
+            // メッセージウィンドウ設定の適用
+            if (snapshot.ContainsKey("MessageWindowSettings") && snapshot["MessageWindowSettings"] is Dictionary<string, object> msgSettings)
+            {
+                if (msgSettings.ContainsKey("maxMessageCount"))
+                    appSettings.MessageWindowSettings.maxMessageCount = Convert.ToInt32(msgSettings["maxMessageCount"]);
+                if (msgSettings.ContainsKey("maxTotalCharacters"))
+                    appSettings.MessageWindowSettings.maxTotalCharacters = Convert.ToInt32(msgSettings["maxTotalCharacters"]);
+                if (msgSettings.ContainsKey("minWindowSize"))
+                    appSettings.MessageWindowSettings.minWindowSize = Convert.ToSingle(msgSettings["minWindowSize"]);
+                if (msgSettings.ContainsKey("maxWindowSize"))
+                    appSettings.MessageWindowSettings.maxWindowSize = Convert.ToSingle(msgSettings["maxWindowSize"]);
+                if (msgSettings.ContainsKey("fontSize"))
+                    appSettings.MessageWindowSettings.fontSize = Convert.ToSingle(msgSettings["fontSize"]);
+                if (msgSettings.ContainsKey("horizontalOffset"))
+                    appSettings.MessageWindowSettings.horizontalOffset = Convert.ToSingle(msgSettings["horizontalOffset"]);
+                if (msgSettings.ContainsKey("verticalOffset"))
+                    appSettings.MessageWindowSettings.verticalOffset = Convert.ToSingle(msgSettings["verticalOffset"]);
+            }
             appSettings.IsEnableAmbientOcclusion = (bool)snapshot["IsEnableAmbientOcclusion"];
             appSettings.MsaaLevel = (int)snapshot["MsaaLevel"];
             appSettings.CharacterShadow = (int)snapshot["CharacterShadow"];

@@ -44,6 +44,15 @@
   "microphoneSettings": {
     "inputThreshold": -30
   },
+  "messageWindowSettings": {
+    "maxMessageCount": 3,
+    "maxTotalCharacters": 300,
+    "minWindowSize": 200,
+    "maxWindowSize": 600,
+    "fontSize": 14,
+    "horizontalOffset": -0.2,
+    "verticalOffset": 0.05
+  },
   "enable_pro_mode": false,
   "enable_internet_retrieval": false,
   "googleApiKey": "",

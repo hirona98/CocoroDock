@@ -277,6 +277,20 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
+    /// メッセージウィンドウ設定クラス
+    /// </summary>
+    public class MessageWindowSettings
+    {
+        public int maxMessageCount { get; set; } = 3;
+        public int maxTotalCharacters { get; set; } = 300;
+        public float minWindowSize { get; set; } = 200f;
+        public float maxWindowSize { get; set; } = 600f;
+        public float fontSize { get; set; } = 14f;
+        public float horizontalOffset { get; set; } = -0.2f;
+        public float verticalOffset { get; set; } = 0.05f;
+    }
+
+    /// <summary>
     /// 逃げ先座標設定クラス
     /// </summary>
     public class EscapePosition
@@ -351,6 +365,7 @@ namespace CocoroDock.Communication
         public float windowPositionY { get; set; } = 0.0f;
         public ScreenshotSettings screenshotSettings { get; set; } = new ScreenshotSettings();
         public MicrophoneSettings microphoneSettings { get; set; } = new MicrophoneSettings();
+        public MessageWindowSettings messageWindowSettings { get; set; } = new MessageWindowSettings();
         public bool enable_pro_mode { get; set; } = true;
         public bool enable_internet_retrieval { get; set; } = true;
         public string googleApiKey { get; set; } = "GOOGLE_API_KEY";
@@ -415,6 +430,17 @@ namespace CocoroDock.Communication
                 microphoneSettings = new MicrophoneSettings
                 {
                     inputThreshold = this.microphoneSettings.inputThreshold
+                },
+
+                messageWindowSettings = new MessageWindowSettings
+                {
+                    maxMessageCount = this.messageWindowSettings.maxMessageCount,
+                    maxTotalCharacters = this.messageWindowSettings.maxTotalCharacters,
+                    minWindowSize = this.messageWindowSettings.minWindowSize,
+                    maxWindowSize = this.messageWindowSettings.maxWindowSize,
+                    fontSize = this.messageWindowSettings.fontSize,
+                    horizontalOffset = this.messageWindowSettings.horizontalOffset,
+                    verticalOffset = this.messageWindowSettings.verticalOffset
                 },
 
                 // EscapePositionリストのディープコピー

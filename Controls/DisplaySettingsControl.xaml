@@ -86,11 +86,6 @@
                           Margin="0,5,0,10"
                           ToolTip="Auto move (unstable)"
                           Foreground="#FF4873CF"/>
-                <CheckBox x:Name="ShowMessageWindowCheckBox"
-                          Content="発話時メッセージウィンドウを表示する"
-                          Margin="0,5,0,10"
-                          ToolTip="Show message window on speech"
-                          Foreground="#FF4873CF"/>
                 <CheckBox x:Name="AmbientOcclusionCheckBox"
                           Content="Ambient Occlusion"
                           Margin="0,5,0,10"
@@ -229,6 +224,133 @@
                             <Run Text="{Binding ElementName=WindowSizeSlider, Path=Value, StringFormat='{}{0:0}'}"/>
                         </TextBlock>
                     </Grid>
+                </GroupBox>
+
+                <!-- 吹き出し設定 -->
+                <GroupBox Header="吹き出し設定"
+                          Margin="0,15,0,0"
+                          Padding="10"
+                          ToolTip="Message bubble settings">
+                    <StackPanel>
+                        <!-- メッセージウィンドウ表示設定 -->
+                        <CheckBox x:Name="ShowMessageWindowCheckBox"
+                                  Content="発話時メッセージウィンドウを表示する"
+                                  Margin="0,5,0,10"
+                                  ToolTip="Show message window on speech"
+                                  Foreground="#FF4873CF"/>
+
+                        <!-- 最大メッセージ数設定 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                            <TextBlock Text="最大メッセージ数"
+                                       VerticalAlignment="Center"
+                                       Foreground="#FF4873CF"
+                                       Width="180"
+                                       ToolTip="Maximum number of messages"/>
+                            <TextBox x:Name="MaxMessageCountTextBox"
+                                     Width="60"
+                                     Text="3"
+                                     Foreground="#FF0078D7"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Left"
+                                     ToolTip="Maximum number of messages to display"/>
+                        </StackPanel>
+
+                        <!-- 最大合計文字数設定 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                            <TextBlock Text="最大合計文字数"
+                                       VerticalAlignment="Center"
+                                       Foreground="#FF4873CF"
+                                       Width="180"
+                                       ToolTip="Maximum total characters"/>
+                            <TextBox x:Name="MaxTotalCharactersTextBox"
+                                     Width="60"
+                                     Text="300"
+                                     Foreground="#FF0078D7"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Left"
+                                     ToolTip="Maximum total characters to display"/>
+                        </StackPanel>
+
+                        <!-- 最小ウィンドウサイズ設定 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                            <TextBlock Text="最小ウィンドウサイズ"
+                                       VerticalAlignment="Center"
+                                       Foreground="#FF4873CF"
+                                       Width="180"
+                                       ToolTip="Minimum window size"/>
+                            <TextBox x:Name="MinWindowSizeTextBox"
+                                     Width="60"
+                                     Text="200"
+                                     Foreground="#FF0078D7"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Left"
+                                     ToolTip="Minimum window size in pixels"/>
+                        </StackPanel>
+
+                        <!-- 最大ウィンドウサイズ設定 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                            <TextBlock Text="最大ウィンドウサイズ"
+                                       VerticalAlignment="Center"
+                                       Foreground="#FF4873CF"
+                                       Width="180"
+                                       ToolTip="Maximum window size"/>
+                            <TextBox x:Name="MaxWindowSizeTextBox"
+                                     Width="60"
+                                     Text="600"
+                                     Foreground="#FF0078D7"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Left"
+                                     ToolTip="Maximum window size in pixels"/>
+                        </StackPanel>
+
+                        <!-- フォントサイズ設定 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                            <TextBlock Text="フォントサイズ"
+                                       VerticalAlignment="Center"
+                                       Foreground="#FF4873CF"
+                                       Width="180"
+                                       ToolTip="Font size"/>
+                            <TextBox x:Name="FontSizeTextBox"
+                                     Width="60"
+                                     Text="14"
+                                     Foreground="#FF0078D7"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Left"
+                                     ToolTip="Font size in pixels"/>
+                        </StackPanel>
+
+                        <!-- 水平オフセット設定 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                            <TextBlock Text="水平オフセット"
+                                       VerticalAlignment="Center"
+                                       Foreground="#FF4873CF"
+                                       Width="180"
+                                       ToolTip="Horizontal offset"/>
+                            <TextBox x:Name="HorizontalOffsetTextBox"
+                                     Width="60"
+                                     Text="0"
+                                     Foreground="#FF0078D7"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Left"
+                                     ToolTip="Horizontal offset for message window"/>
+                        </StackPanel>
+
+                        <!-- 垂直オフセット設定 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                            <TextBlock Text="垂直オフセット"
+                                       VerticalAlignment="Center"
+                                       Foreground="#FF4873CF"
+                                       Width="180"
+                                       ToolTip="Vertical offset"/>
+                            <TextBox x:Name="VerticalOffsetTextBox"
+                                     Width="60"
+                                     Text="0"
+                                     Foreground="#FF0078D7"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Left"
+                                     ToolTip="Vertical offset for message window"/>
+                        </StackPanel>
+                    </StackPanel>
                 </GroupBox>
             </StackPanel>
         </ScrollViewer>
