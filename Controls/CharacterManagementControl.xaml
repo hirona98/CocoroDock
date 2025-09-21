@@ -264,7 +264,7 @@
                                          Padding="2"
                                          Text=""/>
                                 <TextBlock x:Name="BaseUrlPlaceholder"
-                                           Text="ローカルLLM使用時はBase URLを設定可能です（例: http://127.0.0.1:11434）"
+                                           Text="ローカルLLM使用時はBase URLを設定可能です（例: http://127.0.0.1:1234/v1）"
                                            Foreground="#999999"
                                            VerticalAlignment="Center"
                                            Margin="5,5,0,5"
