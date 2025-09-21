@@ -49,6 +49,8 @@
                                     <Run Text="https://docs.litellm.ai/docs/embedding/supported_embedding"/>
                                 </Hyperlink>
                                 <Run Text=" を参照してください"/>
+                                <LineBreak/>
+                                <Run Text="キャラクター設定でBase URLが入力されている場合はその値を使用します"/>
                             </TextBlock.Inlines>
                         </TextBlock>
 
