@@ -54,6 +54,25 @@
                             </TextBlock.Inlines>
                         </TextBlock>
 
+                        <!-- 埋め込みモデル専用Base URL設定 -->
+                        <Grid Margin="0,20,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Base URL:"
+                                       VerticalAlignment="Center"
+                                       ToolTip="Embedded Base URL"
+                                       Foreground="#FF4873CF"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="EmbeddedBaseUrlTextBox"
+                                     Foreground="#FF0078D7"
+                                     Padding="2"
+                                     Text=""
+                                     ToolTip="埋め込みモデルのBase URL（例: http://localhost:1234/v1）"/>
+                        </Grid>
+
                         <!-- 埋め込みモデル次元数設定 -->
                         <Grid Margin="0,20,0,0">
                             <Grid.ColumnDefinitions>

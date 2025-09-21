@@ -531,6 +531,7 @@ namespace CocoroDock.Controls
                 embeddedApiKey = source.embeddedApiKey,
                 embeddedModel = source.embeddedModel,
                 embeddedDimension = source.embeddedDimension,
+                embeddedBaseUrl = source.embeddedBaseUrl,
                 isUseSTT = source.isUseSTT,
                 sttEngine = source.sttEngine,
                 sttWakeWord = source.sttWakeWord,
@@ -616,12 +617,14 @@ namespace CocoroDock.Controls
                     string embeddedApiKey = currentCharacterSetting.embeddedApiKey;
                     string embeddedModel = currentCharacterSetting.embeddedModel;
                     string embeddedDimension = currentCharacterSetting.embeddedDimension;
+                    string embeddedBaseUrl = currentCharacterSetting.embeddedBaseUrl;
 
                     foreach (var character in appSettings.CharacterList)
                     {
                         character.embeddedApiKey = embeddedApiKey;
                         character.embeddedModel = embeddedModel;
                         character.embeddedDimension = embeddedDimension;
+                        character.embeddedBaseUrl = embeddedBaseUrl;
                     }
                 }
             }
@@ -959,7 +962,8 @@ namespace CocoroDock.Controls
                     current.memoryId != previous.memoryId ||
                     current.embeddedApiKey != previous.embeddedApiKey ||
                     current.embeddedModel != previous.embeddedModel ||
-                    current.embeddedDimension != previous.embeddedDimension)
+                    current.embeddedDimension != previous.embeddedDimension ||
+                    current.embeddedBaseUrl != previous.embeddedBaseUrl)
                 {
                     return true;
                 }

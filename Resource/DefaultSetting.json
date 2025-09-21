@@ -130,6 +130,7 @@
       "embeddedApiKey": "",
       "embeddedModel": "openai/text-embedding-3-large",
       "embeddedDimension": "3072",
+      "embeddedBaseUrl": "",
       "isUseSTT": false,
       "sttEngine": "amivoice",
       "sttWakeWord": "",

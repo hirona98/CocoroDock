@@ -149,6 +149,7 @@ namespace CocoroDock.Communication
         public string embeddedApiKey { get; set; } = string.Empty; // 埋め込みモデル用APIキー
         public string embeddedModel { get; set; } = "openai/text-embedding-3-large"; // 埋め込みモデル名
         public string embeddedDimension { get; set; } = "3072"; // 埋め込みモデルの次元数
+        public string embeddedBaseUrl { get; set; } = string.Empty; // 埋め込みモデル専用ベースURL
         public bool isUseSTT { get; set; } = false; // STT（音声認識）機能の有効/無効
         public string sttEngine { get; set; } = "amivoice"; // STTエンジン ("amivoice" | "openai")
         public string sttWakeWord { get; set; } = string.Empty; // STT起動ワード
@@ -246,6 +247,7 @@ namespace CocoroDock.Communication
                 embeddedApiKey = this.embeddedApiKey,
                 embeddedModel = this.embeddedModel,
                 embeddedDimension = this.embeddedDimension,
+                embeddedBaseUrl = this.embeddedBaseUrl,
                 isUseSTT = this.isUseSTT,
                 sttEngine = this.sttEngine,
                 sttWakeWord = this.sttWakeWord,

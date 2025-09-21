@@ -31,6 +31,7 @@ namespace CocoroDock.Controls
                 EmbeddedModelTextBox.Text = character.embeddedModel;
                 EmbeddedDimensionTextBox.Text = character.embeddedDimension;
                 EmbeddedApiKeyPasswordBox.Text = character.embeddedApiKey;
+                EmbeddedBaseUrlTextBox.Text = character.embeddedBaseUrl;
             }
         }
 
@@ -41,6 +42,7 @@ namespace CocoroDock.Controls
                 character.embeddedModel = EmbeddedModelTextBox.Text;
                 character.embeddedDimension = EmbeddedDimensionTextBox.Text;
                 character.embeddedApiKey = EmbeddedApiKeyPasswordBox.Text;
+                character.embeddedBaseUrl = EmbeddedBaseUrlTextBox.Text;
             }
         }
 

@@ -537,6 +537,7 @@ namespace CocoroDock.Controls
                 string inheritedEmbeddedApiKey = string.Empty;
                 string inheritedEmbeddedModel = "openai/text-embedding-3-large";
                 string inheritedEmbeddedDimension = "3072";
+                string inheritedEmbeddedBaseUrl = string.Empty;
 
                 if (_currentCharacterIndex >= 0 && _currentCharacterIndex < AppSettings.Instance.CharacterList.Count)
                 {
@@ -545,6 +546,7 @@ namespace CocoroDock.Controls
                     inheritedEmbeddedApiKey = currentChar.embeddedApiKey;
                     inheritedEmbeddedModel = currentChar.embeddedModel;
                     inheritedEmbeddedDimension = currentChar.embeddedDimension;
+                    inheritedEmbeddedBaseUrl = currentChar.embeddedBaseUrl;
                 }
                 else if (AppSettings.Instance.CharacterList.Count > 0)
                 {
@@ -553,6 +555,7 @@ namespace CocoroDock.Controls
                     inheritedEmbeddedApiKey = firstChar.embeddedApiKey;
                     inheritedEmbeddedModel = firstChar.embeddedModel;
                     inheritedEmbeddedDimension = firstChar.embeddedDimension;
+                    inheritedEmbeddedBaseUrl = firstChar.embeddedBaseUrl;
                 }
 
                 var newCharacter = new CharacterSettings
@@ -578,6 +581,7 @@ namespace CocoroDock.Controls
                     embeddedApiKey = inheritedEmbeddedApiKey,
                     embeddedModel = inheritedEmbeddedModel,
                     embeddedDimension = inheritedEmbeddedDimension,
+                    embeddedBaseUrl = inheritedEmbeddedBaseUrl,
                     isUseSTT = false,
                     sttEngine = "amivoice",
                     sttWakeWord = string.Empty,
@@ -758,6 +762,7 @@ namespace CocoroDock.Controls
                     embeddedApiKey = sourceCharacter.embeddedApiKey,
                     embeddedModel = sourceCharacter.embeddedModel,
                     embeddedDimension = sourceCharacter.embeddedDimension,
+                    embeddedBaseUrl = sourceCharacter.embeddedBaseUrl,
                     isUseSTT = sourceCharacter.isUseSTT,
                     sttEngine = sourceCharacter.sttEngine,
                     sttWakeWord = sourceCharacter.sttWakeWord,
