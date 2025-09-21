@@ -68,6 +68,7 @@
       "apiKey": "",
       "llmModel": "openai/gpt-4o-mini",
       "max_turns_window": 100,
+      "max_tokens": 8192,
       "visionApiKey": "",
       "visionModel": "openai/gpt-4o-mini",
       "localLLMBaseUrl": "",
