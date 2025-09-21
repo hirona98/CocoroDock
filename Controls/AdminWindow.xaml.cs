@@ -467,6 +467,7 @@ namespace CocoroDock.Controls
                 apiKey = source.apiKey,
                 llmModel = source.llmModel,
                 max_turns_window = source.max_turns_window,
+                max_tokens = source.max_tokens,
                 localLLMBaseUrl = source.localLLMBaseUrl,
                 visionApiKey = source.visionApiKey,
                 visionModel = source.visionModel,
@@ -954,6 +955,7 @@ namespace CocoroDock.Controls
                     current.apiKey != previous.apiKey ||
                     current.llmModel != previous.llmModel ||
                     current.max_turns_window != previous.max_turns_window ||
+                    current.max_tokens != previous.max_tokens ||
                     current.visionApiKey != previous.visionApiKey ||
                     current.visionModel != previous.visionModel ||
                     current.localLLMBaseUrl != previous.localLLMBaseUrl ||
