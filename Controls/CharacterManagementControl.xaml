@@ -66,7 +66,7 @@
                     <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
@@ -84,7 +84,7 @@
                         <!-- VRMFilePathの設定 -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
@@ -130,7 +130,7 @@
                         <!-- 影オフメッシュ名設定 -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
@@ -168,7 +168,7 @@
                         <!-- LLMモデルの設定 -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
@@ -183,7 +183,7 @@
                         <!-- LLM説明テキスト -->
                         <TextBlock Foreground="#666666"
                                    TextWrapping="Wrap"
-                                   Margin="100,0,0,0">
+                                   Margin="130,0,0,0">
                             <TextBlock.Inlines>
                                 <Run Text="LiteLLM の書式で記載してください"/>
                                 <LineBreak/>
@@ -203,7 +203,7 @@
                         <!-- APIキーの設定 -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
@@ -229,7 +229,7 @@
                         <!-- 会話履歴件数の設定 -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
@@ -244,14 +244,14 @@
                         <!-- 会話履歴件数説明テキスト -->
                         <TextBlock Foreground="#666666"
                                    TextWrapping="Wrap"
-                                   Margin="100,0,0,0">
+                                   Margin="130,0,0,0">
                             LLMに送信する過去の会話履歴の件数（短期記憶）です。大きくするほど文脈を理解しやすくなりますが、トークン消費量も増加します
                         </TextBlock>
 
                         <!-- Max Tokensの設定 -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
@@ -266,7 +266,7 @@
                         <!-- Max Tokens説明テキスト -->
                         <TextBlock Foreground="#666666"
                                    TextWrapping="Wrap"
-                                   Margin="100,0,0,0">
+                                   Margin="130,0,0,0">
                             LLMが一度に生成できる最大トークン数です。大きくするほど長い回答が可能になりますが、処理時間とコストが増加します
                             <LineBreak/>
                             エラーに気づきにくいため、変更後はしばらくログを確認してください。
@@ -275,7 +275,7 @@
                         <!-- Max Tokens (Vision)の設定 -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
@@ -290,7 +290,7 @@
                         <!-- Max Tokens (Vision)説明テキスト -->
                         <TextBlock Foreground="#666666"
                                    TextWrapping="Wrap"
-                                   Margin="100,0,0,0">
+                                   Margin="130,0,0,0">
                             画像分析時のLLMが一度に生成できる最大トークン数です。大きくすると詳細な分析が可能となります。
                             <LineBreak/>
                             エラーに気づきにくいため、変更後はしばらくログを確認してください。
@@ -299,7 +299,7 @@
                         <!-- Base URLの設定（ローカルLLM用） -->
                         <Grid Margin="0,5,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
@@ -323,14 +323,14 @@
                         <!-- Base URL説明テキスト -->
                         <TextBlock Foreground="#666666"
                                    TextWrapping="Wrap"
-                                   Margin="100,0,0,0">
+                                   Margin="130,0,0,0">
                             画像モデルへのアクセス時にも使用されます
                         </TextBlock>
 
                         <!-- Vision Model -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
@@ -347,7 +347,7 @@
                         <!-- Vision説明テキスト -->
                         <TextBlock Foreground="#666666"
                                    TextWrapping="Wrap"
-                                   Margin="100,0,0,0">
+                                   Margin="130,0,0,0">
                             CocoroAIでは画像説明生成とそれに対するコメント生成で2回LLMを呼び出します。
                             <LineBreak/>
                             画像のみローカルにしたり低コストAPIにしたりできます。
@@ -356,7 +356,7 @@
                         <!-- Vision API Key -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
@@ -381,7 +381,7 @@
 
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
@@ -400,7 +400,7 @@
                         <!-- Memory IDの設定 -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
@@ -415,7 +415,7 @@
                         </Grid>
                         <TextBlock TextWrapping="Wrap"
                                    Foreground="#666666"
-                                   Margin="100,0,0,0">
+                                   Margin="130,0,0,0">
                             あなたとキャラクターの記憶を紐づけるIDです。キャラクター毎に別の名前にすることを推奨します。
                         </TextBlock>
                     </StackPanel>
@@ -436,7 +436,7 @@
                         <!-- TTSエンジンの選択 -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
@@ -459,7 +459,7 @@
                             <!-- Endpoint URL -->
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="130"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
@@ -475,7 +475,7 @@
                             <!-- Speaker ID -->
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="130"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
@@ -500,7 +500,7 @@
                                     <!-- Speed Scale -->
                                     <Grid Margin="0,10,0,0">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="130"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="60"/>
                                         </Grid.ColumnDefinitions>
@@ -525,7 +525,7 @@
                                     <!-- Pitch Scale -->
                                     <Grid Margin="0,10,0,0">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="130"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="60"/>
                                         </Grid.ColumnDefinitions>
@@ -550,7 +550,7 @@
                                     <!-- Intonation Scale -->
                                     <Grid Margin="0,10,0,0">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="130"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="60"/>
                                         </Grid.ColumnDefinitions>
@@ -575,7 +575,7 @@
                                     <!-- Volume Scale -->
                                     <Grid Margin="0,10,0,0">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="130"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="60"/>
                                         </Grid.ColumnDefinitions>
@@ -600,7 +600,7 @@
                                     <!-- Pre Phoneme Length -->
                                     <Grid Margin="0,10,0,0">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="130"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="60"/>
                                         </Grid.ColumnDefinitions>
@@ -625,7 +625,7 @@
                                     <!-- Post Phoneme Length -->
                                     <Grid Margin="0,10,0,0">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="130"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="60"/>
                                         </Grid.ColumnDefinitions>
@@ -650,7 +650,7 @@
                                     <!-- Output Sampling Rate -->
                                     <Grid Margin="0,10,0,0">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="130"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0"
@@ -690,7 +690,7 @@
                             <!-- Endpoint URL -->
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="130"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
@@ -706,7 +706,7 @@
                             <!-- Model Name -->
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="130"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
@@ -722,7 +722,7 @@
                             <!-- Model ID -->
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="130"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
@@ -738,7 +738,7 @@
                             <!-- Speaker Name -->
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="130"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
@@ -754,7 +754,7 @@
                             <!-- Speaker ID -->
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="130"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
@@ -919,7 +919,7 @@
                             <!-- API Key -->
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="130"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
@@ -946,7 +946,7 @@
                             <!-- Model UUID -->
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="130"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
@@ -963,7 +963,7 @@
                             <!-- Speaker UUID -->
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="130"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
@@ -980,7 +980,7 @@
                             <!-- Style ID -->
                             <Grid Margin="0,10,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="130"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
@@ -1094,7 +1094,7 @@
                         <!-- STTエンジンの設定 -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
@@ -1115,7 +1115,7 @@
                         <!-- STT起動ワードの設定 -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
@@ -1130,7 +1130,7 @@
                         <!-- STT起動ワード説明テキスト -->
                         <TextBlock Foreground="#666666"
                                    TextWrapping="Wrap"
-                                   Margin="100,0,0,0">
+                                   Margin="130,0,0,0">
                             音声認識を開始するキーワードです。複数設定する場合はカンマ区切りで入力してください
                             <LineBreak/>
                             （例: こんにちは, ハロー, ミク）。空欄の場合は常に音声認識が有効になります。
@@ -1139,7 +1139,7 @@
                         <!-- STT APIキーの設定 -->
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0"
