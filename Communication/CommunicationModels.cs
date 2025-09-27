@@ -130,6 +130,7 @@ namespace CocoroDock.Communication
         public string llmModel { get; set; } = "openai/gpt-4o-mini";
         public int max_turns_window { get; set; } = 100; // 会話履歴送信件数
         public int max_tokens { get; set; } = 8192; // LLMが生成できる最大トークン数
+        public int max_tokens_vision { get; set; } = 4096; // 画像分析時のLLMが生成できる最大トークン数
         // 画像分析用設定
         public string visionApiKey { get; set; } = string.Empty; // 画像分析用APIキー（空ならapiKeyを使用）
         public string visionModel { get; set; } = "openai/gpt-4o-mini"; // 画像分析用モデル
@@ -176,6 +177,7 @@ namespace CocoroDock.Communication
                 llmModel = this.llmModel,
                 max_turns_window = this.max_turns_window,
                 max_tokens = this.max_tokens,
+                max_tokens_vision = this.max_tokens_vision,
                 visionApiKey = this.visionApiKey,
                 visionModel = this.visionModel,
                 localLLMBaseUrl = this.localLLMBaseUrl,

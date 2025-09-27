@@ -272,6 +272,30 @@
                             エラーに気づきにくいため、変更後はしばらくログを確認してください。
                         </TextBlock>
 
+                        <!-- Max Tokens (Vision)の設定 -->
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Max Tokens (Vision):"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="MaxTokensVisionTextBox"
+                                     Foreground="#FF0078D7"
+                                     Padding="2"
+                                     ToolTip="画像分析時のLLMが生成できる最大トークン数"/>
+                        </Grid>
+                        <!-- Max Tokens (Vision)説明テキスト -->
+                        <TextBlock Foreground="#666666"
+                                   TextWrapping="Wrap"
+                                   Margin="100,0,0,0">
+                            画像分析時のLLMが一度に生成できる最大トークン数です。大きくすると詳細な分析が可能となります。
+                            <LineBreak/>
+                            エラーに気づきにくいため、変更後はしばらくログを確認してください。
+                        </TextBlock>
+
                         <!-- Base URLの設定（ローカルLLM用） -->
                         <Grid Margin="0,5,0,0">
                             <Grid.ColumnDefinitions>

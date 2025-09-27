@@ -267,6 +267,8 @@ namespace CocoroDock.Controls
                 character.max_turns_window = maxTurns;
             if (int.TryParse(MaxTokensTextBox.Text, out int maxTokens))
                 character.max_tokens = maxTokens;
+            if (int.TryParse(MaxTokensVisionTextBox.Text, out int maxTokensVision))
+                character.max_tokens_vision = maxTokensVision;
             character.localLLMBaseUrl = BaseUrlTextBox.Text;
             // 画像分析用設定
             character.visionApiKey = VisionApiKeyPasswordBox.Text;
@@ -410,6 +412,7 @@ namespace CocoroDock.Controls
             LlmModelTextBox.Text = character.llmModel;
             MaxTurnsWindowTextBox.Text = character.max_turns_window.ToString();
             MaxTokensTextBox.Text = character.max_tokens.ToString();
+            MaxTokensVisionTextBox.Text = character.max_tokens_vision.ToString();
             BaseUrlTextBox.Text = character.localLLMBaseUrl;
             UpdateBaseUrlPlaceholder(); // プレースホルダー更新
 
