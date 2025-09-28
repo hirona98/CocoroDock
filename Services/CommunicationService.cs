@@ -1,5 +1,6 @@
 using CocoroDock.Communication;
 using CocoroDock.Windows;
+using CocoroAI.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -294,6 +295,28 @@ namespace CocoroDock.Services
                 // ステータスバーにエラー表示
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"WebSocket通信エラー: {ex.Message}"));
             }
+        }
+
+        /// <summary>
+        /// デスクトップウォッチ画像をCocoroCoreMに送信
+        /// </summary>
+        /// <param name="screenshotData">スクリーンショットデータ</param>
+        public async Task SendDesktopWatchToCoreAsync(ScreenshotData screenshotData)
+        {
+            if (!_webSocketClient.IsConnected)
+            {
+                await _webSocketClient.ConnectAsync();
+            }
+
+            var imageDataUrl = $"data:image/png;base64,{screenshotData.ImageBase64}";
+            var request = new WebSocketChatRequest
+            {
+                query = "",
+                chat_type = "desktop_watch",
+                images = new List<ImageData> { new ImageData { data = imageDataUrl } }
+            };
+
+            await _webSocketClient.SendChatAsync("", request);
         }
 
 

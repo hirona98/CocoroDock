@@ -21,9 +21,6 @@ namespace CocoroDock.Communication
         [JsonPropertyName("notification")]
         public NotificationData? notification { get; set; }
 
-        [JsonPropertyName("desktop_context")]
-        public DesktopContext? desktop_context { get; set; }
-
         [JsonPropertyName("history")]
         public List<HistoryMessage>? history { get; set; }
 

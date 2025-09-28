@@ -243,13 +243,11 @@ namespace CocoroDock
                     return;
                 }
 
-                // CommunicationServiceを使用してデスクトップモニタリングを送信
+                // CommunicationServiceを使用してデスクトップウォッチを送信
                 if (_communicationService != null && _communicationService.IsServerRunning)
                 {
-                    // デスクトップモニタリング用の送信処理（WebSocket使用）
-                    // 画像データをdata URL形式に変換
-                    var imageDataUrl = $"data:image/png;base64,{screenshotData.ImageBase64}";
-                    await _communicationService.SendChatToCoreUnifiedAsync("", null, imageDataUrl);
+                    // デスクトップウォッチ専用の送信処理を使用
+                    await _communicationService.SendDesktopWatchToCoreAsync(screenshotData);
                 }
             }
             catch (Exception ex)

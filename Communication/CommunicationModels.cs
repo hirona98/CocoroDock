@@ -681,17 +681,6 @@ namespace CocoroDock.Communication
     }
 
     /// <summary>
-    /// CocoroCoreM デスクトップ監視コンテキスト
-    /// </summary>
-    public class DesktopContext
-    {
-        public string window_title { get; set; } = string.Empty; // ウィンドウタイトル
-        public string application { get; set; } = string.Empty; // アプリケーション名
-        public string capture_type { get; set; } = string.Empty; // "active" | "full"
-        public string timestamp { get; set; } = string.Empty; // キャプチャ時刻（ISO形式）
-    }
-
-    /// <summary>
     /// CocoroCoreM 会話履歴メッセージ
     /// </summary>
     public class HistoryMessage
@@ -710,7 +699,6 @@ namespace CocoroDock.Communication
         public string chat_type { get; set; } = "text"; // "text" | "text_image" | "notification" | "desktop_watch"
         public List<ImageData>? images { get; set; } // 画像データ配列（オプション）
         public NotificationData? notification { get; set; } // 通知データ（オプション）
-        public DesktopContext? desktop_context { get; set; } // デスクトップコンテキスト（オプション）
         public List<HistoryMessage>? history { get; set; } // 会話履歴（オプション）
         public bool? internet_search { get; set; } // インターネット検索有効化（オプション）
         public string? request_id { get; set; } // リクエスト識別ID（オプション）

@@ -1,4 +1,5 @@
 using CocoroDock.Communication;
+using CocoroAI.Services;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -95,6 +96,12 @@ namespace CocoroDock.Services
         /// <param name="characterName">キャラクター名（オプション）</param>
         /// <param name="imageDataUrls">画像データURLリスト（オプション）</param>
         Task SendChatToCoreUnifiedAsync(string message, string? characterName = null, List<string>? imageDataUrls = null);
+
+        /// <summary>
+        /// デスクトップウォッチ画像をCocoroCoreMに送信
+        /// </summary>
+        /// <param name="screenshotData">スクリーンショットデータ</param>
+        Task SendDesktopWatchToCoreAsync(ScreenshotData screenshotData);
 
         /// <summary>
         /// 新しい会話セッションを開始
