@@ -404,14 +404,8 @@ namespace CocoroDock.Controls
             {
                 if (sender is Button button && button.Tag is int reminderId)
                 {
-                    var result = MessageBox.Show("このリマインダーを削除しますか？", "確認",
-                        MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-                    if (result == MessageBoxResult.Yes)
-                    {
-                        await _reminderService.DeleteReminderAsync(reminderId);
-                        await LoadRemindersAsync();
-                    }
+                    await _reminderService.DeleteReminderAsync(reminderId);
+                    await LoadRemindersAsync();
                 }
             }
             catch (Exception ex)
