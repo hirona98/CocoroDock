@@ -372,7 +372,7 @@ namespace CocoroDock.Communication
         public ScreenshotSettings screenshotSettings { get; set; } = new ScreenshotSettings();
         public MicrophoneSettings microphoneSettings { get; set; } = new MicrophoneSettings();
         public MessageWindowSettings messageWindowSettings { get; set; } = new MessageWindowSettings();
-        public bool enable_pro_mode { get; set; } = true;
+        public bool enable_pro_mode { get; set; } = false;
         public bool enable_internet_retrieval { get; set; } = true;
         public string googleApiKey { get; set; } = "GOOGLE_API_KEY";
         public string googleSearchEngineId { get; set; } = "GOOGLE_SERCH_ENGINE_ID";
