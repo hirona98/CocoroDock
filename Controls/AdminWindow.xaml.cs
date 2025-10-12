@@ -195,6 +195,7 @@ namespace CocoroDock.Controls
         {
             var dict = new Dictionary<string, object>();
             dict["IsEnableWebService"] = SystemSettingsControl.GetIsEnableWebService();
+            dict["IsEnableReminder"] = SystemSettingsControl.GetIsEnableReminder();
             dict["IsEnableNotificationApi"] = SystemSettingsControl.GetIsEnableNotificationApi();
 
             var screenshotSettings = SystemSettingsControl.GetScreenshotSettings();
@@ -573,6 +574,7 @@ namespace CocoroDock.Controls
         {
             var appSettings = AppSettings.Instance;
             appSettings.IsEnableWebService = (bool)snapshot["IsEnableWebService"];
+            appSettings.IsEnableReminder = (bool)snapshot["IsEnableReminder"];
             appSettings.IsEnableNotificationApi = (bool)snapshot["IsEnableNotificationApi"];
             appSettings.IsEnableMcp = (bool)snapshot["IsEnableMcp"];
 
@@ -896,6 +898,7 @@ namespace CocoroDock.Controls
 
             // System設定の取得
             config.isEnableNotificationApi = SystemSettingsControl.GetIsEnableNotificationApi();
+            config.isEnableReminder = SystemSettingsControl.GetIsEnableReminder();
             config.isEnableMcp = McpSettingsControl.GetMcpEnabled();
 
             var CocoroCoreMSettings = SystemSettingsControl.GetCocoroCoreMSettings();
@@ -929,6 +932,7 @@ namespace CocoroDock.Controls
         {
             // 基本設定項目の比較
             if (currentSettings.isEnableNotificationApi != previousSettings.isEnableNotificationApi ||
+                currentSettings.isEnableReminder != previousSettings.isEnableReminder ||
                 currentSettings.isEnableMcp != previousSettings.isEnableMcp ||
                 currentSettings.enable_pro_mode != previousSettings.enable_pro_mode ||
                 currentSettings.enable_internet_retrieval != previousSettings.enable_internet_retrieval ||

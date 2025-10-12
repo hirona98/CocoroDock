@@ -350,6 +350,7 @@ namespace CocoroDock.Communication
         public int notificationApiPort { get; set; } = 55604;
         public int cocoroWebPort { get; set; } = 55607;
         public bool isEnableNotificationApi { get; set; } = false;
+        public bool isEnableReminder { get; set; } = true;
         public bool isEnableMcp { get; set; } = false;
         public bool isEnableWebService { get; set; } = false;
         public bool isRestoreWindowPosition { get; set; } = false;
@@ -398,6 +399,7 @@ namespace CocoroDock.Communication
                 notificationApiPort = this.notificationApiPort,
                 cocoroWebPort = this.cocoroWebPort,
                 isEnableNotificationApi = this.isEnableNotificationApi,
+                isEnableReminder = this.isEnableReminder,
                 isEnableMcp = this.isEnableMcp,
                 isEnableWebService = this.isEnableWebService,
                 isRestoreWindowPosition = this.isRestoreWindowPosition,

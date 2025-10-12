@@ -44,6 +44,11 @@ namespace CocoroDock.Services
         bool IsEnableNotificationApi { get; set; }
 
         /// <summary>
+        /// リマインダー有効/無効
+        /// </summary>
+        bool IsEnableReminder { get; set; }
+
+        /// <summary>
         /// MCP有効/無効
         /// </summary>
         bool IsEnableMcp { get; set; }

@@ -49,6 +49,9 @@ namespace CocoroDock.Controls
             {
                 var appSettings = AppSettings.Instance;
 
+                // リマインダー有効状態を設定
+                EnableReminderCheckBox.IsChecked = appSettings.IsEnableReminder;
+
                 // Webサービス設定
                 IsEnableWebServiceCheckBox.IsChecked = appSettings.IsEnableWebService;
 
@@ -95,6 +98,10 @@ namespace CocoroDock.Controls
         /// </summary>
         private void SetupEventHandlers()
         {
+            // リマインダー有効/無効
+            EnableReminderCheckBox.Checked += OnSettingsChanged;
+            EnableReminderCheckBox.Unchecked += OnSettingsChanged;
+
             // Webサービス設定
             IsEnableWebServiceCheckBox.Checked += OnSettingsChanged;
             IsEnableWebServiceCheckBox.Unchecked += OnSettingsChanged;
@@ -174,6 +181,22 @@ namespace CocoroDock.Controls
             sb.AppendLine("  -ContentType \"application/json; charset=utf-8\" `");
             sb.AppendLine("  -Body '{\"from\":\"MyApp\",\"message\":\"結果\",\"images\":[\"data:image/jpeg;base64,...\",\"data:image/png;base64,...\"]}'");
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// リマインダーの有効状態を取得
+        /// </summary>
+        public bool GetIsEnableReminder()
+        {
+            return EnableReminderCheckBox.IsChecked ?? false;
+        }
+
+        /// <summary>
+        /// リマインダーの有効状態を設定
+        /// </summary>
+        public void SetIsEnableReminder(bool enabled)
+        {
+            EnableReminderCheckBox.IsChecked = enabled;
         }
 
         /// <summary>

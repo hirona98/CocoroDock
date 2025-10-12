@@ -55,6 +55,8 @@ namespace CocoroDock.Services
         public bool IsEnableWebService { get; set; } = false;
         // 通知API設定
         public bool IsEnableNotificationApi { get; set; } = true;
+        // リマインダー設定
+        public bool IsEnableReminder { get; set; } = true;
         // MCP設定
         public bool IsEnableMcp { get; set; } = false;
         // UI設定
@@ -160,6 +162,7 @@ namespace CocoroDock.Services
             NotificationApiPort = config.notificationApiPort;
             CocoroWebPort = config.cocoroWebPort;
             IsEnableNotificationApi = config.isEnableNotificationApi;
+            IsEnableReminder = config.isEnableReminder;
             IsEnableMcp = config.isEnableMcp;
             IsEnableWebService = config.isEnableWebService;
             IsRestoreWindowPosition = config.isRestoreWindowPosition;
@@ -234,6 +237,7 @@ namespace CocoroDock.Services
                 notificationApiPort = NotificationApiPort,
                 cocoroWebPort = CocoroWebPort,
                 isEnableNotificationApi = IsEnableNotificationApi,
+                isEnableReminder = IsEnableReminder,
                 isEnableMcp = IsEnableMcp,
                 isEnableWebService = IsEnableWebService,
                 isRestoreWindowPosition = IsRestoreWindowPosition,
@@ -366,26 +370,25 @@ namespace CocoroDock.Services
                 {
                     var root = doc.RootElement;
 
+                    bool requiresReminderFlag = !root.TryGetProperty("isEnableReminder", out _);
+                    bool requiresVoiceMigration = false;
+
                     if (root.TryGetProperty("characterList", out JsonElement characterListElement))
                     {
-                        bool needsMigration = false;
-                        var characterArray = characterListElement.EnumerateArray();
-
-                        // 旧形式が存在するかチェック
-                        foreach (var character in characterArray)
+                        foreach (var character in characterListElement.EnumerateArray())
                         {
                             if (character.TryGetProperty("ttsEndpointURL", out _) ||
                                 character.TryGetProperty("ttsSperkerID", out _))
                             {
-                                needsMigration = true;
+                                requiresVoiceMigration = true;
                                 break;
                             }
                         }
+                    }
 
-                        if (needsMigration)
-                        {
-                            return PerformJsonMigration(configJson);
-                        }
+                    if (requiresVoiceMigration || requiresReminderFlag)
+                    {
+                        return PerformJsonMigration(configJson, requiresVoiceMigration, requiresReminderFlag);
                     }
                 }
             }
@@ -402,7 +405,9 @@ namespace CocoroDock.Services
             return configJson;
         }
 
-        private string PerformJsonMigration(string configJson)
+
+
+        private string PerformJsonMigration(string configJson, bool migrateVoiceSettings, bool addReminderFlag)
         {
             try
             {
@@ -418,7 +423,7 @@ namespace CocoroDock.Services
 
                         foreach (var property in root.EnumerateObject())
                         {
-                            if (property.Name == "characterList")
+                            if (property.Name == "characterList" && migrateVoiceSettings && property.Value.ValueKind == JsonValueKind.Array)
                             {
                                 writer.WritePropertyName("characterList");
                                 writer.WriteStartArray();
@@ -436,15 +441,20 @@ namespace CocoroDock.Services
                             }
                         }
 
+                        if (addReminderFlag)
+                        {
+                            writer.WriteBoolean("isEnableReminder", false);
+                        }
+
                         writer.WriteEndObject();
                         writer.Flush();
 
                         var migratedJson = Encoding.UTF8.GetString(stream.ToArray());
 
                         // マイグレーション結果の完全性チェック
-                        if (ValidateMigratedJson(migratedJson))
+                        if (ValidateMigratedJson(migratedJson, migrateVoiceSettings, addReminderFlag))
                         {
-                            Debug.WriteLine("VOICEVOXマイグレーションが正常に完了しました。");
+                            Debug.WriteLine("設定マイグレーションが正常に完了しました。");
                             return migratedJson;
                         }
                         else
@@ -467,10 +477,12 @@ namespace CocoroDock.Services
             }
         }
 
+
+
         /// <summary>
         /// マイグレーション後のJSONの完全性を検証
         /// </summary>
-        private bool ValidateMigratedJson(string migratedJson)
+        private bool ValidateMigratedJson(string migratedJson, bool validateVoiceSettings, bool ensureReminderFlag)
         {
             try
             {
@@ -478,41 +490,50 @@ namespace CocoroDock.Services
                 {
                     var root = doc.RootElement;
 
-                    if (!root.TryGetProperty("characterList", out JsonElement characterListElement))
+                    if (ensureReminderFlag && !root.TryGetProperty("isEnableReminder", out _))
                     {
-                        Debug.WriteLine("characterList プロパティが見つかりません。");
+                        Debug.WriteLine("isEnableReminder プロパティが見つかりません。");
                         return false;
                     }
 
-                    foreach (var character in characterListElement.EnumerateArray())
+                    if (validateVoiceSettings)
                     {
-                        // voicevoxConfigが正しく作成されているかチェック
-                        if (!character.TryGetProperty("voicevoxConfig", out JsonElement voicevoxConfig))
+                        if (!root.TryGetProperty("characterList", out JsonElement characterListElement))
                         {
-                            Debug.WriteLine("voicevoxConfig プロパティが見つかりません。");
+                            Debug.WriteLine("characterList プロパティが見つかりません。");
                             return false;
                         }
 
-                        // 必須プロパティの存在チェック
-                        string[] requiredProperties = { "endpointUrl", "speakerId", "speedScale", "pitchScale",
-                                                      "intonationScale", "volumeScale", "prePhonemeLength",
-                                                      "postPhonemeLength", "outputSamplingRate", "outputStereo" };
-
-                        foreach (var prop in requiredProperties)
+                        foreach (var character in characterListElement.EnumerateArray())
                         {
-                            if (!voicevoxConfig.TryGetProperty(prop, out _))
+                            // voicevoxConfigが正しく作成されているかチェック
+                            if (!character.TryGetProperty("voicevoxConfig", out JsonElement voicevoxConfig))
                             {
-                                Debug.WriteLine($"voicevoxConfig の必須プロパティ '{prop}' が見つかりません。");
+                                Debug.WriteLine("voicevoxConfig プロパティが見つかりません。");
                                 return false;
                             }
-                        }
 
-                        // 旧プロパティが削除されているかチェック
-                        if (character.TryGetProperty("ttsEndpointURL", out _) ||
-                            character.TryGetProperty("ttsSperkerID", out _))
-                        {
-                            Debug.WriteLine("旧プロパティが残存しています。");
-                            return false;
+                            // 必須プロパティの存在チェック
+                            string[] requiredProperties = { "endpointUrl", "speakerId", "speedScale", "pitchScale",
+                                                          "intonationScale", "volumeScale", "prePhonemeLength",
+                                                          "postPhonemeLength", "outputSamplingRate", "outputStereo" };
+
+                            foreach (var prop in requiredProperties)
+                            {
+                                if (!voicevoxConfig.TryGetProperty(prop, out _))
+                                {
+                                    Debug.WriteLine($"voicevoxConfig の必須プロパティ '{prop}' が見つかりません。");
+                                    return false;
+                                }
+                            }
+
+                            // 旧プロパティが削除されているかチェック
+                            if (character.TryGetProperty("ttsEndpointURL", out _) ||
+                                character.TryGetProperty("ttsSperkerID", out _))
+                            {
+                                Debug.WriteLine("旧プロパティが残存しています。");
+                                return false;
+                            }
                         }
                     }
 
@@ -525,6 +546,8 @@ namespace CocoroDock.Services
                 return false;
             }
         }
+
+
 
         private void MigrateCharacterJson(JsonElement character, Utf8JsonWriter writer)
         {
