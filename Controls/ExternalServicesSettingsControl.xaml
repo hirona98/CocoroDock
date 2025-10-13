@@ -1,0 +1,75 @@
+<UserControl x:Class="CocoroDock.Controls.ExternalServicesSettingsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="800"
+             d:DesignWidth="800">
+
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Webサービス設定 -->
+                <GroupBox Header="Webサービス"
+                          Margin="0,0,20,20"
+                          Padding="10">
+                    <StackPanel>
+                        <!-- 説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="#666666">
+                            ブラウザからCocoroAIにアクセスできるようになります（Android版のChromeとEdgeで確認済み）
+                            <LineBreak/>
+                            https://＜PCのアドレス＞:55607 にアクセスしてください
+                            <LineBreak/>
+                            ※セキュリティ対策をしていないので直接外部に公開しないでください
+                        </TextBlock>
+
+                        <!-- Webサービス有効化チェックボックス -->
+                        <CheckBox x:Name="IsEnableWebServiceCheckBox"
+                                  Content="Webサービスを有効にする（要再起動）"
+                                  Margin="0,10,0,0"
+                                  Foreground="#FF4873CF"
+                                  ToolTip="Enable Web Service"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- 通知API設定 -->
+                <GroupBox Header="通知API"
+                          Margin="0,0,20,20"
+                          Padding="10">
+                    <StackPanel>
+                        <!-- 説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="#666666">
+                            REST APIで受信した通知をキャラクターが知らせてくれます
+                        </TextBlock>
+
+                        <!-- 通知要求を受けるチェックボックス -->
+                        <CheckBox x:Name="IsEnableNotificationApiCheckBox"
+                                  Content="通知要求を受ける（要再起動）"
+                                  Margin="0,10,0,0"
+                                  Foreground="#FF4873CF"
+                                  ToolTip="Enable notification API"/>
+                        <!-- API詳細（エンドポイント/ボディ/レスポンス/使用例をすべて折りたたみ） -->
+                        <Expander x:Name="ApiDetailsExpander"
+                                  Header="API詳細"
+                                  Foreground="#666666"
+                                  IsExpanded="False"
+                                  Margin="0,10,0,0">
+                            <TextBox x:Name="ApiDetailsTextBox"
+                                     IsReadOnly="True"
+                                     BorderThickness="0"
+                                     VerticalScrollBarVisibility="Auto"
+                                     Foreground="#666666"
+                                     Padding="2"
+                                     TextWrapping="Wrap"
+                                     AcceptsReturn="True"
+                                     Margin="0,10,0,0"/>
+                        </Expander>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

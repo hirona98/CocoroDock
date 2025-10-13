@@ -141,6 +141,14 @@
                     <local:SystemSettingsControl x:Name="SystemSettingsControl"/>
                 </Grid>
             </TabItem>
+
+            <TabItem Header="Web/API"
+                     Style="{StaticResource AdminTabItemStyle}"
+                     ToolTip="Web and API settings">
+                <Grid Margin="20,20,0,20">
+                    <local:ExternalServicesSettingsControl x:Name="ExternalServicesSettingsControl"/>
+                </Grid>
+            </TabItem>
             <!-- TODO: MCP未実装 -->
             <TabItem Header="MCP（未実装）"
                      Style="{StaticResource AdminTabItemStyle}"

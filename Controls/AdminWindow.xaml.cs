@@ -70,6 +70,16 @@ namespace CocoroDock.Controls
                 SaveSystemSettings();
             };
 
+            // 外部サービス設定コントロールを初期化
+            _ = ExternalServicesSettingsControl.InitializeAsync();
+
+            // 外部サービス設定変更イベントを登録
+            ExternalServicesSettingsControl.SettingsChanged += (sender, args) =>
+            {
+                // 設定変更を即座に保存してメインウィンドウに反映
+                SaveSystemSettings();
+            };
+
             // 元の設定のバックアップを作成
             BackupSettings();
 
@@ -194,9 +204,9 @@ namespace CocoroDock.Controls
         private Dictionary<string, object> CollectSystemAndMcpSettings()
         {
             var dict = new Dictionary<string, object>();
-            dict["IsEnableWebService"] = SystemSettingsControl.GetIsEnableWebService();
+            dict["IsEnableWebService"] = ExternalServicesSettingsControl.GetIsEnableWebService();
             dict["IsEnableReminder"] = SystemSettingsControl.GetIsEnableReminder();
-            dict["IsEnableNotificationApi"] = SystemSettingsControl.GetIsEnableNotificationApi();
+            dict["IsEnableNotificationApi"] = ExternalServicesSettingsControl.GetIsEnableNotificationApi();
 
             var screenshotSettings = SystemSettingsControl.GetScreenshotSettings();
             dict["ScreenshotEnabled"] = screenshotSettings.enabled;
@@ -897,7 +907,7 @@ namespace CocoroDock.Controls
             var config = AppSettings.Instance.GetConfigSettings().DeepCopy();
 
             // System設定の取得
-            config.isEnableNotificationApi = SystemSettingsControl.GetIsEnableNotificationApi();
+            config.isEnableNotificationApi = ExternalServicesSettingsControl.GetIsEnableNotificationApi();
             config.isEnableReminder = SystemSettingsControl.GetIsEnableReminder();
             config.isEnableMcp = McpSettingsControl.GetMcpEnabled();
 
