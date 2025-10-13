@@ -121,6 +121,8 @@ namespace CocoroDock.Services
         /// <param name="imageDataUrls">画像データURL配列（オプション）</param>
         Task ProcessNotificationAsync(ChatMessagePayload notification, string[]? imageDataUrls = null);
 
+        Task ProcessDirectRequestAsync(ChatMessagePayload request, string[]? imageDataUrls = null);
+
 
         /// <summary>
         /// CocoroShellにTTS状態を送信

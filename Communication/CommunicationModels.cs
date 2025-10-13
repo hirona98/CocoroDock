@@ -523,6 +523,12 @@ namespace CocoroDock.Communication
         public string[]? images { get; set; } // Base64エンコードされた画像データ配列（data URL形式、最大5枚）
     }
 
+    public class DirectRequestRequest
+    {
+        public string prompt { get; set; } = string.Empty;
+        public string[]? images { get; set; } // Base64エンコードされた画像データ配列（data URL形式、最大5枚）
+    }
+
     /// <summary>
     /// 標準レスポンス
     /// </summary>

@@ -382,6 +382,36 @@ namespace CocoroDock.Services
             }
         }
 
+        public async Task ProcessDirectRequestAsync(ChatMessagePayload request, string[]? imageDataUrls = null)
+        {
+            try
+            {
+                var currentCharacter = GetStoredCharacterSetting();
+
+                if (currentCharacter == null || !currentCharacter.isUseLLM)
+                {
+                    Debug.WriteLine("DirectRequest処理: LLMが無効のためスキップ");
+                    return;
+                }
+
+                List<ImageData>? images = null;
+                if (imageDataUrls != null && imageDataUrls.Length > 0)
+                {
+                    images = imageDataUrls
+                        .Where(url => !string.IsNullOrEmpty(url))
+                        .Select(url => new ImageData { data = url })
+                        .ToList();
+                }
+
+                await SendDirectRequestToCoreAsync(request.message, images);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"DirectRequest処理エラー: {ex.Message}");
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"DirectRequest処理エラー: {ex.Message}"));
+            }
+        }
+
         /// <summary>
         /// CocoroCoreMに通知メッセージを送信
         /// </summary>
@@ -435,6 +465,46 @@ namespace CocoroDock.Services
             {
                 Debug.WriteLine($"通知送信エラー: {ex.Message}");
                 StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"通知送信エラー: {ex.Message}"));
+                throw;
+            }
+        }
+
+        private async Task SendDirectRequestToCoreAsync(string prompt, List<ImageData>? images = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(_currentSessionId))
+                {
+                    _currentSessionId = $"dock_{DateTime.Now:yyyyMMddHHmmssfff}";
+                }
+
+                if (!_webSocketClient.IsConnected)
+                {
+                    Debug.WriteLine("[WebSocket] DirectRequest送信のため接続を開始します...");
+                    var connected = await _webSocketClient.ConnectAsync();
+                    if (!connected)
+                    {
+                        throw new Exception("WebSocket接続に失敗しました");
+                    }
+                }
+
+                var request = new WebSocketChatRequest
+                {
+                    query = prompt,
+                    chat_type = "direct",
+                    images = images,
+                    internet_search = false
+                };
+
+                _statusPollingService.SetProcessingStatus(CocoroCoreMStatus.ProcessingMessage);
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(true, "DirectRequest処理開始"));
+
+                await _webSocketClient.SendChatAsync(_currentSessionId, request);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"DirectRequest送信エラー: {ex.Message}");
+                StatusUpdateRequested?.Invoke(this, new StatusUpdateEventArgs(false, $"DirectRequest送信エラー: {ex.Message}"));
                 throw;
             }
         }

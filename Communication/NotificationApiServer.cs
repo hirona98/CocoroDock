@@ -244,6 +244,164 @@ namespace CocoroDock.Communication
                     }
                 });
 
+                app.MapPost("/api/v1/direct-request", async (HttpContext context) =>
+                {
+                    try
+                    {
+                        // リクエストボディの読み取り
+                        DirectRequestRequest? request = null;
+                        try
+                        {
+                            request = await context.Request.ReadFromJsonAsync<DirectRequestRequest>();
+                        }
+                        catch (System.Text.Json.JsonException jsonEx)
+                        {
+                            Debug.WriteLine($"JSONパースエラー: {jsonEx.Message}");
+                            context.Response.StatusCode = 400;
+                            await context.Response.WriteAsJsonAsync(new { error = "Invalid JSON format" });
+                            return;
+                        }
+
+                        // リクエストの検証
+                        if (request == null)
+                        {
+                            context.Response.StatusCode = 400;
+                            await context.Response.WriteAsJsonAsync(new { error = "Request body is required" });
+                            return;
+                        }
+
+                        const int maxPromptLength = 10 * 1024 * 1024; // 10MB
+                        if (request.prompt.Length > maxPromptLength)
+                        {
+                            context.Response.StatusCode = 400;
+                            await context.Response.WriteAsJsonAsync(new { error = $"Field 'prompt' exceeds maximum length of {maxPromptLength} characters" });
+                            return;
+                        }
+
+                        if (string.IsNullOrWhiteSpace(request.prompt))
+                        {
+                            context.Response.StatusCode = 400;
+                            await context.Response.WriteAsJsonAsync(new { error = "Field 'prompt' is required and cannot be empty" });
+                            return;
+                        }
+
+                        // 複数画像データの検証
+                        List<BitmapSource> imageSources = new List<BitmapSource>();
+                        if (request.images != null && request.images.Length > 0)
+                        {
+                            // 最大枚数制限
+                            const int maxImageCount = 5;
+                            if (request.images.Length > maxImageCount)
+                            {
+                                context.Response.StatusCode = 400;
+                                await context.Response.WriteAsJsonAsync(new { error = $"Too many images. Maximum {maxImageCount} images allowed" });
+                                return;
+                            }
+
+                            // 各画像を検証・デコード
+                            for (int i = 0; i < request.images.Length; i++)
+                            {
+                                if (string.IsNullOrWhiteSpace(request.images[i]))
+                                {
+                                    context.Response.StatusCode = 400;
+                                    await context.Response.WriteAsJsonAsync(new { error = $"Image {i + 1} is empty" });
+                                    return;
+                                }
+
+                                try
+                                {
+                                    var imageSource = ValidateAndDecodeImage(request.images[i]);
+                                    imageSources.Add(imageSource);
+                                }
+                                catch (ArgumentException ex)
+                                {
+                                    context.Response.StatusCode = 400;
+                                    await context.Response.WriteAsJsonAsync(new { error = $"Image {i + 1}: {ex.Message}" });
+                                    return;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine($"画像{i + 1}デコードエラー: {ex.Message}");
+                                    context.Response.StatusCode = 400;
+                                    await context.Response.WriteAsJsonAsync(new { error = $"Invalid image data in image {i + 1}" });
+                                    return;
+                                }
+                            }
+
+                            // 全体サイズ制限チェック
+                            long totalSize = 0;
+                            foreach (var imageData in request.images)
+                            {
+                                var base64Data = imageData.Split(',').Last();
+                                totalSize += base64Data.Length;
+                            }
+                            const long maxTotalSize = 15 * 1024 * 1024; // 15MB (Base64)
+                            if (totalSize > maxTotalSize)
+                            {
+                                context.Response.StatusCode = 400;
+                                await context.Response.WriteAsJsonAsync(new { error = $"Total image size exceeds maximum limit of {maxTotalSize / (1024 * 1024)}MB" });
+                                return;
+                            }
+                        }
+
+                        // DirectRequestをChatメッセージとして転送
+                        var chatPayload = new ChatMessagePayload
+                        {
+                            from = "DirectRequest",
+                            sessionId = $"direct_{DateTime.Now:yyyyMMddHHmmss}",
+                            message = request.prompt.Trim()
+                        };
+
+                        // DirectRequestメッセージを処理
+                        try
+                        {
+                            // チャットウィンドウに表示
+                            if (_communicationService is CommunicationService communicationService)
+                            {
+                                communicationService.RaiseNotificationMessageReceived(chatPayload, imageSources);
+                            }
+
+                            // 即座にレスポンスを返す
+                            context.Response.StatusCode = 204;
+                            await context.Response.CompleteAsync();
+
+                            // DirectRequestを処理（CocoroCoreへの転送）をバックグラウンドで実行
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    await _communicationService.ProcessDirectRequestAsync(chatPayload, request.images);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine($"バックグラウンドDirectRequest処理エラー: {ex.Message}");
+                                }
+                            });
+                        }
+                        catch (InvalidOperationException ioEx)
+                        {
+                            Debug.WriteLine($"DirectRequest送信エラー: {ioEx.Message}");
+                            context.Response.StatusCode = 503;
+                            await context.Response.WriteAsJsonAsync(new { error = "Service temporarily unavailable" });
+                            return;
+                        }
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        // タスクがキャンセルされた場合は何もしない
+                        Debug.WriteLine("DirectRequest処理がキャンセルされました");
+                        context.Response.StatusCode = 499; // Client Closed Request
+                        await context.Response.CompleteAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"DirectRequest処理エラー: {ex.Message}");
+                        Debug.WriteLine($"スタックトレース: {ex.StackTrace}");
+                        context.Response.StatusCode = 500;
+                        await context.Response.WriteAsJsonAsync(new { error = "Internal server error" });
+                    }
+                });
+
                 _host = app;
 
                 // バックグラウンドでサーバーを起動
