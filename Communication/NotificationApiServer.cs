@@ -355,12 +355,6 @@ namespace CocoroDock.Communication
                         // DirectRequestメッセージを処理
                         try
                         {
-                            // チャットウィンドウに表示
-                            if (_communicationService is CommunicationService communicationService)
-                            {
-                                communicationService.RaiseNotificationMessageReceived(chatPayload, imageSources);
-                            }
-
                             // 即座にレスポンスを返す
                             context.Response.StatusCode = 204;
                             await context.Response.CompleteAsync();
