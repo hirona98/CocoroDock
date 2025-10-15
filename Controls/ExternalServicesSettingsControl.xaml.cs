@@ -40,7 +40,8 @@ namespace CocoroDock.Controls
 
                 // 通知API設定
                 IsEnableNotificationApiCheckBox.IsChecked = appSettings.IsEnableNotificationApi;
-                ApiDetailsTextBox.Text = GetApiDetails();
+                NotificationApiDetailsTextBox.Text = GetNotificationApiDetails();
+                DirectRequestApiDetailsTextBox.Text = GetDirectRequestApiDetails();
 
                 // イベントハンドラーを設定
                 SetupEventHandlers();
@@ -82,9 +83,9 @@ namespace CocoroDock.Controls
         }
 
         /// <summary>
-        /// API詳細テキストを取得（エンドポイント/ボディ/レスポンス/使用例を含む）
+        /// 通知API詳細テキストを取得（エンドポイント/ボディ/レスポンス/使用例を含む）
         /// </summary>
-        private string GetApiDetails()
+        private string GetNotificationApiDetails()
         {
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("エンドポイント:");
@@ -120,6 +121,40 @@ namespace CocoroDock.Controls
             sb.AppendLine("  -Uri \"http://127.0.0.1:55604/api/v1/notification\" `");
             sb.AppendLine("  -ContentType \"application/json; charset=utf-8\" `");
             sb.AppendLine("  -Body '{\"from\":\"MyApp\",\"message\":\"結果\",\"images\":[\"data:image/jpeg;base64,...\",\"data:image/png;base64,...\"]}'");
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// 直接要求API詳細テキストを取得（エンドポイント/ボディ/レスポンス/使用例を含む）
+        /// </summary>
+        private string GetDirectRequestApiDetails()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("エンドポイント:");
+            sb.AppendLine("POST http://127.0.0.1:55604/api/v1/direct-request");
+            sb.AppendLine();
+            sb.AppendLine("リクエストボディ (JSON):");
+            sb.AppendLine("{");
+            sb.AppendLine("  \"prompt\": \"任意のプロンプトやメッセージ\",");
+            sb.AppendLine("  \"images\": [  // オプション（最大5枚）");
+            sb.AppendLine("    \"data:image/jpeg;base64,/9j/4AAQ...\",  // 1枚目");
+            sb.AppendLine("    \"data:image/png;base64,iVBORw0KGgo...\"  // 2枚目");
+            sb.AppendLine("  ]");
+            sb.AppendLine("}");
+            sb.AppendLine();
+            sb.AppendLine("レスポンス:");
+            sb.AppendLine("HTTP/1.1 204 No Content");
+            sb.AppendLine();
+            sb.AppendLine("使用例 (cURL):");
+            sb.AppendLine("curl -X POST http://127.0.0.1:55604/api/v1/direct-request \\");
+            sb.AppendLine("  -H \"Content-Type: application/json\" \\");
+            sb.AppendLine("  -d '{\"prompt\":\"これは直近1時間のニュースです。あなたの**キャラクター性を自然に活かして**内容と感想をユーザーに伝えてください。：～ニュース内容～\"}'");
+            sb.AppendLine();
+            sb.AppendLine("使用例 (PowerShell):");
+            sb.AppendLine("Invoke-RestMethod -Method Post `");
+            sb.AppendLine("  -Uri \"http://127.0.0.1:55604/api/v1/direct-request\" `");
+            sb.AppendLine("  -ContentType \"application/json; charset=utf-8\" `");
+            sb.AppendLine("  -Body '{\"prompt\":\"これは直近1時間のニュースです。あなたの**キャラクター性を自然に活かして**内容と感想をユーザーに伝えてください。：～ニュース内容～\"}'");
             return sb.ToString();
         }
 
