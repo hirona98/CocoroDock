@@ -149,8 +149,8 @@
                     <local:ExternalServicesSettingsControl x:Name="ExternalServicesSettingsControl"/>
                 </Grid>
             </TabItem>
-            <!-- TODO: MCP未実装 -->
-            <TabItem Header="MCP（未実装）"
+            <!-- MCP -->
+            <TabItem Header="MCP"
                      Style="{StaticResource AdminTabItemStyle}"
                      ToolTip="Model Context Protocol">
                 <Grid Margin="20,20,0,20">
