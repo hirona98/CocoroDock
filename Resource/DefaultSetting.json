@@ -54,6 +54,11 @@
     "horizontalOffset": -0.2,
     "verticalOffset": 0.05
   },
+  "scheduledCommandSettings": {
+    "enabled": false,
+    "command": "",
+    "intervalMinutes": 60
+  },
   "enable_pro_mode": false,
   "enable_internet_retrieval": false,
   "googleApiKey": "",
