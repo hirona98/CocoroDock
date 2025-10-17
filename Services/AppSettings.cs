@@ -1,4 +1,5 @@
 using CocoroDock.Communication;
+using CocoroDock.Models;
 using CocoroDock.Utilities;
 using System;
 using System.Collections.Generic;
@@ -101,6 +102,9 @@ namespace CocoroDock.Services
 
         // メッセージウィンドウ設定
         public MessageWindowSettings MessageWindowSettings { get; set; } = new MessageWindowSettings();
+
+        // 定期コマンド実行設定
+        public ScheduledCommandSettings ScheduledCommandSettings { get; set; } = new ScheduledCommandSettings();
 
         public bool IsLoaded { get; set; } = false;
 
@@ -209,6 +213,12 @@ namespace CocoroDock.Services
                 MessageWindowSettings = config.messageWindowSettings;
             }
 
+            // 定期コマンド実行設定を更新
+            if (config.scheduledCommandSettings != null)
+            {
+                ScheduledCommandSettings = config.scheduledCommandSettings;
+            }
+
             // CocoroCoreM用追加設定を更新
             EnableProMode = config.enable_pro_mode;
             EnableInternetRetrieval = config.enable_internet_retrieval;
@@ -260,6 +270,12 @@ namespace CocoroDock.Services
                 screenshotSettings = ScreenshotSettings,
                 microphoneSettings = MicrophoneSettings,
                 messageWindowSettings = MessageWindowSettings,
+                scheduledCommandSettings = new ScheduledCommandSettings
+                {
+                    Enabled = ScheduledCommandSettings.Enabled,
+                    Command = ScheduledCommandSettings.Command,
+                    IntervalMinutes = ScheduledCommandSettings.IntervalMinutes
+                },
                 enable_pro_mode = EnableProMode,
                 enable_internet_retrieval = EnableInternetRetrieval,
                 googleApiKey = GoogleApiKey,
@@ -269,6 +285,7 @@ namespace CocoroDock.Services
                 characterList = new List<CharacterSettings>(CharacterList)
             };
         }
+
 
         /// <summary>
         /// 設定ファイルから設定を読み込む

@@ -1,3 +1,4 @@
+using CocoroDock.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -373,6 +374,7 @@ namespace CocoroDock.Communication
         public ScreenshotSettings screenshotSettings { get; set; } = new ScreenshotSettings();
         public MicrophoneSettings microphoneSettings { get; set; } = new MicrophoneSettings();
         public MessageWindowSettings messageWindowSettings { get; set; } = new MessageWindowSettings();
+        public ScheduledCommandSettings scheduledCommandSettings { get; set; } = new ScheduledCommandSettings();
         public bool enable_pro_mode { get; set; } = false;
         public bool enable_internet_retrieval { get; set; } = true;
         public string googleApiKey { get; set; } = "GOOGLE_API_KEY";
@@ -433,6 +435,13 @@ namespace CocoroDock.Communication
                     captureActiveWindowOnly = this.screenshotSettings.captureActiveWindowOnly,
                     idleTimeoutMinutes = this.screenshotSettings.idleTimeoutMinutes,
                     excludePatterns = new List<string>(this.screenshotSettings.excludePatterns)
+                },
+
+                scheduledCommandSettings = new ScheduledCommandSettings
+                {
+                    Enabled = this.scheduledCommandSettings.Enabled,
+                    Command = this.scheduledCommandSettings.Command,
+                    IntervalMinutes = this.scheduledCommandSettings.IntervalMinutes
                 },
 
                 microphoneSettings = new MicrophoneSettings

@@ -59,26 +59,25 @@ namespace CocoroDock.Controls
 
             // MCPタブの初期化
             McpSettingsControl.Initialize();
+            McpSettingsControl.SettingsChanged += (sender, args) => MarkSettingsChanged();
 
             // システム設定コントロールを初期化
             _ = SystemSettingsControl.InitializeAsync();
 
             // システム設定変更イベントを登録
-            SystemSettingsControl.SettingsChanged += (sender, args) =>
-            {
-                // 設定変更を即座に保存してメインウィンドウに反映
-                SaveSystemSettings();
-            };
+            SystemSettingsControl.SettingsChanged += (sender, args) => MarkSettingsChanged();
+
+            // おまけ設定コントロールを初期化
+            _ = ExtrasControl.InitializeAsync();
+
+            // おまけ設定変更イベントを登録
+            ExtrasControl.SettingsChanged += (sender, args) => MarkSettingsChanged();
 
             // 外部サービス設定コントロールを初期化
             _ = ExternalServicesSettingsControl.InitializeAsync();
 
             // 外部サービス設定変更イベントを登録
-            ExternalServicesSettingsControl.SettingsChanged += (sender, args) =>
-            {
-                // 設定変更を即座に保存してメインウィンドウに反映
-                SaveSystemSettings();
-            };
+            ExternalServicesSettingsControl.SettingsChanged += (sender, args) => MarkSettingsChanged();
 
             // 元の設定のバックアップを作成
             BackupSettings();
@@ -127,6 +126,7 @@ namespace CocoroDock.Controls
                 CharacterManagementControl.SetCommunicationService(_communicationService);
             }
             CharacterManagementControl.Initialize();
+            CharacterManagementControl.SettingsChanged += (sender, args) => MarkSettingsChanged();
 
             // キャラクター変更イベントを登録
             CharacterManagementControl.CharacterChanged += (sender, args) =>
@@ -152,10 +152,7 @@ namespace CocoroDock.Controls
             AnimationSettingsControl.Initialize();
 
             // アニメーション設定変更イベントを登録
-            AnimationSettingsControl.SettingsChanged += (sender, args) =>
-            {
-                // 設定変更の記録（必要に応じて処理を追加）
-            };
+            AnimationSettingsControl.SettingsChanged += (sender, args) => MarkSettingsChanged();
 
             // MemorySettingsControlの初期化
             InitializeMemorySettings();
@@ -199,6 +196,14 @@ namespace CocoroDock.Controls
 
         #region 表示設定メソッド
 
+        private void MarkSettingsChanged()
+        {
+            if (ApplyButton != null && !ApplyButton.IsEnabled)
+            {
+                ApplyButton.IsEnabled = true;
+            }
+        }
+
 
         // System やその他設定の収集はこのまま AdminWindow 側で実施
         private Dictionary<string, object> CollectSystemAndMcpSettings()
@@ -227,31 +232,14 @@ namespace CocoroDock.Controls
 
             // MCP 有効/無効
             dict["IsEnableMcp"] = McpSettingsControl.GetMcpEnabled();
+
+            // おまけ設定（定期コマンド実行）
+            var scheduledCommandSettings = ExtrasControl.GetScheduledCommandSettings();
+            dict["ScheduledCommandEnabled"] = scheduledCommandSettings.Enabled;
+            dict["ScheduledCommand"] = scheduledCommandSettings.Command;
+            dict["ScheduledCommandInterval"] = scheduledCommandSettings.IntervalMinutes;
+
             return dict;
-        }
-
-        /// <summary>
-        /// システム設定を即座に保存してメインウィンドウに反映
-        /// </summary>
-        private void SaveSystemSettings()
-        {
-            try
-            {
-                // System/MCP の設定を収集
-                var systemSnapshot = CollectSystemAndMcpSettings();
-
-                // AppSettings に反映（System/MCP）
-                ApplySystemSnapshotToAppSettings(systemSnapshot);
-
-                // 設定をファイルに保存
-                AppSettings.Instance.SaveAppSettings();
-
-                System.Diagnostics.Debug.WriteLine("[AdminWindow] システム設定を即座に保存しました");
-            }
-            catch (System.Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[AdminWindow] システム設定の保存中にエラーが発生しました: {ex.Message}");
-            }
         }
 
         #endregion
@@ -432,8 +420,7 @@ namespace CocoroDock.Controls
             }
             catch (System.Exception ex)
             {
-                MessageBox.Show($"設定の保存中にエラーが発生しました: {ex.Message}",
-                    "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"[AdminWindow] 設定の保存に失敗しました: {ex.Message}");
             }
         }
 
@@ -601,6 +588,11 @@ namespace CocoroDock.Controls
             appSettings.GoogleApiKey = (string)snapshot["GoogleApiKey"];
             appSettings.GoogleSearchEngineId = (string)snapshot["GoogleSearchEngineId"];
             appSettings.InternetMaxResults = (int)snapshot["InternetMaxResults"];
+
+            // おまけ設定（定期コマンド実行）
+            appSettings.ScheduledCommandSettings.Enabled = (bool)snapshot["ScheduledCommandEnabled"];
+            appSettings.ScheduledCommandSettings.Command = (string)snapshot["ScheduledCommand"];
+            appSettings.ScheduledCommandSettings.IntervalMinutes = (int)snapshot["ScheduledCommandInterval"];
 
             // MCPタブのViewModelにも反映
             McpSettingsControl.SetMcpEnabled(appSettings.IsEnableMcp);

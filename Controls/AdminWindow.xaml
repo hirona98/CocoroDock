@@ -158,6 +158,15 @@
                 </Grid>
             </TabItem>
 
+            <!-- おまけ -->
+            <TabItem Header="おまけ"
+                     Style="{StaticResource AdminTabItemStyle}"
+                     ToolTip="Extra features">
+                <Grid Margin="20,20,0,20">
+                    <local:ExtrasControl x:Name="ExtrasControl"/>
+                </Grid>
+            </TabItem>
+
             <TabItem Header="License"
                      Style="{StaticResource AdminTabItemStyle}"
                      ToolTip="License">

@@ -25,7 +25,11 @@ namespace CocoroDock.Utilities
         /// <returns>デシリアライズされたオブジェクト</returns>
         public static T? DeserializeFromJson<T>(string json)
         {
-            return JsonSerializer.Deserialize<T>(json);
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            return JsonSerializer.Deserialize<T>(json, options);
         }
 
     }

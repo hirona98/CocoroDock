@@ -29,6 +29,7 @@ namespace CocoroDock
         private bool _isScreenshotPaused = false;
         private RealtimeVoiceRecognitionService? _voiceRecognitionService;
         private MobileWebSocketServer? _mobileWebSocketServer;
+        private ScheduledCommandService? _scheduledCommandService;
         private AdminWindow? _adminWindow;
         private LogViewerWindow? _logViewerWindow;
 
@@ -83,6 +84,9 @@ namespace CocoroDock
 
                 // スクリーンショットサービスを初期化
                 InitializeScreenshotService();
+
+                // スケジュールコマンドサービスを初期化
+                InitializeScheduledCommandService();
 
                 // 音声認識サービスを初期化
                 // 起動時はウェイクワードの有無に応じてVoiceRecognitionStateMachine内で状態が決定される
@@ -221,6 +225,21 @@ namespace CocoroDock
         }
 
         /// <summary>
+        /// スケジュールコマンドサービスを初期化
+        /// </summary>
+        private void InitializeScheduledCommandService()
+        {
+            var settings = _appSettings.ScheduledCommandSettings;
+            if (settings != null && settings.Enabled && !string.IsNullOrWhiteSpace(settings.Command))
+            {
+                _scheduledCommandService = new ScheduledCommandService(settings.IntervalMinutes);
+                _scheduledCommandService.SetCommand(settings.Command);
+                _scheduledCommandService.Start();
+                Debug.WriteLine($"スケジュールコマンドサービスを開始しました（間隔: {settings.IntervalMinutes}分）");
+            }
+        }
+
+        /// <summary>
         /// スクリーンショットが撮影された時の処理
         /// </summary>
         private async Task OnScreenshotCaptured(ScreenshotData screenshotData)
@@ -332,6 +351,46 @@ namespace CocoroDock
         }
 
         /// <summary>
+        /// スケジュールコマンドサービスの設定を更新
+        /// </summary>
+        private void UpdateScheduledCommandService()
+        {
+            var settings = _appSettings.ScheduledCommandSettings;
+
+            // 現在のサービスが存在し、設定が無効になった場合は停止
+            if (_scheduledCommandService != null && (settings == null || !settings.Enabled || string.IsNullOrWhiteSpace(settings.Command)))
+            {
+                _scheduledCommandService.Stop();
+                _scheduledCommandService.Dispose();
+                _scheduledCommandService = null;
+                Debug.WriteLine("スケジュールコマンドサービスを停止しました");
+            }
+            // 設定が有効でサービスが存在しない場合は開始
+            else if (settings != null && settings.Enabled && !string.IsNullOrWhiteSpace(settings.Command) && _scheduledCommandService == null)
+            {
+                InitializeScheduledCommandService();
+            }
+            // サービスが存在し、設定が変更された場合は再起動
+            else if (_scheduledCommandService != null && settings != null && settings.Enabled && !string.IsNullOrWhiteSpace(settings.Command))
+            {
+                // 間隔またはコマンドが変更された場合は再起動
+                if (_scheduledCommandService.IntervalMinutes != settings.IntervalMinutes)
+                {
+                    _scheduledCommandService.Stop();
+                    _scheduledCommandService.Dispose();
+                    InitializeScheduledCommandService();
+                    Debug.WriteLine("スケジュールコマンドサービスを再起動しました");
+                }
+                else
+                {
+                    // コマンドのみ変更された場合は再起動
+                    _scheduledCommandService.Restart(settings.IntervalMinutes, settings.Command);
+                    Debug.WriteLine("スケジュールコマンドサービスのコマンドを更新しました");
+                }
+            }
+        }
+
+        /// <summary>
         /// APIサーバーを起動（非同期タスク）
         /// </summary>
         private async Task StartApiServerAsync()
@@ -401,6 +460,9 @@ namespace CocoroDock
             {
                 // スクリーンショットサービスの設定を更新
                 UpdateScreenshotService();
+
+                // スケジュールコマンドサービスの設定を更新
+                UpdateScheduledCommandService();
             });
         }
 
@@ -619,6 +681,14 @@ namespace CocoroDock
             {
                 // イベントハンドラの購読解除
                 AppSettings.SettingsSaved -= OnSettingsSaved;
+
+                // スケジュールコマンドサービスを停止
+                if (_scheduledCommandService != null)
+                {
+                    _scheduledCommandService.Stop();
+                    _scheduledCommandService.Dispose();
+                    _scheduledCommandService = null;
+                }
 
                 // 接続中ならリソース解放
                 if (_communicationService != null)
@@ -1261,6 +1331,11 @@ namespace CocoroDock
                 if (_voiceRecognitionService != null)
                 {
                     _voiceRecognitionService.Dispose();
+                }
+
+                if (_scheduledCommandService != null)
+                {
+                    _scheduledCommandService.Dispose();
                 }
 
                 base.OnClosing(e);

@@ -1,0 +1,85 @@
+<UserControl x:Class="CocoroDock.Controls.ExtrasControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="800"
+             d:DesignWidth="800">
+
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- 定期コマンド実行設定 -->
+                <GroupBox Header="定期コマンド実行"
+                          Margin="0,0,20,20"
+                          Padding="10">
+                    <StackPanel>
+                        <!-- 説明テキスト -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="#666666"
+                                   Margin="0,0,0,10">
+                            指定したコマンドを一定間隔で自動実行します。
+                            <LineBreak/>
+                            注意: コマンドが失敗した場合、自動的に停止します。
+                        </TextBlock>
+
+                        <!-- 有効化チェックボックス -->
+                        <CheckBox x:Name="EnableScheduledCommandCheckBox"
+                                  Content="定期コマンド実行を有効にする"
+                                  Margin="0,5,0,10"
+                                  Foreground="#FF4873CF"
+                                  ToolTip="Enable scheduled command execution"/>
+
+                        <!-- コマンド入力 -->
+                        <TextBlock Text="実行コマンド:"
+                                   Margin="0,5,0,5"
+                                   VerticalAlignment="Center"/>
+                        <TextBox x:Name="CommandTextBox"
+                                 Foreground="#FF0078D7"
+                                 BorderBrush="#CCCCCC"
+                                 BorderThickness="1"
+                                 Padding="5"
+                                 AcceptsReturn="False"
+                                 Margin="0,0,0,5"/>
+
+                        <!-- コマンド例 -->
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="#666666"
+                                   FontSize="11"
+                                   Margin="0,0,0,10">
+                            例: C:\Tools\SendNewsDirectAPI.ps1
+                        </TextBlock>
+
+                        <!-- 実行間隔設定 -->
+                        <Grid Margin="0,5,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="実行間隔:"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,10,0"/>
+                            <TextBox Grid.Column="1"
+                                     x:Name="IntervalMinutesTextBox"
+                                     Foreground="#FF0078D7"
+                                     BorderBrush="#CCCCCC"
+                                     BorderThickness="1"
+                                     Padding="2"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Stretch"
+                                     Text="60"
+                                     ToolTip="実行間隔（分）"/>
+                            <TextBlock Grid.Column="2"
+                                       Text="分"
+                                       VerticalAlignment="Center"
+                                       Margin="10,0,0,0"/>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
