@@ -96,17 +96,41 @@ namespace CocoroDock.Services
 
                 Debug.WriteLine($"コマンド実行開始: {_command}");
 
-                var processStartInfo = new ProcessStartInfo
+                // コマンドが PowerShell スクリプト (.ps1) で終わる場合は powershell.exe で実行する
+                ProcessStartInfo processStartInfo;
+                if (_command.TrimEnd().EndsWith(".ps1", StringComparison.OrdinalIgnoreCase))
                 {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c {_command}",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = new UTF8Encoding(false),
-                    StandardErrorEncoding = new UTF8Encoding(false)
-                };
+                    // powershell の -File を使ってスクリプトを実行
+                    // スクリプトパスにスペースがある可能性を考慮して引用で囲む
+                    var psCommand = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{_command}\"";
+                    processStartInfo = new ProcessStartInfo
+                    {
+                        FileName = "powershell.exe",
+                        Arguments = psCommand,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true,
+                        StandardOutputEncoding = new UTF8Encoding(false),
+                        StandardErrorEncoding = new UTF8Encoding(false)
+                    };
+                }
+                else
+                {
+                    // cmd を経由する場合はコマンド全体を引用で囲んで渡す
+                    var cmdArgs = $"/c \"{_command}\"";
+                    processStartInfo = new ProcessStartInfo
+                    {
+                        FileName = "cmd.exe",
+                        Arguments = cmdArgs,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true,
+                        StandardOutputEncoding = new UTF8Encoding(false),
+                        StandardErrorEncoding = new UTF8Encoding(false)
+                    };
+                }
 
                 using (var process = Process.Start(processStartInfo))
                 {
@@ -117,10 +141,10 @@ namespace CocoroDock.Services
                         return;
                     }
 
-                    process.WaitForExit();
-
+                    // 出力を先に読み取り、それから終了を待つパターンがデッドロックを避けやすい
                     var output = process.StandardOutput.ReadToEnd();
                     var error = process.StandardError.ReadToEnd();
+                    process.WaitForExit();
 
                     if (process.ExitCode != 0)
                     {
