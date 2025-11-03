@@ -139,8 +139,9 @@ namespace CocoroDock.Services
             // 1. WAVヘッダー(44バイト)除去してfloat配列に変換
             var samples = ConvertWavToFloat(wavAudio);
 
-            // 2. 音声長調整（3秒に統一）
-            samples = AdjustAudioLength(samples, TARGET_SAMPLES);
+            // 2. Fbank特徴量を抽出
+            var fbankExtractor = new FbankExtractor();
+            var features = fbankExtractor.ExtractFeatures(samples); // [num_frames, 80]
 
             // 3. ONNX推論
             lock (_modelLock)
@@ -148,14 +149,27 @@ namespace CocoroDock.Services
                 if (_sharedModel == null)
                     throw new InvalidOperationException("ONNXモデルがロードされていません");
 
-                var inputTensor = new DenseTensor<float>(samples, new[] { 1, samples.Length });
+                // 特徴量を1次元配列に変換してテンソル作成
+                int numFrames = features.GetLength(0);
+                int numBins = features.GetLength(1); // 80
+
+                var featureArray = new float[numFrames * numBins];
+                for (int i = 0; i < numFrames; i++)
+                {
+                    for (int j = 0; j < numBins; j++)
+                    {
+                        featureArray[i * numBins + j] = features[i, j];
+                    }
+                }
+
+                var inputTensor = new DenseTensor<float>(featureArray, new[] { 1, numFrames, numBins });
                 var inputs = new List<NamedOnnxValue>
                 {
-                    NamedOnnxValue.CreateFromTensor("audio", inputTensor)
+                    NamedOnnxValue.CreateFromTensor("feats", inputTensor)
                 };
 
                 using var results = _sharedModel.Run(inputs);
-                var embedding = results.First(r => r.Name == "embedding")
+                var embedding = results.First(r => r.Name == "embs")
                     .AsEnumerable<float>()
                     .ToArray();
 
