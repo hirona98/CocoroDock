@@ -7,7 +7,7 @@ CocoroDockに話者識別（Speaker Recognition）機能を実装し、複数話
 
 ### 目標
 - リアルタイム音声入力から話者を自動識別
-- 事前登録された話者の判定と未知話者の検出
+- 事前登録された話者の厳格な判定（未知話者や閾値未満は異常として停止）
 - 既存の音声認識フロー（VAD + STT）との統合
 - 軽量・高速な推論パフォーマンス
 
@@ -63,9 +63,9 @@ Silero VAD（音声区間検出） ← 既存
   ↓
 【新規】コサイン類似度計算 vs 登録済みベクトル
   ↓
-【新規】最高類似度の話者を識別（閾値: 0.6以上）
+【新規】話者識別（閾値未満または登録話者ゼロの場合は例外スロー → 停止）
   ↓
-AmiVoice STT ← 既存
+AmiVoice STT（失敗時は例外スロー → 停止） ← 既存
   ↓
 "[話者名] 認識テキスト" を CocoroAI に送信 ← 修正
 ```
@@ -111,15 +111,14 @@ namespace CocoroDock.Services
 
         // インスタンス設定
         private readonly string _dbPath;
-        private bool _enabled;
-        private float _threshold;
+        private readonly float _threshold;
 
         // 定数
         private const int EMBEDDING_DIM = 256; // WeSpeaker ResNet34
         private const int SAMPLE_RATE = 16000;
 
         // 主要メソッド
-        public SpeakerRecognitionService(string dbPath, bool enabled = false, float threshold = 0.6f);
+        public SpeakerRecognitionService(string dbPath, float threshold = 0.6f);
         private static void EnsureModelLoaded();
         private void InitializeDatabase();
 
@@ -192,8 +191,9 @@ public (string speakerId, string speakerName, float confidence) IdentifySpeaker(
     // 2. DBから全登録話者を取得
     var registeredSpeakers = LoadAllEmbeddings();
 
+    // 登録話者がゼロの場合は異常として停止
     if (registeredSpeakers.Count == 0)
-        return ("unknown", "不明", 0f);
+        throw new InvalidOperationException("話者が一人も登録されていません。先に話者を登録してください。");
 
     // 3. コサイン類似度計算（並列処理）
     var (bestId, bestName, maxSimilarity) = registeredSpeakers
@@ -202,9 +202,9 @@ public (string speakerId, string speakerName, float confidence) IdentifySpeaker(
         .OrderByDescending(x => x.sim)
         .First();
 
-    // 4. 閾値判定
+    // 4. 閾値判定（識別失敗は異常として停止）
     if (maxSimilarity < _threshold)
-        return ("unknown", "不明な話者", maxSimilarity);
+        throw new InvalidOperationException($"話者を識別できませんでした（最高類似度: {maxSimilarity:F2} < 閾値: {_threshold:F2}）。話者登録を追加するか閾値を調整してください。");
 
     return (bestId, bestName, maxSimilarity);
 }
@@ -225,7 +225,7 @@ private float CosineSimilarity(float[] a, float[] b)
 
 **フィールド追加**:
 ```csharp
-private readonly SpeakerRecognitionService? _speakerRecognition;
+private readonly SpeakerRecognitionService _speakerRecognition;
 
 // イベント追加
 public event Action<string, string, float>? OnSpeakerIdentified; // (speakerId, name, confidence)
@@ -236,16 +236,16 @@ public event Action<string, string, float>? OnSpeakerIdentified; // (speakerId, 
 public RealtimeVoiceRecognitionService(
     ISpeechToTextService sttService,
     string wakeWords,
+    SpeakerRecognitionService speakerRecognition, // 必須パラメータ
     float vadThreshold = 0.5f,
     int silenceTimeoutMs = 300,
     int activeTimeoutMs = 60000,
-    bool startActive = false,
-    SpeakerRecognitionService? speakerRecognition = null) // 追加
+    bool startActive = false)
 {
     _sttService = sttService ?? throw new ArgumentNullException(nameof(sttService));
+    _speakerRecognition = speakerRecognition ?? throw new ArgumentNullException(nameof(speakerRecognition));
     _stateMachine = new VoiceRecognitionStateMachine(wakeWords, activeTimeoutMs, startActive);
     _sileroVad = new SileroVadService(vadThreshold, silenceTimeoutMs);
-    _speakerRecognition = speakerRecognition; // 追加
 
     // ... 既存処理 ...
 }
@@ -261,56 +261,36 @@ private async Task ProcessAudioBuffer()
     var audioData = _audioBuffer.ToArray();
     _audioBuffer.Clear();
 
-    try
+    var originalState = _stateMachine.CurrentState;
+    _stateMachine.TransitionTo(VoiceRecognitionState.PROCESSING);
+    UpdateWavHeader(audioData);
+
+    // ====== 話者識別（必須処理） ======
+    // 例外が発生した場合は上位に伝播して停止
+    var (speakerId, speakerName, confidence) = _speakerRecognition.IdentifySpeaker(audioData);
+
+    OnSpeakerIdentified?.Invoke(speakerId, speakerName, confidence);
+
+    string speakerPrefix = $"[{speakerName}] ";
+    System.Diagnostics.Debug.WriteLine($"[Speaker] {speakerName} (信頼度: {confidence:F2})");
+    // =================================
+
+    // STT処理（既存、例外発生時は上位へ伝播）
+    var recognitionTask = _sttService.RecognizeAsync(audioData);
+    string recognizedText = await recognitionTask.ConfigureAwait(false);
+
+    _stateMachine.TransitionTo(originalState);
+
+    if (!string.IsNullOrEmpty(recognizedText))
     {
-        var originalState = _stateMachine.CurrentState;
-        _stateMachine.TransitionTo(VoiceRecognitionState.PROCESSING);
-        UpdateWavHeader(audioData);
-
-        // ====== 話者識別（新規追加） ======
-        string speakerPrefix = "";
-        if (_speakerRecognition != null)
-        {
-            try
-            {
-                var (speakerId, speakerName, confidence) = _speakerRecognition.IdentifySpeaker(audioData);
-
-                OnSpeakerIdentified?.Invoke(speakerId, speakerName, confidence);
-
-                if (speakerId != "unknown")
-                {
-                    speakerPrefix = $"[{speakerName}] ";
-                    System.Diagnostics.Debug.WriteLine($"[Speaker] {speakerName} (信頼度: {confidence:F2})");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[Speaker] 識別エラー: {ex.Message}");
-                // エラー時はスキップして続行
-            }
-        }
-        // ================================
-
-        // STT処理（既存）
-        var recognitionTask = _sttService.RecognizeAsync(audioData);
-        string recognizedText = await recognitionTask.ConfigureAwait(false);
-
-        _stateMachine.TransitionTo(originalState);
-
-        if (!string.IsNullOrEmpty(recognizedText))
-        {
-            // 話者情報を付加
-            var textWithSpeaker = speakerPrefix + recognizedText;
-            _stateMachine.ProcessRecognitionResult(textWithSpeaker);
-        }
+        // 話者情報を付加
+        var textWithSpeaker = speakerPrefix + recognizedText;
+        _stateMachine.ProcessRecognitionResult(textWithSpeaker);
     }
-    catch (Exception ex)
+    else
     {
-        System.Diagnostics.Debug.WriteLine($"[VoiceService] Error: {ex.Message}");
-        if (_stateMachine.CurrentState == VoiceRecognitionState.PROCESSING)
-        {
-            _stateMachine.TransitionTo(VoiceRecognitionState.SLEEPING);
-        }
+        // STTで認識できなかった場合も異常として停止
+        throw new InvalidOperationException("音声認識に失敗しました。");
     }
 }
 ```
@@ -328,7 +308,7 @@ public void Dispose()
     _stateMachine?.Dispose();
     _sttService?.Dispose();
     _sileroVad?.Dispose();
-    _speakerRecognition?.Dispose(); // 追加
+    _speakerRecognition.Dispose(); // 必須リソース
 
     System.Diagnostics.Debug.WriteLine("[VoiceService] Disposed");
 }
@@ -348,7 +328,7 @@ public class MicrophoneSettings
     public int inputThreshold { get; set; } = -45;
 
     // ====== 話者識別設定（新規追加） ======
-    public bool enableSpeakerRecognition { get; set; } = false;
+    // 注: 話者識別は常に有効（後方互換禁止方針により無効化オプションは提供しない）
     public float speakerRecognitionThreshold { get; set; } = 0.6f; // 0.5-0.8推奨
     // =====================================
 }
@@ -366,11 +346,6 @@ public class MicrophoneSettings
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <GroupBox Header="話者識別設定" Margin="10">
         <StackPanel>
-            <!-- 有効/無効 -->
-            <CheckBox Content="話者識別を有効化"
-                      IsChecked="{Binding EnableSpeakerRecognition}"
-                      Margin="0,0,0,10"/>
-
             <!-- 登録済み話者リスト -->
             <Label Content="登録済み話者:" FontWeight="Bold"/>
             <ListBox ItemsSource="{Binding RegisteredSpeakers}"
@@ -562,18 +537,17 @@ namespace CocoroDock.Controls
 ```csharp
 public partial class SystemSettingsControl : UserControl
 {
-    private SpeakerRecognitionService? _speakerService;
+    private SpeakerRecognitionService _speakerService;
 
     public void Initialize()
     {
         // 既存の初期化処理...
 
-        // 話者識別サービス初期化
+        // 話者識別サービス初期化（常に有効）
         var dbPath = Path.Combine(AppSettings.Instance.UserDataDirectory, "speaker_recognition.db");
         _speakerService = new SpeakerRecognitionService(
             dbPath,
-            AppSettings.Instance.MicrophoneSettings.enableSpeakerRecognition,
-            AppSettings.Instance.MicrophoneSettings.speakerRecognitionThreshold
+            threshold: AppSettings.Instance.MicrophoneSettings.speakerRecognitionThreshold
         );
 
         SpeakerManagementControl.Initialize(_speakerService);
@@ -594,23 +568,18 @@ private void InitializeVoiceRecognition()
 {
     // ... 既存のSTTサービス初期化 ...
 
-    // 話者識別サービス初期化
-    SpeakerRecognitionService? speakerService = null;
-    if (AppSettings.Instance.MicrophoneSettings.enableSpeakerRecognition)
-    {
-        var dbPath = Path.Combine(AppSettings.Instance.UserDataDirectory, "speaker_recognition.db");
-        speakerService = new SpeakerRecognitionService(
-            dbPath,
-            enabled: true,
-            threshold: AppSettings.Instance.MicrophoneSettings.speakerRecognitionThreshold
-        );
-    }
+    // 話者識別サービス初期化（常に有効）
+    var dbPath = Path.Combine(AppSettings.Instance.UserDataDirectory, "speaker_recognition.db");
+    var speakerService = new SpeakerRecognitionService(
+        dbPath,
+        threshold: AppSettings.Instance.MicrophoneSettings.speakerRecognitionThreshold
+    );
 
-    // 音声認識サービス初期化（speakerServiceを渡す）
+    // 音声認識サービス初期化（speakerServiceは必須パラメータ）
     _voiceRecognitionService = new RealtimeVoiceRecognitionService(
         sttService,
         wakeWords: "...",
-        speakerRecognition: speakerService // 追加
+        speakerRecognition: speakerService
     );
 
     // イベントハンドラ追加
@@ -783,7 +752,6 @@ CocoroDock/Resource/wespeaker_resnet34.onnx
 {
   "microphoneSettings": {
     "inputThreshold": -30,
-    "enableSpeakerRecognition": false,
     "speakerRecognitionThreshold": 0.6
   }
 }
@@ -793,8 +761,9 @@ CocoroDock/Resource/wespeaker_resnet34.onnx
 
 | パラメータ | 型 | デフォルト | 範囲 | 説明 |
 |-----------|-----|-----------|------|------|
-| `enableSpeakerRecognition` | bool | false | - | 話者識別の有効/無効 |
 | `speakerRecognitionThreshold` | float | 0.6 | 0.5-0.9 | 識別閾値（高いほど厳格） |
+
+**注意**: 話者識別は常に有効です。後方互換禁止方針により、無効化オプションは提供しません。
 
 **閾値の目安**:
 - **0.5-0.6**: 寛容（偽陽性が増える可能性）
@@ -831,10 +800,13 @@ CocoroDock/Resource/wespeaker_resnet34.onnx
 
 | エラーケース | 動作 |
 |-------------|------|
-| 話者未登録 | `[不明] テキスト` と表示 |
-| 識別失敗 | ログ出力後、話者名なしで続行 |
-| ONNXモデル読込失敗 | 起動時エラー、機能無効化 |
-| DB接続失敗 | ログ出力、機能無効化 |
+| 話者未登録 | `InvalidOperationException` をスローして停止。ユーザーに登録を促すメッセージを表示 |
+| 識別失敗（閾値未満） | `InvalidOperationException` をスローして停止。閾値調整または追加登録を促すメッセージを表示 |
+| ONNXモデル読込失敗 | 起動時に例外スロー、アプリケーション起動を停止 |
+| DB接続失敗 | 例外スロー、音声認識処理を停止 |
+| STT失敗 | 例外スロー、処理を停止 |
+
+**方針**: フォールバック禁止・異常系停止の原則に従い、全ての異常は例外として上位に伝播させます。
 
 ---
 
