@@ -1056,9 +1056,17 @@ namespace CocoroDock
                 const int silenceTimeoutMs = 500; // 高速化のため短縮
                 const int activeTimeoutMs = 60000;
 
+                // 話者識別サービス初期化（常に有効）
+                var dbPath = System.IO.Path.Combine(AppSettings.Instance.UserDataDirectory, "speaker_recognition.db");
+                var speakerService = new SpeakerRecognitionService(
+                    dbPath,
+                    threshold: AppSettings.Instance.MicrophoneSettings.speakerRecognitionThreshold
+                );
+
                 _voiceRecognitionService = new RealtimeVoiceRecognitionService(
                     new AmiVoiceSpeechToTextService(currentCharacter.sttApiKey),
                     currentCharacter.sttWakeWord,
+                    speakerService, // 話者識別サービスを追加
                     voiceThreshold,
                     silenceTimeoutMs,
                     activeTimeoutMs,
@@ -1069,6 +1077,7 @@ namespace CocoroDock
                 _voiceRecognitionService.OnRecognizedText += OnVoiceRecognized;
                 _voiceRecognitionService.OnStateChanged += OnVoiceStateChanged;
                 _voiceRecognitionService.OnVoiceLevel += OnVoiceLevelChanged;
+                _voiceRecognitionService.OnSpeakerIdentified += OnSpeakerIdentified; // 話者識別イベント
 
                 // 音声認識開始
                 _voiceRecognitionService.StartListening();
@@ -1216,6 +1225,18 @@ namespace CocoroDock
 
                 // CocoroCoreMに送信
                 SendMessageToCocoroCore(text, null);
+            });
+        }
+
+        /// <summary>
+        /// 話者識別結果を処理
+        /// </summary>
+        private void OnSpeakerIdentified(string speakerId, string speakerName, float confidence)
+        {
+            UIHelper.RunOnUIThread(() =>
+            {
+                // ステータス表示更新（必要に応じて）
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] Speaker identified: {speakerName} ({confidence:P0})");
             });
         }
 

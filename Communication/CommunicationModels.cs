@@ -281,6 +281,12 @@ namespace CocoroDock.Communication
     public class MicrophoneSettings
     {
         public int inputThreshold { get; set; } = -45;
+
+        /// <summary>
+        /// 話者識別の信頼度閾値（0.5-0.9推奨）
+        /// 注: 話者識別は常に有効（後方互換禁止方針により無効化オプションは提供しない）
+        /// </summary>
+        public float speakerRecognitionThreshold { get; set; } = 0.6f;
     }
 
     /// <summary>

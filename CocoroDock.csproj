@@ -65,6 +65,8 @@
     </None>
     <!-- Silero VAD ONNXモデル（exe内に組み込み） -->
     <EmbeddedResource Include="Resource\silero_vad.onnx" />
+    <!-- WeSpeaker 話者識別ONNXモデル（exe内に組み込み） -->
+    <EmbeddedResource Include="Resource\wespeaker_resnet34.onnx" />
     <EmbeddedResource Include="Resource\License.txt" />
 
     <!-- wwwrootをEmbeddedResourceとしてexe内に組み込み -->
