@@ -30,7 +30,63 @@ CocoroDockに話者識別（Speaker Recognition）機能を実装し、複数話
 2. **軽量**: CocoroDockの既存ONNX実装（SileroVAD）と同等サイズ
 3. **高精度**: 最新のResNetアーキテクチャ採用
 4. **日本語対応**: 多言語データセットで学習済み
-5. **ライセンス**: Apache 2.0（商用利用可）
+5. **ライセンス**: CC BY 4.0（商用利用可、クレジット表記必須）
+
+---
+
+## 📜 ライセンスとクレジット表記
+
+### WeSpeakerモデルのライセンス
+
+**事前学習済みモデル** `voxceleb_resnet34.onnx` は **Creative Commons Attribution 4.0 International License (CC BY 4.0)** の下で提供されています。
+
+| 項目 | 詳細 |
+|------|------|
+| **コードのライセンス** | Apache 2.0（WeSpeakerリポジトリ） |
+| **モデルのライセンス** | CC BY 4.0（VoxCelebデータセットに準拠） |
+| **商用利用** | ✅ 可能 |
+| **改変・再配布** | ✅ 可能 |
+| **クレジット表記** | ⚠️ **必須** |
+
+### 必要な対応
+
+#### 1. License.txtへの追記
+
+**ファイルパス**: `CocoroDock/Resource/License.txt`
+
+```
+================================================================================
+WeSpeaker Speaker Recognition Model
+================================================================================
+
+Model: voxceleb_resnet34.onnx
+Trained on VoxCeleb dataset
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+Source: https://github.com/wenet-e2e/wespeaker
+VoxCeleb Dataset: http://www.robots.ox.ac.uk/~vgg/data/voxceleb/
+
+Copyright (c) VoxCeleb Contributors
+Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+
+--------------------------------------------------------------------------------
+```
+
+#### 2. csprojでのLicense.txt組み込み
+
+**ファイルパス**: `CocoroDock/CocoroDock.csproj`
+
+既存の設定（67-68行目）で `Resource\License.txt` は既にEmbeddedResourceとして組み込まれています：
+```xml
+<EmbeddedResource Include="Resource\License.txt" />
+```
+
+### CC BY 4.0 ライセンス要件
+
+1. **著作権表示**: モデルの出所とライセンスを明記
+2. **変更の明示**: モデルを改変した場合はその旨を記載
+3. **ライセンスへのリンク**: CC BY 4.0へのリンクまたは全文を含める
+4. **免責事項**: 保証がないことを明示
 
 ---
 
@@ -674,6 +730,15 @@ CocoroDock/Resource/wespeaker_resnet34.onnx
 </ItemGroup>
 ```
 
+**Git LFS設定**:
+
+`.gitattributes` に以下を追加済み（モデルファイルを効率的に管理）:
+```
+*.onnx filter=lfs diff=lfs merge=lfs -text
+```
+
+これにより、ONNXモデルファイル（8-15MB）はGit LFSで管理され、リポジトリの肥大化を防ぎます。
+
 ### 3. データベースファイル
 
 - **パス**: `UserDataM/speaker_recognition.db`
@@ -688,6 +753,8 @@ CocoroDock/Resource/wespeaker_resnet34.onnx
 
 - [ ] WeSpeaker ONNXモデル取得・検証
 - [ ] モデルを `CocoroDock/Resource/` に配置
+- [ ] `Resource/License.txt` にWeSpeakerモデルのクレジット表記を追加（完了）
+- [ ] `.gitattributes` にONNX用LFS設定を追加（完了）
 - [ ] csprojにEmbeddedResource追加
 - [ ] ビルド確認
 
@@ -887,6 +954,8 @@ public void IdentifySpeaker_SameSpeaker_HighConfidence()
 - 公式リポジトリ: https://github.com/wenet-e2e/wespeaker
 - 論文: "WeSpeaker: A Research and Production oriented Speaker Embedding Learning Toolkit"
 - モデルダウンロード: https://github.com/wenet-e2e/wespeaker/blob/main/docs/pretrained.md
+- コードライセンス: Apache 2.0 (https://github.com/wenet-e2e/wespeaker/blob/main/LICENSE)
+- モデルライセンス: CC BY 4.0 (VoxCelebデータセットに準拠)
 
 ### ONNX Runtime
 - ドキュメント: https://onnxruntime.ai/docs/
@@ -894,6 +963,7 @@ public void IdentifySpeaker_SameSpeaker_HighConfidence()
 
 ### 話者認識技術
 - VoxCelebデータセット: https://www.robots.ox.ac.uk/~vgg/data/voxceleb/
+- VoxCelebライセンス: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
 - ECAPA-TDNN論文: "ECAPA-TDNN: Emphasized Channel Attention, Propagation and Aggregation in TDNN Based Speaker Verification"
 
 ---
@@ -902,7 +972,8 @@ public void IdentifySpeaker_SameSpeaker_HighConfidence()
 
 ### 実装前確認
 - [ ] WeSpeaker ONNXモデルの入手方法確認
-- [ ] ライセンス確認（Apache 2.0）
+- [ ] ライセンス確認（CC BY 4.0、クレジット表記必須）
+- [ ] License.txtへのクレジット表記追加
 - [ ] 開発環境準備（Visual Studio, .NET 8.0）
 - [ ] 既存コードのバックアップ
 
@@ -930,5 +1001,24 @@ public void IdentifySpeaker_SameSpeaker_HighConfidence()
 ---
 
 **作成日**: 2025-11-03
-**バージョン**: 1.0
+**最終更新**: 2025-11-03
+**バージョン**: 1.2（Git LFS対応追加版）
 **対象プロジェクト**: CocoroDock v4.5.2
+
+## 📝 変更履歴
+
+### v1.2 (2025-11-03)
+- `.gitattributes` にONNX用Git LFS設定を追加
+- `Resource/License.txt` にWeSpeakerクレジット表記を追加（完了）
+- 実装計画書にGit LFS設定セクションを追加
+- 開発ステップPhase 1にLFS設定項目を追加
+
+### v1.1 (2025-11-03)
+- ライセンス情報を修正: Apache 2.0 → CC BY 4.0
+- ライセンスとクレジット表記セクションを追加
+- License.txtへのクレジット表記方法を明記
+- 開発ステップにライセンス対応を追加
+- チェックリストにクレジット表記項目を追加
+
+### v1.0 (2025-11-03)
+- 初版作成
