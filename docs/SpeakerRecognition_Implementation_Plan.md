@@ -95,26 +95,6 @@ CREATE INDEX idx_speaker_name ON speakers(speaker_name);
 
 ---
 
-### 3. MicrophoneSettings拡張
-
-**ファイルパス**: `CocoroDock/Communication/CommunicationModels.cs`
-
-**変更箇所**: 行280-283
-
-```csharp
-public class MicrophoneSettings
-{
-    public int inputThreshold { get; set; } = -45;
-
-    // ====== 話者識別設定（新規追加） ======
-    // 注: 話者識別は常に有効（後方互換禁止方針により無効化オプションは提供しない）
-    public float speakerRecognitionThreshold { get; set; } = 0.6f; // 0.5-0.8推奨
-    // =====================================
-}
-```
-
----
-
 ### 4. UI実装: SpeakerManagementControl.xaml（新規）
 
 **ファイルパス**: `CocoroDock/Controls/SpeakerManagementControl.xaml`

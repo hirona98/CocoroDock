@@ -222,6 +222,7 @@ namespace CocoroDock.Controls
 
             var microphoneSettings = SystemSettingsControl.GetMicrophoneSettings();
             dict["MicInputThreshold"] = microphoneSettings.inputThreshold;
+            dict["SpeakerRecognitionThreshold"] = microphoneSettings.speakerRecognitionThreshold;
 
             var CocoroCoreMSettings = SystemSettingsControl.GetCocoroCoreMSettings();
             dict["EnableProMode"] = CocoroCoreMSettings.enableProMode;
@@ -582,6 +583,7 @@ namespace CocoroDock.Controls
             appSettings.ScreenshotSettings.excludePatterns = (List<string>)snapshot["ExcludePatterns"];
 
             appSettings.MicrophoneSettings.inputThreshold = (int)snapshot["MicInputThreshold"];
+            appSettings.MicrophoneSettings.speakerRecognitionThreshold = (float)snapshot["SpeakerRecognitionThreshold"];
 
             appSettings.EnableProMode = (bool)snapshot["EnableProMode"];
             appSettings.EnableInternetRetrieval = (bool)snapshot["EnableInternetRetrieval"];

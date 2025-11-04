@@ -389,6 +389,7 @@ namespace CocoroDock.Services
 
                     bool requiresReminderFlag = !root.TryGetProperty("isEnableReminder", out _);
                     bool requiresVoiceMigration = false;
+                    bool requiresSpeakerRecognitionThreshold = false;
 
                     if (root.TryGetProperty("characterList", out JsonElement characterListElement))
                     {
@@ -403,15 +404,29 @@ namespace CocoroDock.Services
                         }
                     }
 
-                    if (requiresVoiceMigration || requiresReminderFlag)
+                    // microphoneSettings.speakerRecognitionThresholdの存在確認
+                    if (root.TryGetProperty("microphoneSettings", out JsonElement micSettings))
                     {
-                        return PerformJsonMigration(configJson, requiresVoiceMigration, requiresReminderFlag);
+                        if (!micSettings.TryGetProperty("speakerRecognitionThreshold", out _))
+                        {
+                            requiresSpeakerRecognitionThreshold = true;
+                        }
+                    }
+                    else
+                    {
+                        // microphoneSettings自体が存在しない場合
+                        requiresSpeakerRecognitionThreshold = true;
+                    }
+
+                    if (requiresVoiceMigration || requiresReminderFlag || requiresSpeakerRecognitionThreshold)
+                    {
+                        return PerformJsonMigration(configJson, requiresVoiceMigration, requiresReminderFlag, requiresSpeakerRecognitionThreshold);
                     }
                 }
             }
             catch (JsonException ex)
             {
-                Debug.WriteLine($"JSON解析エラー（マイグレーション処理）: {ex.Message}");
+                Debug.WriteLine($"JSON解析エラー(マイグレーション処理): {ex.Message}");
                 Debug.WriteLine("元の設定を保持します。");
             }
             catch (Exception ex)
@@ -424,7 +439,7 @@ namespace CocoroDock.Services
 
 
 
-        private string PerformJsonMigration(string configJson, bool migrateVoiceSettings, bool addReminderFlag)
+        private string PerformJsonMigration(string configJson, bool migrateVoiceSettings, bool addReminderFlag, bool addSpeakerRecognitionThreshold = false)
         {
             try
             {
@@ -452,10 +467,39 @@ namespace CocoroDock.Services
 
                                 writer.WriteEndArray();
                             }
+                            else if (property.Name == "microphoneSettings" && addSpeakerRecognitionThreshold)
+                            {
+                                writer.WritePropertyName("microphoneSettings");
+                                writer.WriteStartObject();
+
+                                // 既存のmicrophoneSettingsプロパティをコピー
+                                foreach (var micProp in property.Value.EnumerateObject())
+                                {
+                                    micProp.WriteTo(writer);
+                                }
+
+                                // speakerRecognitionThresholdが存在しない場合のみ追加
+                                if (!property.Value.TryGetProperty("speakerRecognitionThreshold", out _))
+                                {
+                                    writer.WriteNumber("speakerRecognitionThreshold", 0.6);
+                                }
+
+                                writer.WriteEndObject();
+                            }
                             else
                             {
                                 property.WriteTo(writer);
                             }
+                        }
+
+                        // microphoneSettings自体が存在しない場合は新規作成
+                        if (addSpeakerRecognitionThreshold && !root.TryGetProperty("microphoneSettings", out _))
+                        {
+                            writer.WritePropertyName("microphoneSettings");
+                            writer.WriteStartObject();
+                            writer.WriteNumber("inputThreshold", -30);
+                            writer.WriteNumber("speakerRecognitionThreshold", 0.6);
+                            writer.WriteEndObject();
                         }
 
                         if (addReminderFlag)
