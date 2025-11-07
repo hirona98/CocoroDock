@@ -4,64 +4,101 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
-    <GroupBox Header="話者識別設定" Margin="10" Padding="10">
+             d:DesignHeight="450"
+             d:DesignWidth="800">
+    <GroupBox Header="話者識別設定"
+              Margin="0,0,20,20"
+              Padding="10">
         <StackPanel>
             <!-- 登録済み話者リスト -->
-            <Label Content="登録済み話者:" FontWeight="Bold" Margin="0,0,0,5"/>
-            <ListBox x:Name="SpeakersListBox"
-                     Height="150"
-                     Margin="0,0,0,10">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Grid Margin="5,2">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding speakerName}"
-                                       VerticalAlignment="Center"
-                                       Margin="5,0"
-                                       FontSize="14"/>
-                            <Button Grid.Column="1"
-                                    Content="削除"
-                                    Click="DeleteSpeaker_Click"
-                                    Tag="{Binding speakerId}"
-                                    Padding="15,5"
-                                    Margin="5,0"/>
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="120"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="登録済み話者:"
+                           VerticalAlignment="Top"
+                           Margin="0,5,10,0"/>
+                <ListBox Grid.Column="1"
+                         x:Name="SpeakersListBox"
+                         Height="120"
+                         HorizontalContentAlignment="Stretch">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="5,2"
+                                  HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding speakerName}"
+                                           VerticalAlignment="Center"
+                                           Margin="5,0"
+                                           FontSize="14"/>
+                                <Button Grid.Column="1"
+                                        Content="削除"
+                                        Click="DeleteSpeaker_Click"
+                                        Tag="{Binding speakerId}"
+                                        Padding="15,5"
+                                        Margin="5,0"
+                                        HorizontalAlignment="Right"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
 
             <!-- 新規登録 -->
-            <Label Content="新規話者登録:" FontWeight="Bold" Margin="0,10,0,5"/>
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                <TextBox x:Name="NewSpeakerNameBox"
-                         Width="200"
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="120"/>
+                    <ColumnDefinition Width="300"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="新規登録:"
+                           VerticalAlignment="Center"
+                           Margin="0,0,10,0"/>
+                <TextBox Grid.Column="1"
+                         x:Name="NewSpeakerNameBox"
                          Margin="0,0,10,0"
                          VerticalAlignment="Center"
                          VerticalContentAlignment="Center"
                          Padding="5"/>
-                <Button Content="5秒録音して登録"
+                <Button Grid.Column="2"
+                        Content="5秒録音して登録"
                         Click="RecordAndRegisterSpeaker_Click"
                         Padding="15,5"/>
-            </StackPanel>
+            </Grid>
 
-            <!-- 識別感度スライダー -->
-            <Label Content="識別感度:" FontWeight="Bold" Margin="0,10,0,5"/>
-            <Slider x:Name="ThresholdSlider"
-                    Minimum="0.5"
-                    Maximum="0.9"
-                    TickFrequency="0.05"
-                    IsSnapToTickEnabled="True"
-                    TickPlacement="BottomRight"
-                    ValueChanged="ThresholdSlider_ValueChanged"
-                    Margin="0,0,0,5"/>
-            <TextBlock x:Name="ThresholdValueText"
-                       Foreground="Gray"
-                       FontSize="11"
-                       Margin="0,0,0,10"/>
+            <!-- 識別感度設定 -->
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="105"/>
+                    <ColumnDefinition Width="350"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="識別感度:"
+                           VerticalAlignment="Center"/>
+                <Slider Grid.Column="1"
+                        x:Name="ThresholdSlider"
+                        Minimum="0.5"
+                        Maximum="0.9"
+                        TickFrequency="0.05"
+                        IsSnapToTickEnabled="True"
+                        TickPlacement="BottomRight"
+                        ValueChanged="ThresholdSlider_ValueChanged"
+                        Margin="10,0"/>
+                <TextBlock Grid.Column="2"
+                           x:Name="ThresholdValueText"
+                           Foreground="Gray"
+                           FontSize="11"
+                           VerticalAlignment="Center"
+                           Margin="10,0,0,0"
+                           TextAlignment="Left"/>
+            </Grid>
 
             <!-- 録音中表示 -->
             <TextBlock x:Name="RecordingStatusText"
