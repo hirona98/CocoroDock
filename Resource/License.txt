@@ -48,6 +48,13 @@ https://github.com/hecomi/uLipSync/blob/main/LICENSE.md
 Copyright (c) 2020-present Silero Team
 https://github.com/snakers4/silero-vad/blob/master/LICENSE
 
+◆ WeSpeaker ◆
+Model: voxceleb_resnet34.onnx
+Trained on VoxCeleb dataset
+Copyright (c) VoxCeleb Contributors
+https://github.com/wenet-e2e/wespeaker
+https://creativecommons.org/licenses/by/4.0/
+
 ◆ rnnoise-wasm ◆
 Copyright (c) Jitsi
 https://github.com/jitsi/rnnoise-wasm/blob/master/LICENSE

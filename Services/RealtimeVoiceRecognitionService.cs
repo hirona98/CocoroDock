@@ -15,6 +15,7 @@ namespace CocoroDock.Services
         private readonly VoiceRecognitionStateMachine _stateMachine;
         private readonly ISpeechToTextService _sttService;
         private readonly SileroVadService _sileroVad;
+        private readonly SpeakerRecognitionService _speakerRecognition;
 
         // マイクゲイン設定
         private float _microphoneGain = 1f; // デフォルト1倍
@@ -30,6 +31,7 @@ namespace CocoroDock.Services
         public event Action<string>? OnRecognizedText;
         public event Action<VoiceRecognitionState>? OnStateChanged;
         public event Action<float, bool>? OnVoiceLevel;  // level, isAboveThreshold
+        public event Action<string, string, float>? OnSpeakerIdentified; // speakerId, speakerName, confidence
 
         public VoiceRecognitionState CurrentState => _stateMachine.CurrentState;
         public bool IsListening { get; private set; }
@@ -41,12 +43,14 @@ namespace CocoroDock.Services
         public RealtimeVoiceRecognitionService(
             ISpeechToTextService sttService,
             string wakeWords,
+            SpeakerRecognitionService speakerRecognition,
             float vadThreshold = 0.5f,
             int silenceTimeoutMs = 300,
             int activeTimeoutMs = 60000,
             bool startActive = false)
         {
             _sttService = sttService ?? throw new ArgumentNullException(nameof(sttService));
+            _speakerRecognition = speakerRecognition ?? throw new ArgumentNullException(nameof(speakerRecognition));
             _stateMachine = new VoiceRecognitionStateMachine(wakeWords, activeTimeoutMs, startActive);
 
             // 新しいSileroVAD設計：個別インスタンス作成（プール管理付き）
@@ -197,6 +201,16 @@ namespace CocoroDock.Services
                 // デバッグ用音声ファイル保存（デスクトップに保存）
                 // SaveAudioFileForDebug(audioData);
 
+                // ====== 話者識別（必須処理） ======
+                // 例外が発生した場合は上位に伝播して停止
+                var (speakerId, speakerName, confidence) = _speakerRecognition.IdentifySpeaker(audioData);
+
+                OnSpeakerIdentified?.Invoke(speakerId, speakerName, confidence);
+
+                string speakerPrefix = $"[{speakerName}] ";
+                System.Diagnostics.Debug.WriteLine($"[Speaker] {speakerName} (信頼度: {confidence:F2})");
+                // =================================
+
                 // STTサービス呼び出し（並列処理でブロックしない）
                 var recognitionTask = _sttService.RecognizeAsync(audioData);
                 string recognizedText = await recognitionTask.ConfigureAwait(false);
@@ -206,11 +220,14 @@ namespace CocoroDock.Services
 
                 if (!string.IsNullOrEmpty(recognizedText))
                 {
-                    _stateMachine.ProcessRecognitionResult(recognizedText);
+                    // 話者情報を付加
+                    var textWithSpeaker = speakerPrefix + recognizedText;
+                    _stateMachine.ProcessRecognitionResult(textWithSpeaker);
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("[VoiceService] No text recognized");
+                    // STTで認識できなかった場合も異常として停止
+                    throw new InvalidOperationException("音声認識に失敗しました。");
                 }
             }
             catch (Exception ex)
@@ -221,6 +238,8 @@ namespace CocoroDock.Services
                 {
                     _stateMachine.TransitionTo(VoiceRecognitionState.SLEEPING);
                 }
+                // 例外を再スロー（異常系では停止させる）
+                throw;
             }
         }
 
@@ -413,6 +432,7 @@ namespace CocoroDock.Services
             _stateMachine?.Dispose();
             _sttService?.Dispose();
             _sileroVad?.Dispose(); // 新しい設計では個別インスタンスなのでDispose必要
+            _speakerRecognition?.Dispose(); // 話者識別サービスのリソース解放
 
             System.Diagnostics.Debug.WriteLine("[VoiceService] Disposed");
         }

@@ -281,6 +281,7 @@ namespace CocoroDock.Communication
     public class MicrophoneSettings
     {
         public int inputThreshold { get; set; } = -45;
+        public float speakerRecognitionThreshold { get; set; } = 0.6f;
     }
 
     /// <summary>
@@ -446,7 +447,8 @@ namespace CocoroDock.Communication
 
                 microphoneSettings = new MicrophoneSettings
                 {
-                    inputThreshold = this.microphoneSettings.inputThreshold
+                    inputThreshold = this.microphoneSettings.inputThreshold,
+                    speakerRecognitionThreshold = this.microphoneSettings.speakerRecognitionThreshold
                 },
 
                 messageWindowSettings = new MessageWindowSettings

@@ -62,6 +62,11 @@ namespace CocoroDock.Controls
                 // マイク設定
                 MicThresholdSlider.Value = appSettings.MicrophoneSettings.inputThreshold;
 
+                // 話者識別設定
+                var dbPath = System.IO.Path.Combine(appSettings.UserDataDirectory, "speaker_recognition.db");
+                var speakerService = new SpeakerRecognitionService(dbPath, appSettings.MicrophoneSettings.speakerRecognitionThreshold);
+                SpeakerManagementControl.Initialize(speakerService, appSettings.MicrophoneSettings.speakerRecognitionThreshold);
+
                 // CocoroCoreM設定
                 EnableInternetRetrievalCheckBox.IsChecked = appSettings.EnableInternetRetrieval;
                 GoogleApiKeyTextBox.Text = appSettings.GoogleApiKey;
@@ -193,7 +198,8 @@ namespace CocoroDock.Controls
         {
             return new MicrophoneSettings
             {
-                inputThreshold = (int)MicThresholdSlider.Value
+                inputThreshold = (int)MicThresholdSlider.Value,
+                speakerRecognitionThreshold = SpeakerManagementControl.GetCurrentThreshold()
             };
         }
 
@@ -203,6 +209,7 @@ namespace CocoroDock.Controls
         public void SetMicrophoneSettings(MicrophoneSettings settings)
         {
             MicThresholdSlider.Value = settings.inputThreshold;
+            // speakerRecognitionThresholdはInitializeAsyncで設定済み
         }
 
         /// <summary>

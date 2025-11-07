@@ -43,7 +43,8 @@
     ]
   },
   "microphoneSettings": {
-    "inputThreshold": -30
+    "inputThreshold": -30,
+    "speakerRecognitionThreshold": 0.6
   },
   "messageWindowSettings": {
     "maxMessageCount": 3,
