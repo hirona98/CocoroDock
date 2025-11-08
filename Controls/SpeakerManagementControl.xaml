@@ -84,7 +84,7 @@
                            VerticalAlignment="Center"/>
                 <Slider Grid.Column="1"
                         x:Name="ThresholdSlider"
-                        Minimum="0.5"
+                        Minimum="0.1"
                         Maximum="0.9"
                         TickFrequency="0.05"
                         IsSnapToTickEnabled="True"

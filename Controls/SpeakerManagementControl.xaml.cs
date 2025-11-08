@@ -167,10 +167,11 @@ namespace CocoroDock.Controls
 
             string description = _currentThreshold switch
             {
-                < 0.6f => "寛容（偽陽性のリスクあり）",
-                >= 0.6f and < 0.7f => "バランス（推奨）",
-                >= 0.7f => "厳格（偽陰性のリスクあり）",
-                _ => ""
+                < 0.5f => "かなり寛容（誤検出増）",
+                >= 0.5f and < 0.6f => "やや寛容",
+                >= 0.6f and < 0.75f => "バランス（推奨）",
+                >= 0.75f => "厳格（偽陰性リスク）",
+                _ => string.Empty
             };
 
             ThresholdValueText.Text = $"現在値: {_currentThreshold:F2} - {description}";
