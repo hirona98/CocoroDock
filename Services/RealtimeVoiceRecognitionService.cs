@@ -201,15 +201,18 @@ namespace CocoroDock.Services
                 // デバッグ用音声ファイル保存（デスクトップに保存）
                 // SaveAudioFileForDebug(audioData);
 
-                // ====== 話者識別（必須処理） ======
-                // 例外が発生した場合は上位に伝播して停止
-                var (speakerId, speakerName, confidence) = _speakerRecognition.IdentifySpeaker(audioData);
+                // ====== 話者識別（登録済み話者がいる場合のみ実施） ======
+                string speakerPrefix = string.Empty;
+                if (_speakerRecognition.HasRegisteredSpeakers())
+                {
+                    // 例外が発生した場合は上位に伝播して停止
+                    var (speakerId, speakerName, confidence) = _speakerRecognition.IdentifySpeaker(audioData);
 
-                OnSpeakerIdentified?.Invoke(speakerId, speakerName, confidence);
+                    OnSpeakerIdentified?.Invoke(speakerId, speakerName, confidence);
 
-                string speakerPrefix = $"[{speakerName}] ";
-                System.Diagnostics.Debug.WriteLine($"[Speaker] {speakerName} (信頼度: {confidence:F2})");
-                // =================================
+                    speakerPrefix = $"[{speakerName}] ";
+                    System.Diagnostics.Debug.WriteLine($"[Speaker] {speakerName} (信頼度: {confidence:F2})");
+                }
 
                 // STTサービス呼び出し（並列処理でブロックしない）
                 var recognitionTask = _sttService.RecognizeAsync(audioData);

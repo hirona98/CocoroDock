@@ -297,6 +297,29 @@ namespace CocoroDock.Services
         }
 
         /// <summary>
+        /// 登録済み話者が存在するかを確認
+        /// </summary>
+        public bool HasRegisteredSpeakers()
+        {
+            try
+            {
+                using var connection = new SqliteConnection($"Data Source={_dbPath}");
+                connection.Open();
+
+                var countSql = "SELECT 1 FROM speakers LIMIT 1";
+                using var command = new SqliteCommand(countSql, connection);
+                using var reader = command.ExecuteReader();
+
+                return reader.Read();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SpeakerRecognition] HasRegisteredSpeakers error: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// 音声から話者を識別
         /// </summary>
         /// <param name="wavAudio">識別対象の音声データ（WAV形式）</param>
