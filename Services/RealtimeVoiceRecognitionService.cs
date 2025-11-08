@@ -201,8 +201,7 @@ namespace CocoroDock.Services
                 // デバッグ用音声ファイル保存（デスクトップに保存）
                 // SaveAudioFileForDebug(audioData);
 
-                // ====== 話者識別（登録済み話者がいる場合のみ実施） ======
-                string speakerPrefix = string.Empty;
+                // 話者識別（登録済み話者がいる場合のみ実施）
                 if (_speakerRecognition.HasRegisteredSpeakers())
                 {
                     // 例外が発生した場合は上位に伝播して停止
@@ -210,7 +209,6 @@ namespace CocoroDock.Services
 
                     OnSpeakerIdentified?.Invoke(speakerId, speakerName, confidence);
 
-                    speakerPrefix = $"[{speakerName}] ";
                     System.Diagnostics.Debug.WriteLine($"[Speaker] {speakerName} (信頼度: {confidence:F2})");
                 }
 
@@ -223,9 +221,7 @@ namespace CocoroDock.Services
 
                 if (!string.IsNullOrEmpty(recognizedText))
                 {
-                    // 話者情報を付加
-                    var textWithSpeaker = speakerPrefix + recognizedText;
-                    _stateMachine.ProcessRecognitionResult(textWithSpeaker);
+                    _stateMachine.ProcessRecognitionResult(recognizedText);
                 }
                 else
                 {
