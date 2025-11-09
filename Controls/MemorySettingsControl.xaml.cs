@@ -659,7 +659,7 @@ namespace CocoroDock.Controls
                 MessageBox.Show(
                     "記憶データの削除が完了しました。\n\n" +
                     "新しい記憶データベースを作成するには、\n" +
-                    "CocoroCoreMを再起動してください。",
+                    "CocoroAIを再起動してください。",
                     "削除完了",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
