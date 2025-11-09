@@ -137,8 +137,6 @@ namespace CocoroDock.Controls
                 {
                     _speakerService.DeleteSpeaker(speakerId);
                     RefreshSpeakerList();
-                    MessageBox.Show("話者を削除しました", "完了",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
