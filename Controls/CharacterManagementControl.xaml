@@ -272,7 +272,7 @@
                             <TextBlock Foreground="#666666"
                                        TextWrapping="Wrap"
                                        Margin="130,0,0,0">
-                            LLMに送信する過去の会話履歴の件数（短期記憶）です。大きくするほど文脈を理解しやすくなりますが、トークン消費量も増加します
+                            大きくするほど文脈を理解しやすくなりますが、トークン消費量も増加します
                             </TextBlock>
 
                             <!-- Max Tokensの設定 -->
@@ -294,7 +294,7 @@
                             <TextBlock Foreground="#666666"
                                        TextWrapping="Wrap"
                                        Margin="130,0,0,0">
-                            LLMが一度に生成できる最大トークン数です。大きくするほど長い回答が可能になりますが、処理時間とコストが増加します
+                            大きくするほど長い回答が可能になりますが、処理時間とコストが増加します
                             <LineBreak/>
                             エラーに気づきにくいため、変更後はしばらくログを確認してください。
                             </TextBlock>
@@ -318,7 +318,7 @@
                             <TextBlock Foreground="#666666"
                                        TextWrapping="Wrap"
                                        Margin="130,0,0,0">
-                            画像分析時のLLMが一度に生成できる最大トークン数です。大きくすると詳細な分析が可能となります。
+                            大きくすると詳細に分析できます
                             <LineBreak/>
                             エラーに気づきにくいため、変更後はしばらくログを確認してください。
                             </TextBlock>
@@ -375,9 +375,9 @@
                             <TextBlock Foreground="#666666"
                                        TextWrapping="Wrap"
                                        Margin="130,0,0,0">
-                            CocoroAIでは画像説明生成とそれに対するコメント生成で2回LLMを呼び出します。
+                            CocoroAIでは画像説明の生成とそれに対するコメントの生成で2回LLMを呼び出します
                             <LineBreak/>
-                            画像のみローカルにしたり低コストAPIにしたりできます。
+                            画像のみローカルにしたり低コストAPIにしたりできます
                             </TextBlock>
 
                             <!-- Vision API Key -->
