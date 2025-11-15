@@ -32,6 +32,7 @@ namespace CocoroDock
         private ScheduledCommandService? _scheduledCommandService;
         private AdminWindow? _adminWindow;
         private LogViewerWindow? _logViewerWindow;
+        private int? _nextScreenshotInitialDelayMilliseconds;
 
 
         public MainWindow()
@@ -218,7 +219,9 @@ namespace CocoroDock
 
 
                 // サービスを開始
-                _screenshotService.Start();
+                var initialDelay = _nextScreenshotInitialDelayMilliseconds;
+                _screenshotService.Start(initialDelay);
+                _nextScreenshotInitialDelayMilliseconds = null;
 
                 Debug.WriteLine($"スクリーンショットサービスを開始しました（間隔: {screenshotSettings.intervalMinutes}分）");
             }
@@ -791,6 +794,7 @@ namespace CocoroDock
             {
                 screenshotSettings.enabled = !screenshotSettings.enabled;
                 _isScreenshotPaused = !screenshotSettings.enabled;
+                _nextScreenshotInitialDelayMilliseconds = _isScreenshotPaused ? null : 5000;
 
                 // 設定を保存
                 _appSettings.SaveSettings();

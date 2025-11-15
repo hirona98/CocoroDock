@@ -154,13 +154,15 @@ namespace CocoroAI.Services
         /// <summary>
         /// スクリーンショットの定期取得を開始
         /// </summary>
-        public void Start()
+        public void Start(int? initialDelayMilliseconds = null)
         {
             if (IsRunning) return;
 
             IsRunning = true;
-            // 初回実行を設定された間隔後に行うように変更（dueTimeを_intervalMillisecondsに設定）
-            _captureTimer = new System.Threading.Timer(async _ => await CaptureTimerCallback(), null, _intervalMilliseconds, _intervalMilliseconds);
+            var dueTime = (initialDelayMilliseconds.HasValue && initialDelayMilliseconds.Value > 0)
+                ? initialDelayMilliseconds.Value
+                : _intervalMilliseconds;
+            _captureTimer = new System.Threading.Timer(async _ => await CaptureTimerCallback(), null, dueTime, _intervalMilliseconds);
         }
 
         /// <summary>
