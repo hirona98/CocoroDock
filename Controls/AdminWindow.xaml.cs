@@ -465,6 +465,7 @@ namespace CocoroDock.Controls
                 isUseLLM = source.isUseLLM,
                 apiKey = source.apiKey,
                 llmModel = source.llmModel,
+                reasoning_effort = source.reasoning_effort,
                 max_turns_window = source.max_turns_window,
                 max_tokens = source.max_tokens,
                 max_tokens_vision = source.max_tokens_vision,
@@ -963,6 +964,7 @@ namespace CocoroDock.Controls
                 if (current.isUseLLM != previous.isUseLLM ||
                     current.apiKey != previous.apiKey ||
                     current.llmModel != previous.llmModel ||
+                    current.reasoning_effort != previous.reasoning_effort ||
                     current.max_turns_window != previous.max_turns_window ||
                     current.max_tokens != previous.max_tokens ||
                     current.max_tokens_vision != previous.max_tokens_vision ||

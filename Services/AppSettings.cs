@@ -194,6 +194,8 @@ namespace CocoroDock.Services
                 CharacterList = new List<CharacterSettings>(config.characterList);
             }
 
+            EnsureCharacterSchemaConsistency();
+
 
             // スクリーンショット設定を更新
             if (config.screenshotSettings != null)
@@ -228,6 +230,27 @@ namespace CocoroDock.Services
 
             // 設定読み込み完了フラグを設定
             IsLoaded = true;
+        }
+
+        /// <summary>
+        /// 新規追加項目などの不足を補完
+        /// </summary>
+        private void EnsureCharacterSchemaConsistency()
+        {
+            if (CharacterList == null)
+            {
+                return;
+            }
+
+            foreach (var character in CharacterList)
+            {
+                if (character == null)
+                {
+                    continue;
+                }
+
+                character.reasoning_effort ??= string.Empty;
+            }
         }
 
         /// <summary>

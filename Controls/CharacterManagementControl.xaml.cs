@@ -263,6 +263,7 @@ namespace CocoroDock.Controls
             character.isUseLLM = IsUseLLMCheckBox.IsChecked ?? false;
             character.apiKey = ApiKeyPasswordBox.Text;
             character.llmModel = LlmModelTextBox.Text;
+            character.reasoning_effort = ReasoningEffortTextBox.Text;
             if (int.TryParse(MaxTurnsWindowTextBox.Text, out int maxTurns))
                 character.max_turns_window = maxTurns;
             if (int.TryParse(MaxTokensTextBox.Text, out int maxTokens))
@@ -410,6 +411,7 @@ namespace CocoroDock.Controls
             IsUseLLMCheckBox.IsChecked = character.isUseLLM;
             ApiKeyPasswordBox.Text = character.apiKey;
             LlmModelTextBox.Text = character.llmModel;
+            ReasoningEffortTextBox.Text = character.reasoning_effort;
             MaxTurnsWindowTextBox.Text = character.max_turns_window.ToString();
             MaxTokensTextBox.Text = character.max_tokens.ToString();
             MaxTokensVisionTextBox.Text = character.max_tokens_vision.ToString();
@@ -568,6 +570,7 @@ namespace CocoroDock.Controls
                     isUseLLM = false,
                     apiKey = string.Empty,
                     llmModel = "openai/gpt-4o-mini",
+                    reasoning_effort = string.Empty,
                     max_turns_window = 100,
                     localLLMBaseUrl = string.Empty,
                     visionApiKey = string.Empty,
@@ -696,6 +699,7 @@ namespace CocoroDock.Controls
                     isUseLLM = sourceCharacter.isUseLLM,
                     apiKey = sourceCharacter.apiKey,
                     llmModel = sourceCharacter.llmModel,
+                    reasoning_effort = sourceCharacter.reasoning_effort,
                     max_turns_window = sourceCharacter.max_turns_window,
                     localLLMBaseUrl = sourceCharacter.localLLMBaseUrl,
                     visionApiKey = sourceCharacter.visionApiKey,

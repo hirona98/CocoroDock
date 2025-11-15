@@ -129,6 +129,7 @@ namespace CocoroDock.Communication
         public bool isUseLLM { get; set; }
         public string apiKey { get; set; } = string.Empty;
         public string llmModel { get; set; } = "openai/gpt-4o-mini";
+        public string reasoning_effort { get; set; } = string.Empty; // LLMの推論レベル
         public int max_turns_window { get; set; } = 100; // 会話履歴送信件数
         public int max_tokens { get; set; } = 8192; // LLMが生成できる最大トークン数
         public int max_tokens_vision { get; set; } = 4096; // 画像分析時のLLMが生成できる最大トークン数
@@ -176,6 +177,7 @@ namespace CocoroDock.Communication
                 isUseLLM = this.isUseLLM,
                 apiKey = this.apiKey,
                 llmModel = this.llmModel,
+                reasoning_effort = this.reasoning_effort,
                 max_turns_window = this.max_turns_window,
                 max_tokens = this.max_tokens,
                 max_tokens_vision = this.max_tokens_vision,
