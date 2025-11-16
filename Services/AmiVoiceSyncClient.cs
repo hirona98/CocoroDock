@@ -9,6 +9,9 @@ namespace CocoroDock.Services
     public class AmiVoiceSyncClient
     {
         private const string ENDPOINT = "https://acp-api.amivoice.com/v1/recognize";
+        private const float MIN_CONFIDENCE = 0.7f;
+        private const float SINGLE_TOKEN_CONFIDENCE = 0.6f;
+        private const int MIN_TOKENS = 2;
         private readonly string _apiKey;
         private static readonly HttpClient _httpClient;
 
@@ -61,14 +64,28 @@ namespace CocoroDock.Services
 
                 var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-                // 直接textフィールドを取得（aiavatarkitと同じ方式）
-                using var document = JsonDocument.Parse(json);
-                if (document.RootElement.TryGetProperty("results", out var results) &&
-                    results.GetArrayLength() > 0 &&
-                    results[0].TryGetProperty("text", out var textElement))
+                var parseResult = JsonSerializer.Deserialize<AmiVoiceResult>(json);
+
+                if (parseResult?.results == null || parseResult.results.Length == 0)
+                    return string.Empty;
+
+                var first = parseResult.results[0];
+                var tokenCount = first.tokens?.Length ?? 0;
+
+                if (first.confidence < MIN_CONFIDENCE)
                 {
-                    return textElement.GetString() ?? string.Empty;
+                    System.Diagnostics.Debug.WriteLine($"AmiVoice Low confidence: {first.confidence:F2}");
+                    return string.Empty;
                 }
+
+                if (tokenCount < MIN_TOKENS && first.confidence < SINGLE_TOKEN_CONFIDENCE)
+                {
+                    System.Diagnostics.Debug.WriteLine($"AmiVoice Single token and low confidence: {first.confidence:F2}");
+                    return string.Empty;
+                }
+
+                if (!string.IsNullOrWhiteSpace(first.text))
+                    return first.text;
 
                 return string.Empty;
             }
