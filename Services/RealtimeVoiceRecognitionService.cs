@@ -45,7 +45,7 @@ namespace CocoroDock.Services
             string wakeWords,
             SpeakerRecognitionService speakerRecognition,
             float vadThreshold = 0.5f,
-            int silenceTimeoutMs = 300,
+            int silenceTimeoutMs = 500,
             int activeTimeoutMs = 60000,
             bool startActive = false)
         {
