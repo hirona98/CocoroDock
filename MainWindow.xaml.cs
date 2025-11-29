@@ -933,12 +933,16 @@ namespace CocoroDock
             if (_appSettings.CharacterList.Count > 0 &&
                _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count)
             {
-                ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", operation, true);
+                var currentCharacter = _appSettings.CharacterList[_appSettings.CurrentCharacterIndex];
+                if (!string.IsNullOrWhiteSpace(currentCharacter.vrmFilePath))
+                {
+                    ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", operation, true);
+                    return;
+                }
             }
-            else
-            {
-                ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", ProcessOperation.Terminate, true);
-            }
+
+            // VRM未指定時は停止させる
+            ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", ProcessOperation.Terminate, true);
 #endif
         }
 
