@@ -30,7 +30,7 @@ namespace CocoroDock.Services
 
             // Keep-Alive設定
             _httpClient.DefaultRequestHeaders.Connection.Add("keep-alive");
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "CocoroAI/4.7.1");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "CocoroAI/4.7.2");
         }
 
         public AmiVoiceSyncClient(string apiKey)
