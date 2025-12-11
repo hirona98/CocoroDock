@@ -1,19 +1,17 @@
+using CocoroAI.Services;
 using CocoroDock.Communication;
 using CocoroDock.Controls;
 using CocoroDock.Services;
 using CocoroDock.Utilities;
 using CocoroDock.Windows;
-using CocoroAI.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
+using System.IO;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Imaging;
-using System.IO;
 
 namespace CocoroDock
 {
@@ -934,7 +932,7 @@ namespace CocoroDock
                _appSettings.CurrentCharacterIndex < _appSettings.CharacterList.Count)
             {
                 var currentCharacter = _appSettings.CharacterList[_appSettings.CurrentCharacterIndex];
-                if (!string.IsNullOrWhiteSpace(currentCharacter.vrmFilePath))
+                if (!string.IsNullOrWhiteSpace(currentCharacter.vrmFilePath) || currentCharacter.isReadOnly == true)
                 {
                     ProcessHelper.LaunchExternalApplication("CocoroShell.exe", "CocoroShell", operation, true);
                     return;
