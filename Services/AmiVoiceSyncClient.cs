@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -30,7 +29,7 @@ namespace CocoroDock.Services
 
             // Keep-Alive設定
             _httpClient.DefaultRequestHeaders.Connection.Add("keep-alive");
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "CocoroAI/4.7.2");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "CocoroAI/4.7.3");
         }
 
         public AmiVoiceSyncClient(string apiKey)
